@@ -255,40 +255,39 @@ async function scrapeBKFCLiveEvent(eventUrl, outputDir) {
         const redUUID = statsContainer.getAttribute('data-AthleteRedUUID') || '';
         const blueUUID = statsContainer.getAttribute('data-AthleteBlueUUID') || '';
 
-        // Check W/L/D indicators in fight-card_list-title elements
-        // BKFC shows W/L/D as <p> inside .fight-card_list-title for each corner
-        // The first fighter link's section has the red corner indicator,
-        // the second fighter link's section has the blue corner indicator.
+        // Determine the winner from BKFC's win-label badges (authoritative).
+        // Each fighter's headshot link (a[href*="/fighters/"]) contains four
+        // .fight-card_win-label divs — win / lose / draw / no contest. Only the
+        // actual outcome is rendered with display:block (plus class is--winner
+        // for a win or is--draw for a draw/no-contest); the rest are
+        // display:none. We map the winning badge back to its corner via the
+        // fighter slug so red/blue assignment is reliable.
+        //
+        // NOTE: the old RedResult/BlueResult data-render fields are NOT present
+        // on current BKFC pages, and the .fight-card_list-title rows are stat
+        // headers ("W - L - D", "HEIGHT", "FIST SIZE"), not results — the
+        // previous color/opacity heuristic on them never matched, which is why
+        // methods populated but winners stayed null.
         if (!redResult && !blueResult) {
-          const titleEls = container.querySelectorAll('.fight-card_list-title');
-          if (titleEls.length >= 2) {
-            // Each title element contains W, L, D paragraphs — check which is visible/highlighted
-            // For completed fights, the W/L text gets a distinct style
-            // We check which corner's W element has content or is styled
-            titleEls.forEach((titleEl, idx) => {
-              const ps = titleEl.querySelectorAll('p');
-              ps.forEach(p => {
-                const t = p.textContent?.trim().toUpperCase();
-                // Check if this W/L indicator is "active" — BKFC uses opacity or display
-                // to show the result. Check computed style or class.
-                const style = window.getComputedStyle(p);
-                const isVisible = style.opacity !== '0' && style.display !== 'none';
-                if (!isVisible) return;
-                // The W/L/D are always present but only the winning indicator is highlighted
-                // Check for a highlight class or color
-                const color = style.color;
-                const isHighlighted = color && (
-                  color.includes('255') || // bright color (gold/white/green)
-                  color === 'rgb(255, 255, 255)' || // white
-                  color === 'rgb(212, 175, 55)' // gold
-                );
-                if (t === 'W' && isHighlighted) {
-                  if (idx === 0) redResult = 'W';
-                  else blueResult = 'W';
-                }
-              });
-            });
-          }
+          const winLabels = container.querySelectorAll('.fight-card_win-label');
+          winLabels.forEach(badge => {
+            if (window.getComputedStyle(badge).display === 'none') return;
+            const val = ((badge.getAttribute('data-cond-value') || '') || (badge.textContent || ''))
+              .toLowerCase()
+              .trim();
+            const fLink = badge.closest('a[href*="/fighters/"]');
+            const bSlug = fLink
+              ? (fLink.getAttribute('href') || '').split('/fighters/').pop().replace(/\/$/, '')
+              : '';
+            if (val.startsWith('win')) {
+              if (bSlug === fighterASlug) redResult = 'W';
+              else if (bSlug === fighterBSlug) blueResult = 'W';
+            } else if (val.startsWith('draw')) {
+              redResult = 'D';
+            } else if (val.includes('contest')) {
+              redResult = 'NC';
+            }
+          });
         }
 
         // Strategy 2: If we have WinMethod but no W/L, check stats for winner
