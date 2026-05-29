@@ -45,6 +45,23 @@ body {
 .blog-content > * + * {
   margin-top: 1.25rem;
 }
+.blog-content .blog-tldr {
+  border: 1px solid var(--color-border);
+  border-radius: 0.75rem;
+  background: var(--color-background-secondary);
+  padding: 1.25rem 1.5rem;
+}
+.blog-content .blog-tldr-label {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+}
+.blog-content .blog-tldr ul {
+  margin: 0;
+}
 .blog-content h2 {
   font-size: 1.375rem;
   font-weight: 700;
