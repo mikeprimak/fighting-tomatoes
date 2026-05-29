@@ -30,9 +30,10 @@ interface FighterCardProps {
   fightCount?: number; // Number of fights used for average
   lastFightDate?: string; // Most recent completed fight date
   nextFightDate?: string; // Next upcoming fight date
+  subtitle?: string; // Optional context line (e.g. "1.2K followers", "Booked Tue")
 }
 
-export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate }: FighterCardProps) {
+export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate, subtitle }: FighterCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -114,6 +115,12 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount, l
           </View>
         )}
 
+        {subtitle && (
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            {subtitle}
+          </Text>
+        )}
+
         {getRelativeTimeText() && (
           <Text style={[styles.relativeTime, { color: colors.textSecondary }]}>
             {getRelativeTimeText()}
@@ -168,6 +175,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 11,
     fontStyle: 'italic',
     marginTop: 2,
+  },
+  subtitle: {
+    fontSize: 12,
+    marginBottom: 2,
   },
   detailsContainer: {
     flexDirection: 'row',

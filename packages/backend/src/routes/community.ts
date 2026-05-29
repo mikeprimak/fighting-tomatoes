@@ -126,115 +126,53 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // Get userId from token if authenticated
       const userId = request.user?.id;
 
-      const tenDaysAgo = new Date();
-      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      const oneMonthAgo = new Date();
+      oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
 
-      // Get top 3 upvoted reviews from fights in events within the past 10 days
-      // If no reviews in past 10 days, get the most recent 3 reviews with most upvotes
+      const reviewInclude = {
+        user: {
+          select: { id: true, firstName: true, lastName: true, displayName: true },
+        },
+        fight: {
+          include: {
+            fighter1: { select: { id: true, firstName: true, lastName: true, nickname: true } },
+            fighter2: { select: { id: true, firstName: true, lastName: true, nickname: true } },
+            event: { select: { id: true, name: true, date: true } },
+          },
+        },
+      } as const;
+
+      // Recent top comments — prioritize the past month.
       let topReviews = await fastify.prisma.fightReview.findMany({
-        where: {
-          fight: {
-            event: {
-              date: {
-                gte: tenDaysAgo,
-              },
-            },
-          },
-        },
-        orderBy: [
-          { upvotes: 'desc' },
-          { createdAt: 'desc' },
-        ],
+        where: { fight: { event: { date: { gte: oneMonthAgo } } } },
+        orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
         take: 3,
-        include: {
-          user: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              displayName: true,
-            },
-          },
-          fight: {
-            include: {
-              fighter1: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  nickname: true,
-                },
-              },
-              fighter2: {
-                select: {
-                  id: true,
-                  firstName: true,
-                  lastName: true,
-                  nickname: true,
-                },
-              },
-              event: {
-                select: {
-                  id: true,
-                  name: true,
-                  date: true,
-                },
-              },
-            },
-          },
-        },
+        include: reviewInclude,
       });
 
-      // If no reviews found in past 10 days, get any 3 most upvoted reviews
+      // Fallback: if nothing in the past month, the 3 most-upvoted of all time.
       if (topReviews.length === 0) {
         topReviews = await fastify.prisma.fightReview.findMany({
-          orderBy: [
-            { upvotes: 'desc' },
-            { createdAt: 'desc' },
-          ],
+          orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
           take: 3,
-          include: {
-            user: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                displayName: true,
-              },
-            },
-            fight: {
-              include: {
-                fighter1: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    nickname: true,
-                  },
-                },
-                fighter2: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    nickname: true,
-                  },
-                },
-                event: {
-                  select: {
-                    id: true,
-                    name: true,
-                    date: true,
-                  },
-                },
-              },
-            },
-          },
+          include: reviewInclude,
         });
       }
 
+      // Classic throwback — a top comment on a fight from over a year ago.
+      const throwbackReview = await fastify.prisma.fightReview.findFirst({
+        where: { fight: { event: { date: { lt: oneYearAgo } } } },
+        orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
+        include: reviewInclude,
+      });
+
       // Check which reviews the user has upvoted (if authenticated)
-      const reviewIds = topReviews.map((r: any) => r.id);
+      const reviewIds = [
+        ...topReviews.map((r: any) => r.id),
+        ...(throwbackReview ? [throwbackReview.id] : []),
+      ];
 
       const userUpvotes = userId ? await fastify.prisma.reviewVote.findMany({
         where: {
@@ -246,26 +184,29 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
       const upvotedReviewIds = new Set(userUpvotes.map((u: any) => u.reviewId));
 
+      const toComment = (review: any) => ({
+        id: review.id,
+        content: review.content,
+        rating: review.rating,
+        upvotes: review.upvotes,
+        createdAt: review.createdAt,
+        userHasUpvoted: upvotedReviewIds.has(review.id),
+        user: {
+          id: review.user.id,
+          displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+        },
+        fight: {
+          id: review.fight.id,
+          fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
+          fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
+          eventName: review.fight.event.name,
+          eventDate: review.fight.event.date,
+        },
+      });
+
       return reply.send({
-        data: topReviews.map((review: any) => ({
-          id: review.id,
-          content: review.content,
-          rating: review.rating,
-          upvotes: review.upvotes,
-          createdAt: review.createdAt,
-          userHasUpvoted: upvotedReviewIds.has(review.id),
-          user: {
-            id: review.user.id,
-            displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
-          },
-          fight: {
-            id: review.fight.id,
-            fighter1Name: `${review.fight.fighter1.firstName} ${review.fight.fighter1.lastName}`,
-            fighter2Name: `${review.fight.fighter2.firstName} ${review.fight.fighter2.lastName}`,
-            eventName: review.fight.event.name,
-            eventDate: review.fight.event.date,
-          },
-        })),
+        data: topReviews.map(toComment),
+        throwback: throwbackReview ? toComment(throwbackReview) : null,
       });
     } catch (error) {
       console.error('Error fetching top comments:', error);
@@ -1047,152 +988,115 @@ export default async function communityRoutes(fastify: FastifyInstance) {
   }, async (request, reply) => {
     try {
       const now = new Date();
-      const fourteenDaysAgo = new Date();
-      fourteenDaysAgo.setDate(now.getDate() - 14);
-      const fourteenDaysFromNow = new Date();
-      fourteenDaysFromNow.setDate(now.getDate() + 14);
-
-      // Get all fighters from recent completed fights (past 14 days)
-      const recentFights = await fastify.prisma.fight.findMany({
-        where: {
-          event: {
-            date: {
-              gte: fourteenDaysAgo,
-              lte: now,
-            },
-          },
-          fightStatus: 'COMPLETED',
-        },
-        include: {
-          fighter1: true,
-          fighter2: true,
-        },
-        orderBy: {
-          event: {
-            date: 'desc',
-          },
-        },
-      });
-
-      // Get all fighters from upcoming fights (next 14 days)
+      const sixtyDaysAgo = new Date();
+      sixtyDaysAgo.setDate(now.getDate() - 60);
+      const sixtyDaysFromNow = new Date();
+      sixtyDaysFromNow.setDate(now.getDate() + 60);
       // Use startOfToday (not current time) to include fights happening later today
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+      // Helper: a fighter's recent-form average (their last 3 rated fights).
+      const lastThreeAvg = async (fighterId: string) => {
+        const fighterFights = await fastify.prisma.fight.findMany({
+          where: {
+            OR: [{ fighter1Id: fighterId }, { fighter2Id: fighterId }],
+            fightStatus: 'COMPLETED',
+            averageRating: { gt: 0 },
+          },
+          orderBy: { event: { date: 'desc' } },
+          take: 3,
+          include: { event: true },
+        });
+        const avgRating = fighterFights.length > 0
+          ? fighterFights.reduce((sum: number, f: any) => sum + (f.averageRating || 0), 0) / fighterFights.length
+          : 0;
+        return { avgRating, fightCount: fighterFights.length, lastFightDate: fighterFights[0]?.event.date ?? null };
+      };
+
+      // RECENT (past 2 months): fighters who fought and got highly rated.
+      // Pull the highest-rated completed fights in the window, then take their
+      // fighters in rating order.
+      const recentFights = await fastify.prisma.fight.findMany({
+        where: {
+          event: { date: { gte: sixtyDaysAgo, lte: now } },
+          fightStatus: 'COMPLETED',
+          averageRating: { gt: 0 },
+          totalRatings: { gte: 3 },
+        },
+        include: { fighter1: true, fighter2: true, event: true },
+        orderBy: [{ averageRating: 'desc' }, { totalRatings: 'desc' }],
+        take: 40,
+      });
+
+      const recentFighterStats = new Map();
+      for (const fight of recentFights) {
+        for (const fighter of [fight.fighter1, fight.fighter2]) {
+          if (recentFighterStats.has(fighter.id)) continue;
+          const form = await lastThreeAvg(fighter.id);
+          recentFighterStats.set(fighter.id, {
+            fighter,
+            // Fall back to the triggering fight's rating if no prior rated history.
+            avgRating: form.fightCount > 0 ? form.avgRating : (fight.averageRating || 0),
+            fightCount: form.fightCount,
+            lastFightDate: form.lastFightDate ?? fight.event.date,
+          });
+        }
+        if (recentFighterStats.size >= 6) break;
+      }
+
+      // UPCOMING (next 2 months): fighters in the most-hyped upcoming fights.
       const upcomingFights = await fastify.prisma.fight.findMany({
         where: {
-          event: {
-            date: {
-              gte: startOfToday,
-              lte: fourteenDaysFromNow,
-            },
-          },
+          event: { date: { gte: startOfToday, lte: sixtyDaysFromNow } },
           fightStatus: 'UPCOMING',
         },
         include: {
           fighter1: true,
           fighter2: true,
           event: true,
+          predictions: {
+            where: { predictedRating: { not: null } },
+            select: { predictedRating: true },
+          },
         },
       });
 
-      // Calculate average rating for recent fighters (based on their last 3 fights)
-      const recentFighterStats = new Map();
-      for (const fight of recentFights) {
-        for (const fighter of [fight.fighter1, fight.fighter2]) {
-          if (!recentFighterStats.has(fighter.id)) {
-            // Get fighter's last 3 completed fights with ratings
-            const fighterFights = await fastify.prisma.fight.findMany({
-              where: {
-                OR: [
-                  { fighter1Id: fighter.id },
-                  { fighter2Id: fighter.id },
-                ],
-                fightStatus: 'COMPLETED',
-                averageRating: {
-                  gt: 0,
-                },
-              },
-              orderBy: {
-                event: {
-                  date: 'desc',
-                },
-              },
-              take: 3,
-              include: {
-                event: true,
-              },
-            });
+      // Rank upcoming fights by average hype (fall back to soonest when no hype yet).
+      const upcomingByHype = upcomingFights
+        .map((fight: any) => {
+          const hypes = fight.predictions
+            .map((p: any) => p.predictedRating)
+            .filter((r: any): r is number => r != null);
+          const averageHype = hypes.length > 0
+            ? hypes.reduce((sum: number, h: number) => sum + h, 0) / hypes.length
+            : 0;
+          return { fight, averageHype };
+        })
+        .sort((a: any, b: any) =>
+          b.averageHype - a.averageHype ||
+          new Date(a.fight.event.date).getTime() - new Date(b.fight.event.date).getTime()
+        );
 
-            if (fighterFights.length > 0) {
-              const avgRating = fighterFights.reduce((sum: number, f: any) => sum + (f.averageRating || 0), 0) / fighterFights.length;
-              recentFighterStats.set(fighter.id, {
-                fighter,
-                avgRating,
-                fightCount: fighterFights.length,
-                lastFightDate: fighterFights[0].event.date, // Most recent completed fight
-              });
-            }
-          }
-        }
-      }
-
-      // Calculate average rating for upcoming fighters
       const upcomingFighterStats = new Map();
-      const upcomingFighterDates = new Map(); // Track upcoming fight dates
-      for (const fight of upcomingFights) {
+      for (const { fight, averageHype } of upcomingByHype) {
         for (const fighter of [fight.fighter1, fight.fighter2]) {
-          // Track the earliest upcoming fight for this fighter
-          if (!upcomingFighterDates.has(fighter.id)) {
-            upcomingFighterDates.set(fighter.id, fight.event.date);
-          }
-
-          if (!upcomingFighterStats.has(fighter.id)) {
-            // Get fighter's last 3 completed fights with ratings
-            const fighterFights = await fastify.prisma.fight.findMany({
-              where: {
-                OR: [
-                  { fighter1Id: fighter.id },
-                  { fighter2Id: fighter.id },
-                ],
-                fightStatus: 'COMPLETED',
-                averageRating: {
-                  gt: 0,
-                },
-              },
-              orderBy: {
-                event: {
-                  date: 'desc',
-                },
-              },
-              take: 3,
-            });
-
-            if (fighterFights.length > 0) {
-              const avgRating = fighterFights.reduce((sum: number, f: any) => sum + (f.averageRating || 0), 0) / fighterFights.length;
-              upcomingFighterStats.set(fighter.id, {
-                fighter,
-                avgRating,
-                fightCount: fighterFights.length,
-                nextFightDate: upcomingFighterDates.get(fighter.id), // Next upcoming fight
-              });
-            }
-          }
+          if (upcomingFighterStats.has(fighter.id) || recentFighterStats.has(fighter.id)) continue;
+          const form = await lastThreeAvg(fighter.id);
+          upcomingFighterStats.set(fighter.id, {
+            fighter,
+            avgRating: form.avgRating,
+            fightCount: form.fightCount,
+            nextFightDate: fight.event.date,
+            hype: averageHype,
+          });
         }
+        if (upcomingFighterStats.size >= 6) break;
       }
-
-      // Sort and get top fighters
-      const topRecent = Array.from(recentFighterStats.values())
-        .sort((a: any, b: any) => b.avgRating - a.avgRating)
-        .slice(0, 3);
-
-      const topUpcoming = Array.from(upcomingFighterStats.values())
-        .filter((f: any) => !recentFighterStats.has(f.fighter.id)) // Exclude fighters already in recent
-        .sort((a: any, b: any) => b.avgRating - a.avgRating)
-        .slice(0, 4);
 
       return reply.send({
         data: {
-          recent: topRecent,
-          upcoming: topUpcoming,
+          recent: Array.from(recentFighterStats.values()).slice(0, 6),
+          upcoming: Array.from(upcomingFighterStats.values()).slice(0, 6),
         },
       });
     } catch (error) {
@@ -1257,6 +1161,98 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       console.error('Error fetching top-followed fighters:', error);
       return reply.status(500).send({
         error: 'Failed to fetch top-followed fighters',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
+  // Recently booked VIP fighters — notable fighters (100+ user ratings across
+  // their fights) added to an upcoming card within the past 2 weeks. Surfaces
+  // newsworthy bookings on the Home feed.
+  fastify.get('/recently-booked-fighters', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const VIP_MIN_RATINGS = 100;
+      const now = new Date();
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(now.getDate() - 14);
+
+      // Fights whose row was created (booked) in the last 2 weeks and that are
+      // still on an upcoming card.
+      const recentlyBooked = await fastify.prisma.fight.findMany({
+        where: {
+          createdAt: { gte: twoWeeksAgo },
+          fightStatus: 'UPCOMING',
+          event: { date: { gte: now } },
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+          event: { select: { id: true, name: true, date: true } },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (recentlyBooked.length === 0) {
+        return reply.send({ data: [] });
+      }
+
+      const fighterIds = [...new Set(
+        recentlyBooked.flatMap((f: any) => [f.fighter1Id, f.fighter2Id])
+      )] as string[];
+      const fighterIdSet = new Set(fighterIds);
+
+      // Real rating counts. Fighter.totalRatings is unreliable ("fields that lie"),
+      // so sum the maintained Fight.totalRatings across each fighter's fights.
+      const candidateFights = await fastify.prisma.fight.findMany({
+        where: {
+          OR: [
+            { fighter1Id: { in: fighterIds } },
+            { fighter2Id: { in: fighterIds } },
+          ],
+        },
+        select: { fighter1Id: true, fighter2Id: true, totalRatings: true },
+      });
+      const ratingCount = new Map<string, number>();
+      for (const f of candidateFights) {
+        if (fighterIdSet.has(f.fighter1Id)) {
+          ratingCount.set(f.fighter1Id, (ratingCount.get(f.fighter1Id) || 0) + (f.totalRatings || 0));
+        }
+        if (fighterIdSet.has(f.fighter2Id)) {
+          ratingCount.set(f.fighter2Id, (ratingCount.get(f.fighter2Id) || 0) + (f.totalRatings || 0));
+        }
+      }
+
+      // One entry per VIP fighter — keep their most recently booked upcoming fight.
+      const seen = new Set<string>();
+      const data: any[] = [];
+      for (const fight of recentlyBooked) {
+        for (const fighter of [fight.fighter1, fight.fighter2]) {
+          if (seen.has(fighter.id)) continue;
+          const ratings = ratingCount.get(fighter.id) || 0;
+          if (ratings < VIP_MIN_RATINGS) continue;
+          seen.add(fighter.id);
+          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
+          data.push({
+            fighter,
+            ratingCount: ratings,
+            bookedAt: fight.createdAt,
+            event: fight.event,
+            nextFightDate: fight.event.date,
+            opponentName: `${opponent.firstName} ${opponent.lastName}`,
+          });
+        }
+      }
+
+      // Most notable first.
+      data.sort((a, b) => b.ratingCount - a.ratingCount);
+
+      return reply.send({ data: data.slice(0, 10) });
+    } catch (error) {
+      console.error('Error fetching recently booked fighters:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch recently booked fighters',
         code: 'FETCH_ERROR',
       });
     }

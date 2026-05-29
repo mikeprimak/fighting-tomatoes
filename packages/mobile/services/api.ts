@@ -160,6 +160,26 @@ interface ApiError {
   details?: any;
 }
 
+export interface TopComment {
+  id: string;
+  content: string;
+  rating: number;
+  upvotes: number;
+  createdAt: string;
+  userHasUpvoted: boolean;
+  user: {
+    id: string;
+    displayName: string;
+  };
+  fight: {
+    id: string;
+    fighter1Name: string;
+    fighter2Name: string;
+    eventName: string;
+    eventDate: string;
+  };
+}
+
 class ApiService {
   get baseURL() {
     return API_BASE_URL.replace('/api', '');
@@ -1196,27 +1216,25 @@ class ApiService {
 
   // Community methods
   async getTopComments(): Promise<{
-    data: Array<{
-      id: string;
-      content: string;
-      rating: number;
-      upvotes: number;
-      createdAt: string;
-      userHasUpvoted: boolean;
-      user: {
-        id: string;
-        displayName: string;
-      };
-      fight: {
-        id: string;
-        fighter1Name: string;
-        fighter2Name: string;
-        eventName: string;
-        eventDate: string;
-      };
-    }>;
+    data: TopComment[];
+    throwback: TopComment | null;
   }> {
     return this.makeRequest('/community/top-comments');
+  }
+
+  // Recently booked VIP fighters (100+ ratings) added to an upcoming card
+  // in the past 2 weeks.
+  async getRecentlyBookedFighters(): Promise<{
+    data: Array<{
+      fighter: any;
+      ratingCount: number;
+      bookedAt: string;
+      event: { id: string; name: string; date: string };
+      nextFightDate: string;
+      opponentName: string;
+    }>;
+  }> {
+    return this.makeRequest('/community/recently-booked-fighters');
   }
 
   async getTopPreFightComments(): Promise<{
