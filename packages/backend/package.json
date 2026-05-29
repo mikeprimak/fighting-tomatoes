@@ -23,8 +23,8 @@
   "dependencies": {
     "@adminjs/fastify": "^4.2.0",
     "@adminjs/prisma": "^5.0.4",
-    "@anthropic-ai/sdk": "^0.92.0",
     "@adminjs/upload": "^4.0.2",
+    "@anthropic-ai/sdk": "^0.92.0",
     "@aws-sdk/client-s3": "^3.930.0",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
@@ -48,6 +48,7 @@
     "fastify-plugin": "^5.0.1",
     "file-type": "^21.2.0",
     "google-auth-library": "^10.5.0",
+    "gray-matter": "^4.0.3",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.1",

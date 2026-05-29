@@ -8,5 +8,5 @@ export default function Index() {
   // so no placeholder UI (ActivityIndicator, default header) flashes on launch.
   if (isLoading) return null;
 
-  return <Redirect href={hasLiveEvent ? '/(tabs)/live-events' : '/(tabs)/events'} />;
+  return <Redirect href={hasLiveEvent ? '/(tabs)/live-events' : '/(tabs)/home'} />;
 }
