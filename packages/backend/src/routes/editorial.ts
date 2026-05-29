@@ -52,8 +52,10 @@ function parsePost(postsDir: string, filename: string): EditorialPost | null {
     const raw = fs.readFileSync(path.join(postsDir, filename), 'utf8');
     const { data } = matter(raw);
 
-    // Skip drafts and posts explicitly hidden from the home rotation.
-    if (data.draft === true || data.hideFromHome === true) return null;
+    // Skip drafts. NOTE: `hideFromHome` is a web-app curation flag (it controls
+    // the website's home rotation) and is intentionally NOT honored here — the
+    // mobile feed shows every published post by date.
+    if (data.draft === true) return null;
 
     const slug = (data.slug as string) || filename.replace(/\.md$/, '');
     return {
