@@ -241,8 +241,8 @@ export default function HomeScreen() {
   });
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
-    queryKey: ['events', 'UPCOMING'],
-    queryFn: () => apiService.getEvents('UPCOMING'),
+    queryKey: ['events', 'upcoming'],
+    queryFn: () => apiService.getEvents({ type: 'upcoming' }),
     staleTime: 5 * 60 * 1000,
   });
 
