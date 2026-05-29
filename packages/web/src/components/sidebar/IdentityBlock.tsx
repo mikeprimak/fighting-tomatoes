@@ -47,14 +47,43 @@ export function IdentityBlock() {
           className="mx-auto mb-3 h-auto w-full"
           priority
         />
-        <p className="mb-2 text-sm font-bold text-foreground">
+        <p className="mb-3 text-sm font-bold text-foreground">
           Never miss a Good Fight.
         </p>
-        <p className="mb-4 text-xs leading-relaxed text-text-secondary">
-          See pre-fight hype across 15+ promotions so you know which fights are
-          worth watching. Rate fights and find the ones the community loved, and
-          build a Fan DNA that shows what you love about combat sports.
+        <p className="mb-3 text-xs leading-relaxed text-text-secondary">
+          Your home for combat sports across 15+ promotions — UFC, boxing, and
+          more in one place.
         </p>
+        <ul className="mb-4 space-y-2 text-left">
+          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
+            <span aria-hidden className="text-primary">🔥</span>
+            <span>
+              <span className="font-semibold text-foreground">See the hype.</span>{' '}
+              Know which fights are worth watching before they happen.
+            </span>
+          </li>
+          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
+            <span aria-hidden className="text-primary">⭐</span>
+            <span>
+              <span className="font-semibold text-foreground">Rate every fight.</span>{' '}
+              Find the bouts the community loved and skip the duds.
+            </span>
+          </li>
+          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
+            <span aria-hidden className="text-primary">🧬</span>
+            <span>
+              <span className="font-semibold text-foreground">Build your Fan DNA.</span>{' '}
+              A profile that shows what kind of fight fan you are.
+            </span>
+          </li>
+          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
+            <span aria-hidden className="text-primary">🔔</span>
+            <span>
+              <span className="font-semibold text-foreground">Follow fighters.</span>{' '}
+              Get notified on the app the moment they&apos;re booked.
+            </span>
+          </li>
+        </ul>
         <Link
           href="/register"
           className="inline-flex items-center rounded-lg bg-primary px-4 py-2 text-xs font-bold text-text-on-accent hover:bg-primary/90"
