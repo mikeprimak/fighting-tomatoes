@@ -801,6 +801,48 @@ const server = http.createServer(async (req, res) => {
 // Auto-check for active events every 5 minutes (in case Render didn't notify us)
 const AUTO_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
+// ---- Daily Tapology results backfill ---------------------------------------
+// The GitHub Actions backfill 403s (Tapology blocks datacenter IPs) and was
+// disabled. Run it here instead: this service already reaches Tapology fine for
+// live tracking, so it's the one machine that can. Aligned to a quiet UTC hour
+// (no live cards overnight ET) and staggered from the live traffic; the
+// scraper's own 403/429 retry/backoff absorbs any remaining rate-limit
+// collision. No cron to install — the always-on service is the scheduler.
+const BACKFILL_HOUR_UTC = 11;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function runTapologyBackfill(): void {
+  const script = path.join(__dirname, 'scripts', 'backfillTapologyResults.js');
+  console.log(`[BACKFILL] Starting daily Tapology results backfill: ${script}`);
+  exec(
+    `node "${script}"`,
+    {
+      cwd: path.join(__dirname, '..'),
+      env: { ...process.env, BACKFILL_WINDOW_DAYS: process.env.BACKFILL_WINDOW_DAYS || '14' },
+      maxBuffer: 10 * 1024 * 1024,
+    },
+    (err, stdout, stderr) => {
+      if (stdout) console.log(stdout);
+      if (stderr) console.error(stderr);
+      if (err) console.error(`[BACKFILL] Failed: ${err.message}`);
+      else console.log('[BACKFILL] Daily Tapology backfill finished');
+    },
+  );
+}
+
+function scheduleDailyTapologyBackfill(): void {
+  const now = new Date();
+  const next = new Date(now);
+  next.setUTCHours(BACKFILL_HOUR_UTC, 0, 0, 0);
+  if (next.getTime() <= now.getTime()) next.setTime(next.getTime() + DAY_MS);
+  const delay = next.getTime() - now.getTime();
+  console.log(`[BACKFILL] First Tapology backfill in ${(delay / 3600000).toFixed(1)}h, then every 24h`);
+  setTimeout(() => {
+    runTapologyBackfill();
+    setInterval(runTapologyBackfill, DAY_MS);
+  }, delay);
+}
+
 server.listen(PORT, () => {
   console.log(`\n========================================`);
   console.log(`  VPS Scraper Service`);
@@ -832,6 +874,9 @@ server.listen(PORT, () => {
       console.error('[AUTO-CHECK] Error:', err.message);
     }
   }, AUTO_CHECK_INTERVAL_MS);
+
+  // Daily Tapology results backfill (replaces the disabled GH Actions job)
+  scheduleDailyTapologyBackfill();
 });
 
 // Graceful shutdown
