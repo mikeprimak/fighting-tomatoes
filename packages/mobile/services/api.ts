@@ -54,7 +54,7 @@ const API_BASE_URL = getApiBaseUrl();
 // Public web app host — used to deep-link editorial blog posts and resolve
 // their images (which are served from the Next.js web app's /public dir).
 // Repoint here if/when the blog moves to a custom domain.
-export const WEB_URL = 'https://web-jet-gamma-12.vercel.app';
+export const WEB_URL = 'https://goodfights.app';
 
 /** Build an absolute URL for a blog image path like "/blog/foo.png". */
 export function resolveBlogImageUrl(image: string | null | undefined): string {
