@@ -34,6 +34,13 @@ const PHANTOM_FIGHT_IDS: Record<string, string> = {
   'b100f78f-77a9-4e07-98f0-3eccd6f7438d': 'Newcastle 2 #5 Lilley vs Ekedi',
   '14af4a6f-c16c-4ada-812e-ded9f7a1db78': 'Newcastle 2 #8 Shaw vs Spelman',
   '5c70b0fe-aa27-4670-a5be-6106cdb212f0': 'Newcastle 2 #11 Walker vs Gregory',
+  // Added 2026-05-29 (round 2): the audit's last-name matcher MISSED this one
+  // because there are two "Walters" fighter records — the real scored bout is
+  // Heckert vs "Justi" Walters (8d7e830a, COMPLETED), this phantom points at a
+  // duplicate "Justin" Walters (c13678e2). Same person, scraper-split record;
+  // pairing looked present by last name so the diff passed it. UPCOMING, zero
+  // engagement. (The duplicate Fighter rows are a separate dedup concern.)
+  'ca6ca1f4-fad9-40e7-9a0a-cdf570e29b78': 'BKFC Clearwater #5 Heckert vs Walters (dup-fighter phantom)',
 };
 
 async function main() {

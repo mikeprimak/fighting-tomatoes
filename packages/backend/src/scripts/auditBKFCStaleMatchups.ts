@@ -176,11 +176,33 @@ async function main() {
     console.log(`  Scrape returned ${scraped.length} pairings (${scraped.filter(s => s.scored).length} scored):`);
     scraped.forEach(p => console.log(`    - ${p.f1} vs ${p.f2}${p.scored ? ' [scored]' : ''}`));
 
-    // Diff every non-CANCELLED DB row against the scrape.
-    const staleRows = ev.fights.filter(f => {
-      if (f.fightStatus === 'CANCELLED') return false; // leave correct cancellations alone
-      const match = pairInScrape(f.fighter1.lastName, f.fighter2.lastName, scraped);
-      return !match;
+    // Diff every non-CANCELLED DB row against the scrape, recording which scraped
+    // pairing it mapped to. Two classes of phantom:
+    //   (1) ABSENT  — pairing not in the scrape at all (opponent changed).
+    //   (2) DUP     — pairing IS in the scrape, but >1 non-cancelled DB row maps
+    //                 to the SAME scraped pairing (e.g. duplicate "Justi"/"Justin
+    //                 Walters" fighter records). Last-name matching alone would
+    //                 call this "clean"; the unscored sibling is still a phantom.
+    const active = ev.fights.filter(f => f.fightStatus !== 'CANCELLED');
+    const mappedTo = new Map<typeof active[number], ScrapedPair | null>();
+    const byScrapePair = new Map<ScrapedPair, typeof active>();
+    for (const f of active) {
+      const m = pairInScrape(f.fighter1.lastName, f.fighter2.lastName, scraped);
+      mappedTo.set(f, m);
+      if (m) {
+        if (!byScrapePair.has(m)) byScrapePair.set(m, []);
+        byScrapePair.get(m)!.push(f);
+      }
+    }
+
+    const staleRows = active.filter(f => {
+      const m = mappedTo.get(f);
+      if (!m) return true; // class (1): absent from scrape
+      // class (2): multiple rows share this scraped pairing — the one(s) without a
+      // result are phantoms; the real (scored / has-winner) row is the keeper.
+      const siblings = byScrapePair.get(m)!;
+      if (siblings.length > 1 && !f.winner) return true;
+      return false;
     });
 
     if (staleRows.length === 0) {
