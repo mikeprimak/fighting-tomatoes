@@ -1032,6 +1032,36 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         return { avgRating, fightCount: fighterFights.length, lastFightDate: fighterFights[0]?.event.date ?? null };
       };
 
+      // Helper: career rating volume per fighter (sum of Fight.totalRatings).
+      // Fighter.totalRatings is unreliable ("fields that lie"), so we aggregate.
+      // Used to pick the "star" of a fight when there's no decisive winner.
+      const careerRatingCounts = async (ids: string[]) => {
+        const idSet = new Set(ids);
+        const fights = ids.length === 0 ? [] : await fastify.prisma.fight.findMany({
+          where: { OR: [{ fighter1Id: { in: ids } }, { fighter2Id: { in: ids } }] },
+          select: { fighter1Id: true, fighter2Id: true, totalRatings: true },
+        });
+        const counts = new Map<string, number>();
+        for (const f of fights) {
+          if (idSet.has(f.fighter1Id)) counts.set(f.fighter1Id, (counts.get(f.fighter1Id) || 0) + (f.totalRatings || 0));
+          if (idSet.has(f.fighter2Id)) counts.set(f.fighter2Id, (counts.get(f.fighter2Id) || 0) + (f.totalRatings || 0));
+        }
+        return counts;
+      };
+
+      // Pick the single "star" of a fight: the winner is the breakout (a fan
+      // searching the card remembers who won). When there's no decisive winner
+      // (draw / no-contest / not yet fought), fall back to whoever carries more
+      // career ratings. Returns [star, opponent].
+      const pickStar = (fight: any, counts: Map<string, number>) => {
+        const f1 = fight.fighter1, f2 = fight.fighter2;
+        if (fight.winner === f1.id) return [f1, f2];
+        if (fight.winner === f2.id) return [f2, f1];
+        const c1 = counts.get(f1.id) || 0;
+        const c2 = counts.get(f2.id) || 0;
+        return c1 >= c2 ? [f1, f2] : [f2, f1];
+      };
+
       // RECENT (past 2 months): fighters who fought and got highly rated.
       // Pull the highest-rated completed fights in the window, then take their
       // fighters in rating order.
@@ -1047,23 +1077,26 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         take: 40,
       });
 
+      const recentCounts = await careerRatingCounts(
+        [...new Set(recentFights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]))] as string[]
+      );
+
+      // One fighter per fight — the star (winner) — never both sides of the bout.
       const recentFighterStats = new Map();
       for (const fight of recentFights) {
-        for (const fighter of [fight.fighter1, fight.fighter2]) {
-          if (recentFighterStats.has(fighter.id)) continue;
-          const form = await lastThreeAvg(fighter.id);
-          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
-          recentFighterStats.set(fighter.id, {
-            fighter,
-            // Fall back to the triggering fight's rating if no prior rated history.
-            avgRating: form.fightCount > 0 ? form.avgRating : (fight.averageRating || 0),
-            fightCount: form.fightCount,
-            // The rated fight that earned them a spot (what the UI describes).
-            lastFightDate: fight.event.date,
-            opponentName: `${opponent.firstName} ${opponent.lastName}`,
-            rating: fight.averageRating || 0,
-          });
-        }
+        const [star, opponent] = pickStar(fight, recentCounts);
+        if (recentFighterStats.has(star.id)) continue;
+        const form = await lastThreeAvg(star.id);
+        recentFighterStats.set(star.id, {
+          fighter: star,
+          // Fall back to the triggering fight's rating if no prior rated history.
+          avgRating: form.fightCount > 0 ? form.avgRating : (fight.averageRating || 0),
+          fightCount: form.fightCount,
+          // The rated fight that earned them a spot (what the UI describes).
+          lastFightDate: fight.event.date,
+          opponentName: `${opponent.firstName} ${opponent.lastName}`,
+          rating: fight.averageRating || 0,
+        });
         if (recentFighterStats.size >= 6) break;
       }
 
@@ -1100,21 +1133,25 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           new Date(a.fight.event.date).getTime() - new Date(b.fight.event.date).getTime()
         );
 
+      const upcomingCounts = await careerRatingCounts(
+        [...new Set(upcomingFights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]))] as string[]
+      );
+
+      // One fighter per fight — no winner yet, so the bigger draw (more career
+      // ratings) represents the bout.
       const upcomingFighterStats = new Map();
       for (const { fight, averageHype } of upcomingByHype) {
-        for (const fighter of [fight.fighter1, fight.fighter2]) {
-          if (upcomingFighterStats.has(fighter.id) || recentFighterStats.has(fighter.id)) continue;
-          const form = await lastThreeAvg(fighter.id);
-          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
-          upcomingFighterStats.set(fighter.id, {
-            fighter,
-            avgRating: form.avgRating,
-            fightCount: form.fightCount,
-            nextFightDate: fight.event.date,
-            hype: averageHype,
-            opponentName: `${opponent.firstName} ${opponent.lastName}`,
-          });
-        }
+        const [star, opponent] = pickStar(fight, upcomingCounts);
+        if (upcomingFighterStats.has(star.id) || recentFighterStats.has(star.id)) continue;
+        const form = await lastThreeAvg(star.id);
+        upcomingFighterStats.set(star.id, {
+          fighter: star,
+          avgRating: form.avgRating,
+          fightCount: form.fightCount,
+          nextFightDate: fight.event.date,
+          hype: averageHype,
+          opponentName: `${opponent.firstName} ${opponent.lastName}`,
+        });
         if (upcomingFighterStats.size >= 6) break;
       }
 
