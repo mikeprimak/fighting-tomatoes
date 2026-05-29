@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Good Fights — Rate Combat Sports Fights",
+    default: "Good Fights — Highly Rated Combat Sports Fights",
     template: "%s — Good Fights",
   },
   description: "Rate and review MMA, boxing, and combat sports fights. See community ratings, hype scores, and discover the best fights.",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Good Fights",
-    title: "Good Fights — Rate Combat Sports Fights",
+    title: "Good Fights — Highly Rated Combat Sports Fights",
     description: "Rate and review MMA, boxing, and combat sports fights.",
   },
   twitter: {
