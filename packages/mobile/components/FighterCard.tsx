@@ -32,9 +32,10 @@ interface FighterCardProps {
   nextFightDate?: string; // Next upcoming fight date
   subtitle?: string; // Optional context line (e.g. "1.2K followers", "Booked Tue")
   hideNickname?: boolean; // Suppress the "Name "Nickname"" form, show plain name
+  inlineOpponent?: string; // Grey, smaller text on the name line (e.g. "vs Max Holloway")
 }
 
-export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate, subtitle, hideNickname }: FighterCardProps) {
+export default function FighterCard({ fighter, onPress, avgRating, fightCount, lastFightDate, nextFightDate, subtitle, hideNickname, inlineOpponent }: FighterCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
@@ -93,9 +94,16 @@ export default function FighterCard({ fighter, onPress, avgRating, fightCount, l
       />
 
       <View style={styles.fighterInfo}>
-        <Text style={[styles.fighterName, { color: colors.text }]}>
-          {hideNickname ? getFighterDisplayName(fighter) : getFighterName(fighter)}
-        </Text>
+        <View style={styles.nameRow}>
+          <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+            {hideNickname ? getFighterDisplayName(fighter) : getFighterName(fighter)}
+          </Text>
+          {inlineOpponent && (
+            <Text style={[styles.inlineOpponent, { color: colors.textSecondary }]} numberOfLines={1}>
+              {' '}{inlineOpponent}
+            </Text>
+          )}
+        </View>
 
         {avgRating !== undefined && fightCount !== undefined && (
           <View style={styles.ratingContainer}>
@@ -154,10 +162,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    flexWrap: 'wrap',
+    marginBottom: 4,
+  },
   fighterName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 4,
+    flexShrink: 1,
+  },
+  inlineOpponent: {
+    fontSize: 13,
+    flexShrink: 1,
   },
   ratingContainer: {
     flexDirection: 'row',

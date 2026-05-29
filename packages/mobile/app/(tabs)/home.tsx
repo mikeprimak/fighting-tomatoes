@@ -379,7 +379,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="From the Blog"
+        title="The Latest"
         icon="newspaper-o"
         onSeeAll={() => router.push('/blog' as any)}
       >
@@ -547,8 +547,8 @@ export default function HomeScreen() {
               <FighterCard
                 key={b.fighter.id}
                 fighter={b.fighter}
-                subtitle={`vs ${b.opponentName} at ${b.event.name}`}
-                nextFightDate={b.nextFightDate}
+                inlineOpponent={`vs ${b.opponentName}`}
+                subtitle={`at ${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
                 onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
               />
             ))
