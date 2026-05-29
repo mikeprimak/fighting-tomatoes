@@ -305,17 +305,11 @@ export default function HomeScreen() {
     weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
   ).slice(0, 5);
 
-  // Hot fighters: interleave recently-rated + upcoming-hyped so both show.
+  // Hot fighters: three who recently fought, then three who fight next — grouped,
+  // not interleaved.
   const recentHot = hotFighters?.data.recent || [];
   const upcomingHot = hotFighters?.data.upcoming || [];
-  const fighters: any[] = [];
-  {
-    const maxLen = Math.max(recentHot.length, upcomingHot.length);
-    for (let i = 0; i < maxLen && fighters.length < 6; i++) {
-      if (recentHot[i]) fighters.push(recentHot[i]);
-      if (upcomingHot[i] && fighters.length < 6) fighters.push(upcomingHot[i]);
-    }
-  }
+  const fighters: any[] = [...recentHot.slice(0, 3), ...upcomingHot.slice(0, 3)];
 
   const followedFighters = (topFollowed?.data || []).slice(0, 6);
   const recentlyBooked = (recentlyBookedData?.data || []).slice(0, 6);
