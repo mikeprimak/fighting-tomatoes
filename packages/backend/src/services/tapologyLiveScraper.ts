@@ -111,6 +111,41 @@ export class TapologyLiveScraper {
   }
 
   /**
+   * Fetch the event page, retrying on Tapology's rate-limit responses.
+   *
+   * Tapology throttles an IP (403/429) after sustained scraping. The VPS runs
+   * the live tracker plus several daily Tapology-org scrapers, so a live poll
+   * or the daily results backfill can land in a cooldown window and get a 403
+   * even though the IP is not actually blocked. A single 403 used to be fatal —
+   * back off and retry so transient throttling self-heals instead of silently
+   * dropping the scrape (which left results unpopulated).
+   */
+  private async fetchHtmlWithRetry(maxAttempts = 4): Promise<string> {
+    let lastErr: Error | null = null;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const response = await fetch(this.eventUrl, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml',
+        },
+      });
+      if (response.ok) {
+        return response.text();
+      }
+      lastErr = new Error(`HTTP ${response.status}: ${response.statusText}`);
+      // Only rate-limit / forbidden responses are worth retrying.
+      if ((response.status === 403 || response.status === 429) && attempt < maxAttempts) {
+        const waitMs = attempt * 30_000; // 30s, 60s, 90s
+        console.log(`[Tapology] HTTP ${response.status} — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
+        await new Promise((r) => setTimeout(r, waitMs));
+        continue;
+      }
+      break;
+    }
+    throw lastErr ?? new Error('Tapology fetch failed');
+  }
+
+  /**
    * Fetch and parse event data from Tapology
    */
   async scrape(): Promise<TapologyEventData> {
@@ -118,19 +153,8 @@ export class TapologyLiveScraper {
     const startTime = Date.now();
 
     try {
-      // Fetch the page
-      const response = await fetch(this.eventUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const html = await response.text();
+      // Fetch the page (retries on 403/429 rate-limit cooldowns)
+      const html = await this.fetchHtmlWithRetry();
       const $ = cheerio.load(html);
 
       // Get event name - skip cookie consent banners that may have h1 tags
