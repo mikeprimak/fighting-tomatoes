@@ -129,13 +129,63 @@ async function findBackfillCandidates(windowDays: number) {
   });
 }
 
-async function backfillEvent(event: any): Promise<{ matched: number; updated: number }> {
+/**
+ * Promote shadow tracker results to the published fields the app reads.
+ *
+ * Tapology is intentionally excluded from `production_scrapers`, so its live
+ * tracker / parser writes results only to the shadow `tracker*` fields and
+ * never auto-publishes (see liveTrackerConfig.buildTrackerUpdateData). That
+ * review gate is the right call for LIVE tracking — a glitchy mid-event scrape
+ * shouldn't surface a wrong result in real time. But the backfill is the
+ * trusted, days-later reconciliation pass: by the time it runs the source has
+ * settled, so completed-event results are safe to publish automatically.
+ *
+ * Null-only on `winner` so we never clobber a manual fix or a real-time result
+ * that the live tracker already published. Does NOT gate on trackerFightStatus
+ * (that gate is null for fights the lifecycle had already marked COMPLETED, and
+ * is why the admin publish-all endpoint silently skips backfilled fights).
+ */
+async function publishCompletedShadowResults(eventId: string): Promise<number> {
+  const fights = await prisma.fight.findMany({
+    where: { eventId, winner: null, trackerWinner: { not: null } },
+    select: {
+      id: true,
+      fightStatus: true,
+      completedAt: true,
+      trackerWinner: true,
+      trackerMethod: true,
+      trackerRound: true,
+      trackerTime: true,
+    },
+  });
+
+  let published = 0;
+  for (const f of fights) {
+    const data: any = {
+      winner: f.trackerWinner,
+      method: f.trackerMethod,
+      round: f.trackerRound,
+      time: f.trackerTime,
+      fightStatus: 'COMPLETED',
+      completionMethod: 'backfill-tapology-publish',
+    };
+    if (!f.completedAt) data.completedAt = new Date();
+    await prisma.fight.update({ where: { id: f.id }, data });
+    published++;
+  }
+  if (published > 0) {
+    console.log(`  [backfill] published ${published} shadow result(s) → live fields`);
+  }
+  return published;
+}
+
+async function backfillEvent(event: any): Promise<{ matched: number; updated: number; published: number }> {
   console.log(`\n[backfill] ${event.name} (${event.id}) — promotion=${event.promotion}`);
 
   const url = await getTapologyUrl(event);
   if (!url) {
     console.log('  [backfill] No Tapology URL resolved, skipping');
-    return { matched: 0, updated: 0 };
+    return { matched: 0, updated: 0, published: 0 };
   }
   console.log(`  [backfill] Scraping: ${url}`);
 
@@ -145,7 +195,12 @@ async function backfillEvent(event: any): Promise<{ matched: number; updated: nu
 
   const result = await parseTapologyData(event.id, scraped);
   console.log(`  [backfill] matched=${result.fightsMatched} updated=${result.fightsUpdated}`);
-  return { matched: result.fightsMatched, updated: result.fightsUpdated };
+
+  // Backfill is the trusted reconciliation pass: promote the freshly-scraped
+  // shadow results to the published fields for this completed event.
+  const published = await publishCompletedShadowResults(event.id);
+
+  return { matched: result.fightsMatched, updated: result.fightsUpdated, published };
 }
 
 async function main() {
@@ -161,6 +216,7 @@ async function main() {
 
   let totalMatched = 0;
   let totalUpdated = 0;
+  let totalPublished = 0;
   let failures = 0;
 
   for (const event of candidates) {
@@ -168,13 +224,14 @@ async function main() {
       const r = await backfillEvent(event);
       totalMatched += r.matched;
       totalUpdated += r.updated;
+      totalPublished += r.published;
     } catch (err: any) {
       failures++;
       console.error(`  [backfill] ERROR on ${event.name}: ${err.message}`);
     }
   }
 
-  console.log(`\n[backfill] Done. events=${candidates.length} matched=${totalMatched} updated=${totalUpdated} failures=${failures}\n`);
+  console.log(`\n[backfill] Done. events=${candidates.length} matched=${totalMatched} updated=${totalUpdated} published=${totalPublished} failures=${failures}\n`);
 }
 
 main()
