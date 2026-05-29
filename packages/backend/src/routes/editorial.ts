@@ -10,11 +10,10 @@ import matter from 'gray-matter';
  * metadata so the mobile app can render a "blog" section that deep-links into
  * the web blog (https://<web-host>/blog/<slug>).
  *
- * NOTE: The canonical posts currently live in `packages/web/src/content/posts`
- * (read at build time by the Next.js web app). Until that content is unified,
- * the same markdown files are mirrored into `packages/backend/src/content/posts`
- * so the backend can serve them at runtime. When adding/editing a post, update
- * BOTH locations. See docs/areas + the home-screen handoff for the unify follow-up.
+ * SINGLE SOURCE OF TRUTH: posts are authored in `packages/web/src/content/posts`.
+ * `scripts/syncBlogPosts.js` copies them into `packages/backend/src/content/posts`
+ * (gitignored) on `dev` and `build`, so the backend serves the same content the
+ * web app renders. Do NOT edit the backend copy by hand — edit the web posts.
  */
 
 // Resolve the posts directory in a way that works in dev (nodemon from package

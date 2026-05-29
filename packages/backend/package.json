@@ -4,8 +4,9 @@
   "description": "Node.js TypeScript backend API",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon --ext ts --ignore 'live-event-data/**' --ignore 'scraped-data/**' --ignore 'test-results/**' src/server.ts",
-    "build": "prisma generate && tsc --project tsconfig.production.json && { cp src/services/*.js dist/services/ 2>/dev/null || true; }",
+    "dev": "node scripts/syncBlogPosts.js && nodemon --ext ts --ignore 'live-event-data/**' --ignore 'scraped-data/**' --ignore 'test-results/**' src/server.ts",
+    "sync:blog": "node scripts/syncBlogPosts.js",
+    "build": "node scripts/syncBlogPosts.js && prisma generate && tsc --project tsconfig.production.json && { cp src/services/*.js dist/services/ 2>/dev/null || true; }",
     "start": "node dist/server.js",
     "test": "jest",
     "test:watch": "jest --watch",
