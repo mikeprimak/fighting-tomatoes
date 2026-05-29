@@ -20,7 +20,7 @@ import { apiService, buildBlogPostUrl, resolveBlogImageUrl, WEB_URL } from '../.
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
-import { normalizeEventName } from '../../components/fight-cards/shared/utils';
+import { normalizeEventName, getFighterImage, getFighterName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
@@ -31,6 +31,26 @@ const WEB_BLOG_INDEX = `${WEB_URL}/blog`;
 
 const formatCount = (n: number): string =>
   n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`;
+
+// "in 3 weeks" / "tomorrow" / "today" — reads after "Fights X ___".
+const relUntilPhrase = (dateStr: string): string => {
+  const days = Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days < 7) return `in ${days} days`;
+  const weeks = Math.round(days / 7);
+  return weeks === 1 ? 'in 1 week' : `in ${weeks} weeks`;
+};
+
+// "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
+const relAgoPhrase = (dateStr: string): string => {
+  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'yesterday';
+  if (days < 7) return `${days} days ago`;
+  const weeks = Math.round(days / 7);
+  return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+};
 
 type ThemeColors = typeof Colors.light;
 
@@ -169,6 +189,31 @@ function EventThumbnail({
         </Text>
         <Text style={styles.eventThumbDate}>{formatEventDate(event.date)}</Text>
       </View>
+    </TouchableOpacity>
+  );
+}
+
+/** Compact avatar chip for the Most Followed horizontal rail (web sidebar style). */
+function FollowedFighterChip({
+  fighter,
+  followerCount,
+  styles,
+  onPress,
+}: {
+  fighter: any;
+  followerCount: number;
+  styles: ReturnType<typeof makeStyles>;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.followChip} activeOpacity={0.85} onPress={onPress}>
+      <Image source={getFighterImage(fighter)} style={styles.followAvatar} resizeMode="cover" />
+      <Text style={styles.followName} numberOfLines={2}>
+        {getFighterName(fighter)}
+      </Text>
+      <Text style={styles.followCount}>
+        {formatCount(followerCount)} {followerCount === 1 ? 'follower' : 'followers'}
+      </Text>
     </TouchableOpacity>
   );
 }
@@ -469,17 +514,24 @@ export default function HomeScreen() {
         {isFightersLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : fighters.length > 0 ? (
-          fighters.map((f: any) => (
-            <FighterCard
-              key={f.fighter.id}
-              fighter={f.fighter}
-              avgRating={f.avgRating}
-              fightCount={f.fightCount}
-              lastFightDate={f.lastFightDate}
-              nextFightDate={f.nextFightDate}
-              onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
-            />
-          ))
+          fighters.map((f: any) => {
+            // Upcoming (hyped) vs recent (rated) — distinguished by which date is set.
+            const subtitle = f.nextFightDate
+              ? `Fights ${f.opponentName} ${relUntilPhrase(f.nextFightDate)}${
+                  f.hype ? ` - hyped ${f.hype.toFixed(1)}` : ''
+                }`
+              : `Fought ${f.opponentName} ${relAgoPhrase(f.lastFightDate)}${
+                  f.rating ? ` - rated ${f.rating.toFixed(1)}` : ''
+                }`;
+            return (
+              <FighterCard
+                key={f.fighter.id}
+                fighter={f.fighter}
+                subtitle={subtitle}
+                onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
+              />
+            );
+          })
         ) : (
           <Empty styles={styles} text="No hot fighters yet" />
         )}
@@ -501,8 +553,7 @@ export default function HomeScreen() {
               <FighterCard
                 key={b.fighter.id}
                 fighter={b.fighter}
-                nextFightDate={b.nextFightDate}
-                subtitle={`vs ${b.opponentName}`}
+                subtitle={`vs ${b.opponentName} at ${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
                 onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
               />
             ))
@@ -510,19 +561,26 @@ export default function HomeScreen() {
         </Section>
       )}
 
-      {/* Most Followed Fighters --------------------------------------------*/}
+      {/* Most Followed Fighters (horizontal rail) --------------------------*/}
       <Section colors={colors} styles={styles} title="Most Followed" icon="users" iconLib="fa6">
         {isFollowedLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : followedFighters.length > 0 ? (
-          followedFighters.map((f: any) => (
-            <FighterCard
-              key={f.fighter.id}
-              fighter={f.fighter}
-              subtitle={`${formatCount(f.followerCount)} ${f.followerCount === 1 ? 'follower' : 'followers'}`}
-              onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
-            />
-          ))
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {followedFighters.map((f: any) => (
+              <FollowedFighterChip
+                key={f.fighter.id}
+                fighter={f.fighter}
+                followerCount={f.followerCount}
+                styles={styles}
+                onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
+              />
+            ))}
+          </ScrollView>
         ) : (
           <Empty styles={styles} text="No followed fighters yet" />
         )}
@@ -534,7 +592,6 @@ export default function HomeScreen() {
         styles={styles}
         title="Top Comments"
         icon="comments"
-        onSeeAll={() => router.push('/comments' as any)}
       >
         {isCommentsLoading ? (
           <Loading colors={colors} styles={styles} />
@@ -698,6 +755,30 @@ function makeStyles(colors: ThemeColors) {
       color: colors.textSecondary,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+    },
+    // Most Followed horizontal chip
+    followChip: {
+      width: 92,
+      alignItems: 'center',
+    },
+    followAvatar: {
+      width: 72,
+      height: 72,
+      borderRadius: 36,
+      backgroundColor: colors.border,
+      marginBottom: 8,
+    },
+    followName: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    followCount: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 2,
     },
     // Blog carousel card
     blogCard: {
