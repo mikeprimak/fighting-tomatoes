@@ -18,12 +18,19 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService, buildBlogPostUrl, resolveBlogImageUrl, WEB_URL } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
-import { EventBannerCard, CommentCard } from '../../components';
+import { CommentCard } from '../../components';
+import { PromotionLogo } from '../../components/PromotionLogo';
+import { normalizeEventName } from '../../components/fight-cards/shared/utils';
+import { getDefaultBanner } from '../../utils/defaultBanners';
+import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import FighterCard from '../../components/FighterCard';
 
 const WEB_BLOG_INDEX = `${WEB_URL}/blog`;
+
+const formatCount = (n: number): string =>
+  n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`;
 
 type ThemeColors = typeof Colors.light;
 
@@ -99,6 +106,73 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
   );
 }
 
+/** Half-width event thumbnail for the Upcoming Events 2×3 grid. */
+function EventThumbnail({
+  event,
+  colors,
+  styles,
+  onPress,
+}: {
+  event: Event;
+  colors: ThemeColors;
+  styles: ReturnType<typeof makeStyles>;
+  onPress: () => void;
+}) {
+  const imageSource = event.bannerImage
+    ? { uri: event.bannerImage }
+    : getDefaultBanner(event.promotion || '');
+  const name = normalizeEventName(event.name, event.promotion);
+
+  // Top-align the crop for portrait/tall images (faces/posters live at the top).
+  // We measure the box width + image aspect, then pin tall images to top:0 so the
+  // overflow is clipped from the bottom instead of center-cropping.
+  const CONTAINER_ASPECT = 16 / 9;
+  const [boxWidth, setBoxWidth] = React.useState(0);
+  const [imgAspect, setImgAspect] = React.useState<number | null>(null);
+  const isTall = imgAspect !== null && imgAspect < CONTAINER_ASPECT;
+  const handleImageLoad = (e: any) => {
+    const { width: w, height: h } = e.nativeEvent.source;
+    if (w > 0 && h > 0) setImgAspect(w / h);
+  };
+
+  return (
+    <TouchableOpacity style={styles.eventThumb} activeOpacity={0.85} onPress={onPress}>
+      <View
+        style={styles.eventThumbImageWrap}
+        onLayout={(e) => setBoxWidth(e.nativeEvent.layout.width)}
+      >
+        {imageSource ? (
+          <Image
+            source={imageSource}
+            style={
+              isTall && boxWidth
+                ? { position: 'absolute', top: 0, left: 0, width: boxWidth, height: boxWidth / imgAspect! }
+                : styles.eventThumbImage
+            }
+            resizeMode={isTall && boxWidth ? undefined : 'cover'}
+            onLoad={handleImageLoad}
+          />
+        ) : (
+          <View style={[styles.eventThumbImage, styles.eventThumbPlaceholder]}>
+            <PromotionLogo promotion={event.promotion || ''} size={40} color="#FFFFFF" />
+          </View>
+        )}
+        {event.promotion ? (
+          <View style={styles.eventThumbLogo}>
+            <PromotionLogo promotion={event.promotion} size={18} color="#FFFFFF" />
+          </View>
+        ) : null}
+      </View>
+      <View style={styles.eventThumbBody}>
+        <Text style={styles.eventThumbName} numberOfLines={2}>
+          {name}
+        </Text>
+        <Text style={styles.eventThumbDate}>{formatEventDate(event.date)}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 /**
  * Home — the app's landing tab.
  *
@@ -142,9 +216,32 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Fallback: if the week has fewer than 4 highly-rated fights, broaden to the
+  // past month so the section is never thin/empty.
+  const weekRecentFights = topRecentFights?.data || [];
+  const needRecentFallback = !isRecentLoading && weekRecentFights.length < 4;
+  const { data: topRecentFightsMonth } = useQuery({
+    queryKey: ['topRecentFights', isAuthenticated, 'month'],
+    queryFn: () => apiService.getTopRecentFights('month'),
+    staleTime: 5 * 60 * 1000,
+    enabled: needRecentFallback,
+  });
+
   const { data: hotFighters, isLoading: isFightersLoading } = useQuery({
     queryKey: ['hotFighters'],
     queryFn: () => apiService.getHotFighters(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: topFollowed, isLoading: isFollowedLoading } = useQuery({
+    queryKey: ['topFollowedFighters'],
+    queryFn: () => apiService.getTopFollowedFighters(6),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: recentlyBookedData, isLoading: isBookedLoading } = useQuery({
+    queryKey: ['recentlyBookedFighters'],
+    queryFn: () => apiService.getRecentlyBookedFighters(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -159,14 +256,29 @@ export default function HomeScreen() {
   const upcomingEvents: Event[] = (eventsData?.events || [])
     .filter((e: Event) => e.eventStatus === 'UPCOMING')
     .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 4);
+    .slice(0, 6);
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
-  const recentFights = (topRecentFights?.data || []).slice(0, 5);
-  const fighters = hotFighters
-    ? [...hotFighters.data.recent, ...hotFighters.data.upcoming].slice(0, 6)
-    : [];
+  const recentFights = (
+    weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
+  ).slice(0, 5);
+
+  // Hot fighters: interleave recently-rated + upcoming-hyped so both show.
+  const recentHot = hotFighters?.data.recent || [];
+  const upcomingHot = hotFighters?.data.upcoming || [];
+  const fighters: any[] = [];
+  {
+    const maxLen = Math.max(recentHot.length, upcomingHot.length);
+    for (let i = 0; i < maxLen && fighters.length < 6; i++) {
+      if (recentHot[i]) fighters.push(recentHot[i]);
+      if (upcomingHot[i] && fighters.length < 6) fighters.push(upcomingHot[i]);
+    }
+  }
+
+  const followedFighters = (topFollowed?.data || []).slice(0, 6);
+  const recentlyBooked = (recentlyBookedData?.data || []).slice(0, 6);
   const comments = (topComments?.data || []).slice(0, 3);
+  const throwbackComment = topComments?.throwback || null;
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -176,19 +288,20 @@ export default function HomeScreen() {
       setUpvotingCommentId(reviewId);
       await queryClient.cancelQueries({ queryKey: ['topComments'] });
       const previous = queryClient.getQueryData(['topComments']);
+      const toggle = (c: any) =>
+        c && c.id === reviewId
+          ? {
+              ...c,
+              userHasUpvoted: !c.userHasUpvoted,
+              upvotes: c.userHasUpvoted ? c.upvotes - 1 : c.upvotes + 1,
+            }
+          : c;
       queryClient.setQueryData(['topComments'], (old: any) => {
         if (!old) return old;
         return {
           ...old,
-          data: old.data.map((c: any) =>
-            c.id === reviewId
-              ? {
-                  ...c,
-                  userHasUpvoted: !c.userHasUpvoted,
-                  upvotes: c.userHasUpvoted ? c.upvotes - 1 : c.upvotes + 1,
-                }
-              : c
-          ),
+          data: old.data.map(toggle),
+          throwback: toggle(old.throwback),
         };
       });
       return { previous };
@@ -285,16 +398,17 @@ export default function HomeScreen() {
         {isEventsLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : upcomingEvents.length > 0 ? (
-          upcomingEvents.map((event) => (
-            <TouchableOpacity
-              key={event.id}
-              activeOpacity={0.9}
-              onPress={() => router.push(`/event/${event.id}` as any)}
-              style={{ marginBottom: 16 }}
-            >
-              <EventBannerCard event={event} />
-            </TouchableOpacity>
-          ))
+          <View style={styles.eventGrid}>
+            {upcomingEvents.map((event) => (
+              <EventThumbnail
+                key={event.id}
+                event={event}
+                colors={colors}
+                styles={styles}
+                onPress={() => router.push(`/event/${event.id}` as any)}
+              />
+            ))}
+          </View>
         ) : (
           <Empty styles={styles} text="No upcoming events" />
         )}
@@ -371,6 +485,49 @@ export default function HomeScreen() {
         )}
       </Section>
 
+      {/* Recently Booked Fighters ------------------------------------------*/}
+      {(isBookedLoading || recentlyBooked.length > 0) && (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Recently Booked"
+          icon="calendar-plus"
+          iconLib="fa6"
+        >
+          {isBookedLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            recentlyBooked.map((b: any) => (
+              <FighterCard
+                key={b.fighter.id}
+                fighter={b.fighter}
+                nextFightDate={b.nextFightDate}
+                subtitle={`vs ${b.opponentName}`}
+                onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
+              />
+            ))
+          )}
+        </Section>
+      )}
+
+      {/* Most Followed Fighters --------------------------------------------*/}
+      <Section colors={colors} styles={styles} title="Most Followed" icon="users" iconLib="fa6">
+        {isFollowedLoading ? (
+          <Loading colors={colors} styles={styles} />
+        ) : followedFighters.length > 0 ? (
+          followedFighters.map((f: any) => (
+            <FighterCard
+              key={f.fighter.id}
+              fighter={f.fighter}
+              subtitle={`${formatCount(f.followerCount)} ${f.followerCount === 1 ? 'follower' : 'followers'}`}
+              onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
+            />
+          ))
+        ) : (
+          <Empty styles={styles} text="No followed fighters yet" />
+        )}
+      </Section>
+
       {/* Top Community Comments --------------------------------------------*/}
       <Section
         colors={colors}
@@ -399,6 +556,34 @@ export default function HomeScreen() {
           <Empty styles={styles} text="No comments yet" />
         )}
       </Section>
+
+      {/* Classic Throwback -------------------------------------------------*/}
+      {throwbackComment && (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Classic Throwback"
+          icon="clock-rotate-left"
+          iconLib="fa6"
+        >
+          <CommentCard
+            comment={throwbackComment}
+            onPress={() =>
+              throwbackComment.fight &&
+              router.push(`/fight/${throwbackComment.fight.id}` as any)
+            }
+            onUpvote={() =>
+              throwbackComment.fight &&
+              upvoteMutation.mutate({
+                fightId: throwbackComment.fight.id,
+                reviewId: throwbackComment.id,
+              })
+            }
+            isUpvoting={upvotingCommentId === throwbackComment.id}
+            isAuthenticated={isAuthenticated}
+          />
+        </Section>
+      )}
     </ScrollView>
   );
 }
@@ -456,6 +641,63 @@ function makeStyles(colors: ThemeColors) {
     cardSubtext: {
       fontSize: 14,
       color: colors.textSecondary,
+    },
+    // Upcoming events 2×3 grid
+    eventGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      paddingHorizontal: 16,
+      justifyContent: 'space-between',
+      rowGap: 16,
+    },
+    eventThumb: {
+      width: '48%',
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    eventThumbImageWrap: {
+      position: 'relative',
+      width: '100%',
+      aspectRatio: 16 / 9,
+      backgroundColor: colors.border,
+      overflow: 'hidden',
+    },
+    eventThumbImage: {
+      width: '100%',
+      height: '100%',
+    },
+    eventThumbPlaceholder: {
+      backgroundColor: '#1a1a2e',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    eventThumbLogo: {
+      position: 'absolute',
+      bottom: 6,
+      left: 6,
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 4,
+    },
+    eventThumbBody: {
+      padding: 10,
+    },
+    eventThumbName: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    eventThumbDate: {
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
     },
     // Blog carousel card
     blogCard: {
