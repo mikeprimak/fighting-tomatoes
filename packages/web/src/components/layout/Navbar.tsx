@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Flame, Radio, Star, Trophy, EyeOff, Eye } from 'lucide-react';
+import { Search, User, Menu, X, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
@@ -13,6 +13,8 @@ const navLinks = [
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },
 ];
+
+const GET_APP_URL = '/download?utm_source=web&utm_medium=navbar&utm_campaign=get-the-app';
 
 export function Navbar() {
   const pathname = usePathname();
@@ -69,8 +71,17 @@ export function Navbar() {
             ))}
           </div>
 
-          {/* Right side: spoiler toggle + search + auth */}
+          {/* Right side: get app + spoiler toggle + search + auth */}
           <div className="flex items-center gap-2">
+            {/* Get the app — always-present CTA */}
+            <Link
+              href={GET_APP_URL}
+              className="hidden items-center gap-1.5 rounded-lg border border-primary/40 px-3 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/10 md:flex"
+            >
+              <Smartphone size={16} />
+              Get the app
+            </Link>
+
             {/* Spoiler-free toggle */}
             <button
               onClick={() => setSpoilerFreeMode(!spoilerFreeMode)}
@@ -162,6 +173,14 @@ export function Navbar() {
             </Link>
           ))}
           <div className="my-1 border-t border-border" />
+          <Link
+            href={GET_APP_URL}
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-primary"
+          >
+            <Smartphone size={16} />
+            Get the app
+          </Link>
           {isAuthenticated ? (
             <Link
               href="/profile"
