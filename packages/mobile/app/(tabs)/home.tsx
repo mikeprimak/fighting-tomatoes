@@ -236,7 +236,7 @@ export default function HomeScreen() {
   // --- Data ---------------------------------------------------------------
   const { data: editorial, isLoading: isEditorialLoading } = useQuery({
     queryKey: ['editorial'],
-    queryFn: () => apiService.getEditorial(6),
+    queryFn: () => apiService.getEditorial(8),
     staleTime: 30 * 60 * 1000, // 30 min — blog changes rarely
   });
 
