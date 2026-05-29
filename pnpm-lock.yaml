@@ -132,6 +132,9 @@ importers:
       google-auth-library:
         specifier: ^10.5.0
         version: 10.5.0
+      gray-matter:
+        specifier: ^4.0.3
+        version: 4.0.3
       helmet:
         specifier: ^7.2.0
         version: 7.2.0

@@ -51,6 +51,23 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+// Public web app host — used to deep-link editorial blog posts and resolve
+// their images (which are served from the Next.js web app's /public dir).
+// Repoint here if/when the blog moves to a custom domain.
+export const WEB_URL = 'https://web-jet-gamma-12.vercel.app';
+
+/** Build an absolute URL for a blog image path like "/blog/foo.png". */
+export function resolveBlogImageUrl(image: string | null | undefined): string {
+  if (!image) return `${WEB_URL}/good-fights-logo.png`;
+  if (image.startsWith('http')) return image;
+  return `${WEB_URL}${image.startsWith('/') ? '' : '/'}${image}`;
+}
+
+/** Build the public URL for an editorial blog post by slug. */
+export function buildBlogPostUrl(slug: string): string {
+  return `${WEB_URL}/blog/${slug}`;
+}
+
 // Log which API we're using at startup (helps debug local vs production issues)
 console.log(`[API] Using API URL: ${API_BASE_URL}`);
 console.log(`[API] __DEV__=${typeof __DEV__ !== 'undefined' ? __DEV__ : 'undefined'}`);
@@ -1142,6 +1159,23 @@ class ApiService {
     const endpoint = `/news${queryString ? `?${queryString}` : ''}`;
 
     return this.makeRequest(endpoint);
+  }
+
+  // Editorial blog (Good Fights own posts). Metadata only — cards deep-link to
+  // the web blog at WEB_URL/blog/<slug>. Backend route: GET /api/editorial.
+  async getEditorial(limit: number = 10): Promise<{
+    posts: Array<{
+      slug: string;
+      title: string;
+      date: string;
+      author: string;
+      excerpt: string;
+      tags: string[];
+      image: string;
+      featured: boolean;
+    }>;
+  }> {
+    return this.makeRequest(`/editorial?limit=${limit}`);
   }
 
   async getNewsArticle(articleId: string): Promise<{

@@ -9,6 +9,7 @@ import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
 import notificationRulesRoutes from './notificationRules';
 import newsRoutes from './news';
+import editorialRoutes from './editorial';
 import communityRoutes from './community';
 import searchRoutes from './search';
 import feedbackRoutes from './feedback';
@@ -2075,6 +2076,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register news routes under /api prefix
   await fastify.register(newsRoutes, { prefix: '/api' });
+
+  await fastify.register(editorialRoutes, { prefix: '/api' });
 
   // Register community routes under /api/community prefix
   await fastify.register(communityRoutes, { prefix: '/api/community' });
