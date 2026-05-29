@@ -156,26 +156,30 @@ function getLocalParts(date: Date, timezone: string): LocalDateParts {
 }
 
 /**
- * Compute the user's "fight day" — the local calendar date during which they'd
- * watch the fight live, with overnight rollback. A fight that starts at 3am
- * local time belongs to the previous calendar day from the user's POV.
+ * Compute the event's calendar day — the day the card takes place.
+ *
+ * `event.date` is a DATE MARKER the scrapers store at a fixed UTC hour
+ * (UFC = 12:00 UTC, Tapology = 00:00 UTC), NOT a real per-viewer kickoff instant.
+ * Its UTC calendar date is the intended event day for every scraper we run, so we
+ * read the day straight off the UTC components.
+ *
+ * This previously reinterpreted `event.date` in the *user's* timezone and rolled
+ * the day back when the local hour was < noon (meant for genuine 3am overnight
+ * starts). But the UFC noon-UTC marker reads as 5-8am local across the entire US,
+ * so the rollback always fired and every US user got morning-of / 3-day pushes a
+ * full day early. (Tapology's 00:00-UTC marker shifted to the prior evening for the
+ * same net one-day-early effect.) Day-granular triggers don't need the viewer's
+ * timezone at all — only the 9am/10am send time does, and that still uses
+ * `user.timezone` via `localWallClockToUTC` below.
  */
 export function computeFightDay(
-  fightStartUTC: Date,
-  timezone: string,
+  eventDate: Date,
 ): { year: number; month: number; day: number } {
-  const local = getLocalParts(fightStartUTC, timezone);
-  if (local.hour < 12) {
-    // Overnight: roll back one day
-    const d = new Date(Date.UTC(local.year, local.month - 1, local.day));
-    d.setUTCDate(d.getUTCDate() - 1);
-    return {
-      year: d.getUTCFullYear(),
-      month: d.getUTCMonth() + 1,
-      day: d.getUTCDate(),
-    };
-  }
-  return { year: local.year, month: local.month, day: local.day };
+  return {
+    year: eventDate.getUTCFullYear(),
+    month: eventDate.getUTCMonth() + 1,
+    day: eventDate.getUTCDate(),
+  };
 }
 
 /**
@@ -379,7 +383,7 @@ export async function runFollowFighterCron(): Promise<void> {
     else if (ids.includes(fight.fighter2Id)) followedFighterId = fight.fighter2Id;
     if (!followedFighterId) continue;
 
-    const fightDay = computeFightDay(fight.event.date, user.timezone);
+    const fightDay = computeFightDay(fight.event.date);
 
     // 3-day-warn: 10am local on fight-day minus 3 days
     if (!match.threeDaySentAt && user.notifyFollowed3DayWarn) {
