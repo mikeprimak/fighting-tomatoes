@@ -7,16 +7,18 @@ import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
 
 /**
- * Two-column shell: feed on the left, the profile sidebar on the right (desktop).
- * On mobile the desktop sidebar is unreachable because feeds lazy-load forever,
- * so a compact "about you" strip is shown above the feed instead. Mirrors the
- * home (Upcoming) page so Past / Live / Good Fights all match.
+ * Two-column shell: feed on the left, the profile sidebar on the right.
+ * Switches to two columns at the `md` breakpoint (768px) so narrower laptops
+ * keep the layout instead of collapsing to a single column with a full-width
+ * sidebar strip. Below `md` the compact "about you" strip is shown above the
+ * feed instead (the desktop sidebar is unreachable because feeds lazy-load
+ * forever). Mirrors the home (Upcoming) page so Past / Live / Good Fights match.
  */
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_280px] lg:gap-6">
-      {/* Mobile-only "About you" strip above the feed. */}
-      <div className="mb-6 space-y-4 lg:hidden">
+    <div className="md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+      {/* Shown below md: compact "About you" strip above the feed. */}
+      <div className="mb-6 space-y-4 md:hidden">
         <IdentityBlock />
         <FanDNABlock />
         <Link
@@ -30,7 +32,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
       <div className="min-w-0">{children}</div>
 
-      <div className="hidden lg:block">
+      <div className="hidden md:block">
         <ProfileSidebar />
       </div>
     </div>
