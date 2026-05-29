@@ -1,10 +1,16 @@
 name: Tapology Results Backfill
 
 on:
-  schedule:
-    # Daily at 09:00 UTC (4am ET / 5am EDT) — after most events conclude and
-    # Tapology has had time to post results overnight.
-    - cron: "0 9 * * *"
+  # NOTE: the daily schedule is DISABLED. Tapology blocks GitHub Actions IP
+  # ranges (HTTP 403 on every fetch), so this job was a silent no-op here —
+  # it scraped nothing yet exited 0 ("success"). The daily backfill now runs
+  # as a cron on the Hetzner VPS (unblocked residential IP, same box as the
+  # live tracker): `node dist/scripts/backfillTapologyResults.js`. This
+  # workflow is kept for manual dispatch only (e.g. a one-off if the VPS is
+  # down and you trigger from a machine whose IP Tapology allows). See
+  # docs/daily/2026-05-29.md.
+  # schedule:
+  #   - cron: "0 9 * * *"
   workflow_dispatch:
     inputs:
       window_days:
