@@ -630,17 +630,40 @@ export async function authRoutes(fastify: FastifyInstance) {
         { expiresIn: REFRESH_TOKEN_EXPIRES }
       );
 
-      // Update refresh token in database (sliding expiration - 90 days from now)
+      // Rotate with a grace window instead of overwriting in place.
+      //
+      // If we replaced the token in place, a refresh whose RESPONSE is dropped
+      // (e.g. the backend restarts mid-deploy) would strand the client: the DB
+      // already holds the new token, the client never received it, so its next
+      // refresh with the old token 401s and forces a logout. To avoid that we
+      // keep the OLD token valid for a short grace period (60s) and store the
+      // new token in a fresh row. A retried/duplicate refresh inside the window
+      // still succeeds. Expired rows (lapsed grace tokens + old sessions) are
+      // pruned so the table stays bounded.
       const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 90);
+      expiresAt.setDate(expiresAt.getDate() + 90); // 90 days, sliding
 
-      await fastify.prisma.refreshToken.update({
-        where: { id: tokenRecord.id },
-        data: {
-          token: newRefreshToken,
-          expiresAt,
-        }
-      });
+      const graceExpiresAt = new Date(Date.now() + 60_000); // old token: 60s grace
+
+      await fastify.prisma.$transaction([
+        fastify.prisma.refreshToken.create({
+          data: {
+            token: newRefreshToken,
+            userId: decoded.userId,
+            expiresAt,
+          }
+        }),
+        fastify.prisma.refreshToken.update({
+          where: { id: tokenRecord.id },
+          data: { expiresAt: graceExpiresAt },
+        }),
+        fastify.prisma.refreshToken.deleteMany({
+          where: {
+            userId: decoded.userId,
+            expiresAt: { lt: new Date() },
+          }
+        }),
+      ]);
 
       return reply.code(200).send({
         accessToken: newAccessToken,

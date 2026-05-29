@@ -4,7 +4,14 @@ import { secureStorage } from '../utils/secureStorage';
 
 // Token refresh state to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
-let refreshPromise: Promise<boolean> | null = null;
+let refreshPromise: Promise<RefreshResult> | null = null;
+
+// Outcome of a token-refresh attempt.
+//  - 'success':   new tokens stored, retry the request
+//  - 'invalid':   the refresh token was genuinely rejected (real logout)
+//  - 'transient': network error / server restart / 5xx — do NOT log out,
+//                 the session is probably fine, just unreachable right now
+type RefreshResult = 'success' | 'invalid' | 'transient';
 
 function decodeJwtExp(token: string): number | null {
   const parts = token.split('.');
@@ -154,7 +161,7 @@ class ApiService {
       const exp = decodeJwtExp(token);
       if (exp != null && exp * 1000 - Date.now() < 30_000) {
         const refreshed = await this.refreshAccessToken();
-        if (refreshed) {
+        if (refreshed === 'success') {
           return await secureStorage.getItem('accessToken');
         }
         // Refresh failed — fall through and return the (expired) token so the
@@ -174,7 +181,7 @@ class ApiService {
    * Returns true if refresh was successful, false otherwise.
    * Uses a singleton pattern to prevent multiple simultaneous refresh attempts.
    */
-  private async refreshAccessToken(): Promise<boolean> {
+  private async refreshAccessToken(): Promise<RefreshResult> {
     // If already refreshing, wait for that refresh to complete
     if (isRefreshing && refreshPromise) {
       return refreshPromise;
@@ -192,49 +199,78 @@ class ApiService {
     }
   }
 
-  private async _doRefreshToken(): Promise<boolean> {
-    try {
-      const refreshToken = await secureStorage.getItem('refreshToken');
+  private async _doRefreshToken(): Promise<RefreshResult> {
+    const refreshToken = await secureStorage.getItem('refreshToken');
 
-      if (!refreshToken) {
-        console.log('[API] No refresh token available');
-        return false;
-      }
-
-      console.log('[API] Attempting token refresh...');
-
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        console.log('[API] Token refresh failed:', data.error || data.code);
-        return false;
-      }
-
-      // Handle both response formats (tokens object or flat)
-      const newAccessToken = data.tokens?.accessToken || data.accessToken;
-      const newRefreshToken = data.tokens?.refreshToken || data.refreshToken;
-
-      if (newAccessToken && newRefreshToken) {
-        await secureStorage.setItem('accessToken', newAccessToken);
-        await secureStorage.setItem('refreshToken', newRefreshToken);
-        console.log('[API] Token refresh successful');
-        return true;
-      }
-
-      console.log('[API] Token refresh response missing tokens');
-      return false;
-    } catch (error) {
-      console.error('[API] Token refresh error:', error);
-      return false;
+    if (!refreshToken) {
+      // Nothing to refresh with — this is a genuine "must log in" state.
+      console.log('[API] No refresh token available');
+      return 'invalid';
     }
+
+    // Retry transient failures (network drop, backend restarting mid-deploy,
+    // 5xx) a few times before giving up. A transient failure must NOT clear
+    // auth — the session is still valid, the server is just briefly
+    // unreachable. Only an explicit rejection from the refresh endpoint
+    // counts as a real logout.
+    const MAX_ATTEMPTS = 3;
+    const BACKOFF_MS = [300, 800];
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        console.log(`[API] Attempting token refresh (attempt ${attempt + 1}/${MAX_ATTEMPTS})...`);
+
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        // 5xx (incl. 502/503 during a deploy) is transient — retry, don't log out.
+        if (response.status >= 500) {
+          console.log(`[API] Token refresh got ${response.status} (server unavailable), will retry`);
+          await this._sleep(BACKOFF_MS[attempt] ?? 0);
+          continue;
+        }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          // 4xx from the refresh endpoint = the token was genuinely rejected.
+          console.log('[API] Token refresh rejected:', data.error || data.code);
+          return 'invalid';
+        }
+
+        // Handle both response formats (tokens object or flat)
+        const newAccessToken = data.tokens?.accessToken || data.accessToken;
+        const newRefreshToken = data.tokens?.refreshToken || data.refreshToken;
+
+        if (newAccessToken && newRefreshToken) {
+          await secureStorage.setItem('accessToken', newAccessToken);
+          await secureStorage.setItem('refreshToken', newRefreshToken);
+          console.log('[API] Token refresh successful');
+          return 'success';
+        }
+
+        // 2xx but malformed body — treat as a server hiccup, not a logout.
+        console.log('[API] Token refresh response missing tokens');
+        await this._sleep(BACKOFF_MS[attempt] ?? 0);
+        continue;
+      } catch (error) {
+        // fetch threw → network error / timeout. Transient: retry, don't log out.
+        console.error('[API] Token refresh network error:', error);
+        await this._sleep(BACKOFF_MS[attempt] ?? 0);
+      }
+    }
+
+    console.log('[API] Token refresh exhausted retries — treating as transient (no logout)');
+    return 'transient';
+  }
+
+  private _sleep(ms: number): Promise<void> {
+    return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
   }
 
   /**
@@ -288,12 +324,22 @@ class ApiService {
 
         const refreshed = await this.refreshAccessToken();
 
-        if (refreshed) {
+        if (refreshed === 'success') {
           // Retry the original request with new token
           console.log('[API] Retrying request after token refresh');
           return this.makeRequest<T>(endpoint, options, true);
+        } else if (refreshed === 'transient') {
+          // Server briefly unreachable (restart/network). Do NOT log out —
+          // surface a retryable error and keep the session intact.
+          console.log('[API] Refresh hit a transient failure; keeping session');
+          throw {
+            status: 503,
+            error: 'Service temporarily unavailable. Please try again.',
+            code: 'REFRESH_UNAVAILABLE',
+          } as ApiError & { status: number };
         } else {
-          // Refresh failed - clear auth data (will trigger logout via AuthContext)
+          // 'invalid' — refresh token genuinely rejected. Clear auth data
+          // (will trigger logout via AuthContext).
           await this.clearAuthData();
           throw {
             status: 401,

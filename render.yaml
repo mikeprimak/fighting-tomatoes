@@ -5,6 +5,20 @@ services:
     dockerfilePath: ./Dockerfile
     plan: starter
     region: oregon
+    # Only redeploy the backend when something that affects it actually changes.
+    # Without this, every push to main (including web/landing/mobile/docs-only
+    # commits) restarts the backend. Each restart is a ~30-90s downtime window,
+    # and a token refresh that lands in that window logs the user out. On a
+    # heavy push day (~40 web commits on 2026-05-28) that meant repeated
+    # logouts for everyone. See docs/daily/2026-05-28.md.
+    buildFilter:
+      ignoredPaths:
+        - "packages/web/**"
+        - "packages/landing/**"
+        - "packages/mobile/**"
+        - "docs/**"
+        - "archive/**"
+        - "**/*.md"
     envVars:
       - key: DATABASE_URL
         sync: false
