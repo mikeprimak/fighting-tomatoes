@@ -241,8 +241,8 @@ export default function HomeScreen() {
   });
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
-    queryKey: ['events'],
-    queryFn: () => apiService.getEvents(),
+    queryKey: ['events', 'UPCOMING'],
+    queryFn: () => apiService.getEvents('UPCOMING'),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -460,7 +460,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Most Hyped Upcoming"
+        title="Most Hyped"
         icon="bolt"
         onSeeAll={() => router.push('/(tabs)/events' as any)}
       >
@@ -521,6 +521,7 @@ export default function HomeScreen() {
                 key={f.fighter.id}
                 fighter={f.fighter}
                 subtitle={subtitle}
+                hideNickname
                 onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
               />
             );
@@ -547,6 +548,7 @@ export default function HomeScreen() {
                 key={b.fighter.id}
                 fighter={b.fighter}
                 subtitle={`vs ${b.opponentName} at ${b.event.name}`}
+                nextFightDate={b.nextFightDate}
                 onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
               />
             ))

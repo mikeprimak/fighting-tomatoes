@@ -1249,25 +1249,29 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         }
       }
 
-      // One entry per VIP fighter — keep their most recently booked upcoming fight.
+      // One entry per BOOKING — show only the more notable (higher-rated) VIP
+      // fighter, never both sides of the same fight (e.g. don't list both
+      // "Conor vs Max" and "Max vs Conor"). Also dedup a fighter across multiple
+      // bookings (we iterate createdAt desc, so the first/most-recent wins).
       const seen = new Set<string>();
       const data: any[] = [];
       for (const fight of recentlyBooked) {
-        for (const fighter of [fight.fighter1, fight.fighter2]) {
-          if (seen.has(fighter.id)) continue;
-          const ratings = ratingCount.get(fighter.id) || 0;
-          if (ratings < VIP_MIN_RATINGS) continue;
-          seen.add(fighter.id);
-          const opponent = fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
-          data.push({
-            fighter,
-            ratingCount: ratings,
-            bookedAt: fight.createdAt,
-            event: fight.event,
-            nextFightDate: fight.event.date,
-            opponentName: `${opponent.firstName} ${opponent.lastName}`,
-          });
-        }
+        const sides = [fight.fighter1, fight.fighter2]
+          .map((fighter: any) => ({ fighter, ratings: ratingCount.get(fighter.id) || 0 }))
+          .filter((s: any) => s.ratings >= VIP_MIN_RATINGS && !seen.has(s.fighter.id))
+          .sort((a: any, b: any) => b.ratings - a.ratings);
+        const top = sides[0];
+        if (!top) continue;
+        seen.add(top.fighter.id);
+        const opponent = top.fighter.id === fight.fighter1.id ? fight.fighter2 : fight.fighter1;
+        data.push({
+          fighter: top.fighter,
+          ratingCount: top.ratings,
+          bookedAt: fight.createdAt,
+          event: fight.event,
+          nextFightDate: fight.event.date,
+          opponentName: `${opponent.firstName} ${opponent.lastName}`,
+        });
       }
 
       // Most notable first.
