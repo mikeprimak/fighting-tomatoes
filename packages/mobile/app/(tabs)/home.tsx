@@ -295,10 +295,23 @@ export default function HomeScreen() {
   });
 
   // --- Derived ------------------------------------------------------------
+  // Order by calendar day, then float UFC to the top of its day so a marquee UFC
+  // card isn't buried under same-day regional events (Event.date is a UTC-hour
+  // placeholder, so we group on its UTC date components, not local time).
+  const eventDayKey = (d: string) => {
+    const dt = new Date(d);
+    return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
+  };
+  const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
   const upcomingEvents: Event[] = (eventsData?.events || [])
     .filter((e: Event) => e.eventStatus === 'UPCOMING')
-    .sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 8);
+    .sort((a: Event, b: Event) => {
+      const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
+      if (dayDiff !== 0) return dayDiff;
+      if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    })
+    .slice(0, 6);
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   const recentFights = (
