@@ -8,6 +8,17 @@ const POSTS_DIR = path.join(process.cwd(), 'src/content/posts');
 // Fallback share/hero image for posts that don't set their own `image`.
 export const DEFAULT_POST_IMAGE = '/good-fights-logo.png';
 
+/** Optional event block (frontmatter `event:`) → emits SportsEvent JSON-LD. */
+export type PostEvent = {
+  name: string;
+  startDate: string;
+  venue?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  performers?: string[];
+};
+
 export type PostMeta = {
   slug: string;
   title: string;
@@ -16,6 +27,7 @@ export type PostMeta = {
   excerpt: string;
   tags: string[];
   draft: boolean;
+  event: PostEvent | null;
   /** Hero/share image path (e.g. /blog/my-slug.jpg). Empty string = use DEFAULT_POST_IMAGE. */
   image: string;
   /** Pins this post to the EditorialHero band on the main pages. The newest
@@ -98,6 +110,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     excerpt: (data.excerpt as string) || '',
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
     draft: data.draft === true,
+    event: (data.event as PostEvent) || null,
     image: (data.image as string) || '',
     featured: data.featured === true,
     hideFromHome: data.hideFromHome === true,
