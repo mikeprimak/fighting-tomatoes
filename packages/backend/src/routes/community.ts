@@ -572,6 +572,75 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Get classic fights: the highest-rated fights at least 3 years old that the
+  // current user hasn't rated yet. A "watch this from the vault" recommendation
+  // feed. Returns the same shape as top-recent-fights so CompletedFightCard can
+  // render it directly.
+  fastify.get('/classic-fights', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const userId = request.user?.id;
+      const { limit = '10' } = request.query as { limit?: string };
+      const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 10));
+
+      // "At least 3 years old" — event date on or before this cutoff.
+      const threeYearsAgo = new Date();
+      threeYearsAgo.setFullYear(threeYearsAgo.getFullYear() - 3);
+
+      // Enough ratings to be a genuine consensus classic, not a lone 10.
+      const MIN_RATINGS = 5;
+
+      const fights = await fastify.prisma.fight.findMany({
+        where: {
+          event: {
+            date: { lte: threeYearsAgo },
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
+          },
+          fightStatus: 'COMPLETED',
+          averageRating: { gt: 0 },
+          totalRatings: { gte: MIN_RATINGS },
+          // Exclude fights the user has already rated.
+          ...(userId ? { ratings: { none: { userId } } } : {}),
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+          event: true,
+          _count: {
+            select: {
+              reviews: true,
+              preFightComments: true,
+            },
+          },
+        },
+        orderBy: [
+          { averageRating: 'desc' },
+          { totalRatings: 'desc' },
+          { id: 'asc' },
+        ],
+        take: limitNum,
+      });
+
+      const data = fights.map((fight: any) => ({
+        ...fight,
+        reviewCount: fight._count?.reviews || 0,
+        commentCount: fight._count?.preFightComments || 0,
+        userRating: null, // by definition unrated by this user
+      }));
+
+      return reply.send({ data });
+    } catch (error) {
+      console.error('Error fetching classic fights:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch classic fights',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
   // Get hot predictions (fights with strong prediction consensus, next 20 days)
   fastify.get('/hot-predictions', {
     preHandler: optionalAuthenticateMiddleware,

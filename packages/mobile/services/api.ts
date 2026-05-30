@@ -1347,6 +1347,10 @@ class ApiService {
     return this.makeRequest(`/community/top-recent-fights?${params.toString()}`);
   }
 
+  async getClassicFights(limit: number = 10): Promise<{ data: Fight[] }> {
+    return this.makeRequest(`/community/classic-fights?limit=${limit}`);
+  }
+
   async getHotPredictions(): Promise<{
     data: Array<Fight & { totalPredictions: number; consensusPercentage: number }>;
   }> {
