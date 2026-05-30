@@ -56,11 +56,19 @@ export function SpotlightBlock() {
   const f = candidates[0];
   if (!f || (f.averageRating ?? 0) < 7) return null;
 
-  const promotion = f.event?.promotion;
-  const eventName = f.event?.name ?? '';
-  const eventLine = promotion
+  // Drop the promotion when the event name already starts with it, so e.g.
+  // promotion "UFC" + event "UFC 328: ..." doesn't show "UFC" twice.
+  const promotion = (f.event?.promotion ?? '').trim();
+  const eventName = (f.event?.name ?? '').trim();
+  const redundantPromo =
+    !!promotion && eventName.toLowerCase().startsWith(promotion.toLowerCase());
+  const eventLine = promotion && !redundantPromo
     ? `Event: ${promotion}${eventName ? ` · ${eventName}` : ''}`
-    : eventName;
+    : eventName
+      ? `Event: ${eventName}`
+      : promotion
+        ? `Event: ${promotion}`
+        : '';
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">

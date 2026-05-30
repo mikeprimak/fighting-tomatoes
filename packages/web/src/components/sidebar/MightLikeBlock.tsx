@@ -56,7 +56,19 @@ export function MightLikeBlock() {
   if (fights.length === 0) return null;
 
   const f = fights[Math.min(index, fights.length - 1)];
-  const promotion = (f.event as any)?.promotion as string | undefined;
+  // Drop the promotion when the event name already starts with it, so e.g.
+  // "UFC" + "UFC Fight Night ..." doesn't show "UFC" twice.
+  const promotion = ((f.event as any)?.promotion as string | undefined)?.trim() ?? '';
+  const eventName = (f.event?.name ?? '').trim();
+  const redundantPromo =
+    !!promotion && eventName.toLowerCase().startsWith(promotion.toLowerCase());
+  const eventLine = promotion && !redundantPromo
+    ? `Event: ${promotion}${eventName ? ` · ${eventName}` : ''}`
+    : eventName
+      ? `Event: ${eventName}`
+      : promotion
+        ? `Event: ${promotion}`
+        : '';
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -75,8 +87,7 @@ export function MightLikeBlock() {
         </p>
         <p className="mt-1 truncate text-[11px] text-text-secondary">
           {shortDate(f.event.date)}
-          {promotion ? ` · Event: ${promotion}` : ''}
-          {f.event.name ? ` · ${f.event.name}` : ''}
+          {eventLine ? ` · ${eventLine}` : ''}
         </p>
         {f.reason ? (
           <p className="mt-1.5 text-[11px] leading-snug text-text-secondary/80 italic">
