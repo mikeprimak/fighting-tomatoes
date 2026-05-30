@@ -18,6 +18,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { FightDisplayCard, ScreenHeader } from '../../../components';
+import UpcomingFightModal from '../../../components/UpcomingFightModal';
 import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
@@ -61,6 +62,9 @@ export default function EventDetailScreen() {
   const router = useRouter();
 
   const [bannerAspectRatio, setBannerAspectRatio] = useState<number>(16 / 9);
+
+  // Modal state for upcoming fight quick-view
+  const [modalFight, setModalFight] = useState<Fight | null>(null);
 
   // Pulsing animation for live indicator
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -154,8 +158,12 @@ export default function EventDetailScreen() {
   }, [eventIsLive, pulseAnim]);
 
   const handleFightPress = (fight: Fight) => {
-    // Navigate to fight detail screen
-    router.push(`/fight/${fight.id}` as any);
+    // Only UpcomingFightCard delegates its tap here, so this always opens the
+    // upcoming quick-view modal. LiveFightCard and CompletedFightCard manage
+    // their own modal internally and never call onPress.
+    // Attach the parent event so the modal can branch on live-tracking and
+    // target the right query cache (the fights endpoint doesn't nest it).
+    setModalFight(event ? ({ ...fight, event } as Fight) : fight);
   };
 
   const handleBannerLoad = (e: any) => {
@@ -500,6 +508,14 @@ export default function EventDetailScreen() {
         )}
         </ScrollView>
       </View>
+
+      {/* Upcoming fight quick-view modal */}
+      <UpcomingFightModal
+        visible={!!modalFight}
+        fight={modalFight}
+        onClose={() => setModalFight(null)}
+        showNotificationBell={(event as any)?.notificationsAllowed === true}
+      />
     </SafeAreaView>
   );
 }
