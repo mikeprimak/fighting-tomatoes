@@ -406,10 +406,13 @@ export default function HomeScreen() {
     refetchOnMount: 'always',
   });
 
-  // Classics: highest-rated fights 3+ years old the user hasn't rated.
-  // Keyed on auth so the unrated-by-me filter refetches on login/logout.
+  // Classics: highest-rated fights 3+ years old the user hasn't rated. The
+  // backend rotates the set by UTC day; include that day in the key so the
+  // cache busts at midnight and the rotation is actually picked up.
+  // Keyed on auth too so the unrated-by-me filter refetches on login/logout.
+  const classicsDayKey = Math.floor(Date.now() / 86_400_000);
   const { data: classicFights, isLoading: isClassicsLoading } = useQuery({
-    queryKey: ['classicFights', isAuthenticated],
+    queryKey: ['classicFights', isAuthenticated, classicsDayKey],
     queryFn: () => apiService.getClassicFights(8),
     staleTime: 30 * 60 * 1000,
   });

@@ -591,7 +591,12 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // Enough ratings to be a genuine consensus classic, not a lone 10.
       const MIN_RATINGS = 5;
 
-      const fights = await fastify.prisma.fight.findMany({
+      // Pull a pool of the top-rated classics, then rotate which slice we show
+      // by a UTC day seed so the recommendations change every day (cycling
+      // through the pool) instead of always surfacing the same top fights.
+      const POOL_SIZE = 120;
+
+      const pool = await fastify.prisma.fight.findMany({
         where: {
           event: {
             date: { lte: threeYearsAgo },
@@ -621,8 +626,15 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           { totalRatings: 'desc' },
           { id: 'asc' },
         ],
-        take: limitNum,
+        take: POOL_SIZE,
       });
+
+      // Rotate the pool by today's window so each day shows a different page
+      // (with wrap-around). Whole days since the UTC epoch = the seed.
+      const daySeed = Math.floor(Date.now() / 86_400_000);
+      const start = pool.length > 0 ? (daySeed * limitNum) % pool.length : 0;
+      const rotated = [...pool.slice(start), ...pool.slice(0, start)];
+      const fights = rotated.slice(0, limitNum);
 
       const data = fights.map((fight: any) => ({
         ...fight,
