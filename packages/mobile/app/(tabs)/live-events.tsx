@@ -54,6 +54,14 @@ const formatTime = (dateString: string) =>
 // start time has passed and it isn't COMPLETED. Mirrors the fallback on the
 // event detail screen so the Live tab doesn't lag behind the 5-minute
 // backend lifecycle tick.
+// Join org names as proper English: "A", "A and B", "A, B, and C".
+const formatOrgList = (orgs: string[]): string =>
+  orgs.length <= 1
+    ? orgs.join('')
+    : orgs.length === 2
+      ? `${orgs[0]} and ${orgs[1]}`
+      : `${orgs.slice(0, -1).join(', ')}, and ${orgs[orgs.length - 1]}`;
+
 const isEventLiveNow = (event: Event): boolean => {
   if (event.eventStatus === 'LIVE') return true;
   if (event.eventStatus === 'COMPLETED') return false;
@@ -211,7 +219,7 @@ export default function LiveEventsScreen() {
     const promptText =
       hiddenLiveOrgs.length === 1
         ? `But there is a ${hiddenLiveOrgs[0]} event live.`
-        : `But there are live events from ${hiddenLiveOrgs.join(', ')}.`;
+        : `But there are live events from ${formatOrgList(hiddenLiveOrgs as string[])}.`;
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
