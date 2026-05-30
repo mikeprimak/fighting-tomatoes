@@ -8,6 +8,16 @@ tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "preview"]
 image: "/blog/mcgregor-holloway-banner.png"
 draft: false
 featured: true
+event:
+  name: "UFC 329: McGregor vs Holloway 2"
+  startDate: "2026-07-11T21:00:00-04:00"
+  venue: "T-Mobile Arena"
+  city: "Las Vegas"
+  region: "NV"
+  country: "US"
+  performers:
+    - "Conor McGregor"
+    - "Max Holloway"
 ---
 
 Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
@@ -140,7 +150,7 @@ Everything that is left. At his age, after this layoff, a loss to Holloway would
 
 ## What are the stakes for Max Holloway?
 
-For Holloway, this is the rare chance to settle an old score and cash the biggest check of his life at the same time. He is already recognized as one of the greatest to ever do it, a former featherweight king, a BMF champion, and the author of some of the most beloved performances of the modern era. The one thing missing from that resume is a win over Conor McGregor. Avenging the only blemish from their shared history, on the sport's biggest stage and in front of the largest audience he will ever fight for, would erase that lone asterisk and stand as a signature, era-defining night.
+For Holloway, this is the rare chance to settle an old score and cash the biggest check of his life at the same time. He is already recognized as one of the greatest to ever do it, a former featherweight king, a former BMF champion, and the author of some of the most beloved performances of the modern era. The one thing missing from that resume is a win over Conor McGregor. Avenging the only blemish from their shared history, on the sport's biggest stage and in front of the largest audience he will ever fight for, would erase that lone asterisk and stand as a signature, era-defining night.
 
 ## Is this Conor McGregor's last fight?
 
@@ -164,5 +174,10 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
 - **Favorite:** Max Holloway (roughly -400 to -550)
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
+
+## Related reading
+
+- [Max Holloway: how the kid Conor McGregor beat became a legend](/blog/max-holloway-career-explained) — the full arc from 2013 prospect to one of the greatest featherweights ever.
+- [Conor McGregor's long road back: why he hasn't fought since 2021](/blog/conor-mcgregor-return-five-years) — the broken leg, the cancelled comeback, and five years away.
 
 *This is the kind of fight you will want to remember exactly how you felt about. Rate McGregor vs Holloway 2, log your prediction, and track every fight on the card on [Good Fights](https://goodfights.app). Never miss a Good Fight.*

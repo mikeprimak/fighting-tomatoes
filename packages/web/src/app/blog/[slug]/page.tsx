@@ -97,7 +97,43 @@ export default async function BlogPostPage({
         }
       : null;
 
-  const jsonLd = [articleLd, breadcrumbLd, ...(faqLd ? [faqLd] : [])];
+  const eventLd = post.event
+    ? {
+        '@context': 'https://schema.org',
+        '@type': 'SportsEvent',
+        name: post.event.name,
+        startDate: post.event.startDate,
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        image: [imageUrl],
+        description: post.excerpt,
+        ...(post.event.venue
+          ? {
+              location: {
+                '@type': 'Place',
+                name: post.event.venue,
+                address: {
+                  '@type': 'PostalAddress',
+                  addressLocality: post.event.city,
+                  addressRegion: post.event.region,
+                  addressCountry: post.event.country || 'US',
+                },
+              },
+            }
+          : {}),
+        ...(post.event.performers
+          ? { competitor: post.event.performers.map((name) => ({ '@type': 'Person', name })) }
+          : {}),
+        organizer: { '@type': 'Organization', name: 'UFC', url: 'https://www.ufc.com' },
+      }
+    : null;
+
+  const jsonLd = [
+    articleLd,
+    breadcrumbLd,
+    ...(faqLd ? [faqLd] : []),
+    ...(eventLd ? [eventLd] : []),
+  ];
 
   return (
     <article className="mx-auto max-w-2xl py-8">
