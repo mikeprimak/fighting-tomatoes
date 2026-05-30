@@ -231,6 +231,12 @@ the-ring-logo.svg
 screencapture-*.png
 screenshots/
 5.png
+*-sized.png
+words2*.png
+*-GoodFightsBanner.png
+*-Celebration.png
+*-good-fights-article.png
+Good-Fights-Horzontal-*.png
 
 # Database backup dumps (root-level)
 database-backups_*.sql.gz
