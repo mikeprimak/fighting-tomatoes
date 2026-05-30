@@ -392,6 +392,9 @@ importers:
       '@expo/config-plugins':
         specifier: ~54.0.4
         version: 54.0.4
+      '@sentry/cli':
+        specifier: 2.55.0
+        version: 2.55.0
       '@types/react':
         specifier: ~19.1.13
         version: 19.1.13
@@ -6274,7 +6277,6 @@ packages:
     engines: {node: '>=10'}
     os: [darwin]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-linux-arm64@2.55.0:
@@ -6283,7 +6285,6 @@ packages:
     cpu: [arm64]
     os: [linux, freebsd, android]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-linux-arm@2.55.0:
@@ -6292,7 +6293,6 @@ packages:
     cpu: [arm]
     os: [linux, freebsd, android]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-linux-i686@2.55.0:
@@ -6301,7 +6301,6 @@ packages:
     cpu: [x86, ia32]
     os: [linux, freebsd, android]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-linux-x64@2.55.0:
@@ -6310,7 +6309,6 @@ packages:
     cpu: [x64]
     os: [linux, freebsd, android]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-win32-arm64@2.55.0:
@@ -6319,7 +6317,6 @@ packages:
     cpu: [arm64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-win32-i686@2.55.0:
@@ -6328,7 +6325,6 @@ packages:
     cpu: [x86, ia32]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli-win32-x64@2.55.0:
@@ -6337,7 +6333,6 @@ packages:
     cpu: [x64]
     os: [win32]
     requiresBuild: true
-    dev: false
     optional: true
 
   /@sentry/cli@2.55.0:
@@ -6363,7 +6358,6 @@ packages:
     transitivePeerDependencies:
       - encoding
       - supports-color
-    dev: false
 
   /@sentry/core@10.12.0:
     resolution: {integrity: sha512-Jrf0Yo7DvmI/ZQcvBnA0xKNAFkJlVC/fMlvcin+5IrFNRcqOToZ2vtF+XqTgjRZymXQNE8s1QTD7IomPHk0TAw==}
@@ -16751,7 +16745,6 @@ packages:
 
   /proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
-    dev: false
 
   /psl@1.15.0:
     resolution: {integrity: sha512-JZd3gMVBAVQkSs6HdNZo9Sdo0LNcQeMNP3CozBJb3JYC/QUYZTnKxP+f8oWRX4rHP5EurWxqAHTSwUCjlNKa1w==}
