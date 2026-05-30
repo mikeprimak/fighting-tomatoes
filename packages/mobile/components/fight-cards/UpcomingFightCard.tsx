@@ -282,7 +282,11 @@ function UpcomingFightCard({
       <View style={[sharedStyles.container, {
         overflow: 'visible',
         paddingLeft: 64, // 48px square + 16px padding
-        paddingVertical: 0, // No vertical padding
+        paddingTop: 0,
+        // When the event name is shown it pushes the names/headshots down; add
+        // bottom padding so the 50px headshots don't bleed past the card edge
+        // (mirrors CompletedFightCard). No event name = no extra space needed.
+        paddingBottom: showEvent ? 12 : 0,
         paddingRight: 64, // 48px square + 16px padding
         minHeight: 62, // Reduced height after removing counts
         justifyContent: 'center',
