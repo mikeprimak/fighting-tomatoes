@@ -1,5 +1,38 @@
 # HANDOFF — BKFC duplicate-fight root cause (2026-05-30)
 
+> **UPDATE 2026-05-30 (evening, second pass) — RESOLVED + ROOT CAUSE CORRECTED.**
+> The earlier diagnosis below (race / fighter-drift, "fix not started") was incomplete. A
+> second pass found the actual cause with evidence and the immediate issues are fixed:
+>
+> 1. **Order fixed in DB.** BKFC 90 had Till **and** the surviving Phillips/Barrett **both at
+>    `orderOnCard=2`** (a tie, #3 empty) — NOT "Barrett=2, Till=3" as reported. Till was already
+>    correct; moved Phillips/Barrett to `orderOnCard=3`. Main card now 1 Tierney, 2 Till,
+>    3 Phillips/Barrett, 4 Chipchase. The tie is gone, so web/mobile agree for this event.
+> 2. **Root cause = the dupe PREDATES the swap-aware fix.** The surviving row was created
+>    **2026-04-06**; `upsertFightSwapAware` (the only thing that catches swap-order dupes) didn't
+>    land until **2026-05-02** (`db0baf5`). Before that the BKFC parser used a plain
+>    order-sensitive `prisma.fight.upsert` keyed on `eventId_fighter1Id_fighter2Id`. A source-side
+>    fighter-order swap between Apr 6 and May 2 created a second row under the swapped key. The May 2
+>    fix prevents *new* swap-dupes but never cleaned up the one already created.
+> 3. **Both other candidates disproven.** Fighter-drift (B): there is exactly one Peter Barrett
+>    (6 fights) and one John Phillips (8 fights), no phantom/orphan — ruled out. Concurrent-run
+>    race (A): the all-DB swap-dupe scan (`scripts/scan-swap-order-dupes.js`) found only **2**
+>    leftover groups, **both fully CANCELLED and both created before May 2**. **Zero** swap-dupes
+>    created after May 2 across all 16 parsers — so the race has no evidence of ever firing; the
+>    May 2 fix is working.
+> 4. **Shipped:** deterministic `id` tiebreaker on the two display fight queries
+>    (`routes/fights.ts`, `routes/index.ts`) so legacy/future order ties can't diverge between
+>    platforms. (Many legacy Bellator/EBI cards have all fights at `orderOnCard=1`.)
+> 5. **NOT done (optional defense-in-depth, needs Mike's OK — prod migration):** the
+>    order-insensitive unique index + P2002-safe `upsertFightSwapAware`. The actual cause is
+>    already fixed, so this only closes the *theoretical* race. If pursued, first resolve the 2
+>    leftover all-cancelled dupe groups (they'd block a plain unique index) or make the index
+>    partial (exclude CANCELLED). See "Recommended fix" below for the mechanics.
+>
+> Everything below is the original first-pass writeup, kept for context.
+
+---
+
 **Status: investigation done, fix NOT started.** Read this before touching the scrapers or the
 Fight schema.
 

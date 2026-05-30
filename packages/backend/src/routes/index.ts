@@ -378,7 +378,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
       if (includeFights) {
         select.fights = {
           where: { fightStatus: { not: 'CANCELLED' } },
-          orderBy: { orderOnCard: 'asc' },
+          // Tiebreak on id so a legacy/duplicate orderOnCard tie is deterministic
+          // and web/mobile never render the same card in different orders.
+          orderBy: [{ orderOnCard: 'asc' }, { id: 'asc' }],
           select: {
             id: true,
             weightClass: true,
