@@ -39,6 +39,18 @@ const relUntilPhrase = (dateStr: string): string => {
   return weeks === 1 ? 'in 1 week' : `in ${weeks} weeks`;
 };
 
+// Event.date is a UTC-hour placeholder, so compare its UTC calendar day to
+// today's local calendar day (matches formatTimeUntil's day comparison).
+const isEventToday = (dateStr: string): boolean => {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return (
+    d.getUTCFullYear() === now.getFullYear() &&
+    d.getUTCMonth() === now.getMonth() &&
+    d.getUTCDate() === now.getDate()
+  );
+};
+
 // "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
 const relAgoPhrase = (dateStr: string): string => {
   const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
@@ -184,7 +196,9 @@ function EventThumbnail({
         <Text style={styles.eventThumbName} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={styles.eventThumbDate}>{formatEventDate(event.date)}</Text>
+        <Text style={styles.eventThumbDate}>
+          {isEventToday(event.date) ? 'Today' : formatEventDate(event.date)}
+        </Text>
       </View>
     </TouchableOpacity>
   );
