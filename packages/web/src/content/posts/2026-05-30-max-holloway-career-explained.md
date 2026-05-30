@@ -39,7 +39,7 @@ The signature moment came against Calvin Kattar in 2021, when Holloway spent fiv
 
 ## The greatest final second in UFC history
 
-If you only ever watch one Max Holloway moment, make it UFC 300 in April 2024. Holloway fought Justin Gaethje, one of the hardest hitters alive, for the symbolic BMF title. With the fight already his on the scorecards and roughly ten seconds left in the final round, Holloway pointed to the center of the cage and invited Gaethje to stand and trade.
+If you only ever watch one Max Holloway moment, make it UFC 300 in April 2024. Holloway fought Justin Gaethje, one of the hardest hitters alive, for the symbolic BMF title. With the fight already his on the scorecards and roughly ten seconds left in the final round, Holloway pointed to the center of the cage and invited Gaethje to stand and trade. That gesture is pure Holloway, a hallmark he has flashed in fights against Ricardo Lamas, Arnold Allen, and Dustin Poirier: tap the canvas in the middle of the Octagon and dare the other guy to meet him there. It is also where the Good Fights logo comes from.
 
 Then he knocked him out cold with one second remaining.
 
