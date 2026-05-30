@@ -77,6 +77,9 @@ McGregor vs Holloway 2 is a **welterweight bout (170 pounds)**, and it is a **no
 
 Yes. They fought once before, more than a decade ago, and **Conor McGregor won by unanimous decision**. The two met on August 17, 2013 at a UFC Fight Night card in Boston, early in both of their careers. McGregor was a brash Irish prospect the American audience was just getting to know. Holloway was a 21-year-old up-and-comer. McGregor controlled the fight and took a clear decision on all three judges' scorecards.
 
+![Conor McGregor and Max Holloway during their first fight in Boston in 2013](/blog/mcgregor-holloway-2013-first-fight.jpg)
+*McGregor on his way to a unanimous-decision win over a 21-year-old Max Holloway. Boston, August 2013.*
+
 ## What happened in the first McGregor vs Holloway fight?
 
 Here is the wild part, and the detail that makes this rematch so strange: McGregor beat Holloway while **tearing his ACL during the fight**. He hurt the knee partway through, switched to a more measured, control-heavy approach to protect it, and still won every round on the way to a decision. He then needed surgery and a long layoff afterward. So the only meeting between these two saw a half-injured McGregor outpoint a barely-formed version of the man Holloway would become. That is not a result you can lean on too heavily 13 years later.
