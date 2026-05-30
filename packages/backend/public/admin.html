@@ -1750,6 +1750,7 @@
         <button class="tab-btn" onclick="switchTab('broadcasts')">Broadcasts<span id="discoveryBadge" class="badge-unread" style="display: none;"></span></button>
         <button class="tab-btn" onclick="switchTab('feedback')">Feedback<span id="feedbackBadge" class="badge-unread" style="display: none;"></span></button>
         <button class="tab-btn" onclick="switchTab('acquisition')">Acquisition</button>
+        <button class="tab-btn" onclick="switchTab('blog')">Blog</button>
       </div>
       <div id="userInfo" class="user-info" style="display: none;">
         <span id="userEmail"></span>
@@ -2252,6 +2253,35 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Blog Highlights Tab -->
+  <div id="blogTab" class="tab-content">
+    <div class="ops-container">
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Blog Highlights — what's pinned to the top</span>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <button class="btn btn-secondary btn-sm" onclick="loadBlogHighlights()">Refresh</button>
+            <button class="btn btn-primary btn-sm" id="blogSaveBtn" onclick="saveBlogHighlights()">Save</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 1rem;">
+          This is the ordered lineup pinned to the top of the app. <strong>#1</strong> is the big featured hero on the web home;
+          <strong>#2&ndash;#4</strong> are the smaller cards beneath it. The same order leads the mobile Home &ldquo;The Latest&rdquo; row.
+          Everything not listed here just shows newest-first automatically. Reorder with the arrows, then <strong>Save</strong> &mdash;
+          changes go live within about a minute, no deploy needed.
+        </p>
+        <div id="blogHighlightsList"></div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">All published posts</span>
+        </div>
+        <div id="blogAllPostsList"></div>
+      </div>
     </div>
   </div>
 
@@ -4194,6 +4224,113 @@
         loadBroadcastsData();
       } else if (tabName === 'acquisition') {
         loadAcquisitionData();
+      } else if (tabName === 'blog') {
+        loadBlogHighlights();
+      }
+    }
+
+    // ============================================
+    // BLOG HIGHLIGHTS TAB
+    // ============================================
+    let blogHighlights = [];   // ordered slugs (working copy, unsaved until Save)
+    let blogAllPosts = [];     // [{ slug, title, date, hideFromHome }]
+
+    function blogPostTitle(slug) {
+      const p = blogAllPosts.find(x => x.slug === slug);
+      return p ? p.title : slug;
+    }
+
+    async function loadBlogHighlights() {
+      const listEl = document.getElementById('blogHighlightsList');
+      const allEl = document.getElementById('blogAllPostsList');
+      listEl.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      allEl.innerHTML = '';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/blog-highlights`);
+        const data = await res.json();
+        blogAllPosts = data.posts || [];
+        // Keep only highlights that still map to a real post.
+        blogHighlights = (data.highlights || []).filter(s => blogAllPosts.some(p => p.slug === s));
+        renderBlogHighlights();
+      } catch (e) {
+        listEl.innerHTML = `<div class="empty-state">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    function blogRow(inner) {
+      return `<div style="display:flex;align-items:center;gap:0.75rem;padding:0.55rem 0;border-bottom:1px solid rgba(255,255,255,0.08);">${inner}</div>`;
+    }
+
+    function renderBlogHighlights() {
+      const listEl = document.getElementById('blogHighlightsList');
+      const allEl = document.getElementById('blogAllPostsList');
+
+      if (blogHighlights.length === 0) {
+        listEl.innerHTML = `<div class="empty-state">Nothing pinned yet — add posts from the list below. Until you do, the home page falls back to newest-first.</div>`;
+      } else {
+        listEl.innerHTML = blogHighlights.map((slug, i) => {
+          const role = i === 0 ? 'Hero' : (i <= 3 ? 'Card ' + i : 'Extra');
+          const roleColor = i === 0 ? 'var(--accent, #f97316)' : 'var(--text-secondary)';
+          return blogRow(`
+            <span style="width:1.6rem;text-align:right;font-weight:700;color:var(--text-muted);">${i + 1}</span>
+            <span style="width:3.5rem;font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:${roleColor};">${role}</span>
+            <span style="flex:1;min-width:0;">${blogPostTitle(slug)}</span>
+            <span style="display:flex;gap:0.35rem;">
+              <button class="btn btn-secondary btn-sm" onclick="moveBlogHighlight(${i},-1)" ${i === 0 ? 'disabled' : ''}>&uarr;</button>
+              <button class="btn btn-secondary btn-sm" onclick="moveBlogHighlight(${i},1)" ${i === blogHighlights.length - 1 ? 'disabled' : ''}>&darr;</button>
+              <button class="btn btn-secondary btn-sm" onclick="removeBlogHighlight(${i})">Remove</button>
+            </span>
+          `);
+        }).join('');
+      }
+
+      const available = blogAllPosts.filter(p => !blogHighlights.includes(p.slug));
+      allEl.innerHTML = available.length === 0
+        ? `<div class="empty-state">Every published post is already pinned.</div>`
+        : available.map(p => blogRow(`
+            <span style="flex:1;min-width:0;">${p.title}</span>
+            <span style="font-size:0.75rem;color:var(--text-muted);">${fmtDate(p.date)}${p.hideFromHome ? ' &middot; <em>hidden from home</em>' : ''}</span>
+            <button class="btn btn-primary btn-sm" onclick="addBlogHighlight('${p.slug.replace(/'/g, "\\'")}')">+ Add</button>
+          `)).join('');
+    }
+
+    function moveBlogHighlight(i, dir) {
+      const j = i + dir;
+      if (j < 0 || j >= blogHighlights.length) return;
+      const tmp = blogHighlights[i];
+      blogHighlights[i] = blogHighlights[j];
+      blogHighlights[j] = tmp;
+      renderBlogHighlights();
+    }
+
+    function removeBlogHighlight(i) {
+      blogHighlights.splice(i, 1);
+      renderBlogHighlights();
+    }
+
+    function addBlogHighlight(slug) {
+      if (!blogHighlights.includes(slug)) blogHighlights.push(slug);
+      renderBlogHighlights();
+    }
+
+    async function saveBlogHighlights() {
+      const btn = document.getElementById('blogSaveBtn');
+      btn.disabled = true;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/blog-highlights`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slugs: blogHighlights }),
+        });
+        if (!res.ok) {
+          const d = await res.json().catch(() => ({}));
+          throw new Error(d.error || 'Save failed');
+        }
+        showToast('Blog highlights saved — live within a minute', 'success');
+      } catch (e) {
+        showToast(e.message, 'error');
+      } finally {
+        btn.disabled = false;
       }
     }
 

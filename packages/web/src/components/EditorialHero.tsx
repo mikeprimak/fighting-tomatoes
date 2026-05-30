@@ -41,10 +41,10 @@ export function EditorialHero() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Manual control: pin the hero by setting `featured: true` in a post's
-  // frontmatter. Posts arrive newest-first, so this picks the newest featured
-  // one; with nothing featured we fall back to the newest post.
-  const post = data?.posts?.find((p) => p.featured) ?? data?.posts?.[0];
+  // The feed arrives already ordered: admin-pinned highlights first (in the
+  // order set in the admin panel's Blog tab), then newest-first. So the hero is
+  // simply the first post.
+  const post = data?.posts?.[0];
   if (!post) return null;
 
   return (
@@ -65,7 +65,7 @@ export function EditorialHero() {
 
         <div className="flex flex-col justify-center p-5 sm:p-6">
           <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
-            From the blog
+            The Latest
             {post.date && (
               <span className="font-normal normal-case tracking-normal text-text-secondary">
                 · {formatDate(post.date)}

@@ -136,7 +136,7 @@ export default async function BlogPostPage({
   ];
 
   return (
-    <article className="mx-auto max-w-2xl py-8">
+    <article className="mx-auto max-w-2xl pb-8">
       {jsonLd.map((schema, i) => (
         <script
           key={i}
