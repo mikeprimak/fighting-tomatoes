@@ -97,6 +97,18 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
 
   const isLive = event.eventStatus === 'LIVE';
   const isPast = event.eventStatus === 'COMPLETED';
+
+  // The "up next" fight is the UPCOMING fight with the highest orderOnCard
+  // (last to walk out), and only counts when no fight is currently LIVE and
+  // at least one fight on the card has completed. Mirrors EventCard.
+  const hasLiveFight = fights.some((f: any) => f.fightStatus === 'LIVE');
+  const hasCompletedFight = fights.some((f: any) => f.fightStatus === 'COMPLETED');
+  const upNextFight = (!hasLiveFight && hasCompletedFight)
+    ? [...fights]
+        .filter((f: any) => f.fightStatus === 'UPCOMING')
+        .sort((a: any, b: any) => (b.orderOnCard ?? 0) - (a.orderOnCard ?? 0))[0]
+    : undefined;
+
   const sections = groupFightsBySection(fights);
   const sortedSectionKeys = Object.keys(sections).sort((a, b) => {
     const ai = SECTION_ORDER.indexOf(a);
@@ -177,18 +189,16 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
           )}
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {sections[section].map((fight: any) => {
-              if (isLive) {
-                return (
-                  <LiveFightCard
-                    key={fight.id}
-                    fight={fight}
-                    isLiveNow={fight.fightStatus === 'LIVE'}
-                    isUpNext={fight.fightStatus === 'UP_NEXT'}
-                  />
-                );
-              }
               if (isPast || fight.fightStatus === 'COMPLETED') {
                 return <CompletedFightCard key={fight.id} fight={fight} />;
+              }
+              if (isLive) {
+                const isLiveNow = fight.fightStatus === 'LIVE';
+                const isUpNext = upNextFight?.id === fight.id;
+                if (isLiveNow || isUpNext) {
+                  return <LiveFightCard key={fight.id} fight={fight} isLiveNow={isLiveNow} isUpNext={isUpNext} />;
+                }
+                return <UpcomingFightCard key={fight.id} fight={fight} />;
               }
               return <UpcomingFightCard key={fight.id} fight={fight} />;
             })}
