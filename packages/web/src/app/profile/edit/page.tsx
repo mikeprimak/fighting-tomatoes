@@ -6,6 +6,7 @@ import { updateProfile, uploadProfileImage, checkDisplayNameAvailability } from 
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { Camera } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function EditProfilePage() {
   const { user, setUser, isAuthenticated, isLoading } = useAuth();
@@ -131,6 +132,22 @@ export default function EditProfilePage() {
         >
           {saving ? 'Saving...' : 'Save Changes'}
         </button>
+
+        {/* Account & legal */}
+        <div className="mt-6 space-y-3 border-t border-border pt-4">
+          <Link
+            href="/privacy"
+            className="block text-xs text-text-secondary hover:text-foreground"
+          >
+            Privacy Policy
+          </Link>
+          <Link
+            href="/delete-account"
+            className="block text-xs font-medium text-danger hover:underline"
+          >
+            Delete Account
+          </Link>
+        </div>
       </div>
     </div>
   );
