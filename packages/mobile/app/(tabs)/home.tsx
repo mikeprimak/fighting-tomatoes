@@ -637,25 +637,6 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Classics to Watch (historic highly-rated, unrated by user) --------*/}
-      {(isClassicsLoading || classics.length > 0) && (
-        <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
-          {isClassicsLoading ? (
-            <Loading colors={colors} styles={styles} />
-          ) : (
-            classics.map((fight: any, index: number) => (
-              <CompletedFightCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
-                showEvent={true}
-                index={index}
-              />
-            ))
-          )}
-        </Section>
-      )}
-
       {/* Hot Fighters -------------------------------------------------------*/}
       <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
         {isFightersLoading ? (
@@ -765,6 +746,25 @@ export default function HomeScreen() {
           <Empty styles={styles} text="No comments yet" />
         )}
       </Section>
+
+      {/* Classics to Watch (historic highly-rated, unrated by user) --------*/}
+      {(isClassicsLoading || classics.length > 0) && (
+        <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
+          {isClassicsLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            classics.map((fight: any, index: number) => (
+              <CompletedFightCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
+                showEvent={true}
+                index={index}
+              />
+            ))
+          )}
+        </Section>
+      )}
 
       {/* Classic Throwback -------------------------------------------------*/}
       {throwbackComment && (
