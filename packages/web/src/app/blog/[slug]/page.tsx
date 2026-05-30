@@ -29,6 +29,7 @@ export async function generateMetadata({
   return {
     title: post.title,
     description: post.excerpt,
+    alternates: { canonical: `/blog/${slug}` },
     openGraph: {
       title: post.title,
       description: post.excerpt,
@@ -53,8 +54,60 @@ export default async function BlogPostPage({
   const post = getPost(slug);
   if (!post) notFound();
 
+  const postUrl = `${SITE_URL}/blog/${post.slug}`;
+  const imageUrl = `${SITE_URL}${post.image || DEFAULT_POST_IMAGE}`;
+
+  const articleLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.excerpt,
+    image: [imageUrl],
+    datePublished: post.date,
+    dateModified: post.date,
+    author: { '@type': 'Organization', name: post.author || 'Good Fights', url: SITE_URL },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Good Fights',
+      logo: { '@type': 'ImageObject', url: `${SITE_URL}/good-fights-logo.png` },
+    },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+  };
+
+  const breadcrumbLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: SITE_URL },
+      { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
+      { '@type': 'ListItem', position: 3, name: post.title, item: postUrl },
+    ],
+  };
+
+  const faqLd =
+    post.faqs.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'FAQPage',
+          mainEntity: post.faqs.map((f) => ({
+            '@type': 'Question',
+            name: f.question,
+            acceptedAnswer: { '@type': 'Answer', text: f.answer },
+          })),
+        }
+      : null;
+
+  const jsonLd = [articleLd, breadcrumbLd, ...(faqLd ? [faqLd] : [])];
+
   return (
     <article className="mx-auto max-w-2xl py-8">
+      {jsonLd.map((schema, i) => (
+        <script
+          key={i}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
       <Link
         href="/blog"
         className="mb-6 inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"

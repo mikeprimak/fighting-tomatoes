@@ -27,9 +27,60 @@ export type PostMeta = {
   hideFromHome: boolean;
 };
 
+export type Faq = { question: string; answer: string };
+
 export type Post = PostMeta & {
   html: string;
+  /** Q&A pairs auto-extracted from `## ...?` headings, for FAQPage JSON-LD. */
+  faqs: Faq[];
 };
+
+/** Strip markdown formatting down to plain text (for structured-data answers). */
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, '') // images
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1') // links -> link text
+    .replace(/<[^>]+>/g, '') // raw HTML tags (e.g. anchors)
+    .replace(/[*_`#]/g, '') // emphasis / heading marks
+    .replace(/^[-*]\s+/gm, '') // list bullets
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Pull FAQ pairs out of a post: every `## ` heading that ends in `?` becomes a
+ * question, and the prose beneath it (skipping images and italic captions) is the
+ * answer. Used to emit FAQPage structured data so Google can parse the Q&A.
+ */
+function extractFaqs(markdown: string): Faq[] {
+  const lines = markdown.split('\n');
+  const faqs: Faq[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const m = lines[i].match(/^##\s+(.+)$/);
+    const qMark = m ? m[1].indexOf('?') : -1;
+    if (m && qMark !== -1) {
+      // Question = text up to and including the first '?', so headings like
+      // "...outside the US? (Canada, UK...)" yield a clean question.
+      const question = stripMarkdown(m[1].slice(0, qMark + 1));
+      const answerLines: string[] = [];
+      i++;
+      while (i < lines.length && !/^##\s+/.test(lines[i])) {
+        const line = lines[i].trim();
+        const isImage = line.startsWith('![');
+        const isCaption = /^\*[^*].*\*$/.test(line); // italic-only caption line
+        const isAnchor = line.startsWith('<a ');
+        if (line && !isImage && !isCaption && !isAnchor) answerLines.push(line);
+        i++;
+      }
+      const answer = stripMarkdown(answerLines.join(' '));
+      if (answer) faqs.push({ question, answer });
+    } else {
+      i++;
+    }
+  }
+  return faqs;
+}
 
 const includeDrafts = process.env.NODE_ENV !== 'production';
 
@@ -77,7 +128,11 @@ export function getPost(slug: string): Post | null {
   for (const filename of listFiles()) {
     const parsed = parseFile(filename);
     if (parsed && parsed.meta.slug === slug) {
-      return { ...parsed.meta, html: marked.parse(parsed.content) as string };
+      return {
+        ...parsed.meta,
+        html: marked.parse(parsed.content) as string,
+        faqs: extractFaqs(parsed.content),
+      };
     }
   }
   return null;
