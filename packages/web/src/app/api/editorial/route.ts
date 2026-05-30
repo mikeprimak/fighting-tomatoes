@@ -42,7 +42,9 @@ export async function GET() {
     const { posts } = (await res.json()) as { posts: BackendPost[] };
 
     const mapped = (posts || [])
-      .filter((p) => !p.hideFromHome)
+      // Drop posts flagged `hideFromHome` from the auto by-date fill, but an
+      // explicit admin pin always wins — if you highlighted it, show it.
+      .filter((p) => p.highlighted || !p.hideFromHome)
       .map((p) => ({
         slug: p.slug,
         title: p.title,
