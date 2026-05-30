@@ -313,6 +313,9 @@ async function importMVPEvents(
     // cancellation detection. ID-based sigs avoid collisions when fighters
     // share a last name or have multi-word last names.
     const scrapedFightSignatures = new Set<string>();
+    // Fighter IDs present anywhere in this scrape — used to detect rebookings
+    // (a fighter on a DIFFERENT matchup means the old bout is dead).
+    const scrapedFighterIds = new Set<string>();
 
     for (const fightData of fights) {
       // Find or create fighters
@@ -378,6 +381,8 @@ async function importMVPEvents(
 
       // Record this scraped fight for cancellation detection (ID-based sig).
       scrapedFightSignatures.add([fighter1Id, fighter2Id].sort().join('|'));
+      scrapedFighterIds.add(fighter1Id);
+      scrapedFighterIds.add(fighter2Id);
 
       const weightClass = parseBoxingWeightClass(fightData.weightClass);
       const titleName = fightData.isTitle ? `${fightData.weightClass} Championship` : undefined;
@@ -468,7 +473,12 @@ async function importMVPEvents(
         unCancelledCount++;
       } else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData && canCancelMissing) {
         // Two-strike rule: must be missing on consecutive scrapes before cancel.
-        const { newCount, shouldCancel } = decideStrike(dbFight.missingScrapeCount);
+        // A fighter present in this scrape but on a DIFFERENT matchup is definitive
+        // proof the old bout is dead (a fighter can't be on two bouts of one card),
+        // not a transient render glitch — bypass the two-strike wait and cancel now.
+        const rebooked = scrapedFighterIds.has(dbFight.fighter1Id) || scrapedFighterIds.has(dbFight.fighter2Id);
+        const { newCount, shouldCancel: strikeReached } = decideStrike(dbFight.missingScrapeCount);
+        const shouldCancel = strikeReached || rebooked;
         const matchupLabel = `${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`;
         if (shouldCancel) {
           console.log(`    ❌ Cancelling fight (strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${matchupLabel}`);
