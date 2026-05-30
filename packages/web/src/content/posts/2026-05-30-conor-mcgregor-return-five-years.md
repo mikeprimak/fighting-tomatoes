@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Conor McGregor last fought in July 2021, the night his leg snapped against Dustin Poirier. A broken leg, a comeback that fell apart, a broken toe, and five years of everything except fighting. Here is the full timeline of why the biggest star in UFC history has been gone so long, and what he is walking back into at UFC 329."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "feature"]
-image: "/blog/mcgregor-holloway-banner.png"
+image: "/blog/conor-mcgregor-hero.png"
 draft: false
 ---
 
