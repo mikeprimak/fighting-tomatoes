@@ -7,7 +7,7 @@ excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "preview"]
 image: "/blog/mcgregor-holloway-banner.png"
 draft: false
-featured: true
+featured: false
 event:
   name: "UFC 329: McGregor vs Holloway 2"
   startDate: "2026-07-11T21:00:00-04:00"
@@ -177,7 +177,7 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 
 ## Related reading
 
-- [Max Holloway: how the kid Conor McGregor beat became a legend](/blog/max-holloway-career-explained) — the full arc from 2013 prospect to one of the greatest featherweights ever.
-- [Conor McGregor's long road back: why he hasn't fought since 2021](/blog/conor-mcgregor-return-five-years) — the broken leg, the cancelled comeback, and five years away.
+- [Max Holloway: how the kid Conor McGregor beat became a legend](/blog/max-holloway-career-explained) - the full arc from 2013 prospect to one of the greatest featherweights ever.
+- [Conor McGregor's long road back: why he hasn't fought since 2021](/blog/conor-mcgregor-return-five-years) - the broken leg, the cancelled comeback, and five years away.
 
 *This is the kind of fight you will want to remember exactly how you felt about. Rate McGregor vs Holloway 2, log your prediction, and track every fight on the card on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
