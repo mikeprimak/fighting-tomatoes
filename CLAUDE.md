@@ -14,6 +14,9 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
+Also fresh (2026-05-30):
+- **BKFC duplicate-fight root cause: `docs/HANDOFF-bkfc-duplicate-fight-root-cause-2026-05-30.md`** — BKFC 90 had a duplicate "Phillips vs Barrett" fight; investigation done, **fix not started**. Narrowed to a check-then-act race past the order-sensitive Fight unique constraint (live tracker exonerated). Next step: read-only scan for existing swap-order dupes, then an order-insensitive unique index + P2002-safe `upsertFightSwapAware`.
+
 Earlier handoffs still active:
 - Follow-fighter notifications: `docs/HANDOFF-follow-fighter-notifications-test-2026-05-20.md` — booked / 3-day / morning-of / walkout lanes shipped 2026-05-20 but not exercised end-to-end.
 - AI enrichment: `docs/HANDOFF-ai-enrichment-mvp-2026-05-17.md` (cron is live; BKFC editorial gap fix shipped 2026-05-20 — re-audit coverage after a couple cron cycles).

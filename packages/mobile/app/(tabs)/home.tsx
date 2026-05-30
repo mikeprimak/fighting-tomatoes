@@ -240,8 +240,8 @@ const FEATURE_SPOTLIGHTS: {
   route?: string;
 }[] = [
   {
-    icon: 'bolt',
-    iconLib: 'fa',
+    icon: 'fire-flame-curved',
+    iconLib: 'fa6',
     title: 'See the Hype Building',
     body: "Check how hyped upcoming fights are, so you know which cards are worth clearing your weekend for.",
     route: '/(tabs)/events',
@@ -312,17 +312,6 @@ function FeatureSpotlight({
       <Text style={styles.spotlightTitle}>{feature.title}</Text>
       <Text style={styles.spotlightBody}>{feature.body}</Text>
       {feature.route ? <Text style={styles.spotlightHint}>Tap to explore</Text> : null}
-      <View style={styles.spotlightDots}>
-        {FEATURE_SPOTLIGHTS.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.spotlightDot,
-              { backgroundColor: i === idx ? colors.tint : colors.border },
-            ]}
-          />
-        ))}
-      </View>
     </TouchableOpacity>
   );
 }
@@ -1019,16 +1008,6 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 12,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
-    },
-    spotlightDots: {
-      flexDirection: 'row',
-      gap: 6,
-      marginTop: 16,
-    },
-    spotlightDot: {
-      width: 6,
-      height: 6,
-      borderRadius: 3,
     },
   });
 }
