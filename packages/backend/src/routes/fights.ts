@@ -158,10 +158,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Build orderBy
       // When filtering by eventId, default to orderOnCard ascending (main event first)
-      const orderBy: any = {};
+      let orderBy: any = {};
       if (query.eventId) {
-        // For event-specific queries, sort by card order (1 = main event at top)
-        orderBy.orderOnCard = 'asc';
+        // For event-specific queries, sort by card order (1 = main event at top).
+        // Tiebreak on id so a duplicate/legacy orderOnCard tie produces a STABLE,
+        // deterministic order — otherwise web (stable sort) and mobile (non-stable
+        // re-sort) can render the same tied card in different orders.
+        orderBy = [{ orderOnCard: 'asc' }, { id: 'asc' }];
       } else if (query.sortBy === 'event.date') {
         orderBy.event = { date: query.sortOrder };
       } else {
