@@ -1600,9 +1600,15 @@ export default function CompletedFightDetailScreen({
 
         {/* Event Info */}
         <View style={{ alignItems: 'center', marginBottom: 16, paddingHorizontal: 16 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
-            {fight.event.name}
-          </Text>
+          <TouchableOpacity
+            onPress={() => fight.event?.id && router.push(`/event/${fight.event.id}` as any)}
+            disabled={!fight.event?.id}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
+              {fight.event.name}
+            </Text>
+          </TouchableOpacity>
           <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
             {formatEventDate(fight.event.date, { weekday: 'long', month: 'long', year: true })}
           </Text>
