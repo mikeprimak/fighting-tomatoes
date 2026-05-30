@@ -133,7 +133,13 @@ export default function FighterDetailScreen() {
 
   const fighter = fighterData?.fighter;
 
-  if (isLoading) {
+  // Hold the whole screen until BOTH the fighter and their fights are loaded.
+  // Mounting the ScrollView before fights arrive means the fight cards get
+  // appended to an already-laid-out ScrollView, and RN doesn't paint those
+  // late children until a scroll forces a re-layout (the "fights only show
+  // after I scroll" bug). The event detail screen gates on both for the same
+  // reason — keep them consistent.
+  if (isLoading || fightsLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
         <DetailScreenHeader title="Fighter" />
