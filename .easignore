@@ -1,0 +1,35 @@
+# EAS Build upload ignore. Trims the project archive so uploads don't time out
+# (the full tree was 776 MB and ECONNRESET'd mid-upload). NOTE: this file may be
+# used INSTEAD OF .gitignore by EAS, so dependency/build excludes are repeated
+# here. We intentionally do NOT ignore *.png — app icons/splash must ship.
+
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Expo
+.expo/
+.expo-shared/
+
+# Logs / env
+*.log
+npm-debug.log*
+.env*
+
+# OS
+.DS_Store
+
+# Not needed for the mobile build — the big trim (.git was ~360 MB)
+.git/
+docs/
+archive/
+
+# Stray build artifacts / large binaries
+*.aab
+*.apk
+*.ipa
+*.sql
