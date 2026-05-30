@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "preview"]
-image: "/blog/mcgregor-holloway-hero.jpg"
+image: "/blog/mcgregor-holloway-banner.png"
 draft: false
 ---
 
