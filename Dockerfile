@@ -61,6 +61,12 @@ RUN pnpm install --frozen-lockfile
 COPY packages/backend ./packages/backend
 COPY packages/shared ./packages/shared
 
+# Editorial blog posts are authored in packages/web and synced into the backend
+# by scripts/syncBlogPosts.js during `pnpm run build`. The web package isn't
+# otherwise part of this image, so copy just the markdown source it needs —
+# without this, sync finds no source and GET /api/editorial serves an empty list.
+COPY packages/web/src/content/posts ./packages/web/src/content/posts
+
 # Generate Prisma client
 WORKDIR /app/packages/backend
 RUN pnpm run db:generate

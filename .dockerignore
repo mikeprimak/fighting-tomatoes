@@ -42,6 +42,9 @@ __tests__
 # Documentation
 *.md
 !README.md
+# Editorial blog posts (markdown) must reach the build context so
+# syncBlogPosts.js can copy them into the backend for GET /api/editorial.
+!packages/web/src/content/posts/*.md
 docs
 
 # Mobile packages (not needed for backend)
