@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "In 2013, a 21-year-old Max Holloway lost a decision to a brash newcomer named Conor McGregor. Over the next decade he became one of the greatest featherweights in history, threw more strikes than anyone who has ever done it, and produced one of the most iconic knockouts the sport has ever seen. Here is the full story, and why the UFC 329 rematch is so strange."
 tags: ["max-holloway", "conor-mcgregor", "ufc-329", "ufc", "feature"]
-image: "/blog/mcgregor-holloway-banner.png"
+image: "/blog/max-holloway-hero.png"
 draft: false
 ---
 
