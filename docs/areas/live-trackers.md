@@ -18,7 +18,9 @@ Live signal is the most valuable engagement window we have:
 
 A reliable tracker isn't a feature — it's the substrate every other rewarding-users / follow-fighter / notification investment compounds on top of.
 
-## Coverage matrix (Feb 2026 snapshot)
+## Coverage matrix (May 2026)
+
+The Sherdog tracker (shipped 2026-05-16) is now the **standard live tracker for any org whose native source is unreliable**. Set `Event.sherdogPbpUrl` per-event when Sherdog covers the card, and lifecycle dispatch + VPS auto-discover handle everything else (30s cadence).
 
 | Org | scraperType | Live source | Status |
 |---|---|---|---|
@@ -33,12 +35,69 @@ A reliable tracker isn't a feature — it's the substrate every other rewarding-
 | Karate Combat | `tapology` | Tapology (generic) | ✓ Reliable enough |
 | Dirty Boxing | `tapology` | Tapology (generic) | ✓ Reliable enough |
 | RIZIN | `tapology` | Tapology (generic) | ✓ Reliable enough |
-| **MVP** | `tapology` | None (Tapology unreliable for MVP) | ✗ **Investigation underway** |
-| **Top Rank** | `tapology` | None | ✗ Falls back to no-tracker bulk-flip |
-| **Golden Boy** | `tapology` | None | ✗ Falls back to no-tracker bulk-flip |
-| **Gold Star** | `tapology` | None | ✗ Falls back to no-tracker bulk-flip |
+| **MVP** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ✓ Shipped 2026-05-16 |
+| **Top Rank** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ⏳ Set URL per event |
+| **Golden Boy** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ⏳ Set URL per event |
+| **Gold Star** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ⏳ Set URL per event |
 
-The ✗ rows currently get the "no-tracker bulk-flip" path in `eventLifecycle.ts` Step 2 — all fights flip to COMPLETED the moment the event goes LIVE so users can rate, but the per-fight start/end timing signal is fabricated. This is the gap this workstream exists to close.
+**Onboarding a new org to Sherdog tracking**: the moment Sherdog publishes a PBP page for a card, set `event.sherdogPbpUrl = '<url>'` (admin panel or SQL). On lifecycle UPCOMING→LIVE, the VPS picks it up. No code change, no migration, no per-org parser.
+
+Sherdog tracking is **layered on top** of the native `scraperType` — the daily data scraper still pulls from Tapology (or whatever native source the org uses); Sherdog only handles the live-fight signal. Two orthogonal concerns, two fields. This means we can mix-and-match: use a native live tracker when one exists (UFC, ONE, etc.), fall through to Sherdog when one doesn't.
+
+### Operational checklist before any MVP / Top Rank / Golden Boy / Gold Star card
+
+1. Day-of (or evening prior): find the Sherdog PBP URL — typically published at `sherdog.com/news/news/<Event-Name>-playbyplay-results-round-scoring-<id>`. Easiest: search Sherdog's homepage news feed for the event name.
+2. Set the URL on the event: admin panel field, OR SQL: `UPDATE events SET "sherdogPbpUrl" = '<url>' WHERE id = '<event-id>';`
+3. That's it. When the event flips to LIVE, the VPS Sherdog tracker auto-starts on 30s cadence.
+
+### Future automation: daily Sherdog probe
+
+Step 1 is the only manual step. It will be automated by a daily probe job that:
+- Queries Sherdog news (`sherdog.com/news`) for any article matching upcoming-event names in our DB
+- For each match, stores the URL on `event.sherdogPbpUrl`
+- Runs daily, idempotent, only writes if the field is currently null
+
+Probe is unbuilt; estimated ~30 min of work, additive, low risk. Tracked in "Open problems" below.
+
+## Architecture decision: Sherdog as the default tracker source (2026-05-16)
+
+**Context.** Before this decision we treated every promotion as its own per-org live-tracker engineering problem. UFC needed a JA3 bypass; ONE FC had its own JSON; PFL/BKFC/Oktagon/RAF each had a hand-written scraper + parser + GH Actions workflow. Orgs without a native source (MVP, Top Rank, Golden Boy, Gold Star) fell through to the "no-tracker bulk-flip" path — fights flipped to COMPLETED the moment the event went LIVE, with no real per-fight signal.
+
+**Discovery.** During MVP Rousey vs Carano, scouting found that Sherdog's round-by-round play-by-play page already aggregates the same data we were building per-org parsers for, across nearly every major promotion. Structured HTML, a "Live NOW!" marker that flips to the currently-active fight, an Official Result block per fight in a canonical format. Cross-source check (Bleacher Report, MMA News) confirmed Sherdog matched reality on the same 4 completed fights.
+
+**Decision.** Sherdog is now the **default live-tracker source for any org without a reliable native one**. Implementation: a single generic Sherdog scraper + parser + VPS handler, activated per-event by setting `Event.sherdogPbpUrl`. Shipped 2026-05-16 in `services/sherdogLiveScraper.ts`, `services/sherdogLiveParser.ts`, `scraperService.ts scrapeSherdogOnce()`, and `eventLifecycle.ts` dispatch. Runs on the same 30-second VPS cadence as UFC/ONE/etc.
+
+**Layered, not replacement.** Sherdog tracking is orthogonal to `scraperType`. MVP keeps `scraperType='tapology'` for daily data scraping; Sherdog only handles the live signal. Two fields, two concerns. This means every promotion can mix-and-match: native scraper for daily, native live tracker if one exists, Sherdog if not.
+
+**Consequences.**
+- *Onboarding a new org is now zero-code.* Set `sherdogPbpUrl` on the event, lifecycle handles the rest. The previous per-org boilerplate (scraper module + parser module + GH Actions workflow + lifecycle branch + VPS handler) collapses to one row.
+- *Fault tolerance improves.* If Sherdog goes down or doesn't cover a card, falling back to `useManualLiveTracker` is a one-field flip rather than an engineering project.
+- *Single point of failure introduced.* If Sherdog is down for an extended window during a card, every Sherdog-tracked event is affected at once. Mitigation: Bleacher Report identified as a secondary verifier in the source ladder; promote to an active cross-check if Sherdog reliability degrades.
+- *The buyer story improves.* "We support every major promotion" stops being a per-org engineering narrative and becomes a one-line architectural claim.
+
+**Inverts the previous default.** Before this decision the implicit rule was "build a per-org tracker; Sherdog is a fallback for the gaps." The new rule is the opposite: **Sherdog is the default; per-org native trackers are an optimization** for cases where latency or data quality warrants the per-org investment (e.g. UFC pay-per-views, where sub-30s KO detection matters more than the marginal cost of maintaining a UFC-specific parser).
+
+**Future-state redesign (deferred, ~2-3 day refactor when it's worth it).**
+
+The current implementation layers Sherdog on top of the existing `scraperType` plumbing — pragmatic, but the long-term clean version separates two concerns that are currently conflated:
+
+1. **`dailyScraperType`** — which scraper pulls the static card/fight data (Tapology, UFC, ONE, etc.). About daily data ingestion.
+2. **`liveTrackerSource`** — which source feeds the live-fight signal. Values: `native` (per-org parser), `sherdog`, `manual`, `none`.
+
+With that split:
+- Every live tracker implements the same `scrape(url) → {fights, isLive, isComplete}` interface
+- A registry maps `liveTrackerSource` → module; adding a new source = one new module + one row
+- Source ranking lives in code: when probing for a new event's source, walk a defined ladder (native parser → Sherdog → manual). First hit wins, cached on the event row.
+- Auto-completion logic consolidates to one path, not one per parser
+- Observability becomes first-class — every tracker emits start-latency, end-latency, mismatch rate
+
+**What stays unchanged in any redesign.**
+- Shadow fields + audit trail on `Fight` (earned its keep on the Tapology overwrite bug)
+- VPS-at-30s architecture (massive win over 5-min GH Actions polling)
+- "Never reverse COMPLETED" invariant
+- Render → VPS dispatch contract (`/track/start`, `/track/check`)
+
+**Migration cost vs. value.** ~2-3 days of refactor. Not urgent — the layered approach works and ships features. Worth doing when we either hit ~3 more org additions and per-org boilerplate gets painful, or right before a sale pitch where "we support every org cleanly" becomes a marketing artifact.
 
 ## Source ranking ladder
 
@@ -189,12 +248,13 @@ Bleacher Report runs as a parallel cross-check on fight-end — if Sherdog's Off
 
 ## Open problems / roadmap
 
-- **MVP, Top Rank, Golden Boy, Gold Star** — all four are scraperType=tapology with unreliable Tapology coverage. If Sherdog play-by-play covers more than just MVP, one shared "sherdog-pbp" tracker could solve all four. Worth checking on the next Top Rank or Golden Boy card.
-- **Detection of "no live blog exists yet for this card"** — Sherdog only writes play-by-play for cards their staff covers. Need a probe step in the tracker that says "no PBP page → fall back to no-tracker."
-- **Boxing-only orgs** (Top Rank, Golden Boy, Gold Star, future) — BoxRec might be a structured source for these. Check on next big boxing card.
-- **Per-source rate limiting** — Sherdog is a single-page poll, fine at 1-min intervals. Twitter would need careful budget. Document the polling interval per tracker in code.
+- **Daily Sherdog probe (next build, ~30 min)** — automate setting `event.sherdogPbpUrl` so the operational checklist above becomes zero manual steps. Pattern: cron-driven script that GETs `https://www.sherdog.com/news` (or sitemap), pulls article titles, fuzzy-matches against upcoming-event names in our DB, writes any hit onto the event. Idempotent; never overwrites a non-null value. Sherdog publishes PBP article headers ~day-of, so a daily run at noon-ish ET catches all night-of cards. The probe is essentially the same shape as the existing daily broadcast-discovery job in `services/broadcastDiscovery/`.
+- **Detection of "no live blog exists yet for this card"** — Sherdog only writes PBP for cards their staff covers. The tracker already handles 404s gracefully (`scrape()` returns null → cycle is a no-op), but we should track + alert when a Sherdog-tracked event consistently returns null past start time — likely means we set the wrong URL.
+- **Boxing-only orgs** — BoxRec might be a structured source if Sherdog doesn't cover a particular boxing card. Reserve as a future fallback in the source ladder.
+- **Per-source rate limiting** — Sherdog at 30s = ~120 req/hr per active event. Multiple concurrent events could pile up. So far no signal of issues; revisit if we ever run >5 concurrent Sherdog-tracked cards.
 - **Quantify acceptable lag for non-priority fields** — winner/method/round/time. Probably 30 min is fine since the user's already opened the rating modal by then. Cement this somewhere so future trackers know the bar.
 - **Manual tracker UX polish** — when no automated source exists, the admin needs a fast "advance to next fight" button. `useManualLiveTracker` exists schema-side; usability could be better.
+- **Cross-promotion fighter linking via Sherdog IDs** — the scraper captures `sherdogId` per fighter from the PBP page but we don't use it yet. Storing it on `Fighter` would let us cross-link our DB to Sherdog for future enrichment (records, history, recency).
 
 ## Related memories
 

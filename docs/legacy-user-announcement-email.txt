@@ -1,0 +1,41 @@
+Subject: FightingTomatoes.com is now "Good Fights" App. Claim Your Account.
+
+---
+
+Hi {{{contact.first_name|fight fan}}},
+
+The website FightingTomatoes.com is no more. It's now a mobile app called "Good Fights".
+
+Your FightingTomatoes account is now a Good Fights account. And your ratings and reviews are all still there.
+
+Get the app: https://goodfights.app/download
+
+Two ways to get back in:
+
+1. Sign in with Google — Open the app and tap Sign in with Google. It links your old account automatically.
+
+Or 2. Claim with a password — Open the app, type your email on the login screen, and tap Login (no password needed yet). It'll walk you through setting a new one.
+
+A few things the new app can do:
+
+• One Scrollable Schedule: every org in one list — UFC, ONE, PFL, BKFC, boxing, Karate Combat, RIZIN.
+
+• Hype Scores: see which upcoming fights the community is fired for.
+
+• Walkout Notifications: your phone dings when the fight you wanna watch is up next.
+
+• Fight Ratings: see which past fights were actually good.
+
+• Comments: on every fight, and they stay up forever.
+
+If something breaks or the sign-in doesn't work, reply to this — it's a real inbox.
+
+And seriously — thanks for being on the old site. You're the reason I bothered rebuilding it.
+
+— Mike
+contact@goodfights.app
+
+---
+
+Good Fights · 1077 10th St. W., Owen Sound, ON N4K 5S2, Canada
+Unsubscribe: {{{RESEND_UNSUBSCRIBE_URL}}}
