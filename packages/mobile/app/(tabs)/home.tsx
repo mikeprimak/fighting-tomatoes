@@ -275,8 +275,6 @@ const FEATURE_SPOTLIGHTS: {
     iconLib: 'fa',
     title: 'Join the Conversation',
     body: 'See what other fans are saying and add your own takes before and after every fight.',
-    route: '/(tabs)/community',
-    hint: 'Tap to join the conversation',
   },
 ];
 
