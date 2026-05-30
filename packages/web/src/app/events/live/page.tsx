@@ -33,6 +33,14 @@ export default function LiveEventsPage() {
     ),
   ) as string[];
 
+  // Join org names as proper English: "A", "A and B", "A, B, and C".
+  const formatOrgList = (orgs: string[]) =>
+    orgs.length <= 1
+      ? orgs.join('')
+      : orgs.length === 2
+        ? `${orgs[0]} and ${orgs[1]}`
+        : `${orgs.slice(0, -1).join(', ')}, and ${orgs[orgs.length - 1]}`;
+
   return (
     <>
       <EditorialHero />
@@ -76,7 +84,7 @@ export default function LiveEventsPage() {
               >
                 {hiddenLiveOrgs.length === 1
                   ? `But there is a ${hiddenLiveOrgs[0]} event live. Show?`
-                  : `But there are live events from ${hiddenLiveOrgs.join(', ')}. Show?`}
+                  : `But there are live events from ${formatOrgList(hiddenLiveOrgs)}. Show?`}
               </button>
             ) : (
               <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
