@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   },
   description: "Rate and review MMA, boxing, and combat sports fights. See community ratings, hype scores, and discover the best fights.",
   metadataBase: new URL("https://goodfights.app"),
+  verification: {
+    google: "nLyzkvfUZ_LK4-5jKBcwGkF4CZFB_HbwnpXHDA1B5pU",
+  },
   openGraph: {
     type: "website",
     siteName: "Good Fights",
