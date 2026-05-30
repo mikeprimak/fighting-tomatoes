@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Alex Pereira already did the impossible once, winning UFC titles at both middleweight and light heavyweight after starting MMA late in life. Now, at UFC Freedom 250, Poatan tries something no fighter in UFC history has ever done: win a championship in a third weight class. Here is the story of his rise from kickboxing, his rivalry with Israel Adesanya, and the history fight against Ciryl Gane."
 tags: ["alex-pereira", "ufc-freedom-250", "ciryl-gane", "ufc", "feature"]
-image: "/blog/ufc-freedom-250-banner.jpg"
+image: "/blog/alex-pereira.png"
 draft: false
 hideFromHome: true
 ---
