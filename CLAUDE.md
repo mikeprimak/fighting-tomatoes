@@ -12,9 +12,10 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ `docs/HANDOFF-follow-fighter-notifications-test-2026-05-20.md`** — read first. The follow-fighter notification lanes (Booked / 3-day-warn / Morning-of / Walkout-gating) shipped 2026-05-20 but have NOT been exercised end-to-end. Next session is testing: settings persistence smoke test, timezone capture verification, walkout gating (easiest), then booked + cron lanes with the setup steps in the handoff. Test account: `avocadomike@hotmail.com`.
+**→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
 Earlier handoffs still active:
+- Follow-fighter notifications: `docs/HANDOFF-follow-fighter-notifications-test-2026-05-20.md` — booked / 3-day / morning-of / walkout lanes shipped 2026-05-20 but not exercised end-to-end.
 - AI enrichment: `docs/HANDOFF-ai-enrichment-mvp-2026-05-17.md` (cron is live; BKFC editorial gap fix shipped 2026-05-20 — re-audit coverage after a couple cron cycles).
 - Tag-aware Fan DNA: `docs/HANDOFF-tag-aware-personality-2026-05-17.md`.
 
@@ -86,17 +87,18 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **API endpoints**: `docs/API.md`
 - **Doc system overview**: `docs/README.md`
 
-## Current Store Versions (as of Feb 27, 2026)
+## Current Store Versions (as of May 30, 2026)
 
 | Platform | Version | Build # | Status |
 |---|---|---|---|
-| Android (Play Store) | 2.0.2 | versionCode 34 | Built, needs manual upload |
-| iOS (App Store) | 2.0.1 | buildNumber 18 + OTA | Live |
+| Android (Play Store) | 2.0.x | versionCode 36 | Live (uploaded 2026-04-19) |
+| iOS (App Store) | 2.1.0 | buildNumber 19 | Submitted 2026-05-30 (processing → new ASC version) |
 
-- `app.json`: version `2.0.2`, iOS buildNumber `19`, Android versionCode `34`
-- iOS OTA update ID: `562f0e34-83ef-4bdd-869e-39d6684ddfd1` (runtime 2.0.1)
-- Android `eas submit` fails due to Google service account permissions — upload `.aab` manually
-- iOS App Store Connect won't let you swap builds on an existing version — create a new version instead
+- **Android prod is on versionCode 36, NOT 34.** The Feb-27 "34" note was stale and caused a failed 2.1.0 upload (built vc 35 < live vc 36 → "no existing users can upgrade"). The 2.1.0 Android rebuild is **versionCode 37**. Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
+- `build.gradle`: Android versionCode `37`, versionName `2.1.0`. `app.json`: version `2.1.0`, iOS buildNumber `19`.
+- Android `eas submit` fails due to Google service account permissions — download `.aab` and upload manually in Play Console.
+- iOS App Store Connect won't let you swap builds on an existing version — create a new version instead.
+- iOS OTA update ID (legacy 2.0.1): `562f0e34-83ef-4bdd-869e-39d6684ddfd1`.
 
 ## Test Accounts
 
