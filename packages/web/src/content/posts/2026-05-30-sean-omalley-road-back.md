@@ -14,7 +14,7 @@ When Sean O'Malley faces Aiemann Zahabi at [UFC Freedom 250 on June 14](/blog/uf
 
 ## Who is Sean O'Malley?
 
-Sean "Suga" O'Malley is a former UFC bantamweight champion and one of the most recognizable fighters in the sport, known for his bright hair, flashy striking, and enormous social-media following. He built a huge fan base on the way up with a steady run of highlight-reel knockouts, and he became one of the few fighters whose name alone moves the needle for a card.
+"Suga" Sean O'Malley is a former UFC bantamweight champion and one of the most recognizable fighters in the sport, known for his bright hair, flashy striking, and enormous social-media following. He built a huge fan base on the way up with a steady run of highlight-reel knockouts, carrying one-punch knockout power that can end a fight the instant it lands, and he became one of the few fighters whose name alone moves the needle for a card.
 
 ## How did O'Malley become bantamweight champion?
 
@@ -34,7 +34,7 @@ He has already restarted the climb. O'Malley snapped the two-fight skid by beati
 
 ## Who is Aiemann Zahabi?
 
-Zahabi is a much tougher assignment than his profile suggests. The younger brother of legendary coach Firas Zahabi, he is a sharp, patient, technically excellent striker who has quietly put together a long winning streak against good competition. He is not a flashy name, but he is exactly the kind of disciplined, low-risk opponent who can frustrate a fighter trying to make a statement. For O'Malley, this is a banana peel as much as a showcase.
+Zahabi is a much tougher assignment than his profile suggests. The younger brother of legendary Tristar coach Firas Zahabi, who guided Georges St-Pierre through his Hall of Fame career, he is a sharp, patient, technically excellent striker who has quietly put together a long winning streak against good competition. He is not a flashy name, but he is exactly the kind of disciplined, low-risk opponent who can frustrate a fighter trying to make a statement. For O'Malley, this is a banana peel as much as a showcase.
 
 ## Can O'Malley get back to a title shot?
 
