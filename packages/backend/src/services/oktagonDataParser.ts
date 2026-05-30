@@ -702,12 +702,19 @@ async function importOktagonEvents(
         // Check if this exact matchup still exists in scraped data
         if (!scrapedFightPairs.has(dbFightPairKey)) {
           // Two-strike rule: must be missing on consecutive scrapes before cancel.
-          const { newCount, shouldCancel } = decideStrike(dbFight.missingScrapeCount);
           const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
           const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
-          const reason = (fighter1Rebooked || fighter2Rebooked)
-            ? 'fighter rebooked'
-            : 'not in scraped data';
+          const rebooked = fighter1Rebooked || fighter2Rebooked;
+          // A fighter present in this scrape but in a DIFFERENT matchup is
+          // definitive proof the old bout is dead - a fighter can't appear on
+          // two bouts of the same card. That's not a transient render glitch,
+          // so bypass the two-strike wait and cancel immediately. Without this,
+          // a source that flaps between the old and new matchup keeps resetting
+          // the strike counter and the stale bout never reaches two consecutive
+          // misses, leaving both the old and new fight UPCOMING.
+          const { newCount, shouldCancel: strikeReached } = decideStrike(dbFight.missingScrapeCount);
+          const shouldCancel = strikeReached || rebooked;
+          const reason = rebooked ? 'fighter rebooked' : 'not in scraped data';
           const matchupLabel = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
 
           if (shouldCancel) {
