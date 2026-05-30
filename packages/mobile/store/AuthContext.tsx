@@ -106,6 +106,17 @@ const getApiBaseUrl = () => {
 
 const API_BASE_URL = getApiBaseUrl();
 
+const sleep = (ms: number): Promise<void> =>
+  ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+
+// Outcome of a token-refresh attempt (mirrors services/api.ts):
+//  - 'success':   new tokens stored, caller may proceed
+//  - 'invalid':   the refresh token was genuinely rejected (real logout)
+//  - 'transient': server unreachable / 5xx (e.g. backend mid-redeploy) — do NOT
+//                 log out, the session is still valid, the server is just briefly
+//                 unreachable
+type RefreshOutcome = 'success' | 'invalid' | 'transient';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
@@ -119,6 +130,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const appState = useRef(AppState.currentState);
 
   const isAuthenticated = !!user && !!accessToken;
+
+  // Hardened token refresh shared by initializeAuth, the foreground refresh, and
+  // refreshUserData. A 5xx / network failure during a backend redeploy is
+  // TRANSIENT and must NOT log the user out — only a genuine 4xx rejection from
+  // the refresh endpoint clears the session. Retries transient failures a few
+  // times before giving up. On success the new tokens are persisted and synced
+  // into state. Mirrors services/api.ts so every refresh path behaves the same.
+  const tryRefreshTokens = async (): Promise<RefreshOutcome> => {
+    const storedRefreshToken = await secureStorage.getItem('refreshToken');
+    if (!storedRefreshToken) return 'invalid';
+
+    const MAX_ATTEMPTS = 3;
+    const BACKOFF_MS = [300, 800];
+
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: storedRefreshToken }),
+        });
+
+        // 5xx (incl. 502/503 from the proxy while the container restarts) is
+        // transient — retry, never log out.
+        if (res.status >= 500) {
+          console.log(`[Auth] Refresh got ${res.status} (server unavailable), will retry`);
+          await sleep(BACKOFF_MS[attempt] ?? 0);
+          continue;
+        }
+
+        const data = await res.json().catch(() => ({}));
+
+        // 4xx = the refresh token was genuinely rejected → real logout.
+        if (!res.ok) {
+          console.log('[Auth] Refresh rejected:', data.error || data.code);
+          return 'invalid';
+        }
+
+        const newAccessToken = data.tokens?.accessToken || data.accessToken;
+        const newRefreshToken = data.tokens?.refreshToken || data.refreshToken;
+        if (newAccessToken && newRefreshToken) {
+          await secureStorage.setItem('accessToken', newAccessToken);
+          await secureStorage.setItem('refreshToken', newRefreshToken);
+          setAccessToken(newAccessToken);
+          return 'success';
+        }
+
+        // 2xx but malformed body — server hiccup, not a logout.
+        await sleep(BACKOFF_MS[attempt] ?? 0);
+      } catch (error) {
+        // fetch threw → network error / timeout. Transient: retry, don't log out.
+        console.log('[Auth] Refresh network error, will retry:', error);
+        await sleep(BACKOFF_MS[attempt] ?? 0);
+      }
+    }
+
+    console.log('[Auth] Refresh exhausted retries — treating as transient (no logout)');
+    return 'transient';
+  };
 
   // Internal refresh function for use in effects
   const refreshUserDataInternal = async (orgs?: string[]) => {
@@ -147,48 +217,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle 401 - access token expired, try refresh before logging out
       if (response.status === 401) {
         console.log('[Auth] Got 401 on profile fetch, attempting token refresh...');
-        const refreshTokenStored = await secureStorage.getItem('refreshToken');
+        const outcome = await tryRefreshTokens();
 
-        if (refreshTokenStored) {
-          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: refreshTokenStored }),
+        if (outcome === 'success') {
+          // Retry the profile fetch with the freshly stored token.
+          const newAccessToken = await secureStorage.getItem('accessToken');
+          const retryResponse = await fetch(url, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${newAccessToken}` },
           });
-
-          if (refreshResponse.ok) {
-            const refreshData = await refreshResponse.json();
-            const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
-            const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
-
-            if (newAccessToken && newRefreshToken) {
-              console.log('[Auth] Token refresh successful, retrying profile fetch');
-              await secureStorage.setItem('accessToken', newAccessToken);
-              await secureStorage.setItem('refreshToken', newRefreshToken);
-              setAccessToken(newAccessToken);
-
-              // Retry the profile fetch with new token
-              const retryResponse = await fetch(url, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${newAccessToken}` },
-              });
-
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json();
-                if (retryData.user) {
-                  setUser(retryData.user);
-                  if (!orgs || orgs.length === 0) {
-                    await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
-                  }
-                }
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            if (retryData.user) {
+              setUser(retryData.user);
+              if (!orgs || orgs.length === 0) {
+                await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
               }
-              return;
             }
           }
+          return;
         }
 
-        // Refresh failed - only now clear auth state
-        console.log('[Auth] Token refresh failed, clearing auth state');
+        if (outcome === 'transient') {
+          // Backend briefly unreachable (mid-redeploy). Keep the session — the
+          // next request will refresh once the server is back.
+          console.log('[Auth] Refresh transient on foreground; keeping session');
+          return;
+        }
+
+        // 'invalid' — refresh token genuinely rejected. Only now clear auth.
+        console.log('[Auth] Token genuinely rejected, clearing auth state');
         await secureStorage.removeItem('accessToken');
         await secureStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('userData');
@@ -264,33 +322,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (response.status === 401) {
           // Token expired, try to refresh
           console.log('[Auth] Token expired, attempting refresh...');
-          const refreshTokenStored = await secureStorage.getItem('refreshToken');
+          const outcome = await tryRefreshTokens();
 
-          if (refreshTokenStored) {
-            const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ refreshToken: refreshTokenStored }),
-            });
-
-            if (refreshResponse.ok) {
-              const refreshData = await refreshResponse.json();
-              const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
-              const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
-
-              if (newAccessToken && newRefreshToken) {
-                console.log('[Auth] Token refresh successful');
-                await secureStorage.setItem('accessToken', newAccessToken);
-                await secureStorage.setItem('refreshToken', newRefreshToken);
-                setAccessToken(newAccessToken);
-                setUser(JSON.parse(userData));
-                return;
-              }
-            }
+          if (outcome === 'success') {
+            console.log('[Auth] Token refresh successful');
+            // tryRefreshTokens already persisted + synced the new access token.
+            setUser(JSON.parse(userData));
+            return;
           }
 
-          // Refresh failed - clear everything and send to login
-          console.log('[Auth] Token refresh failed, clearing auth state');
+          if (outcome === 'transient') {
+            // Backend mid-redeploy (5xx / network). Don't log out on a heavy
+            // push day — keep the cached session; api.ts will refresh on the
+            // next real request once the server is back.
+            console.log('[Auth] Refresh transient on startup; using cached session');
+            setAccessToken(token);
+            setUser(JSON.parse(userData));
+            return;
+          }
+
+          // 'invalid' — refresh token genuinely rejected. Clear + send to login.
+          console.log('[Auth] Token genuinely rejected, clearing auth state');
           await secureStorage.removeItem('accessToken');
           await secureStorage.removeItem('refreshToken');
           await AsyncStorage.removeItem('userData');
@@ -307,11 +359,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Register push token on app startup (not just login)
           notificationService.registerPushToken();
         } else {
-          // Some other error, clear auth state to be safe
-          console.log('[Auth] Profile fetch failed with status:', response.status);
-          await secureStorage.removeItem('accessToken');
-          await secureStorage.removeItem('refreshToken');
-          await AsyncStorage.removeItem('userData');
+          // Non-401, non-ok (e.g. 502/503 while the backend redeploys). This is
+          // NOT an auth failure — keep the cached session rather than wiping it.
+          // The token is still valid; it will revalidate on the next request.
+          console.log('[Auth] Profile fetch got transient status, using cached session:', response.status);
+          setAccessToken(token);
+          setUser(JSON.parse(userData));
         }
       }
     } catch (error) {
@@ -561,38 +614,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshToken = async () => {
-    try {
-      const storedRefreshToken = await secureStorage.getItem('refreshToken');
-
-      if (!storedRefreshToken) {
-        throw new Error('No refresh token available');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken: storedRefreshToken }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Token refresh failed');
-      }
-
-      // Update stored tokens securely
-      await secureStorage.setItem('accessToken', data.accessToken);
-      await secureStorage.setItem('refreshToken', data.refreshToken);
-
-      setAccessToken(data.accessToken);
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      // If refresh fails, logout user
-      await logout();
-      throw error;
+    const outcome = await tryRefreshTokens();
+    if (outcome === 'success') {
+      // tryRefreshTokens already persisted + synced the new access token.
+      return;
     }
+    if (outcome === 'transient') {
+      // Server briefly unreachable (mid-redeploy). Do NOT log out — keep the
+      // session and let the caller decide. Throw so callers can retry.
+      throw new Error('Token refresh temporarily unavailable');
+    }
+    // 'invalid' — refresh token genuinely rejected. Real logout.
+    await logout();
+    throw new Error('Token refresh failed');
   };
 
   const refreshUserData = async (orgs?: string[]) => {
@@ -623,48 +657,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Handle 401 - access token expired, try refresh before logging out
       if (response.status === 401) {
         console.log('[Auth] Got 401 on refreshUserData, attempting token refresh...');
-        const refreshTokenStored = await secureStorage.getItem('refreshToken');
+        const outcome = await tryRefreshTokens();
 
-        if (refreshTokenStored) {
-          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ refreshToken: refreshTokenStored }),
+        if (outcome === 'success') {
+          // Retry the profile fetch with the freshly stored token.
+          const newAccessToken = await secureStorage.getItem('accessToken');
+          const retryResponse = await fetch(url, {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${newAccessToken}` },
           });
-
-          if (refreshResponse.ok) {
-            const refreshData = await refreshResponse.json();
-            const newAccessToken = refreshData.tokens?.accessToken || refreshData.accessToken;
-            const newRefreshToken = refreshData.tokens?.refreshToken || refreshData.refreshToken;
-
-            if (newAccessToken && newRefreshToken) {
-              console.log('[Auth] Token refresh successful, retrying profile fetch');
-              await secureStorage.setItem('accessToken', newAccessToken);
-              await secureStorage.setItem('refreshToken', newRefreshToken);
-              setAccessToken(newAccessToken);
-
-              // Retry the profile fetch with new token
-              const retryResponse = await fetch(url, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${newAccessToken}` },
-              });
-
-              if (retryResponse.ok) {
-                const retryData = await retryResponse.json();
-                if (retryData.user) {
-                  setUser(retryData.user);
-                  if (!orgs || orgs.length === 0) {
-                    await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
-                  }
-                }
+          if (retryResponse.ok) {
+            const retryData = await retryResponse.json();
+            if (retryData.user) {
+              setUser(retryData.user);
+              if (!orgs || orgs.length === 0) {
+                await AsyncStorage.setItem('userData', JSON.stringify(retryData.user));
               }
-              return;
             }
           }
+          return;
         }
 
-        // Refresh failed - only now clear auth state
-        console.log('[Auth] Token refresh failed, clearing auth state');
+        if (outcome === 'transient') {
+          // Backend briefly unreachable (mid-redeploy). Keep the session.
+          console.log('[Auth] Refresh transient on refreshUserData; keeping session');
+          return;
+        }
+
+        // 'invalid' — refresh token genuinely rejected. Only now clear auth.
+        console.log('[Auth] Token genuinely rejected, clearing auth state');
         await secureStorage.removeItem('accessToken');
         await secureStorage.removeItem('refreshToken');
         await AsyncStorage.removeItem('userData');
