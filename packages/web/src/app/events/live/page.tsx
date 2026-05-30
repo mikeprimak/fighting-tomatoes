@@ -12,7 +12,7 @@ import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Radio } from 'lucide-react';
 
 export default function LiveEventsPage() {
-  const { filterEventsByOrg } = useOrgFilter();
+  const { filterByPromotion, handleOrgPress } = useOrgFilter();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['events', 'live'],
@@ -21,7 +21,17 @@ export default function LiveEventsPage() {
   });
 
   const allEvents = data?.events ?? [];
-  const liveEvents = filterEventsByOrg(allEvents.filter((e: any) => isEventLiveNow(e)));
+  const allLiveEvents = allEvents.filter((e: any) => isEventLiveNow(e));
+  const liveEvents = allLiveEvents.filter((e: any) => filterByPromotion(e.promotion));
+  // Live events the user's org filter is hiding — so we can offer to show them.
+  const hiddenLiveOrgs = Array.from(
+    new Set(
+      allLiveEvents
+        .filter((e: any) => !filterByPromotion(e.promotion))
+        .map((e: any) => e.promotion)
+        .filter(Boolean),
+    ),
+  ) as string[];
 
   return (
     <>
@@ -55,7 +65,19 @@ export default function LiveEventsPage() {
         {!isLoading && liveEvents.length === 0 && !error && (
           <div className="py-12 text-center">
             <p className="text-sm text-text-secondary">No events are live right now.</p>
-            <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
+            {hiddenLiveOrgs.length > 0 ? (
+              <button
+                onClick={() => handleOrgPress('ALL')}
+                className="mt-3 text-sm font-medium text-primary hover:underline"
+              >
+                {hiddenLiveOrgs.length === 1
+                  ? `There is a ${hiddenLiveOrgs[0]} event live.`
+                  : `There are live events from ${hiddenLiveOrgs.join(', ')}.`}{' '}
+                Show?
+              </button>
+            ) : (
+              <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
+            )}
           </div>
         )}
       </SidebarLayout>

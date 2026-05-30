@@ -6,6 +6,7 @@ import { Search, User, Menu, X, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartph
 import { useState } from 'react';
 import { useAuth, useHasApp } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
+import { useAnyLiveEvent } from '@/lib/useAnyLiveEvent';
 
 const navLinks = [
   { href: '/events/live', label: 'Live', icon: Radio },
@@ -21,6 +22,7 @@ export function Navbar() {
   const { user, isAuthenticated } = useAuth();
   const hasApp = useHasApp();
   const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
+  const hasLiveEvent = useAnyLiveEvent();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,7 +68,15 @@ export function Navbar() {
                     : 'text-text-secondary hover:text-foreground'
                 }`}
               >
-                <Icon size={16} />
+                <span className="relative flex items-center">
+                  <Icon size={16} />
+                  {href === '/events/live' && hasLiveEvent && (
+                    <span
+                      className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-danger ring-2 ring-background"
+                      aria-label="Live event in progress"
+                    />
+                  )}
+                </span>
                 {label}
               </Link>
             ))}
@@ -171,7 +181,15 @@ export function Navbar() {
                 isActive(href) ? 'bg-primary/10 text-primary' : 'text-text-secondary'
               }`}
             >
-              <Icon size={16} />
+              <span className="relative flex items-center">
+                <Icon size={16} />
+                {href === '/events/live' && hasLiveEvent && (
+                  <span
+                    className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-danger ring-2 ring-background"
+                    aria-label="Live event in progress"
+                  />
+                )}
+              </span>
               {label}
             </Link>
           ))}

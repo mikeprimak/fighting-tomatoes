@@ -10,7 +10,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Colors } from '../../constants/Colors';
@@ -68,7 +68,7 @@ export default function LiveEventsScreen() {
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
-  const { selectedOrgs, filterEventsByOrg } = useOrgFilter();
+  const { selectedOrgs, filterEventsByOrg, filterByPromotion, handleOrgPress } = useOrgFilter();
   const [modalFight, setModalFight] = useState<Fight | null>(null);
   const [modalShowBell, setModalShowBell] = useState(false);
 
@@ -118,6 +118,28 @@ export default function LiveEventsScreen() {
       refetchOnWindowFocus: true,
     }
   );
+
+  // Lightweight unfiltered query across ALL orgs, so we can detect a live event
+  // the user's org filter is hiding and offer to show it. Shares the
+  // 'liveCheck' key with the navbar/tab red-dot hooks for a cache hit.
+  const { data: allOrgEventsData } = useQuery(
+    ['upcomingEvents', 'liveCheck'],
+    () => apiService.getEvents({ type: 'upcoming', limit: 20 }),
+    {
+      staleTime: 30 * 1000,
+      refetchInterval: 30000,
+      refetchIntervalInBackground: false,
+    }
+  );
+
+  // Distinct promotions that have a live event but are filtered out right now.
+  const hiddenLiveOrgs = React.useMemo(() => {
+    const all: Event[] = allOrgEventsData?.events || [];
+    const hidden = all.filter(
+      (e: Event) => isEventLiveNow(e) && !filterByPromotion(e.promotion)
+    );
+    return Array.from(new Set(hidden.map((e: Event) => e.promotion).filter(Boolean)));
+  }, [allOrgEventsData, filterByPromotion]);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const onRefresh = useCallback(async () => {
@@ -187,14 +209,29 @@ export default function LiveEventsScreen() {
   }, [selectedOrgs]);
 
   const ListEmptyComponent = useCallback(() => {
+    const promptText =
+      hiddenLiveOrgs.length === 1
+        ? `There is a ${hiddenLiveOrgs[0]} event live.`
+        : `There are live events from ${hiddenLiveOrgs.join(', ')}.`;
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>
           {emptyMessage}
         </Text>
+        {hiddenLiveOrgs.length > 0 && (
+          <TouchableOpacity
+            style={styles.showLivePrompt}
+            onPress={() => handleOrgPress('ALL')}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.showLivePromptText, { color: colors.primary }]}>
+              {promptText} Show?
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
-  }, [colors, styles, emptyMessage]);
+  }, [colors, styles, emptyMessage, hiddenLiveOrgs, handleOrgPress]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
@@ -565,6 +602,16 @@ const createStyles = (colors: any) => StyleSheet.create({
   emptyContainer: {
     paddingVertical: 40,
     alignItems: 'center',
+  },
+  showLivePrompt: {
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  showLivePromptText: {
+    fontSize: 15,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   eventSection: {
     marginBottom: 32,
