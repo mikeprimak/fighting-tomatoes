@@ -1,9 +1,7 @@
 'use client';
 
 import { formatEventDate, formatEventTimeCompact, formatTimeUntil, formatTimeAgo } from '@/utils/dateFormatters';
-import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
-import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
-import { LiveFightCard } from '@/components/fight-cards/LiveFightCard';
+import { FightSectionList } from '@/components/fight-cards/FightSectionList';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
 import { normalizeEventName } from '@/utils/eventName';
 import type { CardSection } from '@/lib/api';
@@ -193,22 +191,7 @@ export function EventCard({ event, mode }: EventCardProps) {
               <div className="h-px flex-1 bg-border" />
             </div>
           )}
-          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-            {sections[section].map((fight: any) => {
-              if (mode === 'past' || fight.fightStatus === 'COMPLETED') {
-                return <CompletedFightCard key={fight.id} fight={fight} />;
-              }
-              if (mode === 'live') {
-                const isLiveNow = fight.fightStatus === 'LIVE';
-                const isUpNext = upNextFight?.id === fight.id;
-                if (isLiveNow || isUpNext) {
-                  return <LiveFightCard key={fight.id} fight={fight} isLiveNow={isLiveNow} isUpNext={isUpNext} />;
-                }
-                return <UpcomingFightCard key={fight.id} fight={fight} />;
-              }
-              return <UpcomingFightCard key={fight.id} fight={fight} />;
-            })}
-          </div>
+          <FightSectionList fights={sections[section]} mode={mode} upNextFightId={upNextFight?.id} />
         </div>
         );
       })}
