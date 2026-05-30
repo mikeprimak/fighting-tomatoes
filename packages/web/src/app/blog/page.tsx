@@ -23,7 +23,7 @@ export default function BlogIndexPage() {
   const posts = getAllPosts();
 
   return (
-    <div className="mx-auto max-w-2xl py-8">
+    <div className="mx-auto max-w-2xl pb-8">
       <h1 className="mb-6 text-2xl font-bold">Blog</h1>
 
       {posts.length === 0 ? (

@@ -43,9 +43,9 @@ export function EditorialSecondary() {
   const posts = data?.posts;
   if (!posts || posts.length === 0) return null;
 
-  // Same pick as EditorialHero, so we don't duplicate the hero post here.
-  const heroPost = posts.find((p) => p.featured) ?? posts[0];
-  const rest = posts.filter((p) => p.slug !== heroPost?.slug).slice(0, 3);
+  // The feed is already ordered (highlights first, then newest). The hero takes
+  // posts[0]; these are the next three.
+  const rest = posts.slice(1, 4);
   if (rest.length === 0) return null;
 
   return (

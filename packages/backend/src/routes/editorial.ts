@@ -45,6 +45,52 @@ interface EditorialPost {
   tags: string[];
   image: string;
   featured: boolean;
+  hideFromHome: boolean;
+  /** Set by orderByHighlights(): true if pinned via the admin highlights list. */
+  highlighted?: boolean;
+}
+
+// The admin-curated lineup lives in a single SystemConfig row (key below, value
+// = ordered string[] of post slugs). See routes/adminBlog.ts. Stored in the DB so
+// it's editable live from admin.html with no redeploy and no migration.
+const HIGHLIGHTS_KEY = 'blog_highlights';
+
+/**
+ * Reorder the date-sorted post list so the admin's pinned posts lead, in the
+ * order they pinned them; the rest follow newest-first. With no highlights set
+ * yet, we preserve the prior behavior: posts flagged `featured` in frontmatter
+ * float to the top, then the rest by date — so the home page never changes shape
+ * until an admin actually curates a lineup.
+ */
+async function orderByHighlights(prisma: any, posts: EditorialPost[]): Promise<EditorialPost[]> {
+  let highlights: string[] = [];
+  try {
+    const cfg = await prisma.systemConfig.findUnique({ where: { key: HIGHLIGHTS_KEY } });
+    if (cfg && Array.isArray(cfg.value)) {
+      highlights = (cfg.value as unknown[]).filter((s): s is string => typeof s === 'string');
+    }
+  } catch {
+    // systemConfig unreadable — fall through to the featured/date ordering below.
+  }
+
+  if (highlights.length > 0) {
+    const bySlug = new Map(posts.map((p) => [p.slug, p]));
+    const picked: EditorialPost[] = [];
+    const pickedSlugs = new Set<string>();
+    for (const slug of highlights) {
+      const p = bySlug.get(slug);
+      if (p && !pickedSlugs.has(slug)) {
+        picked.push({ ...p, highlighted: true });
+        pickedSlugs.add(slug);
+      }
+    }
+    const rest = posts.filter((p) => !pickedSlugs.has(p.slug)).map((p) => ({ ...p, highlighted: false }));
+    return [...picked, ...rest];
+  }
+
+  const featured = posts.filter((p) => p.featured).map((p) => ({ ...p, highlighted: true }));
+  const rest = posts.filter((p) => !p.featured).map((p) => ({ ...p, highlighted: false }));
+  return [...featured, ...rest];
 }
 
 function parsePost(postsDir: string, filename: string): EditorialPost | null {
@@ -67,6 +113,7 @@ function parsePost(postsDir: string, filename: string): EditorialPost | null {
       tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
       image: (data.image as string) || '',
       featured: data.featured === true,
+      hideFromHome: data.hideFromHome === true,
     };
   } catch {
     return null;
@@ -101,6 +148,7 @@ function parseFullPost(
       tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],
       image: (data.image as string) || '',
       featured: data.featured === true,
+      hideFromHome: data.hideFromHome === true,
       html: md.render(content),
     };
   } catch {
@@ -136,6 +184,8 @@ export default async function editorialRoutes(fastify: FastifyInstance) {
                   tags: { type: 'array', items: { type: 'string' } },
                   image: { type: 'string' },
                   featured: { type: 'boolean' },
+                  highlighted: { type: 'boolean' },
+                  hideFromHome: { type: 'boolean' },
                 },
               },
             },
@@ -158,14 +208,18 @@ export default async function editorialRoutes(fastify: FastifyInstance) {
         return reply.send({ posts: [] });
       }
 
-      const posts = fs
+      const all = fs
         .readdirSync(postsDir)
         .filter((f) => f.endsWith('.md'))
         .map((f) => parsePost(postsDir, f))
         .filter((p): p is EditorialPost => p !== null)
         // Newest first by frontmatter date.
-        .sort((a, b) => (a.date < b.date ? 1 : -1))
-        .slice(0, limit);
+        .sort((a, b) => (a.date < b.date ? 1 : -1));
+
+      // Pinned highlights lead, then the rest by date. Slice AFTER ordering so a
+      // pinned older post can't get dropped by the limit before it floats up.
+      const ordered = await orderByHighlights(fastify.prisma, all);
+      const posts = ordered.slice(0, limit);
 
       return reply.send({ posts });
     } catch (err) {
