@@ -1205,17 +1205,17 @@ export default function UpcomingFightDetailScreen({
         </TouchableOpacity>
       </View>
 
-      {/* Event Info */}
-      <View style={{ alignItems: 'center', marginBottom: 16, paddingHorizontal: 16 }}>
-        <TouchableOpacity
-          onPress={() => fight.event?.id && router.push(`/event/${fight.event.id}` as any)}
-          disabled={!fight.event?.id}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
-            {fight.event.name}
-          </Text>
-        </TouchableOpacity>
+      {/* Event Info — whole block taps through to the event detail screen */}
+      <TouchableOpacity
+        onPress={() => fight.event?.id && router.push(`/event/${fight.event.id}` as any)}
+        disabled={!fight.event?.id}
+        activeOpacity={0.6}
+        accessibilityRole="button"
+        style={{ alignItems: 'center', marginBottom: 16, paddingHorizontal: 16, paddingVertical: 4 }}
+      >
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colors.text, textAlign: 'center' }}>
+          {fight.event.name}
+        </Text>
         <Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
           {formatEventDate(fight.event.date, { weekday: 'long', month: 'long' })}
         </Text>
@@ -1228,7 +1228,7 @@ export default function UpcomingFightDetailScreen({
               : null,
           ].filter(Boolean).join(' · ')}
         </Text>
-      </View>
+      </TouchableOpacity>
 
       {/* AI preview one-liner + stakes bullets */}
       {(() => {
