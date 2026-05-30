@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { useAuth } from '@/lib/auth';
 import { ProfileSidebar } from '@/components/sidebar/ProfileSidebar';
 import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
@@ -15,19 +16,25 @@ import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
  * forever). Mirrors the home (Upcoming) page so Past / Live / Good Fights match.
  */
 export function SidebarLayout({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuth();
+
   return (
     <div className="md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
       {/* Shown below md: compact "About you" strip above the feed. */}
       <div className="mb-6 space-y-4 md:hidden">
         <IdentityBlock />
         <FanDNABlock />
-        <Link
-          href="/profile"
-          className="flex items-center justify-center gap-0.5 rounded-lg border border-border bg-card py-2 text-xs font-medium text-text-secondary hover:border-primary/30 hover:text-primary"
-        >
-          More about you
-          <ChevronRight size={14} />
-        </Link>
+        {/* Profile link is meaningless logged out (it routes to a sign-in wall),
+            so only show it to authenticated users. */}
+        {isAuthenticated ? (
+          <Link
+            href="/profile"
+            className="flex items-center justify-center gap-0.5 rounded-lg border border-border bg-card py-2 text-xs font-medium text-text-secondary hover:border-primary/30 hover:text-primary"
+          >
+            More about you
+            <ChevronRight size={14} />
+          </Link>
+        ) : null}
       </div>
 
       <div className="min-w-0">{children}</div>
