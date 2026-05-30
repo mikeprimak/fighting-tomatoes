@@ -845,9 +845,9 @@ const styles = StyleSheet.create({
   hypeSquare: {
     position: 'absolute',
     top: 6,
-    bottom: 6,
     left: 0,
     width: 48,
+    height: 48, // Fixed square — must not stretch with card height
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 8,
@@ -882,9 +882,9 @@ const styles = StyleSheet.create({
   userHypeFlameContainer: {
     position: 'absolute',
     top: 6,
-    bottom: 6,
     right: 0,
     width: 48,
+    height: 48, // Fixed square — stay aligned with the hype square on the left
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,

@@ -229,6 +229,104 @@ function FollowedFighterChip({
   );
 }
 
+// Rotating "here's what Good Fights can do for you" education cards shown at the
+// bottom of Home. Cycles once a minute so a returning user keeps discovering
+// features. Each card optionally deep-links to the relevant screen.
+const FEATURE_SPOTLIGHTS: {
+  icon: string;
+  iconLib: 'fa' | 'fa6';
+  title: string;
+  body: string;
+  route?: string;
+}[] = [
+  {
+    icon: 'bolt',
+    iconLib: 'fa',
+    title: 'See the Hype Building',
+    body: "Check how hyped upcoming fights are, so you know which cards are worth clearing your weekend for.",
+    route: '/(tabs)/events',
+  },
+  {
+    icon: 'star',
+    iconLib: 'fa',
+    title: "Know What's Worth Watching",
+    body: 'Community ratings show you which fights actually delivered, so you can find a great one to watch tonight.',
+    route: '/(tabs)/top-fights',
+  },
+  {
+    icon: 'clock-rotate-left',
+    iconLib: 'fa6',
+    title: 'Dig Into the Classics',
+    body: 'Discover the highest-rated fights from years past that you may have missed the first time around.',
+  },
+  {
+    icon: 'bell',
+    iconLib: 'fa',
+    title: 'Follow Your Favorites',
+    body: "Follow fighters and get notified the moment they're booked, the morning of, and when they walk out.",
+    route: '/followed-fighters',
+  },
+  {
+    icon: 'comments',
+    iconLib: 'fa',
+    title: 'Join the Conversation',
+    body: 'See what other fans are saying and add your own takes before and after every fight.',
+    route: '/(tabs)/community',
+  },
+];
+
+function FeatureSpotlight({
+  colors,
+  styles,
+  onNavigate,
+}: {
+  colors: ThemeColors;
+  styles: ReturnType<typeof makeStyles>;
+  onNavigate: (route: string) => void;
+}) {
+  const [idx, setIdx] = React.useState(0);
+
+  React.useEffect(() => {
+    const id = setInterval(
+      () => setIdx((i) => (i + 1) % FEATURE_SPOTLIGHTS.length),
+      60_000,
+    );
+    return () => clearInterval(id);
+  }, []);
+
+  const feature = FEATURE_SPOTLIGHTS[idx];
+
+  return (
+    <TouchableOpacity
+      style={styles.spotlightCard}
+      activeOpacity={feature.route ? 0.85 : 1}
+      onPress={() => feature.route && onNavigate(feature.route)}
+    >
+      <View style={styles.spotlightIconWrap}>
+        {feature.iconLib === 'fa6' ? (
+          <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
+        ) : (
+          <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
+        )}
+      </View>
+      <Text style={styles.spotlightTitle}>{feature.title}</Text>
+      <Text style={styles.spotlightBody}>{feature.body}</Text>
+      {feature.route ? <Text style={styles.spotlightHint}>Tap to explore</Text> : null}
+      <View style={styles.spotlightDots}>
+        {FEATURE_SPOTLIGHTS.map((_, i) => (
+          <View
+            key={i}
+            style={[
+              styles.spotlightDot,
+              { backgroundColor: i === idx ? colors.tint : colors.border },
+            ]}
+          />
+        ))}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 /**
  * Home — the app's landing tab.
  *
@@ -308,6 +406,14 @@ export default function HomeScreen() {
     refetchOnMount: 'always',
   });
 
+  // Classics: highest-rated fights 3+ years old the user hasn't rated.
+  // Keyed on auth so the unrated-by-me filter refetches on login/logout.
+  const { data: classicFights, isLoading: isClassicsLoading } = useQuery({
+    queryKey: ['classicFights', isAuthenticated],
+    queryFn: () => apiService.getClassicFights(8),
+    staleTime: 30 * 60 * 1000,
+  });
+
   // --- Derived ------------------------------------------------------------
   // Order by calendar day, then float UFC to the top of its day so a marquee UFC
   // card isn't buried under same-day regional events (Event.date is a UTC-hour
@@ -342,6 +448,7 @@ export default function HomeScreen() {
   const recentlyBooked = (recentlyBookedData?.data || []).slice(0, 6);
   const comments = (topComments?.data || []).slice(0, 3);
   const throwbackComment = topComments?.throwback || null;
+  const classics = (classicFights?.data || []).slice(0, 5);
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -527,6 +634,25 @@ export default function HomeScreen() {
         )}
       </Section>
 
+      {/* Classics to Watch (historic highly-rated, unrated by user) --------*/}
+      {(isClassicsLoading || classics.length > 0) && (
+        <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
+          {isClassicsLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            classics.map((fight: any, index: number) => (
+              <CompletedFightCard
+                key={fight.id}
+                fight={fight}
+                onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
+                showEvent={true}
+                index={index}
+              />
+            ))
+          )}
+        </Section>
+      )}
+
       {/* Hot Fighters -------------------------------------------------------*/}
       <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
         {isFightersLoading ? (
@@ -578,7 +704,14 @@ export default function HomeScreen() {
       )}
 
       {/* Most Followed Fighters (horizontal rail) --------------------------*/}
-      <Section colors={colors} styles={styles} title="Most Followed" icon="users" iconLib="fa6">
+      <Section
+        colors={colors}
+        styles={styles}
+        title="Most Followed"
+        icon="users"
+        iconLib="fa6"
+        onSeeAll={isAuthenticated ? () => router.push('/followed-fighters' as any) : undefined}
+      >
         {isFollowedLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : followedFighters.length > 0 ? (
@@ -657,6 +790,17 @@ export default function HomeScreen() {
           />
         </Section>
       )}
+
+      {/* Feature spotlight — rotating "what you can do here" education ------*/}
+      <Section
+        colors={colors}
+        styles={styles}
+        title="Did You Know?"
+        icon="lightbulb"
+        iconLib="fa6"
+      >
+        <FeatureSpotlight colors={colors} styles={styles} onNavigate={(route) => router.push(route as any)} />
+      </Section>
     </ScrollView>
   );
 }
@@ -831,6 +975,57 @@ function makeStyles(colors: ThemeColors) {
       fontWeight: '600',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+    },
+    // Feature spotlight card
+    spotlightCard: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginHorizontal: 16,
+      paddingVertical: 22,
+      paddingHorizontal: 20,
+      alignItems: 'center',
+    },
+    spotlightIconWrap: {
+      width: 52,
+      height: 52,
+      borderRadius: 26,
+      backgroundColor: colors.background,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    spotlightTitle: {
+      fontSize: 17,
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      marginBottom: 6,
+    },
+    spotlightBody: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      lineHeight: 20,
+    },
+    spotlightHint: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: colors.tint,
+      marginTop: 12,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    spotlightDots: {
+      flexDirection: 'row',
+      gap: 6,
+      marginTop: 16,
+    },
+    spotlightDot: {
+      width: 6,
+      height: 6,
+      borderRadius: 3,
     },
   });
 }
