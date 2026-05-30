@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Josh Hokit was an All-American wrestler, a college football player, and an NFL practice-squad athlete before he ever threw a professional punch. Now he is 9-0, fresh off beating Curtis Blaydes, and the most polarizing personality on the UFC Freedom 250 card. Here is the full story of his unlikely rise and his White House fight against knockout king Derrick Lewis."
 tags: ["josh-hokit", "ufc-freedom-250", "derrick-lewis", "ufc", "feature"]
-image: "/blog/ufc-freedom-250-banner.jpg"
+image: "/blog/josh-hokit.png"
 draft: false
 hideFromHome: true
 ---
