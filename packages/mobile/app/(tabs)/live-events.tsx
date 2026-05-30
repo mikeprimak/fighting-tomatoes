@@ -202,17 +202,16 @@ export default function LiveEventsScreen() {
   const keyExtractor = useCallback((item: Event) => item.id, []);
 
   const emptyMessage = React.useMemo(() => {
-    if (selectedOrgs.size === 0) return 'No live events currently';
+    if (selectedOrgs.size === 0) return 'No events are live right now';
     const orgNames = Array.from(selectedOrgs).join(', ');
-    if (selectedOrgs.size === 1) return `No ${orgNames} events live currently`;
-    return `No ${orgNames} events live currently`;
+    return `No ${orgNames} events live right now`;
   }, [selectedOrgs]);
 
   const ListEmptyComponent = useCallback(() => {
     const promptText =
       hiddenLiveOrgs.length === 1
-        ? `There is a ${hiddenLiveOrgs[0]} event live.`
-        : `There are live events from ${hiddenLiveOrgs.join(', ')}.`;
+        ? `But there is a ${hiddenLiveOrgs[0]} event live.`
+        : `But there are live events from ${hiddenLiveOrgs.join(', ')}.`;
     return (
       <View style={styles.emptyContainer}>
         <Text style={[styles.noEventsText, { color: colors.textSecondary }]}>

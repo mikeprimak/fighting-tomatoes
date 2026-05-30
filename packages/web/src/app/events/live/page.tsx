@@ -12,7 +12,7 @@ import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Radio } from 'lucide-react';
 
 export default function LiveEventsPage() {
-  const { filterByPromotion, handleOrgPress } = useOrgFilter();
+  const { selectedOrgs, filterByPromotion, handleOrgPress } = useOrgFilter();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['events', 'live'],
@@ -64,16 +64,19 @@ export default function LiveEventsPage() {
 
         {!isLoading && liveEvents.length === 0 && !error && (
           <div className="py-12 text-center">
-            <p className="text-sm text-text-secondary">No events are live right now.</p>
+            <p className="text-sm text-text-secondary">
+              {selectedOrgs.size === 0
+                ? 'No events are live right now.'
+                : `No ${Array.from(selectedOrgs).join(', ')} events live right now.`}
+            </p>
             {hiddenLiveOrgs.length > 0 ? (
               <button
                 onClick={() => handleOrgPress('ALL')}
                 className="mt-3 text-sm font-medium text-primary hover:underline"
               >
                 {hiddenLiveOrgs.length === 1
-                  ? `There is a ${hiddenLiveOrgs[0]} event live.`
-                  : `There are live events from ${hiddenLiveOrgs.join(', ')}.`}{' '}
-                Show?
+                  ? `But there is a ${hiddenLiveOrgs[0]} event live. Show?`
+                  : `But there are live events from ${hiddenLiveOrgs.join(', ')}. Show?`}
               </button>
             ) : (
               <p className="mt-1 text-xs text-text-secondary">Check the Upcoming tab to see what&apos;s next.</p>
