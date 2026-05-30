@@ -29,7 +29,7 @@ function FightColumnHeader({ variant }: { variant: 'hype' | 'rating' }) {
         </span>
       </div>
       <div className="flex-1" />
-      <div className="flex w-12 shrink-0 items-center justify-center">
+      <div className="flex w-12 shrink-0 items-center justify-center pr-2.5">
         <span className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-wide text-text-secondary">
           {right}
         </span>
