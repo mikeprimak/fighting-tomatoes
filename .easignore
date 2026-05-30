@@ -1,35 +1,313 @@
-# EAS Build upload ignore. Trims the project archive so uploads don't time out
-# (the full tree was 776 MB and ECONNRESET'd mid-upload). NOTE: this file may be
-# used INSTEAD OF .gitignore by EAS, so dependency/build excludes are repeated
-# here. We intentionally do NOT ignore *.png — app icons/splash must ship.
+# EAS Build upload ignore.
+#
+# IMPORTANT: when this file exists, EAS CLI uses it INSTEAD OF .gitignore. So it
+# MUST be a SUPERSET of .gitignore — otherwise secret files (Apple .p8 keys,
+# service-account JSON, DB creds) that .gitignore excludes would get tarred and
+# uploaded to the build servers. The block below mirrors .gitignore verbatim;
+# the EAS-specific archive trims are appended at the very bottom.
+#
+# We intentionally do NOT ignore the app's *.png assets (icons/splash must ship);
+# .gitignore only excludes specific named/Screenshot PNGs, which is preserved.
+
+# ===== mirror of .gitignore =====
 
 # Dependencies
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.production
+.env.test
+
+# Claude Code local settings (may contain allowed commands with credentials)
+.claude/settings.local.json
 
 # Build outputs
-.next/
 dist/
 build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Dependency directories
+jspm_packages/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
 
 # Expo
 .expo/
-.expo-shared/
+dist/
+web-build/
 
-# Logs / env
-*.log
-npm-debug.log*
-.env*
+# Metro
+.metro-health-check*
 
-# OS
+# Xcode
+ios/build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
+ios/.xcode.env.local
+
+# Android
+android/build/
+android/app/build/
+android/app/src/main/assets/apk-release.unsigned.apk
+android/app/src/main/assets/index.android.bundle
+android/keystore.properties
+*.apk
+*.aab
+
+# fastlane
+ios/fastlane/report.xml
+ios/fastlane/Preview.html
+ios/fastlane/screenshots
+ios/fastlane/test_output
+android/fastlane/report.xml
+android/fastlane/Preview.html
+android/fastlane/screenshots
+android/fastlane/test_output
+
+# Bundle artifacts
+*.jsbundle
+
+# CocoaPods
+ios/Pods/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads
+uploads/
+tmp/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
 
-# Not needed for the mobile build — the big trim (.git was ~360 MB)
+# Docker
+.dockerignore
+
+# Prisma
+packages/backend/prisma/dev.db
+packages/backend/prisma/migrations/migration_lock.toml
+
+# Scraped data and test artifacts
+packages/backend/live-event-data/
+packages/backend/scraped-data/
+packages/backend/test-results/
+packages/backend/backups/
+packages/backend/public/news-images/
+packages/backend/nul
+nul
+
+# Database backups (local only, not committed)
+db-backups/
+packages/mobile/fcm-service-account.json
+packages/mobile/fight-app-ba5cd-*.json
+
+# Legacy migration sensitive files
+db-creds.txt
+dburl.txt
+*.dump
+*.sql
+!packages/backend/prisma/migrations/**/*.sql
+*.stackdump
+gitguardian_messages.txt
+databases from fightingtomatoes/
+
+# Legacy migration - data exports (contains user PII)
+packages/backend/scripts/legacy-migration/legacy-data/
+packages/backend/scripts/legacy-migration/mysql-export/
+
+# Legacy migration - connection test with credentials
+packages/backend/scripts/legacy-migration/test-mysql-connection.ts
+
+# Apple Auth Keys (NEVER commit these!)
+AuthKey*.p8
+*.p8
+
+# Security alert tracking
+gitissues.txt
+.vercel
+
+# Session temp files and scraper output dumps (root-level)
+tmp-*.json
+tmp-*.txt
+tmp-*.html
+tmp_*.html
+tmpclaude-*
+tmp-pfl-*/
+tmp-pfl-*.txt
+tmp-pfl-*.html
+
+# Workflow log dumps
+bkfc-scraper-logs.txt
+bkfc-workflow.yml
+crashed*.txt
+crash-history.txt
+oktagon-logs.txt
+oktagon-scraper-output-github-actions.txt
+oktagon-workflow.yml
+matchroom-scraper-logs.txt
+matchroom-workflow.yml
+matchroom-page.txt
+goldenboy-scraper-logs.txt
+goldenboy-workflow.yml
+goldenboy-annotations.txt
+scraper-ufc-logs.txt
+ufc-workflow.yml
+ufc-event-page.txt
+ufc-events-page.txt
+ufc-events-check.json
+render-log-output.txt
+live_tracker_logs.zip
+builderrors.txt
+applescreen.txt
+feedback-logs.txt
+feedback-handling-request.txt
+actions-page.txt
+dispatch-resp.txt
+pfl-runs.json
+
+# Screenshots and image experiments (root-level)
+Screenshot*.png
+*.xcf
+RAF-Wrestling-logo.svg
+RIZIN_logo.jpg
+SLOPPY-CONVERSION-*.svg
+THICKER-GOOD-FIGHTS-*.png
+GOOD-FIGHTS-FACEBOOK-COVER-*.png
+GOOD-FIGHTS-FACEBOOK-COVER-*.svg
+GOOD-FIGHTS-FULL-LOGO-*.png
+GOOD-FIGHTS-ICON-HAND-*.png
+GOOD-FIGHTS-LOGO-HAND-*.png
+GOOD-FIGHTS-LOGO-WHITE-*.png
+GOOD-FIGHTS-NOTIFICATION-*.png
+Good-Fights-Word-Logo-*.png
+gamebred-logo-*.png
+gamebred-logo-*.svg
+dirty-boxing-banner-*.png
+ufc-bonfim-vs-brown.jpg
+the-ring-logo.svg
+screencapture-*.png
+screenshots/
+5.png
+
+# Database backup dumps (root-level)
+database-backups_*.sql.gz
+packages/database-backups/
+
+# Misc root junk
+01.txt
+a.txt
+FETCH_HEAD
+ssh
+curl-command
+curl-command.txt
+event.json
+ev1.json
+ev2.json
+event-fights.json
+event.php
+fight.php
+FTindex-source.php
+index.php
+index-modal-with-tags.php
+index-full.html
+one150.html
+onefc151.html
+sf-event.json
+temp-event.json
+tmp-events*.json
+tmp-fights.json
+github-key.txt
+legacyemail.txt
+legacy-users-for-announcement.csv
+migration-info.txt
+output.txt
+logs.txt
+tapology-html-sample.txt
+create_presentation.py
+aggregate-convos.md
+docs/aggregate-convos.md
+
+# One-off backend debug/check/fix scripts (root of packages/backend)
+packages/backend/check-*.js
+packages/backend/check-*.ts
+packages/backend/fix-*.js
+packages/backend/audit-*.js
+packages/backend/set-*.js
+packages/backend/probe-*.js
+packages/backend/import-*.js
+packages/backend/cleanup-*.js
+packages/backend/get-*.js
+packages/backend/restore-*.js
+packages/backend/beta-invite-*.txt
+packages/backend/snapshots/
+packages/backend/tmp-*/
+
+# Nested packages (accidental)
+packages/backend/packages/
+
+# ===== EAS-specific archive trims (not needed to build the mobile app) =====
+# These were the bulk of the 776 MB archive that ECONNRESET'd on upload.
 .git/
 docs/
 archive/
 
-# Stray build artifacts / large binaries
-*.aab
-*.apk
-*.ipa
-*.sql
+# Next.js build output (NOT in .gitignore) — large, web-only, not needed here.
+.next/
+packages/web/.next/
+packages/landing/.next/
+
+# Other workspace build/cache output not required for the mobile build.
+packages/backend/dist/
+packages/web/.vercel/
