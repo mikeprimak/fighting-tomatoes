@@ -238,6 +238,7 @@ const FEATURE_SPOTLIGHTS: {
   title: string;
   body: string;
   route?: string;
+  hint?: string;
 }[] = [
   {
     icon: 'fire-flame-curved',
@@ -245,6 +246,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'See the Hype Building',
     body: "Check how hyped upcoming fights are, so you know which cards are worth clearing your weekend for.",
     route: '/(tabs)/events',
+    hint: 'Tap to explore upcoming events',
   },
   {
     icon: 'star',
@@ -252,6 +254,7 @@ const FEATURE_SPOTLIGHTS: {
     title: "Know What's Worth Watching",
     body: 'Community ratings show you which fights actually delivered, so you can find a great one to watch tonight.',
     route: '/(tabs)/top-fights',
+    hint: 'Tap to see top-rated fights',
   },
   {
     icon: 'clock-rotate-left',
@@ -265,6 +268,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'Follow Your Favorites',
     body: "Follow fighters and get notified the moment they're booked, the morning of, and when they walk out.",
     route: '/followed-fighters',
+    hint: 'Tap to manage your fighters',
   },
   {
     icon: 'comments',
@@ -272,6 +276,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'Join the Conversation',
     body: 'See what other fans are saying and add your own takes before and after every fight.',
     route: '/(tabs)/community',
+    hint: 'Tap to join the conversation',
   },
 ];
 
@@ -311,7 +316,7 @@ function FeatureSpotlight({
       </View>
       <Text style={styles.spotlightTitle}>{feature.title}</Text>
       <Text style={styles.spotlightBody}>{feature.body}</Text>
-      {feature.route ? <Text style={styles.spotlightHint}>Tap to explore</Text> : null}
+      {feature.route ? <Text style={styles.spotlightHint}>{feature.hint || 'Tap to explore'}</Text> : null}
     </TouchableOpacity>
   );
 }
