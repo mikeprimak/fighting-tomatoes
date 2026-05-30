@@ -59,7 +59,10 @@ Interpret the result:
 | `isEmailVerified: false`, `emailVerificationExpires` in past | True 24h expiry. Have them hit "Resend verification" in the app. |
 | No user found | Wrong email / typo. Confirm address. |
 
-Also check Render logs for `TOKEN_INVALID verify-email` (added 2026-05-11). Token prefix + IP + UA are logged. You can correlate against the email click time the user reports.
+Also check Render logs for the verify-email failure codes (token prefix + IP + UA are logged). Since 2026-05-27 the endpoint distinguishes:
+- `TOKEN_STALE` — no row holds the token (replaced by a newer resend, or already verified/consumed). The common case.
+- `TOKEN_EXPIRED` — a row still holds the token but `emailVerificationExpires` has passed (true 24h expiry).
+(Pre-2026-05-27 logs use the old single `TOKEN_INVALID` line, added 2026-05-11.)
 
 ## Manual fix (when the live token check passes)
 
@@ -78,7 +81,7 @@ Re-check the user row to confirm `isEmailVerified: true`.
 ## Known gaps (consider improving)
 
 - No Sentry on backend yet — see `docs/areas/support-tooling.md` item #1.
-- Error page on the landing site shows the same "Verification Failed" UI for stale-token, expired-token, and consumed-token cases. Distinguishing them in the response would help users self-diagnose ("this link has been replaced by a newer email — check your inbox").
+- ~~Error page shows the same "Verification Failed" UI for all failure cases.~~ **CLOSED 2026-05-27** — backend now returns `TOKEN_STALE` vs `TOKEN_EXPIRED`; landing `verify-email.html` renders "📬 Check Your Inbox" (no Resend CTA) for stale and "⏳ Link Expired" (keeps Resend) for expired. Web app mirrors the titles. Verified live (Test 1 + happy-path Test 3 passed). Note: stale and already-verified are indistinguishable from the token alone (both have no matching row), so the stale copy covers both ("...or if you have already verified, just sign in").
 - The resend endpoint overwrites the token unconditionally; there's no rate-limit warning shown to the user before they invalidate their previous link.
 
 ## Past incidents
