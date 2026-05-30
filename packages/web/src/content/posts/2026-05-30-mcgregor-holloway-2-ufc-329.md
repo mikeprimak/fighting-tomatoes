@@ -7,6 +7,7 @@ excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "preview"]
 image: "/blog/mcgregor-holloway-banner.png"
 draft: false
+featured: true
 ---
 
 Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
