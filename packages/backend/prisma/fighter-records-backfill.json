@@ -1,0 +1,313 @@
+{
+  "generatedAt": "2026-05-28T13:55:13.524Z",
+  "applied": true,
+  "ufcstatsTotal": 4495,
+  "counts": {
+    "matched": 36,
+    "unmatched": 5517,
+    "ambiguousStats": 5,
+    "ambiguousOurs": 2,
+    "zeroRecord": 3
+  },
+  "updates": [
+    {
+      "id": "e9db3c08-1179-4c1e-b3d1-45f3d9bf5c9a",
+      "name": "Mike Wilkinson",
+      "sport": "BOXING",
+      "wins": 9,
+      "losses": 4,
+      "draws": 0
+    },
+    {
+      "id": "6999cffc-a461-41ba-99a8-9c0401ba80d6",
+      "name": "Brent Primus",
+      "sport": "BOXING",
+      "wins": 8,
+      "losses": 0,
+      "draws": 0
+    },
+    {
+      "id": "aeb5c19d-66a6-480b-8748-d7a7c54e861b",
+      "name": "Deron Winn",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 3,
+      "draws": 0
+    },
+    {
+      "id": "8f2a954a-c5ad-435f-bcc0-bc9b82f983cc",
+      "name": "Maki Pitolo",
+      "sport": "BOXING",
+      "wins": 13,
+      "losses": 9,
+      "draws": 0
+    },
+    {
+      "id": "b54ef177-30d5-4447-9a0c-b9e722c5f3c9",
+      "name": "Carlos Felipe",
+      "sport": "BOXING",
+      "wins": 11,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "87f29530-30a2-45b0-9e77-be7ba69fc946",
+      "name": "Maxim Grishin",
+      "sport": "BOXING",
+      "wins": 32,
+      "losses": 10,
+      "draws": 2
+    },
+    {
+      "id": "6141d4a4-5e78-4234-afdd-63a044adfde2",
+      "name": "Hamdy Abdelwahab",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "16a39210-fab1-4dc4-8a80-306f0593a05f",
+      "name": "Allan Begosso",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 2,
+      "draws": 1
+    },
+    {
+      "id": "582f9e47-8ac7-4f62-919f-947ebb311212",
+      "name": "Theo Haig",
+      "sport": "BOXING",
+      "wins": 6,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "9687441f-8652-46c9-a156-96a80f759157",
+      "name": "Brandon Jenkins",
+      "sport": "BOXING",
+      "wins": 15,
+      "losses": 9,
+      "draws": 0
+    },
+    {
+      "id": "dac37375-adfb-407e-b01c-0ebd846a9603",
+      "name": "Sabah Homasi",
+      "sport": "BOXING",
+      "wins": 11,
+      "losses": 8,
+      "draws": 0
+    },
+    {
+      "id": "fcece288-d9c8-476b-a211-e776f838d85e",
+      "name": "Rashad Coulter",
+      "sport": "BOXING",
+      "wins": 9,
+      "losses": 4,
+      "draws": 0
+    },
+    {
+      "id": "beec6fe3-d508-4f4c-9dee-696b9636c15b",
+      "name": "Rainn Guerrero",
+      "sport": "BOXING",
+      "wins": 5,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "9af70f2d-4d51-4c27-a85d-31ea3aac2580",
+      "name": "Al Matavao",
+      "sport": "BOXING",
+      "wins": 8,
+      "losses": 3,
+      "draws": 0
+    },
+    {
+      "id": "9ae6010f-3b3f-451f-b907-d81790871ad8",
+      "name": "Solomon Renfro",
+      "sport": "BOXING",
+      "wins": 8,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "9ae0fc88-37be-4729-93f2-80ae658d0917",
+      "name": "Junior dos Santos",
+      "sport": "BOXING",
+      "wins": 21,
+      "losses": 9,
+      "draws": 0
+    },
+    {
+      "id": "aaa8c266-cd80-4e06-a0c9-a22473cff5d2",
+      "name": "David Mgoyan",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "5b74b821-d6e0-4e3e-ae76-76fff64c5d7c",
+      "name": "Anthony Guarascio",
+      "sport": "BOXING",
+      "wins": 3,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "d172aa06-ea01-4829-80d0-219a884d458d",
+      "name": "Josh Fremd",
+      "sport": "BOXING",
+      "wins": 11,
+      "losses": 6,
+      "draws": 0
+    },
+    {
+      "id": "be4a7f6f-3f28-48cf-bf21-e3f17e202bf5",
+      "name": "Chris Avila",
+      "sport": "BOXING",
+      "wins": 5,
+      "losses": 4,
+      "draws": 0
+    },
+    {
+      "id": "031d30a7-bb51-4aba-88f5-2fb0a1e81fed",
+      "name": "Ernie Juarez",
+      "sport": "BOXING",
+      "wins": 8,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "58e67327-1629-42c4-906e-43712b418b66",
+      "name": "Robelis Despaigne",
+      "sport": "BOXING",
+      "wins": 5,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "1695d38f-8f8c-4364-916d-06b53332d0dc",
+      "name": "Elias Silverio",
+      "sport": "BOXING",
+      "wins": 13,
+      "losses": 3,
+      "draws": 0
+    },
+    {
+      "id": "7e9ec9a5-0fa9-4560-ba96-705cd1a5debf",
+      "name": "Caio Bittencourt",
+      "sport": "BOXING",
+      "wins": 14,
+      "losses": 7,
+      "draws": 0
+    },
+    {
+      "id": "10c82eba-2940-47bd-bb6a-c5c28d98a338",
+      "name": "Khadis Ibragimov",
+      "sport": "BOXING",
+      "wins": 8,
+      "losses": 4,
+      "draws": 0
+    },
+    {
+      "id": "769648b2-3ebd-40e2-b04d-57661be7abed",
+      "name": "Jason Jackson",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "1a6d7e3b-ef7d-4b9f-92a1-722f278e2b2e",
+      "name": "Gina Carano",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 1,
+      "draws": 0
+    },
+    {
+      "id": "2eea4998-c62f-49fc-8fae-6da01a812681",
+      "name": "Peter Barrett",
+      "sport": "BOXING",
+      "wins": 11,
+      "losses": 5,
+      "draws": 0
+    },
+    {
+      "id": "37dfac02-7009-426b-935f-bbbe581b39e3",
+      "name": "Darren Till",
+      "sport": "BOXING",
+      "wins": 18,
+      "losses": 5,
+      "draws": 1
+    },
+    {
+      "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+      "name": "Nate Diaz",
+      "sport": "BOXING",
+      "wins": 22,
+      "losses": 13,
+      "draws": 0
+    },
+    {
+      "id": "f003c8a8-7fea-439b-b522-9c8b3dac7b2f",
+      "name": "Philipe Lins",
+      "sport": "BOXING",
+      "wins": 18,
+      "losses": 5,
+      "draws": 0
+    },
+    {
+      "id": "792a0af6-dd8e-4674-bd76-69e5351e05a5",
+      "name": "Albert Morales",
+      "sport": "BOXING",
+      "wins": 7,
+      "losses": 4,
+      "draws": 1
+    },
+    {
+      "id": "799b5934-9beb-407f-b45b-cb052e7604f7",
+      "name": "Ronda Rousey",
+      "sport": "BOXING",
+      "wins": 12,
+      "losses": 2,
+      "draws": 0
+    },
+    {
+      "id": "bdd8731b-147d-4ab7-8a78-44c538f1fdcd",
+      "name": "Mike Perry",
+      "sport": "BOXING",
+      "wins": 14,
+      "losses": 8,
+      "draws": 0
+    },
+    {
+      "id": "909a9a3c-a64b-41ff-becc-f4e74fd0cfe2",
+      "name": "Francis Ngannou",
+      "sport": "BOXING",
+      "wins": 17,
+      "losses": 3,
+      "draws": 0
+    },
+    {
+      "id": "0db29916-12df-4c28-b15a-0c2a0b486bab",
+      "name": "Holly Holm",
+      "sport": "BOXING",
+      "wins": 15,
+      "losses": 7,
+      "draws": 0
+    }
+  ],
+  "skippedAmbiguousStats": [
+    "michael mcdonald",
+    "joey gomez",
+    "mike davis",
+    "tony johnson",
+    "jean silva"
+  ],
+  "skippedAmbiguousOurs": [
+    "rhys mckee",
+    "aj mckee"
+  ]
+}
