@@ -15,8 +15,53 @@ export default function DeleteAccountPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="mx-auto max-w-md pt-20 text-center">
-        <p className="text-text-secondary">You must be signed in to delete your account.</p>
+      <div className="mx-auto max-w-2xl py-12">
+        <div className="mb-6 flex items-center gap-3">
+          <AlertTriangle className="text-danger" size={24} />
+          <h1 className="text-xl font-bold text-danger">Delete Your Good Fights Account</h1>
+        </div>
+
+        <div className="space-y-4 text-sm text-text-secondary">
+          <p>
+            You can request deletion of your Good Fights account and all associated data at any time.
+            You do not need to download the app to do this.
+          </p>
+
+          <h2 className="text-lg font-semibold text-foreground">How to delete your account</h2>
+          <ul className="list-inside list-disc space-y-2">
+            <li>
+              <span className="font-semibold text-foreground">From the web:</span> Sign in to{' '}
+              <a href="/login" className="text-primary hover:underline">goodfights.app</a> and return to this
+              page to permanently delete your account immediately.
+            </li>
+            <li>
+              <span className="font-semibold text-foreground">From the mobile app:</span> Go to Settings →
+              Advanced Settings → Delete Account.
+            </li>
+            <li>
+              <span className="font-semibold text-foreground">By email:</span> Email{' '}
+              <a href="mailto:privacy@goodfights.app" className="text-primary hover:underline">privacy@goodfights.app</a>{' '}
+              from the address on your account and we will delete it within 30 days.
+            </li>
+          </ul>
+
+          <h2 className="text-lg font-semibold text-foreground">What gets deleted</h2>
+          <p>Deleting your account permanently removes all data associated with it, including:</p>
+          <ul className="list-inside list-disc space-y-1">
+            <li>Your account and profile information (email, display name)</li>
+            <li>All your ratings and reviews</li>
+            <li>All your hype scores</li>
+            <li>All your comments</li>
+          </ul>
+          <p>
+            This action is permanent and cannot be undone. We do not retain any personal data after deletion,
+            except where required by law.
+          </p>
+
+          <p className="pt-2">
+            <a href="/login" className="text-primary hover:underline">Sign in to delete your account →</a>
+          </p>
+        </div>
       </div>
     );
   }
