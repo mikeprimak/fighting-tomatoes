@@ -7,7 +7,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 - **Always ask before starting EAS builds** — build credits are limited
 - **Never use local DB** — always use Render External URL unless explicitly asked
 - **Document your work** — at end of every session, create or update `docs/daily/YYYY-MM-DD.md`. If you changed how an area works, update the relevant `docs/areas/*.md`. See `docs/README.md` for templates. Do this without being asked.
-- **Vercel CLI is installed** — manage Vercel things yourself (deploys, env vars, project linking, logs). Don't make the user run Vercel commands. Projects: `packages/web` (Next.js at web-jet-gamma-12.vercel.app) and `packages/landing` (static at goodfights.app). Both auto-deploy from `main` — a `git push` usually suffices.
+- **Vercel CLI is installed** — manage Vercel things yourself (deploys, env vars, project linking, logs). Don't make the user run Vercel commands. Projects: `packages/web` (Next.js, **prod at goodfights.app**) and `packages/landing` (static). Both auto-deploy from `main` — a `git push` usually suffices. **`web-jet-gamma-12.vercel.app` is the old `packages/web` URL and is now an unused dev area — use goodfights.app, never web-jet-gamma-12.**
 - **Log recurring tasks** — when a session surfaces a *recurring* operator task (weekly attribution review, quarterly trait refresh, scraper health audits, etc.), append it to `docs/operations/maintenance.md` under the right cadence section. One-offs don't belong there.
 
 ## Next Session
@@ -34,7 +34,8 @@ When Mike says "this is a [X] session", switch into focused mode on that workstr
 
 ## Web App
 
-- `packages/web` (Next.js 16.2 + Tailwind v4), prod: https://web-jet-gamma-12.vercel.app
+- `packages/web` (Next.js 16.2 + Tailwind v4), prod: https://goodfights.app (blog at `/blog/<slug>`)
+- `web-jet-gamma-12.vercel.app` = old URL, now unused dev area — don't reference it
 - Vercel project: `michael-primaks-projects/web`, 29 routes, SSR, dark-only
 - Env vars in Vercel: `API_URL` + `NEXT_PUBLIC_API_URL` → Render backend
 - Dev: `cd packages/web && pnpm dev` (port 3000)
