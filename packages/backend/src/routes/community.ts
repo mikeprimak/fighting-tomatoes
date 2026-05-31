@@ -245,150 +245,156 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       const { period = 'week' } = request.query as { period?: string };
       console.log('[Top Upcoming Fights] userId:', userId, 'period:', period);
 
-      // Calculate time range based on period
+      // "Most Hyped" must only ever show genuinely hyped fights. A fight needs
+      // at least this aggregate hype to qualify — zero-hype fights never leak in.
+      const MIN_AGGREGATE_HYPE = 7;
+      const DESIRED_COUNT = 10;
+
+      // Calculate the initial forward-looking window based on period.
       const now = new Date();
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const endDate = new Date();
 
+      const windowEnd = (days: number) => {
+        const d = new Date(startOfToday);
+        d.setDate(d.getDate() + days);
+        return d;
+      };
+
+      let initialDays: number;
       switch (period) {
-        case 'week':
-          endDate.setDate(now.getDate() + 6);
-          break;
         case 'month':
-          endDate.setMonth(now.getMonth() + 1);
+          initialDays = 31;
           break;
         case '3months':
-          endDate.setMonth(now.getMonth() + 3);
+          initialDays = 92;
           break;
+        case 'week':
         default:
-          // Default to week if invalid period
-          endDate.setDate(now.getDate() + 6);
+          initialDays = 6;
+          break;
       }
 
-      // Get fights with their predictions to calculate average hype
-      // Use startOfToday (not current time) to include fights happening later today
-      const fights = await fastify.prisma.fight.findMany({
-        where: {
-          event: {
-            date: {
-              gte: startOfToday,
-              lte: endDate,
-            },
-          },
-          fightStatus: 'UPCOMING',
-        },
-        include: {
-          fighter1: true,
-          fighter2: true,
-          event: true,
-          _count: {
-            select: {
-              preFightComments: true,
-            },
-          },
-          predictions: userId ? {
-            where: {
-              OR: [
-                { userId },
-                { predictedRating: { not: null } }
-              ]
-            },
-            select: {
-              predictedRating: true,
-              userId: true,
-            },
-          } : {
-            where: {
-              predictedRating: {
-                not: null,
+      // Score every UPCOMING fight up to `endDate`, returning fights sorted by
+      // hype with the >= MIN_AGGREGATE_HYPE floor applied (zero-hype excluded).
+      const fetchScored = async (endDate: Date) => {
+        const fights = await fastify.prisma.fight.findMany({
+          where: {
+            event: {
+              date: {
+                gte: startOfToday,
+                lte: endDate,
               },
             },
-            select: {
-              predictedRating: true,
-            },
+            fightStatus: 'UPCOMING',
           },
-          ...(userId ? {
-            preFightComments: {
-              where: { userId },
-              select: { id: true },
+          include: {
+            fighter1: true,
+            fighter2: true,
+            event: true,
+            _count: {
+              select: {
+                preFightComments: true,
+              },
             },
-          } : {}),
-        },
-      });
-
-      // Get user's fighter follows if authenticated
-      let followedFighters: any[] = [];
-      if (userId) {
-        // Get all unique fighter IDs from the fights
-        const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
-        const uniqueFighterIds = [...new Set(allFighterIds)];
-
-        // Check which fighters the user is following
-        followedFighters = await fastify.prisma.userFighterFollow.findMany({
-          where: {
-            userId,
-            fighterId: { in: uniqueFighterIds },
-          },
-          select: {
-            fighterId: true,
+            predictions: userId ? {
+              where: {
+                OR: [
+                  { userId },
+                  { predictedRating: { not: null } }
+                ]
+              },
+              select: {
+                predictedRating: true,
+                userId: true,
+              },
+            } : {
+              where: {
+                predictedRating: {
+                  not: null,
+                },
+              },
+              select: {
+                predictedRating: true,
+              },
+            },
+            ...(userId ? {
+              preFightComments: {
+                where: { userId },
+                select: { id: true },
+              },
+            } : {}),
           },
         });
+
+        // Get user's fighter follows if authenticated
+        let followedFighters: any[] = [];
+        if (userId) {
+          const allFighterIds = fights.flatMap((f: any) => [f.fighter1Id, f.fighter2Id]);
+          const uniqueFighterIds = [...new Set(allFighterIds)];
+
+          followedFighters = await fastify.prisma.userFighterFollow.findMany({
+            where: {
+              userId,
+              fighterId: { in: uniqueFighterIds },
+            },
+            select: {
+              fighterId: true,
+            },
+          });
+        }
+
+        const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
+
+        // Calculate average hype for each fight, apply the floor, sort.
+        return fights
+          .map((fight: any) => {
+            const allHypes = fight.predictions
+              .filter((p: any) => p.predictedRating != null)
+              .map((p: any) => p.predictedRating);
+            const averageHype = allHypes.length > 0
+              ? allHypes.reduce((sum: number, h: number) => sum + h, 0) / allHypes.length
+              : 0;
+
+            const userPrediction = userId
+              ? fight.predictions.find((p: any) => p.userId === userId)
+              : null;
+            const userHypePrediction = userPrediction?.predictedRating || null;
+
+            const transformed: any = {
+              ...fight,
+              predictions: undefined,
+              preFightComments: undefined,
+              _count: undefined,
+              averageHype,
+              userHypePrediction,
+              hypeCount: allHypes.length,
+              commentCount: fight._count?.preFightComments || 0,
+              ...(userId && fight.preFightComments ? { userCommentCount: fight.preFightComments.length } : {}),
+            };
+
+            if (userId) {
+              transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
+              transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
+            }
+
+            return transformed;
+          })
+          .filter((f: any) => f.averageHype >= MIN_AGGREGATE_HYPE)
+          .sort((a: any, b: any) => b.averageHype - a.averageHype || b.hypeCount - a.hypeCount);
+      };
+
+      // Start with the requested window, then progressively expand the
+      // forward-looking horizon until we fill the section with hyped fights.
+      // The tight default window often holds too few >= 7-hype fights.
+      const horizons = [...new Set([initialDays, 31, 92, 183])].sort((a, b) => a - b);
+      let fightsWithHype: any[] = [];
+      for (const days of horizons) {
+        fightsWithHype = await fetchScored(windowEnd(days));
+        if (fightsWithHype.length >= DESIRED_COUNT) break;
       }
+      fightsWithHype = fightsWithHype.slice(0, DESIRED_COUNT);
 
-      const followedFighterIds = new Set(followedFighters.map(ff => ff.fighterId));
-
-      // Calculate average hype for each fight and add user hype
-      const fightsWithHype = fights
-        .map((fight: any) => {
-          const allHypes = fight.predictions
-            .filter((p: any) => p.predictedRating != null)
-            .map((p: any) => p.predictedRating);
-          const averageHype = allHypes.length > 0
-            ? allHypes.reduce((sum: number, h: number) => sum + h, 0) / allHypes.length
-            : 0;
-
-          // Get user's hype if authenticated
-          const userPrediction = userId
-            ? fight.predictions.find((p: any) => p.userId === userId)
-            : null;
-          const userHypePrediction = userPrediction?.predictedRating || null;
-
-          if (userId && fight.id === '68606cbb-5e84-4bba-8c80-9bdd2e691994') {
-            console.log('[Shevchenko vs Zhang] userPrediction:', userPrediction);
-            console.log('[Shevchenko vs Zhang] userHypePrediction:', userHypePrediction);
-            console.log('[Shevchenko vs Zhang] all predictions:', fight.predictions);
-          }
-
-          // Add notification/follow status
-          const transformed: any = {
-            ...fight,
-            predictions: undefined, // Remove from response
-            preFightComments: undefined, // Remove raw data from response
-            _count: undefined, // Remove raw count from response
-            averageHype,
-            userHypePrediction,
-            hypeCount: allHypes.length,
-            commentCount: fight._count?.preFightComments || 0,
-            ...(userId && fight.preFightComments ? { userCommentCount: fight.preFightComments.length } : {}),
-          };
-
-          if (userId) {
-            // Note: isFollowing and notification data will be added by notificationRuleEngine
-            // For now, just add fighter follow status for UI display
-            transformed.isFollowingFighter1 = followedFighterIds.has(fight.fighter1Id) || undefined;
-            transformed.isFollowingFighter2 = followedFighterIds.has(fight.fighter2Id) || undefined;
-          }
-
-          return transformed;
-        })
-        .sort((a: any, b: any) => b.averageHype - a.averageHype || b.hypeCount - a.hypeCount)
-        .slice(0, 10);
-
-      console.log('[Top Upcoming Fights] Returning data for first fight:', {
-        id: fightsWithHype[0]?.id,
-        userHypePrediction: fightsWithHype[0]?.userHypePrediction,
-        averageHype: fightsWithHype[0]?.averageHype,
-      });
+      console.log('[Top Upcoming Fights] Returning', fightsWithHype.length, 'hyped fights (>=', MIN_AGGREGATE_HYPE, ')');
 
       return reply.send({ data: fightsWithHype });
     } catch (error) {
