@@ -80,6 +80,10 @@ export interface SherdogEventData {
   isComplete: boolean;
   fights: SherdogFight[];
   scrapedAt: string;
+  /** Optional: concatenated text of the most-recent live-blog posts. Used by
+   *  narrative-based live-fight detection (Yahoo) where results don't reliably
+   *  reach the canonical recap. Sherdog leaves this undefined. */
+  recentText?: string;
 }
 
 // ============== HELPERS ==============

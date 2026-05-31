@@ -237,6 +237,14 @@ export class YahooLiveBlogScraper {
     // COMPLETED while undercard results are still flowing in).
     const isComplete = statusEnded && fights.length > 0;
 
+    // Newest ~6 posts' headline + body — the narrative of the fight currently
+    // in the ring. Main-card results don't reliably reach the `def.` recap, so
+    // the runner uses this to detect the live fight by fighter-name presence.
+    const recentText = updates
+      .slice(0, 6)
+      .map((u) => `${u.headline} ${u.body}`)
+      .join(' ');
+
     const data: SherdogEventData = {
       eventName,
       eventUrl: this.url,
@@ -244,6 +252,7 @@ export class YahooLiveBlogScraper {
       isComplete,
       fights,
       scrapedAt: new Date().toISOString(),
+      recentText,
     };
 
     const latest = updates[0]?.datePublished || '(no updates)';
