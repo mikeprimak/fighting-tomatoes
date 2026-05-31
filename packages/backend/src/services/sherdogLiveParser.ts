@@ -92,23 +92,37 @@ function findDbFight(
   const cFullA = compress(sA.name);
   const cFullB = compress(sB.name);
 
+  // Token sets from the scraped full names. Live blogs sometimes carry extra
+  // surname tokens our DB omits — e.g. Yahoo's "Yescia Nery Plata" vs our
+  // "Jessica Nery". splitName() would pick "Plata" as the last name and miss
+  // the match, so we also test every name token against the DB last name.
+  const tokens = (full: string) =>
+    normalize(full)
+      .split(/\s+/)
+      .map(t => t.replace(/[^a-z]/g, ''))
+      .filter(t => t.length >= 3);
+  const tokA = tokens(sA.name);
+  const tokB = tokens(sB.name);
+
+  const matchesLastNames = (x: string, y: string) =>
+    x === y || (x.length >= 3 && y.length >= 3 && (x.endsWith(y) || y.endsWith(x)));
+  const tokenMatch = (dbLast: string, toks: string[]) => {
+    const d = compress(dbLast);
+    return d.length >= 3 && toks.some(t => t === d || t.endsWith(d) || d.endsWith(t));
+  };
+
   return dbFights.find(f => {
     const dbA = compress(f.fighter1.lastName);
     const dbB = compress(f.fighter2.lastName);
     const dbFullA = compress(`${f.fighter1.firstName} ${f.fighter1.lastName}`);
     const dbFullB = compress(`${f.fighter2.firstName} ${f.fighter2.lastName}`);
 
-    const matchesLastNames = (x: string, y: string) =>
-      x === y || (x.length >= 3 && y.length >= 3 && (x.endsWith(y) || y.endsWith(x)));
+    const aHitsF1 = matchesLastNames(cA, dbA) || cFullA === dbFullA || tokenMatch(f.fighter1.lastName, tokA);
+    const aHitsF2 = matchesLastNames(cA, dbB) || cFullA === dbFullB || tokenMatch(f.fighter2.lastName, tokA);
+    const bHitsF1 = matchesLastNames(cB, dbA) || cFullB === dbFullA || tokenMatch(f.fighter1.lastName, tokB);
+    const bHitsF2 = matchesLastNames(cB, dbB) || cFullB === dbFullB || tokenMatch(f.fighter2.lastName, tokB);
 
-    const directOrder =
-      (matchesLastNames(cA, dbA) || cFullA === dbFullA) &&
-      (matchesLastNames(cB, dbB) || cFullB === dbFullB);
-    const reverseOrder =
-      (matchesLastNames(cA, dbB) || cFullA === dbFullB) &&
-      (matchesLastNames(cB, dbA) || cFullB === dbFullA);
-
-    return directOrder || reverseOrder;
+    return (aHitsF1 && bHitsF2) || (aHitsF2 && bHitsF1);
   });
 }
 
@@ -140,7 +154,18 @@ export interface SherdogParserResult {
 export async function parseSherdogLiveData(
   liveData: SherdogEventData,
   eventId: string,
-  options: BackfillOptions & { dryRun?: boolean } = {},
+  options: BackfillOptions & {
+    dryRun?: boolean;
+    /** When set, fire the "next fight is up next" walkout notification the
+     *  moment a fight flips to COMPLETED (the result comes in). This is the
+     *  signal model for trackers that detect fight-END rather than fight-START
+     *  — e.g. the Yahoo boxing live-blog tracker, which has no per-fight "Live
+     *  NOW" marker. Mirrors the manual-tracker cascade in admin.ts: next fight =
+     *  highest orderOnCard still UPCOMING below the one that just ended. Sherdog
+     *  leaves this OFF (it fires walkout on its earlier Live-NOW flip instead;
+     *  enabling both would double-notify). */
+    notifyNextFightOnComplete?: boolean;
+  } = {},
 ): Promise<SherdogParserResult> {
   const result: SherdogParserResult = {
     fightsUpdated: 0,
@@ -332,6 +357,50 @@ export async function parseSherdogLiveData(
           console.log(`     🔔 Walkout notif fired for ${dbLabel}`);
         } catch (err: any) {
           console.error(`     ❌ Walkout notif setup failed: ${err.message}`);
+        }
+      }
+
+      // Fight-END → notify the NEXT fight as up next (Yahoo-style trackers).
+      // When a result comes in, the following fight is ~10-15 min from its
+      // ring walk — exactly the heads-up window users want. Next fight = the
+      // highest orderOnCard still UPCOMING below the one that just completed
+      // (orderOnCard=1 is the main event/last; openers have the highest). Same
+      // convention + query as the manual-tracker cascade in admin.ts.
+      if (
+        !options.dryRun &&
+        isNewlyComplete &&
+        options.notifyNextFightOnComplete &&
+        !options.skipNotifications &&
+        dbFight.orderOnCard !== null
+      ) {
+        try {
+          const { notifyFightStartViaRules } = await import('./notificationService');
+          const nextFight = await prisma.fight.findFirst({
+            where: {
+              eventId,
+              orderOnCard: { lt: dbFight.orderOnCard },
+              fightStatus: 'UPCOMING',
+            },
+            orderBy: { orderOnCard: 'desc' },
+            include: {
+              fighter1: { select: { firstName: true, lastName: true } },
+              fighter2: { select: { firstName: true, lastName: true } },
+            },
+          });
+          if (nextFight) {
+            const fmt = (f: { firstName: string; lastName: string }) =>
+              f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : f.lastName || f.firstName;
+            notifyFightStartViaRules(
+              nextFight.id,
+              fmt(nextFight.fighter1),
+              fmt(nextFight.fighter2),
+            ).catch((err) => console.error(`     ❌ Up-next notif failed: ${err.message}`));
+            console.log(
+              `     🔔 Up-next notif fired: ${fmt(nextFight.fighter1)} vs ${fmt(nextFight.fighter2)} (after ${dbLabel} ended)`,
+            );
+          }
+        } catch (err: any) {
+          console.error(`     ❌ Up-next notif setup failed: ${err.message}`);
         }
       }
     }
