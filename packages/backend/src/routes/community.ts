@@ -248,6 +248,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // "Most Hyped" must only ever show genuinely hyped fights. A fight needs
       // at least this aggregate hype to qualify — zero-hype fights never leak in.
       const MIN_AGGREGATE_HYPE = 7;
+      // Require a minimum number of hype predictions so a single early vote
+      // can't crown a fight — the average must be backed by >= this many hypes.
+      const MIN_HYPE_COUNT = 3;
       const DESIRED_COUNT = 10;
 
       // Calculate the initial forward-looking window based on period.
@@ -379,7 +382,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
             return transformed;
           })
-          .filter((f: any) => f.averageHype >= MIN_AGGREGATE_HYPE);
+          .filter((f: any) => f.averageHype >= MIN_AGGREGATE_HYPE && f.hypeCount >= MIN_HYPE_COUNT);
       };
 
       // Time bands (days from today). The section fills from the nearest band
