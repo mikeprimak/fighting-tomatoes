@@ -386,7 +386,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // Start with the requested window, then progressively expand the
       // forward-looking horizon until we fill the section with hyped fights.
       // The tight default window often holds too few >= 7-hype fights.
-      const horizons = [...new Set([initialDays, 31, 92, 183])].sort((a, b) => a - b);
+      const horizons = [...new Set([initialDays, 13, 20, 26, 61])].sort((a, b) => a - b);
       let fightsWithHype: any[] = [];
       for (const days of horizons) {
         fightsWithHype = await fetchScored(windowEnd(days));
