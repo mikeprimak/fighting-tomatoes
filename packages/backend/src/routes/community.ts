@@ -379,20 +379,35 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
             return transformed;
           })
-          .filter((f: any) => f.averageHype >= MIN_AGGREGATE_HYPE)
-          .sort((a: any, b: any) => b.averageHype - a.averageHype || b.hypeCount - a.hypeCount);
+          .filter((f: any) => f.averageHype >= MIN_AGGREGATE_HYPE);
       };
 
-      // Start with the requested window, then progressively expand the
-      // forward-looking horizon until we fill the section with hyped fights.
-      // The tight default window often holds too few >= 7-hype fights.
-      const horizons = [...new Set([initialDays, 13, 20, 26, 61])].sort((a, b) => a - b);
-      let fightsWithHype: any[] = [];
-      for (const days of horizons) {
-        fightsWithHype = await fetchScored(windowEnd(days));
-        if (fightsWithHype.length >= DESIRED_COUNT) break;
-      }
-      fightsWithHype = fightsWithHype.slice(0, DESIRED_COUNT);
+      // Time bands (days from today). The section fills from the nearest band
+      // first: any >= 7-hype fights in the next 6 days lead (sorted by hype),
+      // then the 7-13 day band fills remaining spots (sorted by hype), and so
+      // on. A far-off high-hype fight never jumps ahead of a sooner one.
+      const bands = [...new Set([initialDays, 13, 20, 26, 61])].sort((a, b) => a - b);
+      const maxDays = bands[bands.length - 1];
+
+      const scored = await fetchScored(windowEnd(maxDays));
+
+      const dayOffset = (f: any) => {
+        const t = new Date(f.event?.mainStartTime || f.event?.date).getTime();
+        return Math.floor((t - startOfToday.getTime()) / 86400000);
+      };
+      const bandIndex = (f: any) => {
+        const d = dayOffset(f);
+        const i = bands.findIndex((b) => d <= b);
+        return i === -1 ? bands.length : i;
+      };
+
+      const fightsWithHype = scored
+        .sort((a: any, b: any) =>
+          bandIndex(a) - bandIndex(b) ||
+          b.averageHype - a.averageHype ||
+          b.hypeCount - a.hypeCount
+        )
+        .slice(0, DESIRED_COUNT);
 
       console.log('[Top Upcoming Fights] Returning', fightsWithHype.length, 'hyped fights (>=', MIN_AGGREGATE_HYPE, ')');
 
