@@ -246,6 +246,34 @@ Bleacher Report runs as a parallel cross-check on fight-end — if Sherdog's Off
 
 (BJPenn lagging, dropped from consideration.)
 
+### MVP **boxing** — Han vs. Holm 2 source scout (2026-05-30, ~19:45 ET, prelims live)
+
+**Context**: Han vs. Holm 2 (MVPW-03, El Paso, ESPN) is an **all-boxing** card — 12 women's bouts headlined by Stephanie Han vs Holly Holm, plus Amanda Serrano, Yokasta Valle, Mary Spencer. This is the key finding: **the Sherdog tracker does not apply to boxing.** Sherdog is an MMA outlet — it writes structured PBP news articles for MMA only. Confirmed at scout time: Sherdog's news feed had live PBP pages for tonight's *MMA* cards (PFL Brussels, PFL MENA 9, UFC Macau) but none for Han vs Holm; four guessed `…-playbyplay-results-round-scoring` URL patterns all 404'd. So MVP boxing cards need a **separate, non-Sherdog live source**. Scouted the boxing source ladder live during the prelims.
+
+**Sources probed** (all curled with a browser UA — most boxing live pages block plain WebFetch):
+
+| Source | HTTP | Live signal? | Structured? | Verdict |
+|---|---|---|---|---|
+| **Yahoo Sports / Uncrowned live blog** | 200 (683 KB) | **Yes** — `liveblog-status live` + per-post `<time class="post-time" dateTime>` ISO timestamps, latest ~1-2 min old | **Yes** — schema.org `LiveBlogPosting` JSON-LD: array of `BlogPosting` updates each w/ `datePublished` + `headline` + `articleBody` | **Primary** |
+| MVP promoter RBR (mostvaluablepromotions.com) | 200 (109 KB) | Updates per fight-completion, no clean live marker | Semi — `result-c` blocks w/ canonical `def. X via UD (scores)`, but bleeds in old MVP-1 articles (Nate Diaz etc.) + promoter-reliability risk ([[lesson_promoter_site_phantom_events]]) | Backup / cross-check |
+| BoxRec (date page + Holm profile) | 200 | **No** — Holm's bout row reads "scheduled bouts subject to change"; result posted only post-fight, often delayed | Yes (tables, stable fighter IDs `box-pro/{id}`) | **Post-event result backfill only**, not live |
+| Tapology event page | 200 (551 KB) | **No** — page shows pre-fight card/odds/leaderboard, no live results | (the generic tracker we already run) | Rejected — this *is* the gap (Tapology unreliable-live for MVP, why MVP fell through to no-tracker) |
+| FightMag live results | 403 | — | — | Rejected — blocks scraping |
+| Sherdog PBP | 404 | — | — | N/A — MMA only, doesn't cover boxing |
+
+**Decision: Yahoo/Uncrowned live blog is the primary boxing live source.** Evidence: structured + timestamped + current + major outlet (Alan Dawson byline; Yahoo also ran the RBR for the Rousey MMA card). Sample beats captured live: "DOWN GOES PANATTA!!!", "The judges are unanimous!", "The results are in!", "def. Maria Salinas by UD (80-72 × 3)".
+
+**Parser shape differs from Sherdog.** Sherdog gave a per-fight structured *card* (`<div class="event">` blocks). Yahoo is a reverse-chronological prose *stream*. A Yahoo parser would: (1) parse the `LiveBlogPosting` JSON-LD into ordered `{datePublished, headline, body}`; (2) detect result-announcement posts ("judges are unanimous" / "results are in" / `def. X by UD/KO/TKO (scores)`) → extract winner+method+scores → match DB fight by last names → COMPLETED + backfill; (3) detect ring-walk posts → walkout/start signal; (4) `liveblog-status` ended → event complete. Closer to the "live blog" tier (tier 3) than the structured-aggregator tier, but the JSON-LD makes it tractable — comparable effort to the Sherdog parser. Reuse `compress()`/`stripDiacritics` last-name matching + the COMPLETED-never-reversed guards from `sherdogLiveParser.ts`.
+
+**Architectural note** — this is the boxing analog of the Sherdog decision. A generic `yahooLiveBlogScraper` + per-event `yahooLiveBlogUrl` (mirror of `sherdogPbpUrl`) would cover **every** future boxing card on the same plumbing (MVP, Matchroom, Top Rank boxing, Golden Boy, DAZN cards) the way Sherdog generalizes MMA. BoxRec stays as the reserved post-event result-backfill source.
+
+**Reference URLs** (caught up ~19:45 ET, prelims live):
+- Yahoo live blog: https://sports.yahoo.com/boxing/live/stephanie-han-vs-holly-holm-2-live-results-round-by-round-updates-ring-walks-for-texas-rematch-070000761.html
+- MVP promoter RBR: https://www.mostvaluablepromotions.com/mvpw-03-results-han-vs-holm-2-serrano-vs-hanson-live-round-by-round-updates/
+- BoxRec event: https://boxrec.com/en/date?date=2026-05-30 · Holm: https://boxrec.com/en/box-pro/117628
+
+**Status**: source chosen (Yahoo). Build not started — recommend building the parser now against the live card (the MVP-1 pattern), since live data is the only way to validate start/end latency.
+
 ## Open problems / roadmap
 
 - **Daily Sherdog probe (next build, ~30 min)** — automate setting `event.sherdogPbpUrl` so the operational checklist above becomes zero manual steps. Pattern: cron-driven script that GETs `https://www.sherdog.com/news` (or sitemap), pulls article titles, fuzzy-matches against upcoming-event names in our DB, writes any hit onto the event. Idempotent; never overwrites a non-null value. Sherdog publishes PBP article headers ~day-of, so a daily run at noon-ish ET catches all night-of cards. The probe is essentially the same shape as the existing daily broadcast-discovery job in `services/broadcastDiscovery/`.

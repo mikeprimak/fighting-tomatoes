@@ -184,7 +184,13 @@ export async function parseSherdogLiveData(
     if (!options.dryRun) {
       await prisma.event.update({
         where: { id: eventId },
-        data: { eventStatus: 'COMPLETED', completionMethod: 'sherdog-tracker' },
+        data: {
+          eventStatus: 'COMPLETED',
+          // Audit label honors the caller's source (e.g. 'yahoo-tracker' when
+          // the Yahoo live-blog scraper feeds this reconciler); defaults to
+          // sherdog for the original caller.
+          completionMethod: options.completionMethodOverride || 'sherdog-tracker',
+        },
       });
     }
     console.log(`  ✅ Event → COMPLETED`);
