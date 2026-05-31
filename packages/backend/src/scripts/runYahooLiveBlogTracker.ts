@@ -98,6 +98,10 @@ async function main() {
     nullOnlyResults: args.nullOnlyResults,
     skipNotifications: args.skipNotifications,
     completionMethodOverride: 'yahoo-tracker',
+    // Yahoo detects fight-END (the result), not fight-START. So the moment a
+    // result lands, notify the next fight as "up next" — the heads-up signal
+    // that is this tracker's primary purpose.
+    notifyNextFightOnComplete: true,
   });
 
   console.log('========================================');
