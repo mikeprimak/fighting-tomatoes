@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Good Fights — Highly Rated Combat Sports Fights",
+    default: "Good Fights",
     template: "%s — Good Fights",
   },
   description: "Rate and review MMA, boxing, and combat sports fights. See community ratings, hype scores, and discover the best fights.",
