@@ -150,17 +150,16 @@ async function detectAndNotifyLiveFight(eventId: string, recentText: string): Pr
     f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : f.lastName || f.firstName;
   const label = `${fmt(live.fighter1)} vs ${fmt(live.fighter2)}`;
 
-  // Everything earlier in the card (higher orderOnCard) is finished — complete
-  // any still-open rows (winners backfill later from the recap / BoxRec).
-  const passed = await prisma.fight.updateMany({
-    where: {
-      eventId,
-      orderOnCard: { gt: live.orderOnCard },
-      fightStatus: { in: ['UPCOMING', 'LIVE'] },
-    },
-    data: { fightStatus: 'COMPLETED', completionMethod: 'yahoo-narrative-passed', completedAt: new Date() },
+  // ORDER-AGNOSTIC: MVP reorders fights live, and no source publishes the live
+  // running order, so we do NOT assume orderOnCard is the broadcast order. When
+  // the narrated fight changes, whatever we previously had LIVE has ended —
+  // complete it (winner backfills from the recap / BoxRec). We follow the
+  // broadcast purely by which fighters are being talked about.
+  const prevLive = await prisma.fight.updateMany({
+    where: { eventId, id: { not: live.id }, fightStatus: 'LIVE' },
+    data: { fightStatus: 'COMPLETED', completionMethod: 'yahoo-narrative-ended', completedAt: new Date() },
   });
-  if (passed.count) console.log(`[YAHOO TRACKER] Completed ${passed.count} earlier fight(s) the broadcast moved past.`);
+  if (prevLive.count) console.log(`[YAHOO TRACKER] Completed ${prevLive.count} fight(s) the broadcast moved on from.`);
 
   if (live.fightStatus === 'LIVE') {
     console.log(`[YAHOO TRACKER] Live fight unchanged: ${label} (already LIVE, notif already sent).`);
