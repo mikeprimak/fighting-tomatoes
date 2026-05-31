@@ -28,7 +28,7 @@ The Sherdog tracker (shipped 2026-05-16) is now the **standard live tracker for 
 | ONE FC | `onefc` | onefc.com | ✓ Reliable |
 | BKFC | `bkfc` | dedicated parser | ✓ Reliable |
 | Oktagon | `oktagon` | dedicated parser | ✓ Reliable |
-| RAF | `raf` | dedicated parser | ✓ Reliable |
+| RAF | `raf` | realamericanfreestyle.com (result-only) | ⚠️ Results work (after 2026-05-30 fix); up-next needs Yahoo — see HANDOFF-raf-live-tracker-2026-05-30 |
 | PFL | `pfl` | dedicated parser | ✓ Reliable |
 | Matchroom | `matchroom` | matchroomboxing.com | ✓ Reliable |
 | Zuffa Boxing | `tapology` | Tapology (generic) | ✓ Reliable enough |
@@ -58,6 +58,29 @@ Step 1 is the only manual step. It will be automated by a daily probe job that:
 - Runs daily, idempotent, only writes if the field is currently null
 
 Probe is unbuilt; estimated ~30 min of work, additive, low risk. Tracked in "Open problems" below.
+
+### Boxing cards — Yahoo/Uncrowned tracker (shipped 2026-05-30)
+
+**Sherdog is MMA-only — it publishes no PBP for boxing.** Boxing cards (MVP
+boxing, Top Rank boxing, Golden Boy, Matchroom, DAZN, also RAF up-next) use the
+**Yahoo/Uncrowned live-blog tracker** instead. Same idea as Sherdog: a generic
+scraper + the *same* reconciler, activated per-event by a Yahoo live-blog URL.
+
+- Source: `sports.yahoo.com/boxing/live/<event-slug>-...html` — canonical
+  `"{Winner} def. {Loser} by {METHOD} (scores)"` recap + `LiveBlogPosting`
+  JSON-LD. `fetch()` with a browser UA works.
+- Code: `services/yahooLiveBlogScraper.ts` + `scripts/runYahooLiveBlogTracker.ts`;
+  reuses `parseSherdogLiveData` with `notifyNextFightOnComplete: true` (fires the
+  "next fight up next" notif when each **result** lands — Yahoo detects fight-END,
+  not fight-START).
+- **Run + gotchas + per-card playbook: `docs/HANDOFF-yahoo-boxing-live-tracker-2026-05-30.md`.**
+  Key gotchas: Yahoo keeps only ~20 posts (results scroll off → poll ≤90s);
+  set `useManualLiveTracker=true` to stop the no-tracker bulk-flip; reset
+  wrongly-`notificationSent=true` rows or the main-event notif is suppressed;
+  app "up next" = highest `orderOnCard` still UPCOMING (keep done fights
+  COMPLETED). Currently **manual CLI loop only** — not yet wired into
+  lifecycle/VPS (the `Event.yahooLiveBlogUrl` + dispatch + VPS handler is the
+  deferred durability step, mirroring Sherdog).
 
 ## Architecture decision: Sherdog as the default tracker source (2026-05-16)
 
@@ -98,6 +121,19 @@ With that split:
 - Render → VPS dispatch contract (`/track/start`, `/track/check`)
 
 **Migration cost vs. value.** ~2-3 days of refactor. Not urgent — the layered approach works and ships features. Worth doing when we either hit ~3 more org additions and per-org boilerplate gets painful, or right before a sale pitch where "we support every org cleanly" becomes a marketing artifact.
+
+## Finding: RAF tracking + the up-next source problem (2026-05-30, during RAF 09)
+
+Full writeup: **`docs/HANDOFF-raf-live-tracker-2026-05-30.md`**. Key points for this doc:
+
+- **RAF's `✓ Reliable` claim was false.** The RAF parser computed correct results but `raf` was missing from `production_scrapers`, so it wrote only *shadow* fields — the app's visible state came entirely from the lifecycle bulk-flip (all fights COMPLETED, no winners). Fixed live by adding `raf` to `production_scrapers` (local/prod-config only; decide vs. gate-bypass like Sherdog later).
+- **The official RAF site is RESULT-ONLY** (`realamericanfreestyle.com/events/rafNN`, on `Event.ufcUrl`): winner + score + takedowns ~2-5 min after each bout, but **no live/walkout signal** — bouts read `upcoming` until finished.
+- **`notifyNextFight()` was directionally wrong.** RAF runs **main-event-last** (`orderOnCard [1]` = headliner = last to compete; bouts run descending). Old `orderOnCard > completed` returned NULL → up-next never fired. Fixed to `< completed` / `desc`.
+- **Up-next cannot be driven off a result-only source** — by the time a result posts, the next fight is already on (confirmed live: pinged Keckeisen up-next while Nolf was already on the mat).
+- **Yahoo's live blog is the up-next source for RAF.** It posts a forward-looking headline ~1-3 min before each bout under rotating labels (`First Match:` / `Up Next:` / `Next Up:` / `On Deck:`), real-time, ahead of the official page. Server-rendered JSON in the page HTML, parseable without a browser. A poller (`raf-upnext-yahoo.ts`) was built + dry-run-verified; productionize as the notification trigger while keeping the official page for results.
+- ⚠️ **GH Actions `raf-live-tracker.yml` was not actually running** (all `trackerUpdatedAt` NULL pre-manual-run) — investigate dispatch / `GITHUB_TOKEN`.
+
+General principle reinforced: **results and up-next are different signals and may need different sources.** A forward-looking signal (walkout / on-deck) is required for up-next; a result feed is only good for status/closure.
 
 ## Source ranking ladder
 
