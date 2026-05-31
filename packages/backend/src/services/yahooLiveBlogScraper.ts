@@ -123,7 +123,11 @@ function extractResults(text: string): SherdogFightResult[] {
     }
 
     out.push({
-      winner: splitName(winnerFull).lastName,
+      // Pass the FULL winner name (not just the last token). resolveWinnerId in
+      // the parser substring-matches it against each DB fighter's last name, so
+      // a multi-token live-blog name ("Yesica Nery Plata") still resolves to our
+      // "Nery" — where splitName() would have wrongly yielded "Plata".
+      winner: winnerFull,
       method,
       round,
       time: null, // Yahoo recap doesn't carry M:SS; finishes give round only.
