@@ -124,6 +124,12 @@
         }
       ],
       "expo-web-browser",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Allow Good Fights to use Face ID to sign you back in quickly."
+        }
+      ],
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       "@sentry/react-native",

@@ -3,6 +3,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { AppState, AppStateStatus, Platform } from 'react-native';
 import { secureStorage } from '../utils/secureStorage';
+import {
+  isBiometricAvailable,
+  isBiometricEnabled,
+  storeBiometricCredentials,
+  getBiometricCredentials,
+  clearBiometricCredentials,
+  promptBiometric,
+} from '../utils/biometricAuth';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
 import type { Notification, NotificationResponse } from 'expo-notifications';
@@ -65,9 +73,15 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   isGuest: boolean;
+  // Biometric quick-unlock
+  biometricAvailable: boolean;
+  biometricEnabled: boolean;
   login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: (idToken: string) => Promise<void>;
   loginWithApple: (identityToken: string, email?: string, firstName?: string, lastName?: string) => Promise<void>;
+  loginWithBiometric: () => Promise<void>;
+  enableBiometricLogin: (email: string, password: string) => Promise<boolean>;
+  disableBiometricLogin: () => Promise<void>;
   register: (userData: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<void>;
@@ -127,6 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     identifyPosthog(user);
   }, [user?.id]);
   const [isGuest, setIsGuest] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const appState = useRef(AppState.currentState);
 
   const isAuthenticated = !!user && !!accessToken;
@@ -273,6 +289,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Probe biometric capability + saved preference once on mount so the login
+  // screen can decide whether to show the quick-unlock button.
+  useEffect(() => {
+    (async () => {
+      const [available, enabled] = await Promise.all([
+        isBiometricAvailable(),
+        isBiometricEnabled(),
+      ]);
+      setBiometricAvailable(available);
+      setBiometricEnabled(enabled);
+    })();
+  }, []);
+
   // Initialize auth state on app start
   useEffect(() => {
     initializeAuth();
@@ -416,6 +445,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setIsGuest(false); // Clear guest mode on login
 
+      // If biometric quick-unlock is already on, keep the stored credentials in
+      // sync with what just worked (covers a password change since enabling).
+      if (await isBiometricEnabled()) {
+        await storeBiometricCredentials(email, password);
+      }
+
       // Clear query cache to ensure fresh data for the new user
       queryClient.clear();
       console.log('Query cache cleared on login');
@@ -515,6 +550,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Apple login error:', error);
       throw error;
     }
+  };
+
+  // Quick-unlock: confirm a biometric scan, then replay the stored credentials
+  // through the normal login path (which stores fresh tokens + navigates). We
+  // re-login rather than reuse the refresh token on purpose — the logouts this
+  // feature exists to fix are caused by the refresh token being rejected, so a
+  // full re-auth is the only thing guaranteed to work in that case.
+  const loginWithBiometric = async () => {
+    const creds = await getBiometricCredentials();
+    if (!creds) {
+      throw new Error('No saved sign-in found. Please sign in with your password.');
+    }
+    const ok = await promptBiometric('Sign in to Good Fights');
+    if (!ok) {
+      throw new Error('Authentication cancelled');
+    }
+    try {
+      await login(creds.email, creds.password);
+    } catch (error) {
+      // If the password is genuinely wrong (e.g. changed elsewhere, or a typo
+      // when enabling from Settings), the stored creds are useless — clear them
+      // and disable so the user falls back to password sign-in cleanly. Network
+      // / server errors are NOT auth failures, so leave the setup intact then.
+      const message = error instanceof Error ? error.message.toLowerCase() : '';
+      if (message.includes('invalid') || message.includes('password') || message.includes('credential')) {
+        await clearBiometricCredentials();
+        setBiometricEnabled(false);
+        throw new Error('Saved password no longer works. Please sign in with your password.');
+      }
+      throw error;
+    }
+  };
+
+  // Called right after a successful manual login (the screen still has the
+  // plaintext password in state). Confirms a scan, then stores the credentials.
+  const enableBiometricLogin = async (email: string, password: string): Promise<boolean> => {
+    if (!(await isBiometricAvailable())) return false;
+    const ok = await promptBiometric('Confirm to enable quick sign-in');
+    if (!ok) return false;
+    await storeBiometricCredentials(email, password);
+    setBiometricAvailable(true);
+    setBiometricEnabled(true);
+    return true;
+  };
+
+  const disableBiometricLogin = async () => {
+    await clearBiometricCredentials();
+    setBiometricEnabled(false);
   };
 
   const register = async (userData: RegisterData) => {
@@ -744,9 +827,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isAuthenticated,
     isGuest,
+    biometricAvailable,
+    biometricEnabled,
     login,
     loginWithGoogle,
     loginWithApple,
+    loginWithBiometric,
+    enableBiometricLogin,
+    disableBiometricLogin,
     register,
     logout,
     refreshToken,
