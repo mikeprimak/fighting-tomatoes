@@ -95,13 +95,16 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 
 | Platform | Version | Build # | Status |
 |---|---|---|---|
-| Android (Play Store) | 2.0.x | versionCode 36 | Live (uploaded 2026-04-19) |
-| iOS (App Store) | 2.1.0 | buildNumber 19 | Submitted 2026-05-30 (processing → new ASC version) |
+| Android (Play Store) | 2.1.0 | versionCode 38 | In review (uploaded 2026-06-01) |
+| iOS (App Store) | 2.1.1 | buildNumber 21 | In TestFlight (submitted 2026-06-01); not yet submitted for App Store review |
 
-- **Android prod is on versionCode 36, NOT 34.** The Feb-27 "34" note was stale and caused a failed 2.1.0 upload (built vc 35 < live vc 36 → "no existing users can upgrade"). The 2.1.0 Android rebuild is **versionCode 37**. Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
-- `build.gradle`: Android versionCode `37`, versionName `2.1.0`. `app.json`: version `2.1.0`, iOS buildNumber `19`.
+- **Android prod was versionCode 36 (2.0.x); 2.1.0 shipped as vc 37 then vc 38** (2026-06-01, profile redesign + biometric native build). Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
+- `build.gradle`: Android versionCode `38`, versionName `2.1.0`. `app.json`: version `2.1.1`, iOS buildNumber `21`. **Note iOS marketing version (2.1.1) is ahead of Android versionName (2.1.0)** — they diverged because the iOS 2.1.0 train was sealed (see below).
+- **iOS 2.1.0 train is CLOSED** — an approved build sealed it, so ASC rejects new 2.1.0 builds (ITMS-90186 + 90062). Bump `app.json` version (e.g. 2.1.1) for any new iOS build. iOS `runtimeVersion` uses the `appVersion` policy, so the version bump also moves the iOS OTA runtime (now `2.1.1`).
 - Android `eas submit` fails due to Google service account permissions — download `.aab` and upload manually in Play Console.
 - iOS App Store Connect won't let you swap builds on an existing version — create a new version instead.
+- **`eas build` needs eas-cli >= 20** (eas.json constraint); the global install is a stale 16.28.0, so use `npx eas-cli@latest ...`. `eas update` works on the old one.
+- To read an ASC submission's real error (eas-cli only prints "something went wrong"): query `api.expo.dev/graphql` with the `expo-session` header from `~/.expo/state.json` `auth.sessionSecret`.
 - iOS OTA update ID (legacy 2.0.1): `562f0e34-83ef-4bdd-869e-39d6684ddfd1`.
 
 ## Test Accounts
