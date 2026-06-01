@@ -10,14 +10,20 @@ import {
   KeyboardEvent,
   ScrollView,
   Image,
+  Alert,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../store/AuthContext';
+import { getBiometricLabel } from '../../utils/biometricAuth';
 import { Colors } from '../../constants/Colors';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { GoogleSignInButton } from '../../components/GoogleSignInButton';
 import { AppleSignInButton } from '../../components/AppleSignInButton';
+
+const BIOMETRIC_PROMPT_DISMISSED_KEY = 'biometricPromptDismissed';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -26,9 +32,19 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [status, setStatus] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
-  const { login, continueAsGuest } = useAuth();
+  const [biometricLabel, setBiometricLabel] = useState('Biometrics');
+  const {
+    login,
+    continueAsGuest,
+    biometricAvailable,
+    biometricEnabled,
+    loginWithBiometric,
+    enableBiometricLogin,
+  } = useAuth();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+
+  const canQuickUnlock = biometricAvailable && biometricEnabled;
 
   // Handle keyboard show/hide
   useEffect(() => {
@@ -52,6 +68,67 @@ export default function LoginScreen() {
     };
   }, []);
 
+  // Resolve the device's biometric label (Face ID / Touch ID / Fingerprint) for
+  // button + prompt copy, and auto-trigger the unlock prompt once if it's set up
+  // so a returning (or just-logged-out) user can tap straight back in.
+  const autoPrompted = React.useRef(false);
+  useEffect(() => {
+    if (!canQuickUnlock) return;
+    let cancelled = false;
+    (async () => {
+      const label = await getBiometricLabel();
+      if (cancelled) return;
+      setBiometricLabel(label);
+      if (!autoPrompted.current) {
+        autoPrompted.current = true;
+        handleBiometricLogin();
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [canQuickUnlock]);
+
+  const handleBiometricLogin = async () => {
+    setIsLoading(true);
+    setStatus('');
+    try {
+      await loginWithBiometric();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      // A cancelled scan is a normal user action — don't shout about it.
+      if (message !== 'Authentication cancelled') {
+        setStatus(message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // After a successful manual login, offer to turn on quick-unlock — unless it's
+  // already on or the user has dismissed the offer before.
+  const maybeOfferBiometric = async (loginEmail: string, loginPassword: string) => {
+    if (!biometricAvailable || biometricEnabled) return;
+    const dismissed = await AsyncStorage.getItem(BIOMETRIC_PROMPT_DISMISSED_KEY);
+    if (dismissed === 'true') return;
+    const label = await getBiometricLabel();
+    Alert.alert(
+      `Sign in faster with ${label}?`,
+      `Next time, unlock Good Fights with ${label} instead of typing your password.`,
+      [
+        {
+          text: 'Not now',
+          style: 'cancel',
+          onPress: () => AsyncStorage.setItem(BIOMETRIC_PROMPT_DISMISSED_KEY, 'true'),
+        },
+        {
+          text: `Use ${label}`,
+          onPress: () => enableBiometricLogin(loginEmail, loginPassword),
+        },
+      ]
+    );
+  };
+
   const handleLogin = async () => {
     setStatus('Button clicked!');
 
@@ -63,9 +140,12 @@ export default function LoginScreen() {
     setIsLoading(true);
     setStatus('Logging in...');
 
+    const normalizedEmail = email.trim().toLowerCase();
     try {
-      await login(email.trim().toLowerCase(), password);
+      await login(normalizedEmail, password);
       setStatus('Login successful!');
+      // login() has already navigated to the tabs; this alert overlays it.
+      maybeOfferBiometric(normalizedEmail, password);
     } catch (error) {
       setStatus(`Login failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
@@ -86,6 +166,24 @@ export default function LoginScreen() {
           <View style={styles.header}>
             <Image source={require('../../assets/login-logo.png')} style={styles.logoImage} resizeMode="contain" />
           </View>
+
+        {/* Biometric quick-unlock — only when set up on this device */}
+        {canQuickUnlock && (
+          <TouchableOpacity
+            style={[styles.biometricButton, { borderColor: colors.primary }]}
+            onPress={handleBiometricLogin}
+            disabled={isLoading}
+          >
+            <Ionicons
+              name={biometricLabel === 'Face ID' || biometricLabel === 'Face Unlock' ? 'scan-outline' : 'finger-print'}
+              size={22}
+              color={colors.primary}
+            />
+            <Text style={[styles.biometricButtonText, { color: colors.primary }]}>
+              Unlock with {biometricLabel}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         {/* OAuth Sign-In Buttons */}
         <View style={styles.oauthContainer}>
@@ -298,6 +396,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
   },
   signUpLinkText: {
+    fontWeight: '600',
+  },
+  biometricButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    borderWidth: 1.5,
+    borderRadius: 8,
+    paddingVertical: 14,
+    marginBottom: 16,
+  },
+  biometricButtonText: {
+    fontSize: 16,
     fontWeight: '600',
   },
   oauthContainer: {
