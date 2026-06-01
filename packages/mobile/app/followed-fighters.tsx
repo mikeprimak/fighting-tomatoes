@@ -6,9 +6,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Stack, useFocusEffect } from 'expo-router';
+import { Stack, useFocusEffect, router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { useQuery } from '@tanstack/react-query';
@@ -184,6 +186,11 @@ export default function FollowedFightersScreen() {
           headerStyle: { backgroundColor: colors.card },
           headerTintColor: colors.text,
           headerShadowVisible: false,
+          headerLeft: () => (
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
+            </TouchableOpacity>
+          ),
         }}
       />
 

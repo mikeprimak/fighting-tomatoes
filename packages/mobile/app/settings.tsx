@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { apiService } from '../services/api';
 import { notificationService } from '../services/notificationService';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -171,8 +171,8 @@ export default function SettingsScreen() {
             headerShadowVisible: false,
             headerBackTitleVisible: false,
             headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
-                <FontAwesome name="chevron-left" size={20} color={colors.text} />
+              <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+                <Ionicons name="arrow-back" size={24} color={colors.text} />
               </TouchableOpacity>
             ),
           }}
@@ -194,8 +194,8 @@ export default function SettingsScreen() {
           headerShadowVisible: false,
           headerBackTitleVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
-              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
         }}

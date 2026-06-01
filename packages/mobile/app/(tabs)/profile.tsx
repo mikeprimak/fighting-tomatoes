@@ -16,19 +16,16 @@ import { useColorScheme } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { useAuth } from '../../store/AuthContext';
-import { useOrgFilter } from '../../store/OrgFilterContext';
 import { useSpoilerFree } from '../../store/SpoilerFreeContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
 import { CommentCard, PreFightCommentCard } from '../../components';
-import OrgFilterTabs from '../../components/OrgFilterTabs';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
 import { notificationService } from '../../services/notificationService';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
 import PredictionAccuracyChart from '../../components/PredictionAccuracyChart';
-import SectionContainer from '../../components/SectionContainer';
 
 interface EventAccuracy {
   eventId: string;
@@ -89,9 +86,56 @@ const getOrdinalSuffix = (n: number): string => {
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
 };
 
+// Alternating grey bands, matching the fight-list cards (#222222 / #181818).
+const SECTION_BG_EVEN = '#222222';
+const SECTION_BG_ODD = '#181818';
+
+// Title-less, border-less activity section. Replaces the old colored
+// SectionContainer header bars — each section is just a flat grey band with
+// an optional top-right "See All" link.
+function ActivitySection({
+  bgColor,
+  title,
+  headerRight,
+  children,
+  onPress,
+}: {
+  bgColor: string;
+  title?: React.ReactNode;
+  headerRight?: React.ReactNode;
+  children: React.ReactNode;
+  onPress?: () => void;
+}) {
+  const rowStyle = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minHeight: 54,
+    backgroundColor: bgColor,
+  };
+  const inner = (
+    <>
+      <View style={{ flex: 1, marginRight: 12 }}>
+        {title ?? null}
+        {children}
+      </View>
+      {headerRight ?? null}
+    </>
+  );
+  if (onPress) {
+    return (
+      <TouchableOpacity style={rowStyle} onPress={onPress} activeOpacity={0.7}>
+        {inner}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={rowStyle}>{inner}</View>;
+}
+
 export default function ProfileScreen() {
   const { user, logout, refreshUserData, isAuthenticated } = useAuth();
-  const { selectedOrgs, filterByPromotion } = useOrgFilter();
   const { spoilerFreeMode, setSpoilerFreeMode } = useSpoilerFree();
   const queryClient = useQueryClient();
 
@@ -118,13 +162,12 @@ export default function ProfileScreen() {
     else Linking.openSettings();
   };
 
-  // Refresh user data when org filter changes
+  // Refresh user data on auth (org filtering removed from this screen).
   useEffect(() => {
     if (isAuthenticated) {
-      const orgsArray = Array.from(selectedOrgs);
-      refreshUserData(orgsArray.length > 0 ? orgsArray : undefined);
+      refreshUserData();
     }
-  }, [selectedOrgs, isAuthenticated]);
+  }, [isAuthenticated]);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { alertState, showConfirm, showError, hideAlert } = useCustomAlert();
@@ -139,6 +182,9 @@ export default function ProfileScreen() {
 
   // Track if user has ANY predictions (for showing time filter)
   const [hasAnyPredictions, setHasAnyPredictions] = useState<boolean>(false);
+
+  // Number of fighters the user follows (shown as a subtitle on the row)
+  const [followedCount, setFollowedCount] = useState<number | null>(null);
 
   // Global standing data state
   const [globalStanding, setGlobalStanding] = useState<{
@@ -241,27 +287,18 @@ export default function ProfileScreen() {
     }
   }, [user?.id, timeFilter]);
 
-  // Fetch user's top upvoted reviews and comments when screen comes into focus
-  // This ensures data is fresh after user navigates back from other screens
+  // Refresh the followed-fighters count when the screen comes into focus,
+  // so it stays accurate after following/unfollowing elsewhere.
   useFocusEffect(
     useCallback(() => {
       const fetchData = async () => {
         if (!user) return;
 
         try {
-          const [reviewsData, commentsData] = await Promise.all([
-            api.getMyTopReviews(3),
-            api.getMyTopPreflightComments(3),
-          ]);
-
-          if (reviewsData && reviewsData.reviews) {
-            setTopReviews(reviewsData);
-          }
-          if (commentsData && commentsData.comments) {
-            setTopPreflightComments(commentsData);
-          }
+          const followed = await api.getFollowedFighters();
+          setFollowedCount(followed?.fighters?.length ?? 0);
         } catch (error) {
-          console.log('Error fetching profile comments:', error);
+          console.log('Error fetching followed fighters count:', error);
         }
       };
 
@@ -375,9 +412,8 @@ export default function ProfileScreen() {
     if (!user) return;
     setIsRefreshing(true);
     try {
-      const orgsArray = Array.from(selectedOrgs);
       await Promise.all([
-        refreshUserData(orgsArray.length > 0 ? orgsArray : undefined),
+        refreshUserData(),
         (async () => {
           try {
             const [accuracyData, standingData] = await Promise.all([
@@ -414,7 +450,7 @@ export default function ProfileScreen() {
     } finally {
       setIsRefreshing(false);
     }
-  }, [user, selectedOrgs, refreshUserData, timeFilter]);
+  }, [user, refreshUserData, timeFilter]);
 
   // Handle upvote on a pre-flight comment
   const handleUpvotePreflight = async (fightId: string, commentId: string) => {
@@ -438,45 +474,6 @@ export default function ProfileScreen() {
   };
 
   const styles = createStyles(colors);
-
-  // Filter prediction accuracy data by org
-  const filteredPredictionAccuracy = useMemo(() => {
-    if (selectedOrgs.size === 0) return predictionAccuracy;
-    const filteredEvents = predictionAccuracy.accuracyByEvent.filter(event =>
-      filterByPromotion(event.promotion)
-    );
-    const totalCorrect = filteredEvents.reduce((sum, e) => sum + e.correct, 0);
-    const totalIncorrect = filteredEvents.reduce((sum, e) => sum + e.incorrect, 0);
-    return {
-      accuracyByEvent: filteredEvents,
-      totalCorrect,
-      totalIncorrect,
-    };
-  }, [predictionAccuracy, selectedOrgs.size, filterByPromotion]);
-
-  // Filter reviews by org
-  const filteredTopReviews = useMemo(() => {
-    if (selectedOrgs.size === 0) return topReviews;
-    const filteredReviews = topReviews.reviews.filter(review =>
-      filterByPromotion(review.fight?.promotion)
-    );
-    return {
-      reviews: filteredReviews,
-      totalWithUpvotes: filteredReviews.length,
-    };
-  }, [topReviews, selectedOrgs.size, filterByPromotion]);
-
-  // Filter pre-flight comments by org
-  const filteredTopPreflightComments = useMemo(() => {
-    if (selectedOrgs.size === 0) return topPreflightComments;
-    const filteredComments = topPreflightComments.comments.filter(comment =>
-      filterByPromotion(comment.fight?.promotion)
-    );
-    return {
-      comments: filteredComments,
-      totalWithUpvotes: filteredComments.length,
-    };
-  }, [topPreflightComments, selectedOrgs.size, filterByPromotion]);
 
   // Render star rating display (out of 10) with heatmap colors
   // Rounds to nearest whole number
@@ -612,9 +609,6 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
-      {/* Organization Filter Tabs */}
-      <OrgFilterTabs />
-
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         refreshControl={
@@ -627,197 +621,70 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Predictions Section - TEMPORARILY REMOVED */}
-        {false && <SectionContainer
-          title="My Winner Picks"
-          icon="trophy"
-          iconColor="#fff"
-          headerBgColor="#166534"
-          containerBgColorDark="rgba(34, 197, 94, 0.05)"
-          containerBgColorLight="rgba(34, 197, 94, 0.08)"
-        >
-          {/* Check if user has ANY predictions - if so, show time filter */}
-          {!hasAnyPredictions ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
-              {selectedOrgs.size > 0
-                ? `No predictions for ${Array.from(selectedOrgs).join(' or ')} events`
-                : (
-                  <>
-                    Predict winners on{' '}
-                    <Text
-                      style={{ color: colors.primary, fontWeight: '600' }}
-                      onPress={() => router.push('/(tabs)')}
-                    >
-                      Upcoming Events
-                    </Text>
-                    .
-                  </>
-                )}
-            </Text>
-          ) : (
-            <>
-              {/* Time Filter Buttons - always visible when user has predictions */}
-              <View style={styles.filterTabsContainer}>
-                {timeFilterOptions.map((option) => (
-                  <TouchableOpacity
-                    key={option.key}
-                    onPress={() => setTimeFilter(option.key)}
-                    style={[styles.filterTab, timeFilter === option.key && styles.filterTabActive]}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Text style={[styles.filterTabText, timeFilter === option.key && styles.filterTabTextActive]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={{ height: 4 }} />
-
-              {/* Show content or empty message based on filtered data */}
-              {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) === 0 ? (
-                <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 16, textAlign: 'center' }}>
-                  No predictions in this time period
-                </Text>
-              ) : (
-                <>
-                  {/* Two stat boxes side by side */}
-                  <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
-                    {/* Prediction Accuracy - bordered */}
-                    <View style={{
-                      flex: 1,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 8,
-                      padding: 12,
-                    }}>
-                      <Text style={[styles.predictionLabel, { color: colors.text }]}>Prediction{'\n'}Accuracy</Text>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                          {(filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect) > 0
-                            ? `${Math.round((filteredPredictionAccuracy.totalCorrect / (filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect)) * 100)}%`
-                            : '—'}
-                        </Text>
-                        <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                          ({filteredPredictionAccuracy.totalCorrect}/{filteredPredictionAccuracy.totalCorrect + filteredPredictionAccuracy.totalIncorrect})
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Global Standing - bordered */}
-                    <View style={{
-                      flex: 1,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                      borderRadius: 8,
-                      padding: 12,
-                    }}>
-                      <Text style={[styles.predictionLabel, { color: colors.text }]}>Global{'\n'}Standing</Text>
-                      <View style={{ alignItems: 'flex-end' }}>
-                        <Text style={[styles.predictionValue, { color: colors.text, fontSize: 20 }]}>
-                          {globalStanding.hasRanking
-                            ? getOrdinalSuffix(globalStanding.position!)
-                            : '—'}
-                        </Text>
-                        {globalStanding.hasRanking && globalStanding.totalUsers > 0 && (
-                          <Text style={{ color: colors.textSecondary, fontSize: 12 }}>
-                            top {Math.round((globalStanding.position! / globalStanding.totalUsers) * 100)}%
-                          </Text>
-                        )}
-                      </View>
-                    </View>
-                  </View>
-
-                  {/* Prediction Accuracy Chart */}
-                  <PredictionAccuracyChart
-                    data={filteredPredictionAccuracy.accuracyByEvent}
-                    totalCorrect={filteredPredictionAccuracy.totalCorrect}
-                    totalIncorrect={filteredPredictionAccuracy.totalIncorrect}
-                  />
-                </>
-              )}
-            </>
-          )}
-        </SectionContainer>}
-
         {/* Settings */}
         <View style={styles.settingsContainer}>
-          {/* Account */}
-          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>ACCOUNT</Text>
-          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <TouchableOpacity
-              style={[styles.settingsRow, { borderBottomColor: colors.border }]}
-              onPress={() => router.push('/change-display-name')}
+          {/* Account (email) */}
+          <View style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}>
+            <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Account</Text>
+            <Text
+              style={[styles.settingsRowValue, { color: colors.textSecondary, marginTop: 0, flexShrink: 1, textAlign: 'right' }]}
+              numberOfLines={1}
             >
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Display Name</Text>
-                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {user?.displayName || '—'}
-                </Text>
-              </View>
-              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
-
-            <View style={[styles.settingsRow, { borderBottomColor: colors.border }]}>
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Email</Text>
-                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]} numberOfLines={1}>
-                  {user?.email || '—'}
-                </Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
-              onPress={() => router.push('/advanced-settings')}
-            >
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Advanced Settings</Text>
-              </View>
-              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
+              {user?.email || '—'}
+            </Text>
           </View>
 
-          {/* Preferences */}
-          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>PREFERENCES</Text>
-          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <View style={[styles.settingsRow, { borderBottomWidth: 0 }]}>
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Spoiler-Free Mode</Text>
+          {/* Display Name */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
+            onPress={() => router.push('/edit-profile')}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Display Name</Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]} numberOfLines={1}>
+                {user?.displayName || '—'}
+              </Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Spoiler-Free Mode */}
+          <View style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}>
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>
+                Spoiler-Free Mode: {spoilerFreeMode ? 'ON' : 'OFF'}
+              </Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                {spoilerFreeMode
+                  ? 'Fight winners are currently hidden until you rate them.'
+                  : 'Fight winners are visible.'}
+              </Text>
+            </View>
+            <Switch
+              value={spoilerFreeMode}
+              onValueChange={setSpoilerFreeMode}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
+            />
+          </View>
+
+          {/* My Followed Fighters */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
+            onPress={() => router.push('/followed-fighters' as any)}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Followed Fighters</Text>
+              {followedCount !== null && (
                 <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                  Hide fight outcomes until you rate
+                  Following {followedCount} {followedCount === 1 ? 'fighter' : 'fighters'}
                 </Text>
-              </View>
-              <Switch
-                value={spoilerFreeMode}
-                onValueChange={setSpoilerFreeMode}
-                trackColor={{ false: '#767577', true: '#4CAF50' }}
-                thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
-              />
+              )}
             </View>
-          </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
 
-          {/* Following */}
-          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>FOLLOWING</Text>
-          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <TouchableOpacity
-              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
-              onPress={() => router.push('/followed-fighters' as any)}
-            >
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Followed Fighters</Text>
-              </View>
-              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Notifications */}
-          <Text style={[styles.settingsGroupLabel, { color: colors.textSecondary }]}>NOTIFICATIONS</Text>
+          {/* Notification permission banner — only when not granted */}
           {permissionStatus !== 'granted' && (
             <View style={[styles.permissionBanner, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
               <FontAwesome name="exclamation-triangle" size={20} color={colors.warning} />
@@ -839,430 +706,131 @@ export default function ProfileScreen() {
               </TouchableOpacity>
             </View>
           )}
-          <View style={[styles.settingsGroup, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
-            <TouchableOpacity
-              style={[styles.settingsRow, { borderBottomWidth: 0 }]}
-              onPress={() => router.push('/settings')}
-            >
-              <View style={styles.settingsRowLeft}>
-                <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notification settings</Text>
-                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                  Choose which alerts you get for fighters you follow
-                </Text>
-              </View>
-              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+
+          {/* Notification settings */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+            onPress={() => router.push('/settings')}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notification settings</Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                Choose which alerts you get for fighters you follow
+              </Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
-        {/* My Activity */}
-        <Text style={[styles.activityHeader, { color: colors.text }]}>MY ACTIVITY</Text>
-
-        {/* Average Rating */}
-        <SectionContainer
-          title="My Ratings"
-          icon="star"
-          iconColor="#000"
-          headerBgColor="#F5C518"
-          containerBgColorDark="rgba(245, 197, 24, 0.05)"
-          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+        {/* My Ratings */}
+        <ActivitySection
+          bgColor={SECTION_BG_ODD}
+          onPress={user?.totalRatings ? () => router.push('/activity/my-ratings' as any) : undefined}
+          title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Ratings</Text>}
           headerRight={user?.totalRatings ? (
-            <TouchableOpacity
-              onPress={() => router.push('/activity/my-ratings' as any)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
-              <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
-            </TouchableOpacity>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           ) : undefined}
         >
-          <View style={{ height: 10 }} />
           {!user?.totalRatings ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
-              {selectedOrgs.size > 0
-                ? `No ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
-                : (
-                  <>
-                    Rate fights on{' '}
-                    <Text
-                      style={{ color: colors.primary, fontWeight: '600' }}
-                      onPress={() => router.push('/(tabs)/past-events')}
-                    >
-                      Past Events
-                    </Text>
-                    .
-                  </>
-                )}
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Rate fights on{' '}
+              <Text
+                style={{ color: colors.primary, fontWeight: '600' }}
+                onPress={() => router.push('/(tabs)/past-events')}
+              >
+                Past Events
+              </Text>
+              .
             </Text>
           ) : (
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-                {/* Large Star Icon */}
-                <View style={{ alignItems: 'center' }}>
-                  <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
-                    <FontAwesome
-                      name="star"
-                      size={90}
-                      color={getHypeHeatmapColor(Math.round(user?.averageRating || 0))}
-                    />
-                    <Text style={[styles.ratingIconText, { marginTop: -2 }]}>
-                      {user?.averageRating ? user.averageRating.toFixed(1) : '0.0'}
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>avg.</Text>
-                </View>
-
-                {/* Distribution Chart */}
-                <View style={{ flex: 1 }}>
-                  {renderDistributionChart(user?.ratingDistribution || {}, 'rating')}
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, textAlign: 'center' }}>{user?.totalRatings || 0} fights</Text>
-                </View>
-              </View>
-            </View>
+            <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+              My Average Rating: <Text style={{ color: colors.text, fontWeight: '600' }}>{(user?.averageRating || 0).toFixed(1)}</Text>
+              {'   '}·{'   '}{user?.totalRatings || 0} fights rated
+            </Text>
           )}
+        </ActivitySection>
 
-          {/* My Comments (Post-Fight) */}
-          <View style={{ marginTop: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <FontAwesome name="comments" size={18} color={colors.text} />
-                <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
-              </View>
-              {filteredTopReviews?.reviews && filteredTopReviews.reviews.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => router.push('/activity/my-comments' as any)}
-                  style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
-                  <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-            {!filteredTopReviews?.reviews || filteredTopReviews.reviews.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
-                {selectedOrgs.size > 0
-                  ? `No comments for ${Array.from(selectedOrgs).join(' or ')} fights`
-                  : 'None yet.'}
-              </Text>
-            ) : (
-              <View>
-                {filteredTopReviews.reviews.map((review) => (
-                  <View key={review.id} style={{ marginBottom: 8 }}>
-                    <CommentCard
-                      comment={{
-                        id: review.id,
-                        content: review.isReply ? `↳ ${review.content}` : review.content,
-                        rating: review.rating || 0,
-                        upvotes: review.upvotes,
-                        userHasUpvoted: review.userHasUpvoted,
-                        user: { displayName: 'Me' },
-                        fight: review.fight ? {
-                          id: review.fight.id,
-                          fighter1Name: review.fight.fighter1Name,
-                          fighter2Name: review.fight.fighter2Name,
-                          eventName: review.fight.eventName,
-                        } : undefined,
-                      }}
-                      onPress={() => router.push(`/fight/${review.fight?.id}?mode=completed` as any)}
-                      onUpvote={() => handleUpvote(review.fightId, review.id)}
-                      isUpvoting={upvotingReviewId === review.id}
-                      isAuthenticated={isAuthenticated}
-                      showMyReview={true}
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </SectionContainer>
-
-        {/* Average Hype */}
-        <SectionContainer
-          title="My Hype"
-          icon="fire-flame-curved"
-          iconFamily="fontawesome6"
-          iconColor="#000"
-          headerBgColor="#F5C518"
-          containerBgColorDark="rgba(245, 197, 24, 0.05)"
-          containerBgColorLight="rgba(245, 197, 24, 0.08)"
+        {/* My Hype */}
+        <ActivitySection
+          bgColor={SECTION_BG_EVEN}
+          onPress={user?.totalHype ? () => router.push('/activity/my-hype' as any) : undefined}
+          title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Hype</Text>}
           headerRight={user?.totalHype ? (
-            <TouchableOpacity
-              onPress={() => router.push('/activity/my-hype' as any)}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>See All</Text>
-              <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.8)" />
-            </TouchableOpacity>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           ) : undefined}
         >
-          <View style={{ height: 10 }} />
           {!user?.totalHype ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
-              {selectedOrgs.size > 0
-                ? `No hype ratings for ${Array.from(selectedOrgs).join(' or ')} fights`
-                : (
-                  <>
-                    Hype fights on{' '}
-                    <Text
-                      style={{ color: colors.primary, fontWeight: '600' }}
-                      onPress={() => router.push('/(tabs)')}
-                    >
-                      Upcoming Events
-                    </Text>
-                    .
-                  </>
-                )}
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Hype fights on{' '}
+              <Text
+                style={{ color: colors.primary, fontWeight: '600' }}
+                onPress={() => router.push('/(tabs)')}
+              >
+                Upcoming Events
+              </Text>
+              .
             </Text>
           ) : (
-            <View>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-                {/* Large Flame Icon */}
-                <View style={{ alignItems: 'center' }}>
-                  <View style={[styles.ratingIconContainer, { marginTop: 7 }]}>
-                    {/* Background circle for better text contrast */}
-                    <View style={{
-                      position: 'absolute',
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      backgroundColor: getHypeHeatmapColor(Math.round(user?.averageHype || 0)),
-                      opacity: 0.4,
-                      top: 30,
-                    }} />
-                    <FontAwesome6
-                      name="fire-flame-curved"
-                      size={90}
-                      color={getHypeHeatmapColor(Math.round(user?.averageHype || 0))}
-                    />
-                    <Text style={[styles.ratingIconText, { marginTop: 6 }]}>
-                      {user?.averageHype ? user.averageHype.toFixed(1) : '0.0'}
-                    </Text>
-                  </View>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>avg.</Text>
-                </View>
-
-                {/* Distribution Chart */}
-                <View style={{ flex: 1 }}>
-                  {renderDistributionChart(user?.hypeDistribution || {}, 'hype')}
-                  <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2, textAlign: 'center' }}>{user?.totalHype || 0} fights</Text>
-                </View>
-              </View>
-            </View>
+            <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+              My Average Hype: <Text style={{ color: colors.text, fontWeight: '600' }}>{(user?.averageHype || 0).toFixed(1)}</Text>
+              {'   '}·{'   '}{user?.totalHype || 0} fights hyped
+            </Text>
           )}
+        </ActivitySection>
 
-          {/* My Comments (Pre-Fight) */}
-          <View style={{ marginTop: 16 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, marginBottom: 20 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <FontAwesome name="comments" size={18} color={colors.text} />
-                <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textTransform: 'uppercase', letterSpacing: 2 }}>My Comments</Text>
-              </View>
-              {filteredTopPreflightComments?.comments && filteredTopPreflightComments.comments.length > 0 && (
-                <TouchableOpacity
-                  onPress={() => router.push('/activity/my-preflight-comments' as any)}
-                  style={{ position: 'absolute', right: 0, flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                  hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                >
-                  <Text style={{ fontSize: 11, color: colors.textSecondary }}>See All</Text>
-                  <FontAwesome name="chevron-right" size={10} color={colors.textSecondary} />
-                </TouchableOpacity>
-              )}
-            </View>
-            {!filteredTopPreflightComments?.comments || filteredTopPreflightComments.comments.length === 0 ? (
-              <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8, textAlign: 'center' }}>
-                {selectedOrgs.size > 0
-                  ? `No hype comments for ${Array.from(selectedOrgs).join(' or ')} fights`
-                  : 'None yet.'}
-              </Text>
-            ) : (
-              <View>
-                {filteredTopPreflightComments.comments.map((comment) => (
-                  <View key={comment.id} style={{ marginBottom: 8 }}>
-                    <PreFightCommentCard
-                      comment={{
-                        id: comment.id,
-                        content: comment.content,
-                        hypeRating: comment.hypeRating,
-                        predictedWinner: comment.predictedWinner,
-                        upvotes: comment.upvotes,
-                        userHasUpvoted: comment.userHasUpvoted,
-                        user: { displayName: 'Me' },
-                        fight: comment.fight ? {
-                          id: comment.fight.id,
-                          fighter1Name: comment.fight.fighter1Name,
-                          fighter2Name: comment.fight.fighter2Name,
-                          eventName: comment.fight.eventName,
-                        } : undefined,
-                      }}
-                      fighter1Id={comment.fight?.fighter1Id}
-                      fighter2Id={comment.fight?.fighter2Id}
-                      fighter1Name={comment.fight?.fighter1Name}
-                      fighter2Name={comment.fight?.fighter2Name}
-                      onPress={() => router.push(`/fight/${comment.fight?.id}${comment.fight?.fightStatus === 'COMPLETED' ? '?mode=completed' : ''}` as any)}
-                      onUpvote={() => handleUpvotePreflight(comment.fightId, comment.id)}
-                      isUpvoting={upvotingPreflightId === comment.id}
-                      isAuthenticated={isAuthenticated}
-                      showMyComment={true}
-                    />
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
-        </SectionContainer>
-
-        {/* Fan DNA — surfaces the user's trait cards from the personality engine. */}
-        {(fanDNALoading || fanDNACards.length > 0 || fanDNAType) && (
-          <SectionContainer
-            title="Fan DNA"
-            icon="dna"
-            iconFamily="fontawesome6"
-            iconColor="#000"
-            headerBgColor="#A78BFA"
-            containerBgColorDark="rgba(167, 139, 250, 0.06)"
-            containerBgColorLight="rgba(167, 139, 250, 0.10)"
-            headerRight={(fanDNACards.length > 0 || fanDNAType) ? (
-              <TouchableOpacity
-                onPress={() => router.push('/activity/fan-dna' as any)}
-                style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              >
-                <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>See All</Text>
-                <FontAwesome name="chevron-right" size={10} color="rgba(255,255,255,0.85)" />
-              </TouchableOpacity>
+        {/* Your Fan DNA — condensed to title + personality type line. */}
+        {(fanDNALoading || fanDNAType) && (
+          <ActivitySection
+            bgColor={SECTION_BG_ODD}
+            onPress={fanDNAType ? () => router.push('/activity/fan-dna' as any) : undefined}
+            title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>Your Fan DNA</Text>}
+            headerRight={fanDNAType ? (
+              <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
             ) : undefined}
           >
-            <View style={{ paddingVertical: 12 }}>
-              {fanDNALoading && fanDNACards.length === 0 && !fanDNAType ? (
-                <Text style={{ color: colors.textSecondary, fontSize: 13, textAlign: 'center', paddingVertical: 8 }}>
-                  Computing your DNA…
-                </Text>
-              ) : (
-                <View style={{ gap: 10 }}>
-                  {fanDNAType && (
-                    <TouchableOpacity
-                      onPress={() => router.push('/activity/fan-dna' as any)}
-                      activeOpacity={0.7}
-                      style={{
-                        backgroundColor: 'rgba(167, 139, 250, 0.18)',
-                        borderRadius: 10,
-                        padding: 14,
-                        borderWidth: 1,
-                        borderColor: 'rgba(167, 139, 250, 0.4)',
-                        marginBottom: 4,
-                      }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                        {fanDNAType.primaryStat ? (
-                          <View style={{
-                            minWidth: 64,
-                            paddingHorizontal: 8,
-                            paddingVertical: 8,
-                            alignItems: 'center',
-                          }}>
-                            <Text style={{ fontSize: 22, fontWeight: '800', color: '#A78BFA' }}>
-                              {fanDNAType.primaryStat}
-                            </Text>
-                            {fanDNAType.secondaryStat ? (
-                              <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }} numberOfLines={1}>
-                                {fanDNAType.secondaryStat}
-                              </Text>
-                            ) : null}
-                          </View>
-                        ) : null}
-                        <View style={{ flex: 1 }}>
-                          <Text style={{ fontSize: 11, color: '#A78BFA', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.6 }}>
-                            Your type
-                          </Text>
-                          <Text style={{ fontSize: 17, fontWeight: '700', color: colors.text, marginTop: 2 }}>
-                            {fanDNAType.label}
-                          </Text>
-                          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 4, lineHeight: 17 }}>
-                            {fanDNAType.body}
-                          </Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  )}
-                  {fanDNACards.slice(0, 2).map((card, i) => (
-                    <TouchableOpacity
-                      key={`${card.traitId}-${i}`}
-                      onPress={() => router.push('/activity/fan-dna' as any)}
-                      activeOpacity={0.7}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 12,
-                        paddingVertical: 8,
-                      }}
-                    >
-                      {card.primaryStat ? (
-                        <View style={{
-                          minWidth: 64,
-                          paddingHorizontal: 10,
-                          paddingVertical: 8,
-                          backgroundColor: 'rgba(167, 139, 250, 0.15)',
-                          borderRadius: 8,
-                          alignItems: 'center',
-                        }}>
-                          <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>
-                            {card.primaryStat}
-                          </Text>
-                          {card.secondaryStat && (
-                            <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 1 }} numberOfLines={1}>
-                              {card.secondaryStat}
-                            </Text>
-                          )}
-                        </View>
-                      ) : null}
-                      <View style={{ flex: 1 }}>
-                        <Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>
-                          {card.headline}
-                        </Text>
-                        {card.body && (
-                          <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }} numberOfLines={2}>
-                            {card.body}
-                          </Text>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                  {fanDNACards.length > 2 && (
-                    <Text style={{ fontSize: 11, color: colors.textSecondary, textAlign: 'center', marginTop: 4 }}>
-                      +{fanDNACards.length - 2} more trait{fanDNACards.length - 2 === 1 ? '' : 's'}
-                    </Text>
-                  )}
-                </View>
-              )}
-            </View>
-          </SectionContainer>
+            {fanDNAType ? (
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                Your Type: <Text style={{ color: colors.text, fontWeight: '600' }}>{fanDNAType.label}</Text>
+              </Text>
+            ) : (
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>Computing your DNA…</Text>
+            )}
+          </ActivitySection>
         )}
 
-        {/* Actions */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={() => router.push('/send-feedback')}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="comment" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Send Feedback</Text>
-            </View>
-          </TouchableOpacity>
+        {/* Advanced Settings — moved to the bottom, below Fan DNA */}
+        <TouchableOpacity
+          style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+          onPress={() => router.push('/advanced-settings' as any)}
+        >
+          <View style={styles.settingsRowLeft}>
+            <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Advanced Settings</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.actionButtonFull, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}
-            onPress={handleLogout}
-          >
-            <View style={styles.actionButtonContent}>
-              <FontAwesome name="sign-out" size={18} color={colors.text} />
-              <Text style={[styles.actionButtonText, { color: colors.text }]}>Sign Out</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        {/* Send Feedback */}
+        <TouchableOpacity
+          style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
+          onPress={() => router.push('/send-feedback')}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <FontAwesome name="comment" size={18} color={colors.text} />
+            <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Send Feedback</Text>
+          </View>
+          <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        {/* Sign Out */}
+        <TouchableOpacity
+          style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+          onPress={handleLogout}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <FontAwesome name="sign-out" size={18} color={colors.text} />
+            <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Sign Out</Text>
+          </View>
+        </TouchableOpacity>
       </ScrollView>
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
@@ -1418,8 +986,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     textShadowRadius: 4,
   },
   settingsContainer: {
-    marginTop: 8,
-    marginHorizontal: 12,
+    marginTop: 0,
+    marginHorizontal: 0,
   },
   activityHeader: {
     fontSize: 14,
@@ -1448,7 +1016,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderBottomWidth: 1,
     minHeight: 54,
   },
   settingsRowLeft: {
