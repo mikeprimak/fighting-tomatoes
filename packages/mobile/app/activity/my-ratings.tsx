@@ -16,7 +16,7 @@ import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api';
 import { FightData } from '../../components/FightDisplayCardNew';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 
 type SortOption = 'newest' | 'highest' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '10';
@@ -118,8 +118,8 @@ export default function MyRatingsScreen() {
           headerShadowVisible: false,
           headerBackTitleVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
-              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
         }}

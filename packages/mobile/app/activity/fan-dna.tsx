@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
@@ -72,8 +72,8 @@ export default function FanDNAScreen() {
           headerTintColor: colors.text,
           headerShadowVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
-              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
         }}

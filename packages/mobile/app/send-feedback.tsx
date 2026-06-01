@@ -18,7 +18,7 @@ import { Colors } from '../constants/Colors';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 import { api } from '../services/api';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
 export default function SendFeedbackScreen() {
@@ -84,8 +84,8 @@ export default function SendFeedbackScreen() {
           headerShadowVisible: false,
           headerBackTitleVisible: false,
           headerLeft: () => (
-            <TouchableOpacity onPress={() => router.back()} style={{ paddingRight: 16 }}>
-              <FontAwesome name="chevron-left" size={20} color={colors.text} />
+            <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
+              <Ionicons name="arrow-back" size={24} color={colors.text} />
             </TouchableOpacity>
           ),
         }}
