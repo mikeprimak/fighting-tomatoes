@@ -575,6 +575,13 @@ export async function authRoutes(fastify: FastifyInstance) {
             code: { type: 'string' },
           },
         },
+        503: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
       },
     },
   }, async (request: FastifyRequest, reply: FastifyReply) => {
@@ -617,64 +624,57 @@ export async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Generate new tokens
+      // Issue a fresh access token. Do NOT rotate the refresh token.
+      //
+      // We previously rotated the refresh token on every call (mint a new one,
+      // expire the old after a 60s grace). That caused repeated involuntary
+      // logouts: if the refresh RESPONSE was lost (flaky connection on a morning
+      // app-open, or the app suspended mid-request) the client never stored the
+      // new token, and by the time it retried, the old token's short grace had
+      // lapsed -> 401 -> logout. The grace window was never long enough to
+      // survive a backgrounded app.
+      //
+      // Stable refresh tokens remove that entire failure class: the phone always
+      // holds a valid token, so a dropped response or a retry is harmless. We
+      // slide the expiry forward 90 days on every use, so an active session
+      // never lapses. Tradeoff: no rotation-based reuse detection — acceptable
+      // for this app; reliable sessions matter far more than that marginal
+      // hardening, and logout-on-open was a top user complaint.
       const newAccessToken = jwt.sign(
         { userId: decoded.userId },
         JWT_SECRET,
         { expiresIn: ACCESS_TOKEN_EXPIRES }
       );
 
-      const newRefreshToken = jwt.sign(
-        { userId: decoded.userId, type: 'refresh' },
-        JWT_SECRET,
-        { expiresIn: REFRESH_TOKEN_EXPIRES }
-      );
+      const slidExpiresAt = new Date();
+      slidExpiresAt.setDate(slidExpiresAt.getDate() + 90); // sliding 90-day window
 
-      // Rotate with a grace window instead of overwriting in place.
-      //
-      // If we replaced the token in place, a refresh whose RESPONSE is dropped
-      // (e.g. the backend restarts mid-deploy) would strand the client: the DB
-      // already holds the new token, the client never received it, so its next
-      // refresh with the old token 401s and forces a logout. To avoid that we
-      // keep the OLD token valid for a short grace period (60s) and store the
-      // new token in a fresh row. A retried/duplicate refresh inside the window
-      // still succeeds. Expired rows (lapsed grace tokens + old sessions) are
-      // pruned so the table stays bounded.
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 90); // 90 days, sliding
-
-      const graceExpiresAt = new Date(Date.now() + 60_000); // old token: 60s grace
-
-      await fastify.prisma.$transaction([
-        fastify.prisma.refreshToken.create({
-          data: {
-            token: newRefreshToken,
-            userId: decoded.userId,
-            expiresAt,
-          }
-        }),
-        fastify.prisma.refreshToken.update({
-          where: { id: tokenRecord.id },
-          data: { expiresAt: graceExpiresAt },
-        }),
-        fastify.prisma.refreshToken.deleteMany({
-          where: {
-            userId: decoded.userId,
-            expiresAt: { lt: new Date() },
-          }
-        }),
-      ]);
+      await fastify.prisma.refreshToken.update({
+        where: { id: tokenRecord.id },
+        data: { expiresAt: slidExpiresAt },
+      });
 
       return reply.code(200).send({
         accessToken: newAccessToken,
-        refreshToken: newRefreshToken,
+        refreshToken, // unchanged — client re-stores the same value, no-op
       });
 
     } catch (error: any) {
-      request.log.error(error, 'Refresh token error:');
-      return reply.code(401).send({
-        error: 'Invalid refresh token',
-        code: 'INVALID_TOKEN',
+      // Distinguish a genuinely bad token from a transient backend/DB failure.
+      // Only a real JWT problem should log the user out; anything else (DB blip,
+      // cold-start, connection drop) must surface as 503 so the client keeps the
+      // session and retries — NOT a 401, which the client treats as a hard logout.
+      const name = error?.name;
+      if (name === 'JsonWebTokenError' || name === 'TokenExpiredError' || name === 'NotBeforeError') {
+        return reply.code(401).send({
+          error: 'Invalid or expired refresh token',
+          code: 'INVALID_TOKEN',
+        });
+      }
+      request.log.error(error, 'Refresh token transient error');
+      return reply.code(503).send({
+        error: 'Service temporarily unavailable. Please try again.',
+        code: 'REFRESH_UNAVAILABLE',
       });
     }
   });
