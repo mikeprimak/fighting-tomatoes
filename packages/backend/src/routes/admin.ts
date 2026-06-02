@@ -16,7 +16,7 @@ import {
 import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
 import { getActiveEventExpectations, getEventFightExpectations } from '../services/notificationExpectations';
-import { sendPushNotifications } from '../services/notificationService';
+import { sendPushNotifications, notifyFightStartViaRules } from '../services/notificationService';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -713,6 +713,48 @@ export async function adminRoutes(fastify: FastifyInstance) {
       data: { type: 'admin_expectation_alert_test' },
     });
     return reply.send(result); // { success, failed }
+  });
+
+  // Manually fire the per-fight "up next / walkout" push — for when the automated
+  // live tracker fails and the operator needs to deliver the promised ping by hand.
+  // Safety: dispatches via notifyFightStartViaRules, which only pushes match rows
+  // with notificationSent=false and then marks them sent — so a repeat call (or a
+  // double-click) sends nothing. We report the pending recipient count up front so
+  // the panel can confirm + show "already sent" state.
+  fastify.post('/admin/fights/:id/send-notification', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const fight = await prisma.fight.findUnique({
+      where: { id },
+      include: {
+        fighter1: { select: { firstName: true, lastName: true } },
+        fighter2: { select: { firstName: true, lastName: true } },
+      },
+    });
+    if (!fight) {
+      return reply.code(404).send({ error: 'Fight not found' });
+    }
+
+    // Distinct users who would actually receive a ping right now (unsent rows).
+    const pendingMatches = await prisma.fightNotificationMatch.findMany({
+      where: { fightId: id, isActive: true, notificationSent: false },
+      select: { userId: true },
+    });
+    const pendingUsers = new Set(pendingMatches.map((m) => m.userId)).size;
+
+    if (pendingUsers === 0) {
+      // Either nobody is waiting, or the ping already fired. Don't re-send.
+      return reply.send({ dispatched: 0, alreadySent: true });
+    }
+
+    const f1Name = fight.fighter1 ? `${fight.fighter1.firstName} ${fight.fighter1.lastName}` : 'TBD';
+    const f2Name = fight.fighter2 ? `${fight.fighter2.firstName} ${fight.fighter2.lastName}` : 'TBD';
+
+    await notifyFightStartViaRules(id, f1Name, f2Name);
+
+    return reply.send({ dispatched: pendingUsers, alreadySent: false });
   });
 
   // Per-fight expectation counts for a single event.

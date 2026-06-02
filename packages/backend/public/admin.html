@@ -3001,6 +3001,29 @@
     let expectationsInitialized = false;
     let expectAlertSound = null;
 
+    async function sendFightNotification(fightId, count) {
+      const fight = (selectedEvent?.fights || []).find(f => f.id === fightId);
+      const f1 = fight?.fighter1, f2 = fight?.fighter2;
+      const matchup = fight
+        ? `${f1 ? f1.firstName + ' ' + f1.lastName : 'TBD'} vs ${f2 ? f2.firstName + ' ' + f2.lastName : 'TBD'}`
+        : 'this fight';
+      if (!confirm(`Send the "Up Next" push now to ${count} waiting user${count === 1 ? '' : 's'} for:\n\n${matchup}\n\nFires once — anyone already notified is skipped, so you can't double-send. Continue?`)) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/fights/${fightId}/send-notification`, { method: 'POST' });
+        const data = await res.json();
+        if (data.alreadySent) {
+          showToast('Already sent — nobody new to notify for this fight', 'info');
+        } else {
+          showToast(`✅ Ping sent to ${data.dispatched} waiting user${data.dispatched === 1 ? '' : 's'}`, 'success');
+        }
+        // Reload so the button flips to "✓ Ping sent".
+        if (selectedEvent) await selectEvent(selectedEvent.id);
+      } catch (e) {
+        showToast('Failed to send notification', 'error');
+        console.error(e);
+      }
+    }
+
     async function sendTestExpectationAlert() {
       try {
         const res = await authFetch(`${API_BASE}/admin/notification-expectations/test-alert`, { method: 'POST' });
@@ -3436,6 +3459,21 @@
       const f1Name = f1 ? `${f1.firstName} ${f1.lastName}` : 'TBD';
       const f2Name = f2 ? `${f2.firstName} ${f2.lastName}` : 'TBD';
 
+      // Notification expectation detail for this fight (who's waiting / still unsent)
+      const exp = (window.__fightExpectations?.perFight || {})[fight.id] || { waiting: 0, pending: 0 };
+      const isSendableStatus = fight.fightStatus === 'UPCOMING' || fight.fightStatus === 'LIVE';
+      let notifControl = '';
+      if (exp.waiting > 0) {
+        if (exp.pending > 0 && isSendableStatus) {
+          notifControl = `<button class="btn btn-sm" style="background: var(--accent-orange); color: #000; padding: 0.15rem 0.55rem; font-size: 0.72rem; font-weight: 700;"
+                            onclick="sendFightNotification('${fight.id}', ${exp.pending})">🔔 Send ping (${exp.pending})</button>`;
+        } else if (exp.pending === 0) {
+          notifControl = `<span style="font-size: 0.72rem; color: var(--accent-green); font-weight: 600;">✓ Ping sent</span>`;
+        } else {
+          notifControl = `<span style="font-size: 0.72rem; color: var(--text-muted);">${exp.pending} waiting (fight not live/upcoming)</span>`;
+        }
+      }
+
       // Determine fight status
       let status = 'upcoming';
       let statusLabel = 'Upcoming';
@@ -3477,7 +3515,7 @@
               <div class="fight-matchup">
                 <span style="${fight.winner === fight.fighter1?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f1Name)}</span> vs <span style="${fight.winner === fight.fighter2?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f2Name)}</span>
                 ${fight.isTitle ? '<span class="fight-title-badge">TITLE</span>' : ''}
-                ${(() => { const n = (window.__fightExpectations?.perFight || {})[fight.id] || 0; return n > 0 ? `<span class="fight-expect-badge" title="${n} user${n === 1 ? '' : 's'} waiting on a notification for this fight">🔔 ${n}</span>` : ''; })()}
+                ${exp.waiting > 0 ? `<span class="fight-expect-badge" title="${exp.waiting} user${exp.waiting === 1 ? '' : 's'} waiting on a notification for this fight">🔔 ${exp.waiting}</span>` : ''}
               </div>
               <div class="fight-details">
                 ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds
@@ -3495,6 +3533,7 @@
                        onchange="updateScheduledStartTime('${fight.id}', this.value)">
                 ${scheduledTime ? `<span style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.3rem;">${scheduledTime}</span>` : ''}
               </div>
+              ${notifControl ? `<div class="fight-details" style="margin-top: 0.3rem; display: flex; align-items: center; gap: 0.4rem;"><span style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Notify:</span>${notifControl}</div>` : ''}
             </div>
           </div>
           <div class="fight-status-section">
