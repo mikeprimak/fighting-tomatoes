@@ -3,6 +3,7 @@ import {
   View,
   Text,
   ScrollView,
+  FlatList,
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
@@ -593,32 +594,82 @@ export default function HomeScreen() {
     }
   };
 
-  // Lazy-load the next page of news as the user nears the bottom of Home (the
-  // news list is the last section, so this drives its infinite scroll).
-  const handleScroll = (e: any) => {
-    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
-    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    if (distanceFromBottom < 600 && hasMoreNews && !isFetchingMoreNews) {
-      fetchMoreNews();
-    }
-  };
+  // Lazy-load the next page of news when the FlatList nears its end.
+  const loadMoreNews = React.useCallback(() => {
+    if (hasMoreNews && !isFetchingMoreNews) fetchMoreNews();
+  }, [hasMoreNews, isFetchingMoreNews, fetchMoreNews]);
 
   const styles = makeStyles(colors);
+
+  // News rows are the FlatList's virtualized items, so only the cards near the
+  // viewport stay mounted — that's what keeps scrolling smooth as pages append.
+  const renderNewsItem = React.useCallback(
+    ({ item }: { item: any }) => {
+      const imageUri =
+        item.imageUrl ||
+        (item.localImagePath ? `${apiService.baseURL}${item.localImagePath}` : null);
+      return (
+        <TouchableOpacity
+          style={styles.newsCard}
+          activeOpacity={0.85}
+          onPress={() => openNewsArticle(item.url)}
+        >
+          {imageUri ? (
+            <Image
+              source={{ uri: imageUri }}
+              style={styles.newsImage}
+              resizeMode="cover"
+              resizeMethod="resize"
+              fadeDuration={150}
+            />
+          ) : (
+            <View style={[styles.newsImage, styles.newsImagePlaceholder]}>
+              <FontAwesome6 name="newspaper" size={24} color={colors.textSecondary} />
+            </View>
+          )}
+          <View style={styles.newsBody}>
+            <Text style={styles.newsSource} numberOfLines={1}>
+              {item.source}
+            </Text>
+            <Text style={styles.newsHeadline} numberOfLines={3}>
+              {item.headline}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      );
+    },
+    [styles, colors],
+  );
 
   return (
     <View style={styles.container}>
     {/* Pinned search bar — shown when the header magnifying glass is toggled */}
     <SearchBar />
-    <ScrollView
+    <FlatList
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
-      onScroll={handleScroll}
-      scrollEventThrottle={200}
+      data={news}
+      keyExtractor={(item: any) => item.id}
+      renderItem={renderNewsItem}
+      onEndReached={loadMoreNews}
+      onEndReachedThreshold={0.6}
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={9}
+      removeClippedSubviews
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
-    >
+      ListFooterComponent={
+        isFetchingMoreNews ? (
+          <View style={styles.newsFooter}>
+            <ActivityIndicator size="small" color={colors.primary} />
+          </View>
+        ) : null
+      }
+      ListHeaderComponent={
+        <View>
       {/* Editorial / Blog ---------------------------------------------------*/}
       <Section
         colors={colors}
@@ -918,71 +969,31 @@ export default function HomeScreen() {
         <FeatureSpotlight colors={colors} styles={styles} onNavigate={(route) => router.push(route as any)} />
       </Section>
 
-      {/* Latest News — aggregated combat-sports headlines (external links) -----*/}
+      {/* Latest News header — the article rows below are the FlatList items,
+          so they virtualize and stay smooth as more pages lazy-load. ---------*/}
       {(isNewsLoading || news.length > 0) && (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="Latest News"
-          icon="newspaper"
-          iconLib="fa6"
-        >
-          {isNewsLoading ? (
-            <Loading colors={colors} styles={styles} />
-          ) : (
-            <View style={styles.newsList}>
-              {news.map((article: any) => {
-                const imageUri =
-                  article.imageUrl ||
-                  (article.localImagePath
-                    ? `${apiService.baseURL}${article.localImagePath}`
-                    : null);
-                return (
-                  <TouchableOpacity
-                    key={article.id}
-                    style={styles.newsCard}
-                    activeOpacity={0.85}
-                    onPress={() => openNewsArticle(article.url)}
-                  >
-                    {imageUri ? (
-                      <Image
-                        source={{ uri: imageUri }}
-                        style={styles.newsImage}
-                        resizeMode="cover"
-                      />
-                    ) : (
-                      <View style={[styles.newsImage, styles.newsImagePlaceholder]}>
-                        <FontAwesome6 name="newspaper" size={24} color={colors.textSecondary} />
-                      </View>
-                    )}
-                    <View style={styles.newsBody}>
-                      <Text style={styles.newsSource} numberOfLines={1}>
-                        {article.source}
-                      </Text>
-                      <Text style={styles.newsHeadline} numberOfLines={3}>
-                        {article.headline}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-              {isFetchingMoreNews && (
-                <View style={styles.newsFooter}>
-                  <ActivityIndicator size="small" color={colors.primary} />
-                </View>
-              )}
+        <View style={styles.newsHeader}>
+          <View style={styles.sectionTitleRow}>
+            <FontAwesome6 name="newspaper" size={20} color={colors.primary} />
+            <Text style={styles.sectionTitle}>Latest News</Text>
+          </View>
+          {isNewsLoading && (
+            <View style={{ marginTop: 12 }}>
+              <Loading colors={colors} styles={styles} />
             </View>
           )}
-        </Section>
+        </View>
       )}
+        </View>
+      }
+    />
 
-      {/* Upcoming fight hype quick-view modal (Most Hyped section) */}
-      <UpcomingFightModal
-        visible={!!modalFight}
-        fight={modalFight}
-        onClose={() => setModalFight(null)}
-      />
-    </ScrollView>
+    {/* Upcoming fight hype quick-view modal (Hyped Upcoming Fights section) */}
+    <UpcomingFightModal
+      visible={!!modalFight}
+      fight={modalFight}
+      onClose={() => setModalFight(null)}
+    />
     </View>
   );
 }
@@ -1158,10 +1169,10 @@ function makeStyles(colors: ThemeColors) {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
-    // News vertical list (external-link headlines, lazy-loaded)
-    newsList: {
-      paddingHorizontal: 16,
-      gap: 12,
+    // News vertical list (external-link headlines, lazy-loaded FlatList rows)
+    newsHeader: {
+      marginHorizontal: 16,
+      marginBottom: 12,
     },
     newsCard: {
       flexDirection: 'row',
@@ -1170,6 +1181,8 @@ function makeStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
       overflow: 'hidden',
+      marginHorizontal: 16,
+      marginBottom: 12,
     },
     newsImage: {
       width: 104,
