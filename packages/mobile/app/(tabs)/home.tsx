@@ -704,7 +704,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Most Hyped"
+        title="Hyped Upcoming Fights"
         icon="bolt"
         onSeeAll={() => router.push('/(tabs)/events' as any)}
       >
