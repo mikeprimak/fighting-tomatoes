@@ -11,6 +11,40 @@ import { EditorialHero } from '@/components/EditorialHero';
 import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2 } from 'lucide-react';
 
+// Priority orgs float above everyone else *within the same day*; days themselves
+// stay newest-first and each group stays time-sorted. Match against the canonical
+// Event.promotion strings, upper-cased.
+const PRIMARY_PROMOTIONS = new Set(['UFC', 'PFL', 'BKFC', 'KARATE COMBAT', 'DIRTY BOXING', 'RAF']);
+
+const isPrimaryOrg = (promotion?: string) =>
+  !!promotion && PRIMARY_PROMOTIONS.has(promotion.toUpperCase());
+
+// UTC day bucket (YYYY-MM-DD) so events are grouped by calendar day regardless
+// of the viewer's timezone — mirrors how event dates are rendered.
+const dayKey = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+};
+
+const startMs = (e: any): number => {
+  const d = new Date(e.mainStartTime ?? e.date);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+};
+
+function sortPastEvents(events: any[]): any[] {
+  return [...events].sort((a, b) => {
+    // 1) newest day first
+    const byDay = dayKey(b.date).localeCompare(dayKey(a.date));
+    if (byDay !== 0) return byDay;
+    // 2) priority group above secondary group
+    const groupDelta = (isPrimaryOrg(a.promotion) ? 0 : 1) - (isPrimaryOrg(b.promotion) ? 0 : 1);
+    if (groupDelta !== 0) return groupDelta;
+    // 3) time-based within the group (latest first)
+    return startMs(b) - startMs(a);
+  });
+}
+
 export default function PastEventsPage() {
   const { filterEventsByOrg } = useOrgFilter();
 
@@ -33,7 +67,7 @@ export default function PastEventsPage() {
   });
 
   const allEvents = data?.pages.flatMap(page => page.events) ?? [];
-  const filteredEvents = filterEventsByOrg(allEvents);
+  const filteredEvents = sortPastEvents(filterEventsByOrg(allEvents));
 
   return (
     <>

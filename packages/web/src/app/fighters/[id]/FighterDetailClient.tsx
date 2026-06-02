@@ -128,12 +128,8 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
       {/* Completed section */}
       {completedFights.length > 0 && (
         <section>
-          <div className="mb-2 flex items-center justify-between">
-            <SectionHeaderRow leftLabel="RATING" rightLabel="MY RATING" />
-          </div>
-
-          {/* Sort */}
-          <div className="mb-2 flex items-center gap-2">
+          {/* Sort — sits a line above the column header, pushed to the far right */}
+          <div className="mb-2 flex items-center justify-end gap-2">
             <span className="text-xs text-text-secondary">Sort by:</span>
             <button
               onClick={() => setSortBy('date')}
@@ -148,6 +144,8 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
               Highest Rated
             </button>
           </div>
+
+          <SectionHeaderRow leftLabel="RATING" rightLabel="MY RATING" />
 
           <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
             {completedFights.map((fight: any) => (

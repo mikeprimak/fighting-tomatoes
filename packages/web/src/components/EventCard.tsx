@@ -103,10 +103,12 @@ export function EventCard({ event, mode }: EventCardProps) {
 
   const displayName = normalizeEventName(event.name, event.promotion);
 
+  const pastBadge = formatTimeAgo(event.date);
   const timeBadge = mode === 'upcoming'
     ? formatTimeUntil(event.date, event.mainStartTime ?? undefined)
     : mode === 'past'
-      ? formatTimeAgo(event.date)
+      // A completed event from today should read COMPLETE, not TODAY.
+      ? (pastBadge === 'TODAY' ? 'COMPLETE' : pastBadge)
       : 'LIVE';
 
   const timeBadgeColor = mode === 'live' ? 'bg-danger/20 text-danger' :

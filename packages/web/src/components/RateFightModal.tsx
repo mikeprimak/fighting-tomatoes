@@ -8,6 +8,7 @@ import {
   deleteFightRating,
   reviewFight,
   updateReview,
+  updateFightUserData,
   getFightReviews,
 } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -40,6 +41,10 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
   const [error, setError] = useState('');
   const [authGate, setAuthGate] = useState(false);
   const initialCommentRef = useRef('');
+  // Tracks whether the click that may close the modal *started* on the backdrop.
+  // Prevents a close when the user presses inside the modal (e.g. selecting text
+  // in the textarea) and releases the mouse outside it.
+  const pressStartedOnBackdrop = useRef(false);
 
   const { data: reviewsData } = useQuery({
     queryKey: ['fightReviews', fight?.id],
@@ -90,12 +95,15 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
         tasks.push(rateFight(fight.id, selectedRating));
       }
     }
-    if (isAuthenticated && selectedRating != null) {
+    if (isAuthenticated) {
       const trimmed = comment.trim();
-      if (trimmed && trimmed !== initialCommentRef.current.trim()) {
-        const hasExisting = !!initialCommentRef.current.trim();
+      const hadComment = !!initialCommentRef.current.trim();
+      if (!trimmed && hadComment) {
+        // The user cleared their comment → delete the review (rating untouched).
+        tasks.push(updateFightUserData(fight.id, { review: null }));
+      } else if (trimmed && trimmed !== initialCommentRef.current.trim() && selectedRating != null) {
         tasks.push(
-          hasExisting
+          hadComment
             ? updateReview(fight.id, { content: trimmed, rating: selectedRating })
             : reviewFight(fight.id, { content: trimmed, rating: selectedRating }),
         );
@@ -149,7 +157,15 @@ export function RateFightModal({ isOpen, onClose, fight, existingRating, existin
   const f2 = fight.fighter2 ?? {};
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      onMouseDown={e => { pressStartedOnBackdrop.current = e.target === e.currentTarget; }}
+      onClick={e => {
+        // Only close when both the press and the release happened on the
+        // backdrop — a drag that ends outside the modal shouldn't close it.
+        if (e.target === e.currentTarget && pressStartedOnBackdrop.current) onClose();
+      }}
+    >
       <div
         className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl border border-border bg-background p-5"
         onClick={e => e.stopPropagation()}
