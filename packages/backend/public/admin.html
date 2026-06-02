@@ -1897,6 +1897,8 @@
             <option value="upcoming" selected>Upcoming</option>
             <option value="past">Past</option>
           </select>
+          <button class="btn btn-secondary btn-sm" onclick="sendTestExpectationAlert()"
+                  title="Send a test push to your phone to confirm expectation alerts work">🔔 Test phone alert</button>
         </div>
 
         <div id="eventList" class="event-list">
@@ -2998,6 +3000,21 @@
     let lastExpectationCounts = {};   // eventId -> expectingUsers (last seen)
     let expectationsInitialized = false;
     let expectAlertSound = null;
+
+    async function sendTestExpectationAlert() {
+      try {
+        const res = await authFetch(`${API_BASE}/admin/notification-expectations/test-alert`, { method: 'POST' });
+        const data = await res.json();
+        if (data.success > 0) {
+          showToast('✅ Test push sent — check your phone', 'success');
+        } else {
+          showToast('No device got it. Is the app logged in as your admin account with notifications on?', 'error');
+        }
+      } catch (e) {
+        showToast('Failed to send test alert', 'error');
+        console.error(e);
+      }
+    }
 
     function startExpectationsWatch() {
       if (expectationsTimer) clearInterval(expectationsTimer);
