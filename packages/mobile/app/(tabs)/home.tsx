@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Image,
   RefreshControl,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -447,6 +448,14 @@ export default function HomeScreen() {
     staleTime: 30 * 60 * 1000,
   });
 
+  // Aggregated combat-sports news (MMA Fighting, Bloody Elbow, UFC, Sherdog, …),
+  // refreshed daily by the news scraper. Shown as a carousel at the bottom of Home.
+  const { data: newsData, isLoading: isNewsLoading } = useQuery({
+    queryKey: ['news', 'home'],
+    queryFn: () => apiService.getNews({ limit: 12 }),
+    staleTime: 30 * 60 * 1000,
+  });
+
   // --- Derived ------------------------------------------------------------
   // Order by calendar day, then float UFC to the top of its day so a marquee UFC
   // card isn't buried under same-day regional events (Event.date is a UTC-hour
@@ -488,6 +497,7 @@ export default function HomeScreen() {
   const comments = (topComments?.data || []).slice(0, 3);
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
+  const news = (newsData?.articles || []).slice(0, 10);
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -529,6 +539,16 @@ export default function HomeScreen() {
 
   const openBlogPost = (slug: string) => {
     router.push(`/blog/${slug}` as any);
+  };
+
+  // News articles are external links (MMA Fighting, UFC, etc.) — open in the
+  // device browser rather than navigating in-app.
+  const openNewsArticle = async (url: string) => {
+    try {
+      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
+    } catch {
+      // no-op — a malformed/unsupported URL just does nothing
+    }
   };
 
   const styles = makeStyles(colors);
@@ -844,6 +864,63 @@ export default function HomeScreen() {
         <FeatureSpotlight colors={colors} styles={styles} onNavigate={(route) => router.push(route as any)} />
       </Section>
 
+      {/* Latest News — aggregated combat-sports headlines (external links) -----*/}
+      {(isNewsLoading || news.length > 0) && (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Latest News"
+          icon="newspaper"
+          iconLib="fa6"
+        >
+          {isNewsLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+            >
+              {news.map((article: any) => {
+                const imageUri =
+                  article.imageUrl ||
+                  (article.localImagePath
+                    ? `${apiService.baseURL}${article.localImagePath}`
+                    : null);
+                return (
+                  <TouchableOpacity
+                    key={article.id}
+                    style={styles.newsCard}
+                    activeOpacity={0.85}
+                    onPress={() => openNewsArticle(article.url)}
+                  >
+                    {imageUri ? (
+                      <Image
+                        source={{ uri: imageUri }}
+                        style={styles.newsImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={[styles.newsImage, styles.newsImagePlaceholder]}>
+                        <FontAwesome6 name="newspaper" size={28} color={colors.textSecondary} />
+                      </View>
+                    )}
+                    <View style={styles.newsBody}>
+                      <Text style={styles.newsSource} numberOfLines={1}>
+                        {article.source}
+                      </Text>
+                      <Text style={styles.newsHeadline} numberOfLines={3}>
+                        {article.headline}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          )}
+        </Section>
+      )}
+
       {/* Upcoming fight hype quick-view modal (Most Hyped section) */}
       <UpcomingFightModal
         visible={!!modalFight}
@@ -1025,6 +1102,41 @@ function makeStyles(colors: ThemeColors) {
       fontWeight: '600',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+    },
+    // News carousel card (external-link headlines)
+    newsCard: {
+      width: 220,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    newsImage: {
+      width: '100%',
+      height: 120,
+      backgroundColor: colors.border,
+    },
+    newsImagePlaceholder: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    newsBody: {
+      padding: 12,
+    },
+    newsSource: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.tint,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 6,
+    },
+    newsHeadline: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.text,
+      lineHeight: 19,
     },
     // Feature spotlight card
     spotlightCard: {
