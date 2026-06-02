@@ -621,7 +621,8 @@ export default function ProfileScreen() {
           />
         }
       >
-        {/* Settings */}
+        {/* Settings — ordered: account, display name, my hype, my ratings,
+            followed fighters, fan DNA, spoiler-free, notifications, advanced. */}
         <View style={styles.settingsContainer}>
           {/* Account (email) */}
           <View style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}>
@@ -647,108 +648,7 @@ export default function ProfileScreen() {
             </View>
             <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
           </TouchableOpacity>
-
-          {/* Spoiler-Free Mode */}
-          <View style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}>
-            <View style={styles.settingsRowLeft}>
-              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>
-                Spoiler-Free Mode: {spoilerFreeMode ? 'ON' : 'OFF'}
-              </Text>
-              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                {spoilerFreeMode
-                  ? 'Fight winners are currently hidden until you rate them.'
-                  : 'Fight winners are visible.'}
-              </Text>
-            </View>
-            <Switch
-              value={spoilerFreeMode}
-              onValueChange={setSpoilerFreeMode}
-              trackColor={{ false: '#767577', true: '#4CAF50' }}
-              thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
-            />
-          </View>
-
-          {/* My Followed Fighters */}
-          <TouchableOpacity
-            style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
-            onPress={() => router.push('/followed-fighters' as any)}
-          >
-            <View style={styles.settingsRowLeft}>
-              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Followed Fighters</Text>
-              {followedCount !== null && (
-                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                  Following {followedCount} {followedCount === 1 ? 'fighter' : 'fighters'}
-                </Text>
-              )}
-            </View>
-            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-          </TouchableOpacity>
-
-          {/* Notification permission banner — only when not granted */}
-          {permissionStatus !== 'granted' && (
-            <View style={[styles.permissionBanner, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
-              <FontAwesome name="exclamation-triangle" size={20} color={colors.warning} />
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.permissionTitle, { color: colors.text }]}>Notifications off</Text>
-                <Text style={[styles.permissionText, { color: colors.textSecondary }]}>
-                  {permissionStatus === 'denied'
-                    ? 'Enable them in your device settings.'
-                    : 'Grant permission to receive push notifications.'}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.permissionButton, { backgroundColor: colors.primary }]}
-                onPress={permissionStatus === 'denied' ? openAppSettings : requestPermissions}
-              >
-                <Text style={styles.permissionButtonText}>
-                  {permissionStatus === 'denied' ? 'Open Settings' : 'Enable'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Notification settings */}
-          <TouchableOpacity
-            style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
-            onPress={() => router.push('/settings')}
-          >
-            <View style={styles.settingsRowLeft}>
-              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notification settings</Text>
-              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                Choose which alerts you get for fighters you follow
-              </Text>
-            </View>
-            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-          </TouchableOpacity>
         </View>
-
-        {/* My Ratings */}
-        <ActivitySection
-          bgColor={SECTION_BG_ODD}
-          onPress={user?.totalRatings ? () => router.push('/activity/my-ratings' as any) : undefined}
-          title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Ratings</Text>}
-          headerRight={user?.totalRatings ? (
-            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-          ) : undefined}
-        >
-          {!user?.totalRatings ? (
-            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
-              Rate fights on{' '}
-              <Text
-                style={{ color: colors.primary, fontWeight: '600' }}
-                onPress={() => router.push('/(tabs)/past-events')}
-              >
-                Past Events
-              </Text>
-              .
-            </Text>
-          ) : (
-            <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-              My Average Rating: <Text style={{ color: colors.text, fontWeight: '600' }}>{(user?.averageRating || 0).toFixed(1)}</Text>
-              {'   '}·{'   '}{user?.totalRatings || 0} fights rated
-            </Text>
-          )}
-        </ActivitySection>
 
         {/* My Hype */}
         <ActivitySection
@@ -778,6 +678,52 @@ export default function ProfileScreen() {
           )}
         </ActivitySection>
 
+        {/* My Ratings */}
+        <ActivitySection
+          bgColor={SECTION_BG_ODD}
+          onPress={user?.totalRatings ? () => router.push('/activity/my-ratings' as any) : undefined}
+          title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Ratings</Text>}
+          headerRight={user?.totalRatings ? (
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          ) : undefined}
+        >
+          {!user?.totalRatings ? (
+            <Text style={{ color: colors.textSecondary, fontSize: 14, lineHeight: 20, paddingVertical: 8 }}>
+              Rate fights on{' '}
+              <Text
+                style={{ color: colors.primary, fontWeight: '600' }}
+                onPress={() => router.push('/(tabs)/past-events')}
+              >
+                Past Events
+              </Text>
+              .
+            </Text>
+          ) : (
+            <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+              My Average Rating: <Text style={{ color: colors.text, fontWeight: '600' }}>{(user?.averageRating || 0).toFixed(1)}</Text>
+              {'   '}·{'   '}{user?.totalRatings || 0} fights rated
+            </Text>
+          )}
+        </ActivitySection>
+
+        <View style={styles.settingsContainer}>
+          {/* My Followed Fighters */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+            onPress={() => router.push('/followed-fighters' as any)}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>My Followed Fighters</Text>
+              {followedCount !== null && (
+                <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                  Following {followedCount} {followedCount === 1 ? 'fighter' : 'fighters'}
+                </Text>
+              )}
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Your Fan DNA — condensed to title + personality type line. */}
         {(fanDNALoading || fanDNAType) && (
           <ActivitySection
@@ -798,16 +744,75 @@ export default function ProfileScreen() {
           </ActivitySection>
         )}
 
-        {/* Advanced Settings — moved to the bottom, below Fan DNA */}
-        <TouchableOpacity
-          style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
-          onPress={() => router.push('/advanced-settings' as any)}
-        >
-          <View style={styles.settingsRowLeft}>
-            <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Advanced Settings</Text>
+        <View style={styles.settingsContainer}>
+          {/* Spoiler-Free Mode */}
+          <View style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}>
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>
+                Spoiler-Free Mode: {spoilerFreeMode ? 'ON' : 'OFF'}
+              </Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                {spoilerFreeMode
+                  ? 'Fight winners are currently hidden until you rate them.'
+                  : 'Fight winners are visible.'}
+              </Text>
+            </View>
+            <Switch
+              value={spoilerFreeMode}
+              onValueChange={setSpoilerFreeMode}
+              trackColor={{ false: '#767577', true: '#4CAF50' }}
+              thumbColor={spoilerFreeMode ? '#FFFFFF' : '#f4f3f4'}
+            />
           </View>
-          <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
-        </TouchableOpacity>
+
+          {/* Notification permission banner — only when not granted */}
+          {permissionStatus !== 'granted' && (
+            <View style={[styles.permissionBanner, { backgroundColor: colors.warning + '20', borderColor: colors.warning }]}>
+              <FontAwesome name="exclamation-triangle" size={20} color={colors.warning} />
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.permissionTitle, { color: colors.text }]}>Notifications off</Text>
+                <Text style={[styles.permissionText, { color: colors.textSecondary }]}>
+                  {permissionStatus === 'denied'
+                    ? 'Enable them in your device settings.'
+                    : 'Grant permission to receive push notifications.'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.permissionButton, { backgroundColor: colors.primary }]}
+                onPress={permissionStatus === 'denied' ? openAppSettings : requestPermissions}
+              >
+                <Text style={styles.permissionButtonText}>
+                  {permissionStatus === 'denied' ? 'Open Settings' : 'Enable'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Notification settings */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
+            onPress={() => router.push('/settings')}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notification settings</Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                Choose which alerts you get for fighters you follow
+              </Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          {/* Advanced Settings */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+            onPress={() => router.push('/advanced-settings' as any)}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Advanced Settings</Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
 
         {/* Send Feedback */}
         <TouchableOpacity
