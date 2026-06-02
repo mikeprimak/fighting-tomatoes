@@ -737,6 +737,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       return reply.code(404).send({ error: 'Fight not found' });
     }
 
+    // Never send for a cancelled fight.
+    if (fight.fightStatus === 'CANCELLED') {
+      return reply.send({ dispatched: 0, cancelled: true });
+    }
+
     // Distinct users who would actually receive a ping right now (unsent rows).
     const pendingMatches = await prisma.fightNotificationMatch.findMany({
       where: { fightId: id, isActive: true, notificationSent: false },

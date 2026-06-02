@@ -3011,7 +3011,9 @@
       try {
         const res = await authFetch(`${API_BASE}/admin/fights/${fightId}/send-notification`, { method: 'POST' });
         const data = await res.json();
-        if (data.alreadySent) {
+        if (data.cancelled) {
+          showToast('Fight is cancelled — notification blocked', 'info');
+        } else if (data.alreadySent) {
           showToast('Already sent — nobody new to notify for this fight', 'info');
         } else {
           showToast(`✅ Ping sent to ${data.dispatched} waiting user${data.dispatched === 1 ? '' : 's'}`, 'success');
@@ -3461,10 +3463,15 @@
 
       // Notification expectation detail for this fight (who's waiting / still unsent)
       const exp = (window.__fightExpectations?.perFight || {})[fight.id] || { waiting: 0, pending: 0 };
+      const isCancelled = fight.fightStatus === 'CANCELLED';
       const isSendableStatus = fight.fightStatus === 'UPCOMING' || fight.fightStatus === 'LIVE';
       let notifControl = '';
       if (exp.waiting > 0) {
-        if (exp.pending > 0 && isSendableStatus) {
+        if (isCancelled) {
+          // Cancelled fights never notify (guarded server-side). Show it so the
+          // operator can see those users exist but are safe.
+          notifControl = `<span style="font-size: 0.72rem; color: var(--text-muted);">🚫 ${exp.waiting} had alerts set — won't send (cancelled)</span>`;
+        } else if (exp.pending > 0 && isSendableStatus) {
           notifControl = `<button class="btn btn-sm" style="background: var(--accent-orange); color: #000; padding: 0.15rem 0.55rem; font-size: 0.72rem; font-weight: 700;"
                             onclick="sendFightNotification('${fight.id}', ${exp.pending})">🔔 Send ping (${exp.pending})</button>`;
         } else if (exp.pending === 0) {
@@ -3515,7 +3522,7 @@
               <div class="fight-matchup">
                 <span style="${fight.winner === fight.fighter1?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f1Name)}</span> vs <span style="${fight.winner === fight.fighter2?.id ? 'font-weight: 700; color: var(--accent-green);' : ''}">${escapeHtml(f2Name)}</span>
                 ${fight.isTitle ? '<span class="fight-title-badge">TITLE</span>' : ''}
-                ${exp.waiting > 0 ? `<span class="fight-expect-badge" title="${exp.waiting} user${exp.waiting === 1 ? '' : 's'} waiting on a notification for this fight">🔔 ${exp.waiting}</span>` : ''}
+                ${exp.waiting > 0 && !isCancelled ? `<span class="fight-expect-badge" title="${exp.waiting} user${exp.waiting === 1 ? '' : 's'} waiting on a notification for this fight">🔔 ${exp.waiting}</span>` : ''}
               </div>
               <div class="fight-details">
                 ${fight.weightClass || 'Catchweight'} • ${fight.scheduledRounds} rounds

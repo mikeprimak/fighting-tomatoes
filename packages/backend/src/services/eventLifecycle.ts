@@ -397,7 +397,7 @@ export async function runEventLifecycleCheck(): Promise<{
         earlyPrelimStartTime: true,
         useManualLiveTracker: true,
         fights: {
-          select: { id: true, cardType: true },
+          select: { id: true, cardType: true, fightStatus: true },
         },
       },
     });
@@ -419,6 +419,8 @@ export async function runEventLifecycleCheck(): Promise<{
         main: [],
       };
       for (const f of event.fights) {
+        // Skip cancelled fights — they're off the card, nobody should be pinged.
+        if (f.fightStatus === 'CANCELLED') continue;
         const n = normalizeCardType(f.cardType);
         if (n && n.includes('early prelim')) buckets.early.push(f.id);
         else if (n && n.includes('prelim')) buckets.prelim.push(f.id);
@@ -459,7 +461,9 @@ export async function runEventLifecycleCheck(): Promise<{
         (s) => now >= new Date(s.startTime.getTime() - SECTION_NOTIF_LEAD_MS),
       );
       if (anySectionTriggered) {
-        const allFightIds = event.fights.map((f) => f.id);
+        const allFightIds = event.fights
+          .filter((f) => f.fightStatus !== 'CANCELLED')
+          .map((f) => f.id);
         await notifyEventSectionStart(event.id, allFightIds, event.name, null);
       }
     }
