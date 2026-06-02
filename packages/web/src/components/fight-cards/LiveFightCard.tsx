@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, MessageCircle, Star } from 'lucide-react';
+import { Flame, MessageCircle } from 'lucide-react';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { RateFightModal } from '@/components/RateFightModal';
@@ -29,8 +29,6 @@ interface LiveFightCardProps {
     averageHype?: number;
     hypeCount?: number;
     commentCount?: number;
-    averageRating?: number;
-    totalRatings?: number;
     userHypePrediction?: number;
     userRating?: number;
     userReview?: { content: string; rating?: number };
@@ -75,19 +73,8 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
   const hasHype = hypeScore > 0;
   const hasUserHype = userHype > 0;
 
-  // Once a fight has been rated (e.g. a headliner that's effectively over but
-  // still flagged live), surface the rating layered over the hype — mirrors
-  // CompletedFightCard so the user's rating doesn't vanish on a live/up-next card.
-  const avgRating = fight.averageRating ?? 0;
-  const totalRatings = fight.totalRatings ?? 0;
-  const userRatingValue = fight.userRating ?? 0;
-  const hasRating = avgRating > 0;
-  const hasUserRating = userRatingValue > 0;
-
   const hypeColor = hasHype ? getHypeHeatmapColor(hypeScore) : undefined;
   const userHypeColor = hasUserHype ? getHypeHeatmapColor(userHype) : undefined;
-  const ratingColor = hasRating ? getHypeHeatmapColor(avgRating) : undefined;
-  const userRatingColor = hasUserRating ? getHypeHeatmapColor(userRatingValue) : undefined;
 
   const userPickedF1 = fight.userPredictedWinner === fight.fighter1.id;
   const userPickedF2 = fight.userPredictedWinner === fight.fighter2.id;
@@ -115,30 +102,23 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
 
         {/* Body with gold wash */}
         <div className="relative flex items-stretch bg-[#F5C518]/[0.12]">
-          {/* Left: community square — rating layered over hype once rated,
-              otherwise hype only. Matches CompletedFightCard's stacked squares. */}
+          {/* Left: community hype square — matches CompletedFightCard's rating square */}
           <div className="relative w-12 shrink-0">
-            {hasRating ? (
-              <>
-                {/* Hype square (behind, offset down+right) */}
-                {hasHype && (
-                  <div
-                    className="absolute left-3 top-4 h-12 w-12 rounded-md"
-                    style={{ backgroundColor: hypeColor, zIndex: 0 }}
-                  />
-                )}
-                {/* Rating square (front) — opaque so the hype square beneath
-                    can't bleed through. */}
-                <div
-                  className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
-                  style={{ backgroundColor: ratingColor }}
-                >
+            <div
+              className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
+              style={{
+                backgroundColor: hasHype ? hypeColor : '#202020',
+                border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
+              }}
+            >
+              {hasHype ? (
+                <>
                   <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
-                    {avgRating === 10 ? '10' : avgRating.toFixed(1)}
+                    {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
                   </span>
-                  {(totalRatings > 0 || commentCount > 0) ? (
+                  {(hypeCount > 0 || commentCount > 0) ? (
                     <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
-                      {totalRatings > 0 ? <span>({totalRatings})</span> : null}
+                      {hypeCount > 0 ? <span>({hypeCount})</span> : null}
                       {commentCount > 0 ? (
                         <span className="flex items-center gap-0.5">
                           <MessageCircle size={8} strokeWidth={2.5} />
@@ -147,46 +127,19 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
                       ) : null}
                     </div>
                   ) : null}
-                </div>
-              </>
-            ) : (
-              <div
-                className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
-                style={{
-                  backgroundColor: hasHype ? hypeColor : '#202020',
-                  border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
-                }}
-              >
-                {hasHype ? (
-                  <>
-                    <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
-                      {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
+                </>
+              ) : (
+                <div className="flex flex-col items-center gap-0.5">
+                  <Flame size={18} className="text-text-secondary/40" />
+                  {commentCount > 0 ? (
+                    <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
+                      <MessageCircle size={8} strokeWidth={2.5} />
+                      {commentCount}
                     </span>
-                    {(hypeCount > 0 || commentCount > 0) ? (
-                      <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
-                        {hypeCount > 0 ? <span>({hypeCount})</span> : null}
-                        {commentCount > 0 ? (
-                          <span className="flex items-center gap-0.5">
-                            <MessageCircle size={8} strokeWidth={2.5} />
-                            {commentCount}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center gap-0.5">
-                    <Flame size={18} className="text-text-secondary/40" />
-                    {commentCount > 0 ? (
-                      <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
-                        <MessageCircle size={8} strokeWidth={2.5} />
-                        {commentCount}
-                      </span>
-                    ) : null}
-                  </div>
-                )}
-              </div>
-            )}
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Center: fighters + names */}
@@ -223,21 +176,9 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
             )}
           </div>
 
-          {/* Right: user rating star once rated, otherwise user hype flame */}
+          {/* Right: user hype flame */}
           <div className="relative flex w-12 shrink-0 items-center justify-center">
-            {hasUserRating ? (
-              <>
-                <Star
-                  size={42}
-                  fill={userRatingColor}
-                  color={userRatingColor}
-                  strokeWidth={1.5}
-                />
-                <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
-                  {Math.round(userRatingValue)}
-                </span>
-              </>
-            ) : hasUserHype ? (
+            {hasUserHype ? (
               <>
                 <Flame
                   size={42}
