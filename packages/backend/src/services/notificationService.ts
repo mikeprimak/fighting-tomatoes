@@ -132,6 +132,18 @@ export async function notifyFightStartViaRules(
 ): Promise<void> {
   console.log(`[Notifications] Checking rules for fight start: ${fighter1Name} vs ${fighter2Name}`);
 
+  // Safety: never notify for a cancelled fight. Matches are intentionally left
+  // active (not deactivated) so a rebooked/un-cancelled fight still notifies —
+  // the guard is re-evaluated on each dispatch, so a CANCELLED fight stays muted.
+  const fightStatusRow = await prisma.fight.findUnique({
+    where: { id: fightId },
+    select: { fightStatus: true },
+  });
+  if (fightStatusRow?.fightStatus === 'CANCELLED') {
+    console.log(`[Notifications] Skipping cancelled fight ${fightId}`);
+    return;
+  }
+
   // Get all users who have active notification matches for this fight
   const matches = await prisma.fightNotificationMatch.findMany({
     where: {
@@ -278,7 +290,18 @@ export async function notifyEventSectionStart(
 ): Promise<void> {
   if (sectionFightIds.length === 0) return;
 
-  const matches = await prisma.fightNotificationMatch.findMany({
+  // Safety: drop any cancelled fights before we look at matches, so nobody gets a
+  // "starts soon" ping for a fight that's off the card. Matches stay active so a
+  // rebooked fight can still notify later.
+  const statusRows = await prisma.fight.findMany({
+    where: { id: { in: sectionFightIds } },
+    select: { id: true, fightStatus: true },
+  });
+  const cancelledFightIds = new Set(
+    statusRows.filter((f) => f.fightStatus === 'CANCELLED').map((f) => f.id),
+  );
+
+  const matches = (await prisma.fightNotificationMatch.findMany({
     where: {
       fightId: { in: sectionFightIds },
       isActive: true,
@@ -287,7 +310,7 @@ export async function notifyEventSectionStart(
     include: {
       rule: { select: { name: true } },
     },
-  });
+  })).filter((m) => !cancelledFightIds.has(m.fightId));
 
   if (matches.length === 0) return;
 
