@@ -465,19 +465,25 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
-  // "This weekend" = the Fri/Sat/Sun of the current-or-coming weekend, as UTC day
-  // keys so they line up with eventDayKey (Event.date is a UTC-hour placeholder).
-  // We anchor on the user's local calendar date, then snap to that week's Saturday.
+  // "This weekend" = every event from today up to (but not including) the Monday
+  // that starts next week — i.e. the rest of the current Mon–Sun week. On Sat/Sun
+  // that's the remaining weekend; the instant Monday arrives the window rolls to
+  // the whole next week (Mon–Sun), so mid-week cards (Wed/Thu/Fri) are included.
+  // Compared as UTC day keys to line up with eventDayKey (Event.date is a
+  // UTC-hour placeholder); anchored on the user's local calendar date.
   const DAY_MS = 86_400_000;
   const nowLocal = new Date();
   const todayKey = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
   const localDow = nowLocal.getDay(); // 0=Sun … 6=Sat
-  // On Sunday the weekend's Saturday was yesterday; otherwise jump forward to it.
-  const saturdayKey = localDow === 0 ? todayKey - DAY_MS : todayKey + ((6 - localDow + 7) % 7) * DAY_MS;
-  const weekendKeys = new Set([saturdayKey - DAY_MS, saturdayKey, saturdayKey + DAY_MS]); // Fri/Sat/Sun
+  let daysUntilNextMonday = (1 - localDow + 7) % 7; // 0 when today is Monday
+  if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
+  const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
   const upcomingEvents: Event[] = (eventsData?.events || [])
     .filter((e: Event) => e.eventStatus === 'UPCOMING')
-    .filter((e: Event) => weekendKeys.has(eventDayKey(e.date)))
+    .filter((e: Event) => {
+      const k = eventDayKey(e.date);
+      return k >= todayKey && k < nextMondayKey;
+    })
     .sort((a: Event, b: Event) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
       if (dayDiff !== 0) return dayDiff;
