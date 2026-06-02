@@ -59,11 +59,37 @@ discovery — already configured in GitHub Actions).
 - `STARTTIME_RETRY_HOURS=36` — re-attempt an unresolved event after N hours.
 - `STARTTIME_MAX_EVENTS=40` — cap events per run (Brave free tier = 2k/mo).
 
+## Coverage (org-agnostic)
+
+There is NO per-org wiring. The selector keys off the symptom — any UPCOMING event
+with both `prelimStartTime` and `earlyPrelimStartTime` null — so it already covers
+EVERY promotion with the start-time gap (MVP, Top Rank, Golden Boy, Gold Star,
+BKFC, PFL, Zuffa, Oktagon, RIZIN, RAF, …). UFC self-excludes (it already carries
+all three section times from ufc.com). Adding a new org needs zero changes here.
+
+The real limiter is **web coverage per card, not org wiring**: US boxing/MMA gets
+clean "ring walk times" articles (high hit rate); thin/regional cards (ONE Friday
+Fights, small RIZIN, RAF) often have no schedule article → times left null (never
+guessed). Future work is coverage *quality* (better queries, a fallback source,
+verifying international local→ET conversion), not breadth.
+
 ## Cost
 
-~1 Brave query + 1 Haiku call per unresolved event; freshness throttle means most
-events resolve once at high confidence then stop. Well under the broadcast-
-discovery footprint (~$50/yr).
+~1 Brave query + 1 Haiku 4.5 call per unresolved event (~$0.002/event on Haiku
+with prompt caching). Cost self-limits hard: once an event gets a confident prelim
+time it is **excluded from selection entirely** (filter requires `prelimStartTime`
+null), so it never queries again — only genuinely unresolved events keep retrying,
+throttled to once per `STARTTIME_RETRY_HOURS` (36h).
+
+- Realistic steady state: ~20–30 events/day × $0.002 ≈ **~$0.05/day ≈ ~$18/yr** (Haiku).
+- Hard ceiling: `STARTTIME_MAX_EVENTS=40`/run → worst case ~**$30/yr** Haiku.
+- **Brave ≈ $0**: free tier is 2,000 queries/mo; realistic volume (~600–1,200/mo,
+  shared with broadcast discovery) stays under it. If it ever tips into paid,
+  ~$2–4/mo → ~$60/yr absolute worst case all-in.
+
+Smaller than the broadcast-discovery footprint (~$50/yr) — Haiku not Sonnet, modest
+volume, aggressive drop-out. Tighten further via `STARTTIME_MAX_EVENTS`,
+`STARTTIME_WINDOW_DAYS` (21), or `STARTTIME_RETRY_HOURS`.
 
 ## Provenance (Event columns)
 
