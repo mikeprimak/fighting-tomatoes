@@ -232,33 +232,48 @@ export class MMANewsScraper {
       const scrapedArticles = await page.evaluate(() => {
         const items: any[] = [];
 
-        // Updated selectors for MMA Fighting's new structure
+        // MMA Fighting is a Next.js site whose CSS class names are hashed and
+        // rotate over time, so we key off structure that's stable: the Duet
+        // "content-card" container and article URLs shaped /<section>/<id>/<slug>
+        // (e.g. /ufc/491846/ilia-topuria-...). Headlines come from the title
+        // anchor's text, falling back to the card image's alt text.
         // @ts-ignore - document is available in browser context
-        const articleElements = document.querySelectorAll('div.duet--content-cards--content-card, [class*="content-card"]');
+        const cards = document.querySelectorAll('.duet--content-cards--content-card, div[class*="content-card"]');
 
-        articleElements.forEach((article: any) => {
+        cards.forEach((card: any) => {
           try {
-            // The title link is the second <a> tag with class _1ngvuhm0
-            const linkElement = article.querySelector('a._1ngvuhm0');
-            // Title can be in the link text or in a div with specific classes
-            const titleElement = linkElement || article.querySelector('div.ls9zuh9');
-            const imageElement = article.querySelector('img');
+            const anchors = Array.from(card.querySelectorAll('a[href]')) as any[];
+            const storyAnchor = anchors.find((a) =>
+              /^\/[a-z0-9-]+\/\d+\/[a-z0-9-]+/.test(a.getAttribute('href') || ''),
+            );
+            if (!storyAnchor) return;
 
-            if (linkElement && titleElement) {
-              const url = linkElement.href;
-              const headline = titleElement.textContent?.trim() || '';
-              // MMA Fighting doesn't show descriptions on listing page
-              const description = '';
+            const url = storyAnchor.href;
 
-              let imageUrl = '';
-              if (imageElement) {
-                imageUrl = (imageElement as any).src ||
-                          (imageElement as any).dataset?.src || '';
+            let headline = '';
+            for (const a of anchors) {
+              const t = (a.textContent || '').trim();
+              if (t.length > 15) { headline = t; break; }
+            }
+            if (!headline) {
+              const altImg = card.querySelector('img[alt]');
+              if (altImg) headline = (altImg.getAttribute('alt') || '').trim();
+            }
+
+            let imageUrl = '';
+            const imageElement = card.querySelector('img');
+            if (imageElement) {
+              imageUrl = imageElement.currentSrc || (imageElement as any).src ||
+                         imageElement.getAttribute('src') || '';
+              if (!imageUrl || imageUrl.startsWith('data:')) {
+                const ss = imageElement.getAttribute('srcset');
+                if (ss) imageUrl = ss.split(',').pop().trim().split(' ')[0];
               }
+            }
 
-              if (headline && url && !items.some(i => i.url === url)) {
-                items.push({ headline, description, url, imageUrl });
-              }
+            // MMA Fighting doesn't show descriptions on the listing page
+            if (headline && url && !items.some((i) => i.url === url)) {
+              items.push({ headline, description: '', url, imageUrl });
             }
           } catch (err) {
             console.error('Error parsing article:', err);
