@@ -17,6 +17,7 @@ import { Colors } from '../../constants/Colors';
 import { hasRecord } from '../../utils/formatRecord';
 import { apiService, Fight } from '../../services/api';
 import { DetailScreenHeader, FightDisplayCard } from '../../components';
+import UpcomingFightModal from '../../components/UpcomingFightModal';
 import FollowFighterButton from '../../components/FollowFighterButton';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome } from '@expo/vector-icons';
@@ -41,6 +42,9 @@ export default function FighterDetailScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+  // Hype quick-view modal for upcoming fights (completed cards open their own
+  // rating modal internally and never call onPress).
+  const [modalFight, setModalFight] = useState<Fight | null>(null);
 
   // Reset image error state when fighter changes
   useEffect(() => {
@@ -127,7 +131,12 @@ export default function FighterDetailScreen() {
   }, [fightsData?.fights, sortBy]);
 
   const handleFightPress = (fight: Fight) => {
-    // Navigate to the fight detail screen
+    // Upcoming fights open the hype quick-view modal (matching the event screen).
+    // Anything else (e.g. an "up next" live card) still navigates to detail.
+    if (fight.fightStatus === 'UPCOMING') {
+      setModalFight(fight);
+      return;
+    }
     router.push(`/fight/${fight.id}`);
   };
 
@@ -397,6 +406,13 @@ export default function FighterDetailScreen() {
           )}
         </View>
       </ScrollView>
+
+      {/* Upcoming fight hype quick-view modal */}
+      <UpcomingFightModal
+        visible={!!modalFight}
+        fight={modalFight}
+        onClose={() => setModalFight(null)}
+      />
     </SafeAreaView>
   );
 }

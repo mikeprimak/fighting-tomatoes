@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Colors } from '../../../constants/Colors';
 import { apiService } from '../../../services/api';
 import { useAuth } from '../../../store/AuthContext';
@@ -31,8 +31,24 @@ export default function TopFightsScreen() {
   const { isAuthenticated } = useAuth();
   const { isSearchVisible } = useSearch();
   const { selectedOrgs } = useOrgFilter();
-  const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>('week');
+  // Optional deep-link: /(tabs)/top-fights?period=all lands pre-filtered (e.g.
+  // the home "Dig Into the Classics" card opens the all-time list).
+  const { period: periodParam } = useLocalSearchParams<{ period?: string }>();
+  const VALID_PERIODS: TimePeriod[] = ['week', 'month', '3months', 'year', 'all'];
+  const initialPeriod: TimePeriod =
+    periodParam && VALID_PERIODS.includes(periodParam as TimePeriod)
+      ? (periodParam as TimePeriod)
+      : 'week';
+  const [topRatedPeriod, setTopRatedPeriod] = useState<TimePeriod>(initialPeriod);
   const flatListRef = useRef<FlatList>(null);
+
+  // A fresh deep-link with ?period= should re-apply even if the screen is
+  // already mounted (tab screens persist).
+  React.useEffect(() => {
+    if (periodParam && VALID_PERIODS.includes(periodParam as TimePeriod)) {
+      setTopRatedPeriod(periodParam as TimePeriod);
+    }
+  }, [periodParam]);
 
   // Convert selected orgs to comma-separated string for API
   const promotionsFilter = selectedOrgs.size > 0

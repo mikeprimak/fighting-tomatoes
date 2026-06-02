@@ -24,6 +24,7 @@ import { getDefaultBanner } from '../../utils/defaultBanners';
 import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
+import UpcomingFightModal from '../../components/UpcomingFightModal';
 import FighterCard from '../../components/FighterCard';
 
 const formatCount = (n: number): string =>
@@ -60,6 +61,22 @@ const relAgoPhrase = (dateStr: string): string => {
   const weeks = Math.round(days / 7);
   return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
 };
+
+// Whole-day epoch index — bump this and the rotation advances by one window.
+const epochDay = () => Math.floor(Date.now() / 86_400_000);
+
+// Daily-rotating window over a quality-ordered pool. Every section still pulls
+// from the top of its pool (so "the best" stays surfaced), but which slice of
+// that pool we show advances once per day and wraps. With pool ≈ 3× the window
+// this yields a ~2–3 day rotation before a fighter/comment reappears.
+function rotateDaily<T>(arr: T[], size: number, day: number): T[] {
+  if (!arr || arr.length <= size) return arr || [];
+  const periods = Math.ceil(arr.length / size);
+  const start = (day % periods) * size;
+  const out: T[] = [];
+  for (let i = 0; i < size; i++) out.push(arr[(start + i) % arr.length]);
+  return out;
+}
 
 type ThemeColors = typeof Colors.light;
 
@@ -261,6 +278,16 @@ const FEATURE_SPOTLIGHTS: {
     iconLib: 'fa6',
     title: 'Dig Into the Classics',
     body: 'Discover the highest-rated fights from years past that you may have missed the first time around.',
+    route: '/(tabs)/top-fights?period=all',
+    hint: 'Tap to see the best fights of all time',
+  },
+  {
+    icon: 'filter',
+    iconLib: 'fa',
+    title: 'Make It Your Sport',
+    body: 'Select the combat sports organizations you care about, and your events and Good Fights lists tune to just those.',
+    route: '/(tabs)/events',
+    hint: 'Tap to pick your organizations',
   },
   {
     icon: 'bell',
@@ -336,6 +363,8 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = React.useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = React.useState<string | null>(null);
+  // Hype quick-view modal for the "Most Hyped" upcoming cards.
+  const [modalFight, setModalFight] = React.useState<any | null>(null);
 
   // --- Data ---------------------------------------------------------------
   const { data: editorial, isLoading: isEditorialLoading } = useQuery({
@@ -379,10 +408,14 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Pull a deeper pool (18) so the home rail can rotate through the most-followed
+  // daily while still only ever showing top fighters. dayKey busts the cache at
+  // midnight so the rotation actually advances.
+  const dayKey = epochDay();
   const { data: topFollowed, isLoading: isFollowedLoading } = useQuery({
-    queryKey: ['topFollowedFighters'],
-    queryFn: () => apiService.getTopFollowedFighters(6),
-    staleTime: 5 * 60 * 1000,
+    queryKey: ['topFollowedFighters', 'home', dayKey],
+    queryFn: () => apiService.getTopFollowedFighters(18),
+    staleTime: 30 * 60 * 1000,
   });
 
   const { data: recentlyBookedData, isLoading: isBookedLoading } = useQuery({
@@ -434,13 +467,19 @@ export default function HomeScreen() {
   ).slice(0, 5);
 
   // Hot fighters: three who recently fought, then three who fight next — grouped,
-  // not interleaved.
+  // not interleaved. Each side rotates daily within the pool the backend returns.
   const recentHot = hotFighters?.data.recent || [];
   const upcomingHot = hotFighters?.data.upcoming || [];
-  const fighters: any[] = [...recentHot.slice(0, 3), ...upcomingHot.slice(0, 3)];
+  const fighters: any[] = [
+    ...rotateDaily(recentHot, 3, dayKey),
+    ...rotateDaily(upcomingHot, 3, dayKey),
+  ];
 
-  const followedFighters = (topFollowed?.data || []).slice(0, 6);
-  const recentlyBooked = (recentlyBookedData?.data || []).slice(0, 6);
+  // Most-followed + recently-booked rails rotate daily over their top pools so
+  // the home feed stays fresh between fight weekends (top comments / classic
+  // throwback already rotate server-side).
+  const followedFighters = rotateDaily(topFollowed?.data || [], 6, dayKey);
+  const recentlyBooked = rotateDaily(recentlyBookedData?.data || [], 6, dayKey);
   const comments = (topComments?.data || []).slice(0, 3);
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
@@ -594,7 +633,7 @@ export default function HomeScreen() {
             <UpcomingFightCard
               key={fight.id}
               fight={fight}
-              onPress={() => router.push(`/fight/${fight.id}` as any)}
+              onPress={() => setModalFight(fight)}
               showEvent={true}
               index={index}
             />
@@ -796,6 +835,13 @@ export default function HomeScreen() {
       >
         <FeatureSpotlight colors={colors} styles={styles} onNavigate={(route) => router.push(route as any)} />
       </Section>
+
+      {/* Upcoming fight hype quick-view modal (Most Hyped section) */}
+      <UpcomingFightModal
+        visible={!!modalFight}
+        fight={modalFight}
+        onClose={() => setModalFight(null)}
+      />
     </ScrollView>
   );
 }

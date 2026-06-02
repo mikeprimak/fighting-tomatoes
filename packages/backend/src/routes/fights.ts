@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
 import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
-import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike } from '../services/commentLikeNotifications';
+import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike, notifyCommentReply } from '../services/commentLikeNotifications';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
 import { TBA_FIGHTER_ID, isTBAFighter, fightHasTBA } from '../constants/tba';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
@@ -1333,6 +1333,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Notify the parent comment's author that they got a reply (fire-and-forget).
+      const replierName =
+        replyReview.user?.displayName ||
+        `${replyReview.user?.firstName ?? ''} ${replyReview.user?.lastName ?? ''}`.trim();
+      notifyCommentReply({
+        parentAuthorUserId: parentReview.userId,
+        replierUserId: currentUserId,
+        replierName,
+        fightId,
+        commentType: 'post_fight',
+        parentCommentId: parentReviewId,
+      }).catch((err) => {
+        console.error('[Notifications] review reply notification failed:', err);
+      });
+
       // Check if user has now reached the limit after saving
       const totalReviewsAfterSave = await fastify.prisma.fightReview.count({
         where: {
@@ -1833,6 +1848,21 @@ export async function fightRoutes(fastify: FastifyInstance) {
           userId: currentUserId,
           commentId: replyComment.id,
         },
+      });
+
+      // Notify the parent comment's author that they got a reply (fire-and-forget).
+      const replierName =
+        replyComment.user?.displayName ||
+        `${replyComment.user?.firstName ?? ''} ${replyComment.user?.lastName ?? ''}`.trim();
+      notifyCommentReply({
+        parentAuthorUserId: parentComment.userId,
+        replierUserId: currentUserId,
+        replierName,
+        fightId,
+        commentType: 'pre_fight',
+        parentCommentId,
+      }).catch((err) => {
+        console.error('[Notifications] pre-fight reply notification failed:', err);
       });
 
       // Check if user has now reached the limit after saving

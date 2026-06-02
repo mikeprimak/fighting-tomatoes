@@ -308,7 +308,8 @@ function CompletedFightCard({
               <Text
                 style={{
                   color: colors.textSecondary,
-                  fontSize: 10,
+                  fontSize: 13,
+                  fontWeight: '600',
                   textAlign: 'center',
                   flex: 1,
                 }}
