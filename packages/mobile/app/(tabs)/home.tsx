@@ -154,7 +154,7 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
   );
 }
 
-/** Half-width event thumbnail for the Upcoming Events 2×3 grid. */
+/** Half-width event thumbnail for the Events This Weekend grid. */
 function EventThumbnail({
   event,
   colors,
@@ -465,15 +465,25 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
+  // "This weekend" = the Fri/Sat/Sun of the current-or-coming weekend, as UTC day
+  // keys so they line up with eventDayKey (Event.date is a UTC-hour placeholder).
+  // We anchor on the user's local calendar date, then snap to that week's Saturday.
+  const DAY_MS = 86_400_000;
+  const nowLocal = new Date();
+  const todayKey = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
+  const localDow = nowLocal.getDay(); // 0=Sun … 6=Sat
+  // On Sunday the weekend's Saturday was yesterday; otherwise jump forward to it.
+  const saturdayKey = localDow === 0 ? todayKey - DAY_MS : todayKey + ((6 - localDow + 7) % 7) * DAY_MS;
+  const weekendKeys = new Set([saturdayKey - DAY_MS, saturdayKey, saturdayKey + DAY_MS]); // Fri/Sat/Sun
   const upcomingEvents: Event[] = (eventsData?.events || [])
     .filter((e: Event) => e.eventStatus === 'UPCOMING')
+    .filter((e: Event) => weekendKeys.has(eventDayKey(e.date)))
     .sort((a: Event, b: Event) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
       if (dayDiff !== 0) return dayDiff;
       if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
-    })
-    .slice(0, 6);
+    });
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   const recentFights = (
@@ -618,11 +628,11 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Upcoming Events ----------------------------------------------------*/}
+      {/* Events This Weekend ------------------------------------------------*/}
       <Section
         colors={colors}
         styles={styles}
-        title="Upcoming Events"
+        title="Events This Weekend"
         icon="fire-flame-curved"
         iconLib="fa6"
         onSeeAll={() => router.push('/(tabs)/events' as any)}
@@ -642,7 +652,7 @@ export default function HomeScreen() {
             ))}
           </View>
         ) : (
-          <Empty styles={styles} text="No upcoming events" />
+          <Empty styles={styles} text="No events this weekend" />
         )}
       </Section>
 
