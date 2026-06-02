@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Flame, MessageCircle } from 'lucide-react';
+import { MessageCircle, MessageSquareQuote, Star } from 'lucide-react';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { RateFightModal } from '@/components/RateFightModal';
@@ -29,6 +29,9 @@ interface LiveFightCardProps {
     averageHype?: number;
     hypeCount?: number;
     commentCount?: number;
+    averageRating?: number;
+    totalRatings?: number;
+    reviewCount?: number;
     userHypePrediction?: number;
     userRating?: number;
     userReview?: { content: string; rating?: number };
@@ -66,15 +69,22 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
   const stripText = isLive ? 'Live Now' : 'Up Next';
   const [modalOpen, setModalOpen] = useState(false);
 
+  // Mirror CompletedFightCard / the mobile live card: aggregate RATING on the
+  // left (front square, with aggregate HYPE peeking behind it), and the user's
+  // own RATING on the right — not hype.
   const hypeScore = fight.averageHype ?? 0;
-  const userHype = fight.userHypePrediction ?? 0;
-  const hypeCount = fight.hypeCount ?? 0;
-  const commentCount = fight.commentCount ?? 0;
   const hasHype = hypeScore > 0;
-  const hasUserHype = userHype > 0;
-
   const hypeColor = hasHype ? getHypeHeatmapColor(hypeScore) : undefined;
-  const userHypeColor = hasUserHype ? getHypeHeatmapColor(userHype) : undefined;
+
+  const avgRating = fight.averageRating ?? 0;
+  const totalRatings = fight.totalRatings ?? 0;
+  const reviewCount = fight.reviewCount ?? 0;
+  const userRating = fight.userRating ?? 0;
+  const hasRating = avgRating > 0;
+  const hasUserRating = userRating > 0;
+  const hasUserComment = !!fight.userReview?.content?.trim();
+  const ratingColor = hasRating ? getHypeHeatmapColor(avgRating) : undefined;
+  const userRatingColor = hasUserRating ? getHypeHeatmapColor(userRating) : undefined;
 
   const userPickedF1 = fight.userPredictedWinner === fight.fighter1.id;
   const userPickedF2 = fight.userPredictedWinner === fight.fighter2.id;
@@ -102,27 +112,37 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
 
         {/* Body with gold wash */}
         <div className="relative flex items-stretch bg-[#F5C518]/[0.12]">
-          {/* Left: community hype square — matches CompletedFightCard's rating square */}
+          {/* Left: aggregate RATING square (front) with aggregate HYPE peeking
+              behind it — mirrors CompletedFightCard and the mobile live card. */}
           <div className="relative w-12 shrink-0">
+            {/* Hype square (behind, offset down+right) */}
+            {hasHype && (
+              <div
+                className="absolute left-3 top-4 h-12 w-12 rounded-md"
+                style={{ backgroundColor: hypeColor, zIndex: 0 }}
+              />
+            )}
+            {/* Rating square (front) — grey (opaque) when not yet rated, so the
+                hype square beneath never shows through. */}
             <div
               className="absolute left-2 top-3 z-[1] flex h-12 w-12 flex-col items-center justify-center gap-0.5 rounded-md"
               style={{
-                backgroundColor: hasHype ? hypeColor : '#202020',
-                border: hasHype ? 'none' : '1px solid var(--color-border, #2a2a2a)',
+                backgroundColor: hasRating ? ratingColor : '#202020',
+                border: hasRating ? 'none' : '1px solid var(--color-border, #2a2a2a)',
               }}
             >
-              {hasHype ? (
+              {hasRating ? (
                 <>
                   <span className="text-base font-bold leading-none text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_60%)]">
-                    {hypeScore === 10 ? '10' : hypeScore.toFixed(1)}
+                    {avgRating === 10 ? '10' : avgRating.toFixed(1)}
                   </span>
-                  {(hypeCount > 0 || commentCount > 0) ? (
+                  {(totalRatings > 0 || reviewCount > 0) ? (
                     <div className="flex items-center gap-1 text-[9px] font-semibold leading-none text-black/60">
-                      {hypeCount > 0 ? <span>({hypeCount})</span> : null}
-                      {commentCount > 0 ? (
+                      {totalRatings > 0 ? <span>({totalRatings})</span> : null}
+                      {reviewCount > 0 ? (
                         <span className="flex items-center gap-0.5">
                           <MessageCircle size={8} strokeWidth={2.5} />
-                          {commentCount}
+                          {reviewCount}
                         </span>
                       ) : null}
                     </div>
@@ -130,11 +150,11 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
                 </>
               ) : (
                 <div className="flex flex-col items-center gap-0.5">
-                  <Flame size={18} className="text-text-secondary/40" />
-                  {commentCount > 0 ? (
+                  <Star size={18} className="text-text-secondary/40" />
+                  {reviewCount > 0 ? (
                     <span className="flex items-center gap-0.5 text-[9px] font-semibold leading-none text-text-secondary/70">
                       <MessageCircle size={8} strokeWidth={2.5} />
-                      {commentCount}
+                      {reviewCount}
                     </span>
                   ) : null}
                 </div>
@@ -176,22 +196,30 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
             )}
           </div>
 
-          {/* Right: user hype flame */}
+          {/* Right: user's own RATING star */}
           <div className="relative flex w-12 shrink-0 items-center justify-center">
-            {hasUserHype ? (
+            {hasUserRating ? (
               <>
-                <Flame
+                <Star
                   size={42}
-                  fill={userHypeColor}
-                  color={userHypeColor}
+                  fill={userRatingColor}
+                  color={userRatingColor}
                   strokeWidth={1.5}
                 />
-                <span className="absolute inset-0 flex items-center justify-center pt-1 text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
-                  {Math.round(userHype)}
+                <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]">
+                  {Math.round(userRating)}
                 </span>
               </>
             ) : (
-              <Flame size={30} className="text-text-secondary/30" />
+              <Star size={30} className="text-text-secondary/30" />
+            )}
+            {hasUserComment && (
+              <MessageSquareQuote
+                size={13}
+                className="absolute right-0 top-1 text-[#F5C518]"
+                fill="#F5C518"
+                aria-label="You commented"
+              />
             )}
           </div>
         </div>
