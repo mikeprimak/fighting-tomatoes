@@ -152,9 +152,6 @@ export default function FollowedFightersScreen() {
     }
     return (
       <>
-        <Text style={[styles.headerText, { color: colors.textSecondary }]}>
-          You will receive a notification before they fight.
-        </Text>
         {fighters.map((fighter: FollowedFighter) => (
           <View
             key={fighter.id}
@@ -206,17 +203,16 @@ export default function FollowedFightersScreen() {
           My Followed Fighters
         </Text>
 
-        <TouchableOpacity
-          style={[styles.settingsLink, { backgroundColor: colors.card, borderColor: colors.border }]}
-          onPress={() => router.push('/settings' as any)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="notifications-outline" size={18} color={colors.text} />
-          <Text style={[styles.settingsLinkText, { color: colors.text }]}>
-            Notification settings
-          </Text>
-          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
-        </TouchableOpacity>
+        <Text style={[styles.introText, { color: colors.textSecondary }]}>
+          We will make sure you know when they're fighting.{' '}
+          <Text
+            style={[styles.introLink, { color: colors.primary }]}
+            onPress={() => router.push('/settings' as any)}
+          >
+            Get notified
+          </Text>{' '}
+          when they're booked, the week of their fight and as they walk out.
+        </Text>
 
         {renderMyFollowsSection()}
       </ScrollView>
@@ -251,19 +247,14 @@ const createStyles = (colors: any) =>
       fontSize: 13,
       fontWeight: '600',
     },
-    settingsLink: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 10,
-      padding: 12,
-      borderRadius: 12,
-      borderWidth: 1,
-      marginBottom: 14,
+    introText: {
+      fontSize: 14,
+      lineHeight: 20,
+      paddingHorizontal: 4,
+      marginBottom: 16,
     },
-    settingsLinkText: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '600',
+    introLink: {
+      fontWeight: '700',
     },
     headerText: {
       fontSize: 13,

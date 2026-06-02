@@ -26,6 +26,7 @@ import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
 import FighterCard from '../../components/FighterCard';
+import { SearchBar } from '../../components';
 
 const formatCount = (n: number): string =>
   n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`;
@@ -263,7 +264,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'See the Hype Building',
     body: "Check how hyped upcoming fights are, so you know which cards are worth clearing your weekend for.",
     route: '/(tabs)/events',
-    hint: 'Tap to explore upcoming events',
+    hint: 'Explore upcoming events',
   },
   {
     icon: 'star',
@@ -271,7 +272,7 @@ const FEATURE_SPOTLIGHTS: {
     title: "Know What's Worth Watching",
     body: 'Community ratings show you which fights actually delivered, so you can find a great one to watch tonight.',
     route: '/(tabs)/top-fights',
-    hint: 'Tap to see top-rated fights',
+    hint: 'See top-rated fights',
   },
   {
     icon: 'clock-rotate-left',
@@ -279,7 +280,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'Dig Into the Classics',
     body: 'Discover the highest-rated fights from years past that you may have missed the first time around.',
     route: '/(tabs)/top-fights?period=all',
-    hint: 'Tap to see the best fights of all time',
+    hint: 'See the best fights of all time',
   },
   {
     icon: 'filter',
@@ -287,7 +288,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'Make It Your Sport',
     body: 'Select the combat sports organizations you care about, and your events and Good Fights lists tune to just those.',
     route: '/(tabs)/events',
-    hint: 'Tap to pick your organizations',
+    hint: 'Pick your organizations',
   },
   {
     icon: 'bell',
@@ -295,7 +296,7 @@ const FEATURE_SPOTLIGHTS: {
     title: 'Follow Your Favorites',
     body: "Follow fighters and get notified the moment they're booked, the morning of, and when they walk out.",
     route: '/followed-fighters',
-    hint: 'Tap to manage your fighters',
+    hint: 'Manage your fighters',
   },
   {
     icon: 'comments',
@@ -319,7 +320,7 @@ function FeatureSpotlight({
   React.useEffect(() => {
     const id = setInterval(
       () => setIdx((i) => (i + 1) % FEATURE_SPOTLIGHTS.length),
-      60_000,
+      10_000,
     );
     return () => clearInterval(id);
   }, []);
@@ -341,7 +342,11 @@ function FeatureSpotlight({
       </View>
       <Text style={styles.spotlightTitle}>{feature.title}</Text>
       <Text style={styles.spotlightBody}>{feature.body}</Text>
-      {feature.route ? <Text style={styles.spotlightHint}>{feature.hint || 'Tap to explore'}</Text> : null}
+      {feature.route ? (
+        <View style={styles.spotlightButton}>
+          <Text style={styles.spotlightButtonText}>{feature.hint || 'Explore'}</Text>
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -529,6 +534,9 @@ export default function HomeScreen() {
   const styles = makeStyles(colors);
 
   return (
+    <View style={styles.container}>
+    {/* Pinned search bar — shown when the header magnifying glass is toggled */}
+    <SearchBar />
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
@@ -843,6 +851,7 @@ export default function HomeScreen() {
         onClose={() => setModalFight(null)}
       />
     </ScrollView>
+    </View>
   );
 }
 
@@ -1055,6 +1064,20 @@ function makeStyles(colors: ThemeColors) {
       fontWeight: '700',
       color: colors.tint,
       marginTop: 12,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    spotlightButton: {
+      marginTop: 16,
+      backgroundColor: colors.primary,
+      paddingHorizontal: 18,
+      paddingVertical: 9,
+      borderRadius: 8,
+    },
+    spotlightButtonText: {
+      fontSize: 13,
+      fontWeight: '700',
+      color: '#000',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
