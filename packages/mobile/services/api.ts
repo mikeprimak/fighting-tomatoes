@@ -674,8 +674,16 @@ class ApiService {
     return this.makeRequest('/fighters/followed');
   }
 
-  async getTopFollowedFighters(limit: number = 20): Promise<{ data: { fighter: any; followerCount: number; isFollowing: boolean }[] }> {
-    return this.makeRequest(`/community/top-followed-fighters?limit=${limit}`);
+  async getTopFollowedFighters(
+    limit: number = 20,
+    page?: number,
+  ): Promise<{
+    data: { fighter: any; followerCount: number; isFollowing: boolean }[];
+    pagination?: { page: number; limit: number; hasMore: boolean };
+  }> {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (page) params.append('page', String(page));
+    return this.makeRequest(`/community/top-followed-fighters?${params.toString()}`);
   }
 
   // Crew-related API methods

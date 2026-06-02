@@ -232,7 +232,7 @@ type CandidateFight = {
   fighter2Id: string;
   fighter1: { firstName: string | null; lastName: string | null };
   fighter2: { firstName: string | null; lastName: string | null };
-  event: { name: string; date: Date };
+  event: { id: string; name: string; date: Date };
 };
 
 type CandidateUser = {
@@ -244,60 +244,103 @@ type CandidateUser = {
   timezone: string;
 };
 
-async function sendLaneNotification(args: {
+// A single fighter-follow match that has hit its trigger window and is ready to
+// notify. We collect these across the whole scan, then aggregate per
+// (user, lane, event) so a user following several fighters on one card gets ONE
+// push instead of one per fighter.
+type PendingDispatch = {
   matchId: string;
   user: CandidateUser;
   fight: CandidateFight;
   followedFighterId: string;
   lane: 'THREE_DAY' | 'MORNING_OF';
-}): Promise<void> {
-  const { matchId, user, fight, followedFighterId, lane } = args;
+};
 
+function followedNameFor(fight: CandidateFight, followedFighterId: string): string {
   const isFollowedFighter1 = fight.fighter1Id === followedFighterId;
-  const followedName = fullName(
+  return fullName(
     isFollowedFighter1 ? fight.fighter1.firstName : fight.fighter2.firstName,
     isFollowedFighter1 ? fight.fighter1.lastName : fight.fighter2.lastName,
   );
-  const opponentName = fullName(
+}
+
+function opponentNameFor(fight: CandidateFight, followedFighterId: string): string {
+  const isFollowedFighter1 = fight.fighter1Id === followedFighterId;
+  return fullName(
     isFollowedFighter1 ? fight.fighter2.firstName : fight.fighter1.firstName,
     isFollowedFighter1 ? fight.fighter2.lastName : fight.fighter1.lastName,
   );
+}
+
+/**
+ * Record that a lane fired for a single match: marks the per-lane sentAt and logs
+ * one FollowNotificationEvent (per-fighter, load-bearing for attribution). The
+ * push itself is sent once per group by the caller — this only persists state.
+ */
+async function recordLaneSent(d: PendingDispatch): Promise<void> {
+  const sentAtField = d.lane === 'THREE_DAY' ? 'threeDaySentAt' : 'morningOfSentAt';
+  await prisma.$transaction([
+    prisma.fightNotificationMatch.update({
+      where: { id: d.matchId },
+      data: { [sentAtField]: new Date() },
+    }),
+    prisma.followNotificationEvent.create({
+      data: {
+        matchId: d.matchId,
+        userId: d.user.id,
+        fightId: d.fight.id,
+        fighterId: d.followedFighterId,
+        lane: d.lane,
+      },
+    }),
+  ]);
+}
+
+/**
+ * Send one aggregated push for all of a user's followed fighters on the same
+ * event+lane, then persist per-match state for each. One fighter keeps the
+ * personal "Pereira fights today" copy; multiple collapse to a count.
+ */
+async function dispatchLaneGroup(group: PendingDispatch[]): Promise<void> {
+  if (group.length === 0) return;
+  const { user, fight, lane } = group[0];
+  const todayPhrase = lane === 'THREE_DAY' ? 'fight in 3 days' : 'fight today';
 
   let title: string;
   let body: string;
-  if (lane === 'THREE_DAY') {
-    title = `${followedName} fights in 3 days`;
+  if (group.length === 1) {
+    const followedName = followedNameFor(fight, group[0].followedFighterId);
+    const opponentName = opponentNameFor(fight, group[0].followedFighterId);
+    title = lane === 'THREE_DAY' ? `${followedName} fights in 3 days` : `${followedName} fights today`;
     body = `vs ${opponentName} · ${fight.event.name}`;
   } else {
-    title = `${followedName} fights today`;
-    body = `vs ${opponentName} · ${fight.event.name}`;
+    title = `${group.length} fighters you follow ${todayPhrase}`;
+    const names = group
+      .map((d) => followedNameFor(d.fight, d.followedFighterId))
+      .slice(0, 3)
+      .join(', ');
+    const extra = group.length > 3 ? ` +${group.length - 3} more` : '';
+    body = `${names}${extra} · ${fight.event.name}`;
   }
 
   await sendPushNotifications([user.id], {
     title,
     body,
-    data: { fightId: fight.id, screen: 'fight-detail', lane: lane.toLowerCase() },
+    // Multiple fighters → land on the event; a single fighter → their fight.
+    data:
+      group.length === 1
+        ? { fightId: fight.id, screen: 'fight-detail', lane: lane.toLowerCase() }
+        : { eventId: fight.event.id, screen: 'event-detail', lane: lane.toLowerCase() },
   });
 
-  const sentAtField = lane === 'THREE_DAY' ? 'threeDaySentAt' : 'morningOfSentAt';
-  await prisma.$transaction([
-    prisma.fightNotificationMatch.update({
-      where: { id: matchId },
-      data: { [sentAtField]: new Date() },
-    }),
-    prisma.followNotificationEvent.create({
-      data: {
-        matchId,
-        userId: user.id,
-        fightId: fight.id,
-        fighterId: followedFighterId,
-        lane,
-      },
-    }),
-  ]);
+  for (const d of group) {
+    await recordLaneSent(d).catch((err) =>
+      console.error(`[FollowFighterCron] ${lane} record failed:`, err),
+    );
+  }
 
   console.log(
-    `[Notifications] ${lane} dispatched: user=${user.id} ${followedName} vs ${opponentName}`,
+    `[Notifications] ${lane} dispatched: user=${user.id} event=${fight.event.name} (${group.length} fighter${group.length === 1 ? '' : 's'})`,
   );
 }
 
@@ -347,7 +390,7 @@ export async function runFollowFighterCron(): Promise<void> {
       fighter2Id: true,
       fighter1: { select: { firstName: true, lastName: true } },
       fighter2: { select: { firstName: true, lastName: true } },
-      event: { select: { name: true, date: true } },
+      event: { select: { id: true, name: true, date: true } },
     },
   });
   const fightById = new Map<string, CandidateFight>(fights.map((f) => [f.id, f]));
@@ -368,6 +411,10 @@ export async function runFollowFighterCron(): Promise<void> {
     },
   });
   const userById = new Map(users.map((u) => [u.id, u]));
+
+  // Collect everything that's due this pass, then dispatch one push per
+  // (user, lane, event) so multi-fighter cards don't spam.
+  const pending: PendingDispatch[] = [];
 
   for (const match of matches) {
     const fight = fightById.get(match.fightId);
@@ -400,15 +447,7 @@ export async function runFollowFighterCron(): Promise<void> {
         now >= trigger &&
         now.getTime() - trigger.getTime() < TRIGGER_WINDOW_MS
       ) {
-        await sendLaneNotification({
-          matchId: match.id,
-          user,
-          fight,
-          followedFighterId,
-          lane: 'THREE_DAY',
-        }).catch((err) =>
-          console.error('[FollowFighterCron] THREE_DAY dispatch failed:', err),
-        );
+        pending.push({ matchId: match.id, user, fight, followedFighterId, lane: 'THREE_DAY' });
       }
     }
 
@@ -426,17 +465,24 @@ export async function runFollowFighterCron(): Promise<void> {
         now >= trigger &&
         now.getTime() - trigger.getTime() < TRIGGER_WINDOW_MS
       ) {
-        await sendLaneNotification({
-          matchId: match.id,
-          user,
-          fight,
-          followedFighterId,
-          lane: 'MORNING_OF',
-        }).catch((err) =>
-          console.error('[FollowFighterCron] MORNING_OF dispatch failed:', err),
-        );
+        pending.push({ matchId: match.id, user, fight, followedFighterId, lane: 'MORNING_OF' });
       }
     }
+  }
+
+  // Group by user + lane + event, then send one aggregated push per group.
+  const groups = new Map<string, PendingDispatch[]>();
+  for (const d of pending) {
+    const key = `${d.user.id}|${d.lane}|${d.fight.event.id}`;
+    const arr = groups.get(key) ?? [];
+    arr.push(d);
+    groups.set(key, arr);
+  }
+
+  for (const group of groups.values()) {
+    await dispatchLaneGroup(group).catch((err) =>
+      console.error('[FollowFighterCron] group dispatch failed:', err),
+    );
   }
 }
 

@@ -447,10 +447,19 @@ export async function runEventLifecycleCheck(): Promise<{
         });
       }
 
-      for (const section of sections) {
-        const triggerAt = new Date(section.startTime.getTime() - SECTION_NOTIF_LEAD_MS);
-        if (now < triggerAt) continue;
-        await notifyEventSectionStart(event.id, section.fightIds, event.name, section.label);
+      // ONE pre-event "starts soon" push per event (not per section). As soon as
+      // the earliest section's lead time passes, notify each user about ALL the
+      // fighters they follow across the WHOLE card in a single push. Following
+      // multiple fighters spread over early-prelim/prelim/main used to yield up
+      // to three separate notifications; aggregating over every fight id collapses
+      // that to one. notifyEventSectionStart marks every matched row sent, so
+      // later lifecycle passes find nothing left to send for this event.
+      const anySectionTriggered = sections.some(
+        (s) => now >= new Date(s.startTime.getTime() - SECTION_NOTIF_LEAD_MS),
+      );
+      if (anySectionTriggered) {
+        const allFightIds = event.fights.map((f) => f.id);
+        await notifyEventSectionStart(event.id, allFightIds, event.name, null);
       }
     }
   } catch (error: any) {

@@ -85,9 +85,14 @@ export default function FollowedFightersScreen() {
     if (topFollowed.length === 0) return null;
     return (
       <View style={styles.topSection}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>
-          Most Followed on Good Fights
-        </Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>
+            Most Followed on Good Fights
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/most-followed-fighters' as any)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={[styles.seeAllText, { color: colors.primary }]}>See all</Text>
+          </TouchableOpacity>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -200,6 +205,19 @@ export default function FollowedFightersScreen() {
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: topFollowed.length > 0 ? 24 : 0 }]}>
           My Followed Fighters
         </Text>
+
+        <TouchableOpacity
+          style={[styles.settingsLink, { backgroundColor: colors.card, borderColor: colors.border }]}
+          onPress={() => router.push('/settings' as any)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="notifications-outline" size={18} color={colors.text} />
+          <Text style={[styles.settingsLinkText, { color: colors.text }]}>
+            Notification settings
+          </Text>
+          <Ionicons name="chevron-forward" size={18} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         {renderMyFollowsSection()}
       </ScrollView>
     </SafeAreaView>
@@ -221,6 +239,31 @@ const createStyles = (colors: any) =>
       fontWeight: '700',
       marginBottom: 10,
       paddingHorizontal: 4,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 10,
+      paddingHorizontal: 4,
+    },
+    seeAllText: {
+      fontSize: 13,
+      fontWeight: '600',
+    },
+    settingsLink: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 10,
+      padding: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      marginBottom: 14,
+    },
+    settingsLinkText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: '600',
     },
     headerText: {
       fontSize: 13,

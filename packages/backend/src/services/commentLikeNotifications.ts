@@ -197,3 +197,66 @@ export async function maybeNotifyPreFightCommentLike(commentId: string, voterUse
     console.error('[CommentLike] maybeNotifyPreFightCommentLike error:', err);
   }
 }
+
+/**
+ * Notify a comment's author that someone replied to it. Covers both post-fight
+ * review replies and pre-fight comment replies. Best-effort: never throws into
+ * the reply request path. Self-replies are skipped.
+ */
+export async function notifyCommentReply(args: {
+  parentAuthorUserId: string;
+  replierUserId: string;
+  replierName: string;
+  fightId: string;
+  commentType: 'pre_fight' | 'post_fight';
+  // The parent comment id, so a tap can land on the thread.
+  parentCommentId: string;
+}): Promise<void> {
+  try {
+    const { parentAuthorUserId, replierUserId, replierName, fightId, commentType, parentCommentId } = args;
+    if (parentAuthorUserId === replierUserId) return; // never notify on self-reply
+
+    const fight = await prisma.fight.findUnique({
+      where: { id: fightId },
+      select: {
+        id: true,
+        fighter1: { select: { firstName: true, lastName: true } },
+        fighter2: { select: { firstName: true, lastName: true } },
+        event: { select: { eventStatus: true } },
+      },
+    });
+    if (!fight) return;
+
+    const matchup = `${`${fight.fighter1.firstName} ${fight.fighter1.lastName}`.trim()} vs ${`${fight.fighter2.firstName} ${fight.fighter2.lastName}`.trim()}`;
+    const name = replierName.trim() || 'Someone';
+    const title = `${name} replied to your comment`;
+
+    await sendPushNotifications([parentAuthorUserId], {
+      title,
+      body: matchup,
+      data: {
+        type: 'comment_replied',
+        commentType,
+        commentId: parentCommentId,
+        fightId: fight.id,
+        eventStatus: fight.event.eventStatus,
+      },
+    });
+
+    await prisma.userNotification.create({
+      data: {
+        userId: parentAuthorUserId,
+        title,
+        message: matchup,
+        type: 'COMMENT_REPLIED',
+        linkType: 'fight',
+        linkId: fight.id,
+      },
+    }).catch((err) => {
+      // In-app row is best-effort; never let this fail the reply response
+      console.error('[CommentReply] Failed to write UserNotification row:', err);
+    });
+  } catch (err) {
+    console.error('[CommentReply] notifyCommentReply error:', err);
+  }
+}

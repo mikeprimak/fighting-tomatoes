@@ -155,6 +155,9 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
 
   return (
     <Tabs
+      // Back/tab history returns to the last-visited tab (not always Home).
+      // Without this, swiping/going back from Profile snaps to the first tab.
+      backBehavior="history"
       screenOptions={{
         tabBarActiveTintColor: '#F5C518',
         tabBarInactiveTintColor: colors.tabIconDefault,
@@ -330,6 +333,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           href: null, // Hidden from tab bar — reached via the header profile icon
           title: user?.displayName || 'Me',
           headerTitle: () => <HeaderLogo title={user?.displayName || 'Me'} />,
+          headerRight: headerActions, // Same top-bar actions as the other main screens
         }}
       />
     </Tabs>

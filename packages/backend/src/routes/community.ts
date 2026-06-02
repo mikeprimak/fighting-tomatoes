@@ -1282,14 +1282,23 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     try {
       const userId = (request as any).user?.id as string | undefined;
       const limit = Math.min(Number((request.query as any)?.limit) || 20, 50);
+      // Optional pagination for the "all most-followed" infinite-scroll screen.
+      // Page is 1-based; when omitted this stays a simple top-N (page 1).
+      const page = Math.max(Number((request.query as any)?.page) || 1, 1);
+      const skip = (page - 1) * limit;
 
-      // Aggregate follow counts grouped by fighterId
+      // Aggregate follow counts grouped by fighterId. Fetch one extra row to know
+      // whether another page exists without a second count query.
       const grouped = await fastify.prisma.userFighterFollow.groupBy({
         by: ['fighterId'],
         _count: { fighterId: true },
         orderBy: { _count: { fighterId: 'desc' } },
-        take: limit,
+        skip,
+        take: limit + 1,
       });
+
+      const hasMore = grouped.length > limit;
+      if (hasMore) grouped.pop();
 
       const fighterIds = grouped.map((g) => g.fighterId);
 
@@ -1323,7 +1332,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         })
         .filter((x): x is { fighter: any; followerCount: number; isFollowing: boolean } => x !== null);
 
-      return reply.send({ data });
+      return reply.send({ data, pagination: { page, limit, hasMore } });
     } catch (error) {
       console.error('Error fetching top-followed fighters:', error);
       return reply.status(500).send({
