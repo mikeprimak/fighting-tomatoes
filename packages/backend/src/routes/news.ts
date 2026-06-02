@@ -61,28 +61,56 @@ export default async function newsRoutes(fastify: FastifyInstance) {
     const skip = (page - 1) * limit;
 
     try {
-      const where = source ? { source, isActive: true } : { isActive: true };
+      // Single-source filter: straight recency pagination.
+      if (source) {
+        const where = { source, isActive: true };
+        const [articles, total] = await Promise.all([
+          fastify.prisma.newsArticle.findMany({
+            where,
+            skip,
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+          }),
+          fastify.prisma.newsArticle.count({ where }),
+        ]);
+        return reply.code(200).send({
+          articles,
+          pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+        });
+      }
 
-      const [articles, total] = await Promise.all([
-        fastify.prisma.newsArticle.findMany({
-          where,
-          skip,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-        }),
-        fastify.prisma.newsArticle.count({ where }),
-      ]);
+      // Mixed feed: round-robin interleave by source so a single source can't
+      // clump (e.g. a batch first-scraped together shares near-identical
+      // createdAt). We pull a recent pool, group by source preserving recency,
+      // then take one per source per round before paginating the result.
+      const POOL_SIZE = 300;
+      const recent = await fastify.prisma.newsArticle.findMany({
+        where: { isActive: true },
+        take: POOL_SIZE,
+        orderBy: { createdAt: 'desc' },
+      });
 
-      const totalPages = Math.ceil(total / limit);
+      const bySource = new Map<string, typeof recent>();
+      for (const article of recent) {
+        const queue = bySource.get(article.source);
+        if (queue) queue.push(article);
+        else bySource.set(article.source, [article]);
+      }
+
+      const queues = Array.from(bySource.values());
+      const interleaved: typeof recent = [];
+      for (let round = 0; interleaved.length < recent.length; round++) {
+        for (const queue of queues) {
+          if (queue[round]) interleaved.push(queue[round]);
+        }
+      }
+
+      const total = interleaved.length;
+      const articles = interleaved.slice(skip, skip + limit);
 
       return reply.code(200).send({
         articles,
-        pagination: {
-          page,
-          limit,
-          total,
-          totalPages,
-        },
+        pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       });
     } catch (error: any) {
       request.log.error(error, 'News articles fetch error:');
