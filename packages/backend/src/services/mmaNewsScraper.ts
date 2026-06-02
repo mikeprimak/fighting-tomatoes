@@ -211,7 +211,7 @@ export class MMANewsScraper {
       console.error(`Failed to fetch OG image for ${articleUrl}:`, error);
       return '';
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
   }
 
@@ -292,7 +292,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping MMA Fighting:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;
@@ -370,7 +370,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping Bloody Elbow:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;
@@ -464,7 +464,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping UFC:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;
@@ -565,7 +565,7 @@ export class MMANewsScraper {
       console.log('Fetching OG images in batches (slow but memory-safe)...');
 
       // CRITICAL: Close main listing page before fetching OG images
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
 
       for (let i = 0; i < filteredArticles.length; i++) {
         const item = filteredArticles[i];
@@ -624,7 +624,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping Bleacher Report:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;
@@ -679,7 +679,7 @@ export class MMANewsScraper {
       console.log('Fetching OG images in batches (slow but memory-safe)...');
 
       // CRITICAL: Close main listing page before fetching OG images
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
 
       for (let i = 0; i < scrapedArticles.length; i++) {
         const item = scrapedArticles[i];
@@ -738,7 +738,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping Sherdog:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;
@@ -827,7 +827,7 @@ export class MMANewsScraper {
     } catch (error) {
       console.error('Error scraping ESPN Boxing:', error);
     } finally {
-      await page.close();
+      try { await page.close(); } catch { /* page/connection may already be gone — don't lose scraped articles */ }
     }
 
     return articles;

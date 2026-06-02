@@ -1,0 +1,72 @@
+name: News Scraper
+# Aggregates combat-sports news (MMA Fighting, Bloody Elbow, UFC, Bleacher
+# Report, Sherdog, ESPN Boxing) and upserts into the DB. Runs on GitHub Actions
+# rather than Render because Puppeteer exceeds Render's 512MB limit — the same
+# reason the UFC scraper lives here. Feeds the "Latest News" section on the
+# mobile Home screen via GET /api/news.
+
+on:
+  schedule:
+    # Daily at 13:00 UTC (~8-9am ET) so fresh headlines are ready each morning
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+    # Allow manual trigger from the GitHub UI
+
+jobs:
+  scrape-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Build TypeScript
+        run: |
+          cd packages/backend
+          pnpm build
+
+      - name: Install Chromium for Puppeteer
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run News Scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd packages/backend
+          echo "Starting news scraper..."
+          node dist/scripts/scrapeNewsToDb.js
+          echo "Done!"
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "News Scraper workflow completed successfully at $(date)"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "News Scraper workflow FAILED at $(date)"
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=scraper&org=News" || echo "Failed to send alert"
