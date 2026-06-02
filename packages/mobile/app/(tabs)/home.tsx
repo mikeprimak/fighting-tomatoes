@@ -10,9 +10,10 @@ import {
   Image,
   RefreshControl,
   Linking,
+  Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -317,14 +318,26 @@ function FeatureSpotlight({
   onNavigate: (route: string) => void;
 }) {
   const [idx, setIdx] = React.useState(0);
+  // Cross-fade between slides: fade the content out, swap the slide, fade back in.
+  const opacity = React.useRef(new Animated.Value(1)).current;
 
   React.useEffect(() => {
-    const id = setInterval(
-      () => setIdx((i) => (i + 1) % FEATURE_SPOTLIGHTS.length),
-      10_000,
-    );
+    const id = setInterval(() => {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 350,
+        useNativeDriver: true,
+      }).start(() => {
+        setIdx((i) => (i + 1) % FEATURE_SPOTLIGHTS.length);
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 350,
+          useNativeDriver: true,
+        }).start();
+      });
+    }, 15_000);
     return () => clearInterval(id);
-  }, []);
+  }, [opacity]);
 
   const feature = FEATURE_SPOTLIGHTS[idx];
 
@@ -334,20 +347,22 @@ function FeatureSpotlight({
       activeOpacity={feature.route ? 0.85 : 1}
       onPress={() => feature.route && onNavigate(feature.route)}
     >
-      <View style={styles.spotlightIconWrap}>
-        {feature.iconLib === 'fa6' ? (
-          <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
-        ) : (
-          <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
-        )}
-      </View>
-      <Text style={styles.spotlightTitle}>{feature.title}</Text>
-      <Text style={styles.spotlightBody}>{feature.body}</Text>
-      {feature.route ? (
-        <View style={styles.spotlightButton}>
-          <Text style={styles.spotlightButtonText}>{feature.hint || 'Explore'}</Text>
+      <Animated.View style={[styles.spotlightInner, { opacity }]}>
+        <View style={styles.spotlightIconWrap}>
+          {feature.iconLib === 'fa6' ? (
+            <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
+          ) : (
+            <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
+          )}
         </View>
-      ) : null}
+        <Text style={styles.spotlightTitle}>{feature.title}</Text>
+        <Text style={styles.spotlightBody}>{feature.body}</Text>
+        {feature.route ? (
+          <View style={styles.spotlightButton}>
+            <Text style={styles.spotlightButtonText}>{feature.hint || 'Explore'}</Text>
+          </View>
+        ) : null}
+      </Animated.View>
     </TouchableOpacity>
   );
 }
@@ -449,10 +464,21 @@ export default function HomeScreen() {
   });
 
   // Aggregated combat-sports news (MMA Fighting, Bloody Elbow, UFC, Sherdog, …),
-  // refreshed daily by the news scraper. Shown as a carousel at the bottom of Home.
-  const { data: newsData, isLoading: isNewsLoading } = useQuery({
+  // refreshed daily by the news scraper. Shown as a vertical list at the bottom of
+  // Home; pages are lazy-loaded as the user scrolls toward the end.
+  const {
+    data: newsData,
+    isLoading: isNewsLoading,
+    fetchNextPage: fetchMoreNews,
+    hasNextPage: hasMoreNews,
+    isFetchingNextPage: isFetchingMoreNews,
+  } = useInfiniteQuery({
     queryKey: ['news', 'home'],
-    queryFn: () => apiService.getNews({ limit: 12 }),
+    queryFn: ({ pageParam = 1 }) => apiService.getNews({ page: pageParam, limit: 8 }),
+    getNextPageParam: (lastPage) =>
+      lastPage.pagination.page < lastPage.pagination.totalPages
+        ? lastPage.pagination.page + 1
+        : undefined,
     staleTime: 30 * 60 * 1000,
   });
 
@@ -513,7 +539,7 @@ export default function HomeScreen() {
   const comments = (topComments?.data || []).slice(0, 3);
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
-  const news = (newsData?.articles || []).slice(0, 10);
+  const news = (newsData?.pages || []).flatMap((p: any) => p.articles || []);
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -567,6 +593,16 @@ export default function HomeScreen() {
     }
   };
 
+  // Lazy-load the next page of news as the user nears the bottom of Home (the
+  // news list is the last section, so this drives its infinite scroll).
+  const handleScroll = (e: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = e.nativeEvent;
+    const distanceFromBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
+    if (distanceFromBottom < 600 && hasMoreNews && !isFetchingMoreNews) {
+      fetchMoreNews();
+    }
+  };
+
   const styles = makeStyles(colors);
 
   return (
@@ -577,6 +613,8 @@ export default function HomeScreen() {
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      onScroll={handleScroll}
+      scrollEventThrottle={200}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
@@ -892,11 +930,7 @@ export default function HomeScreen() {
           {isNewsLoading ? (
             <Loading colors={colors} styles={styles} />
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
-            >
+            <View style={styles.newsList}>
               {news.map((article: any) => {
                 const imageUri =
                   article.imageUrl ||
@@ -918,7 +952,7 @@ export default function HomeScreen() {
                       />
                     ) : (
                       <View style={[styles.newsImage, styles.newsImagePlaceholder]}>
-                        <FontAwesome6 name="newspaper" size={28} color={colors.textSecondary} />
+                        <FontAwesome6 name="newspaper" size={24} color={colors.textSecondary} />
                       </View>
                     )}
                     <View style={styles.newsBody}>
@@ -932,7 +966,12 @@ export default function HomeScreen() {
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+              {isFetchingMoreNews && (
+                <View style={styles.newsFooter}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              )}
+            </View>
           )}
         </Section>
       )}
@@ -1119,9 +1158,13 @@ function makeStyles(colors: ThemeColors) {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
-    // News carousel card (external-link headlines)
+    // News vertical list (external-link headlines, lazy-loaded)
+    newsList: {
+      paddingHorizontal: 16,
+      gap: 12,
+    },
     newsCard: {
-      width: 220,
+      flexDirection: 'row',
       backgroundColor: colors.card,
       borderRadius: 12,
       borderWidth: 1,
@@ -1129,8 +1172,8 @@ function makeStyles(colors: ThemeColors) {
       overflow: 'hidden',
     },
     newsImage: {
-      width: '100%',
-      height: 120,
+      width: 104,
+      height: 104,
       backgroundColor: colors.border,
     },
     newsImagePlaceholder: {
@@ -1138,7 +1181,9 @@ function makeStyles(colors: ThemeColors) {
       alignItems: 'center',
     },
     newsBody: {
+      flex: 1,
       padding: 12,
+      justifyContent: 'center',
     },
     newsSource: {
       fontSize: 11,
@@ -1154,6 +1199,10 @@ function makeStyles(colors: ThemeColors) {
       color: colors.text,
       lineHeight: 19,
     },
+    newsFooter: {
+      paddingVertical: 16,
+      alignItems: 'center',
+    },
     // Feature spotlight card
     spotlightCard: {
       backgroundColor: colors.card,
@@ -1163,6 +1212,10 @@ function makeStyles(colors: ThemeColors) {
       marginHorizontal: 16,
       paddingVertical: 22,
       paddingHorizontal: 20,
+      alignItems: 'center',
+    },
+    spotlightInner: {
+      width: '100%',
       alignItems: 'center',
     },
     spotlightIconWrap: {
