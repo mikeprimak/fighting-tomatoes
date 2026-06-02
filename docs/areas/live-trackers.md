@@ -82,6 +82,43 @@ scraper + the *same* reconciler, activated per-event by a Yahoo live-blog URL.
   lifecycle/VPS (the `Event.yahooLiveBlogUrl` + dispatch + VPS handler is the
   deferred durability step, mirroring Sherdog).
 
+## Start-time discovery — events flip LIVE on time (2026-06-02)
+
+**Problem.** Tapology (and most aggregators) publish only ONE time per card — the
+**main-card broadcast time**. The earlier prelim/early-prelim start (often hours
+before) lives only in prose "what time does it start / ring walk times" articles
+(ESPN, Yahoo, Bad Left Hook, promoter). So Tapology-backed orgs flipped LIVE hours
+late: e.g. MVP **Han vs. Holm 2** stored `mainStartTime = 8 PM ET` but the card
+opened ~3:30–5:15 PM ET; the app showed it upcoming while prelims ran and
+notifications started late. Confirmed Tapology's event + bout pages expose no
+prelim time at all — a data gap, not a parsing miss.
+
+**Fix (shipped).** `services/startTimeDiscovery` — the boxing/agg analog of
+broadcast discovery. Daily, per upcoming event with no early-bell time on file
+(`earlyPrelimStartTime` AND `prelimStartTime` both null → excludes UFC), Brave-
+search the start/ring-walk coverage → Haiku 4.5 extracts each section's time
+(ET-normalized, confidence-gated, grounded) → convert ET→UTC → write
+prelim/early-prelim with ordering + provenance guards (never fabricate, never
+clobber the card scraper's `mainStartTime` or an admin value; floor 0.7).
+`getStartTime()` already picks the earliest section, so the event flips LIVE at
+the real first bell. Runs daily via `start-time-discovery.yml` + a best-effort
+tail on `runAllOrganizationScrapers`. Validated against Han vs Holm 2 (prelims
+19:30Z @ 0.92). New Event provenance columns: `startTimeSource` /
+`startTimeConfidence` / `startTimeSourceUrls` / `startTimeDiscoveredAt`.
+
+## MVP Han vs Holm post-mortem — why the live tracker missed Holm (2026-06-02)
+
+Separate from the start-time fix (above) and **still open**. The Yahoo boxing
+tracker failed to fire Holm's "up next" for two reasons, both DB-evidenced:
+1. **Not durable.** It's a hand-run CLI loop (the handoff's #1 deferred item). The
+   loop died ~10 PM ET when the prior session ended; Serrano→Holm happened with
+   nothing polling Yahoo. Fix = mirror the Sherdog durable rollout
+   (`Event.yahooLiveBlogUrl` + lifecycle dispatch + VPS handler).
+2. **Premature headliner fire.** `detectAndNotifyLiveFight` (runYahooLiveBlogTracker.ts)
+   matched the headliner's surnames in the live blog's all-night main-event hype
+   posts and fired the Han/Holm walkout at 7:46 PM ET (~4h early). Fix = don't let
+   the main event win the narrative match off preview text.
+
 ## Architecture decision: Sherdog as the default tracker source (2026-05-16)
 
 **Context.** Before this decision we treated every promotion as its own per-org live-tracker engineering problem. UFC needed a JA3 bypass; ONE FC had its own JSON; PFL/BKFC/Oktagon/RAF each had a hand-written scraper + parser + GH Actions workflow. Orgs without a native source (MVP, Top Rank, Golden Boy, Gold Star) fell through to the "no-tracker bulk-flip" path — fights flipped to COMPLETED the moment the event went LIVE, with no real per-fight signal.
