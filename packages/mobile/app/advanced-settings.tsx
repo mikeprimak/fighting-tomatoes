@@ -20,6 +20,8 @@ import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 import { api } from '../services/api';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import * as Application from 'expo-application';
+import * as Updates from 'expo-updates';
 
 export default function AdvancedSettingsScreen() {
   const {
@@ -109,6 +111,19 @@ export default function AdvancedSettingsScreen() {
 
   const styles = createStyles(colors);
 
+  // Build/update provenance — lets us tell a store-native build apart from an OTA
+  // bundle at a glance (e.g. vc38 embedded vs vc37 + OTA) when diagnosing "why
+  // isn't my change showing." channel/runtime/updateId come from expo-updates.
+  const appVersion = Application.nativeApplicationVersion ?? '—';
+  const buildNumber = Application.nativeBuildVersion ?? '—';
+  const otaChannel = Updates.channel ?? 'dev';
+  const otaRuntime = Updates.runtimeVersion ?? '—';
+  const otaOrigin = Updates.isEmbeddedLaunch
+    ? 'embedded'
+    : Updates.updateId
+      ? `OTA ${Updates.updateId.slice(0, 8)}`
+      : 'OTA';
+
   return (
     <>
       <Stack.Screen
@@ -163,6 +178,16 @@ export default function AdvancedSettingsScreen() {
               <FontAwesome name="trash" size={16} color="#FFFFFF" />
               <Text style={styles.deleteButtonText}>Delete Account</Text>
             </TouchableOpacity>
+          </View>
+
+          {/* Build info — diagnostic footer */}
+          <View style={styles.buildFooter}>
+            <Text style={[styles.buildText, { color: colors.textSecondary }]}>
+              Good Fights v{appVersion} ({buildNumber}) · {otaChannel}
+            </Text>
+            <Text style={[styles.buildTextDim, { color: colors.textSecondary }]}>
+              runtime {otaRuntime} · {otaOrigin}
+            </Text>
           </View>
         </ScrollView>
 
@@ -404,5 +429,19 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
+  },
+  buildFooter: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 24,
+    gap: 2,
+  },
+  buildText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  buildTextDim: {
+    fontSize: 11,
+    opacity: 0.7,
   },
 });
