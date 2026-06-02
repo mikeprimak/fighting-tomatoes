@@ -15,6 +15,7 @@ import {
 } from '../config/liveTrackerConfig';
 import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
+import { getActiveEventExpectations, getEventFightExpectations } from '../services/notificationExpectations';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -687,6 +688,25 @@ export async function adminRoutes(fastify: FastifyInstance) {
     ]);
 
     return reply.send({ events, total });
+  });
+
+  // Notification expectations dashboard: per-event counts of users waiting on a
+  // notification across all LIVE + UPCOMING events. Drives the admin "who's
+  // waiting" board so the operator knows which cards to monitor + manually ping.
+  fastify.get('/admin/notification-expectations', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    const events = await getActiveEventExpectations(prisma);
+    return reply.send({ events });
+  });
+
+  // Per-fight expectation counts for a single event.
+  fastify.get('/admin/events/:id/notification-expectations', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const data = await getEventFightExpectations(prisma, id);
+    return reply.send(data);
   });
 
   // Get single event
