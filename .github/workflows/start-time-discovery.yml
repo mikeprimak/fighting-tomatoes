@@ -1,0 +1,54 @@
+name: Start-Time Discovery
+
+# Daily job that finds the REAL first-bell (prelim / early-prelim) start time for
+# upcoming events whose source (Tapology, etc.) published only the main-card time.
+# Without it, events flip LIVE hours late (only the main card is known), so the
+# app shows the card as upcoming while prelims are already underway and the
+# walkout/up-next notifications start late. Writes are confidence-gated and never
+# clobber a scraper/admin value (see services/startTimeDiscovery + persist.ts).
+
+on:
+  schedule:
+    # Daily 13:00 UTC — after the morning daily scrapes have refreshed events.
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      max_events:
+        description: "Max events to resolve this run (default 40)."
+        required: false
+        default: ""
+      dry_run:
+        description: "Set to 'true' to preview without writing."
+        required: false
+        default: ""
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      - name: Install
+        run: |
+          pnpm install --frozen-lockfile=false
+          cd packages/backend
+          npx prisma generate
+      - name: Run start-time discovery
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          STARTTIME_MAX_EVENTS: ${{ github.event.inputs.max_events }}
+        run: |
+          cd packages/backend
+          npx tsx src/scripts/runStartTimeDiscovery.ts ${{ github.event.inputs.dry_run == 'true' && '--dry-run' || '' }}
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=discovery&org=start-times" || true
