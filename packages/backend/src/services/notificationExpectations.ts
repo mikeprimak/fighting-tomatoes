@@ -176,14 +176,26 @@ export interface FightExpectation {
   expectingUsers: number;
 }
 
+export interface FightExpectationDetail {
+  // Distinct users with an active match (whether or not already notified).
+  waiting: number;
+  // Distinct users whose match is still UNsent (notificationSent=false) — i.e.
+  // who would actually receive a manual "send now" ping right now.
+  pending: number;
+}
+
 /**
  * Per-fight expectation counts for a single event, keyed by fightId.
  * Includes a total of distinct users across the whole event.
+ *
+ * `pending` reflects the walkout/up-next dispatch flag (notificationSent): once a
+ * fight's ping has fired (auto or manual), pending drops to 0, which the admin
+ * panel uses to show "✓ Sent" instead of an active send button.
  */
 export async function getEventFightExpectations(
   prisma: PrismaClient,
   eventId: string
-): Promise<{ totalUsers: number; perFight: Record<string, number> }> {
+): Promise<{ totalUsers: number; perFight: Record<string, FightExpectationDetail> }> {
   const fights = await prisma.fight.findMany({
     where: { eventId },
     select: { id: true },
@@ -193,23 +205,37 @@ export async function getEventFightExpectations(
 
   const matches = await prisma.fightNotificationMatch.findMany({
     where: { isActive: true, fightId: { in: fightIds } },
-    select: { userId: true, fightId: true },
+    select: { userId: true, fightId: true, notificationSent: true },
   });
 
-  const perFightSets = new Map<string, Set<string>>();
+  const waitingSets = new Map<string, Set<string>>();
+  const pendingSets = new Map<string, Set<string>>();
   const allUsers = new Set<string>();
   for (const m of matches) {
     allUsers.add(m.userId);
-    let s = perFightSets.get(m.fightId);
-    if (!s) {
-      s = new Set();
-      perFightSets.set(m.fightId, s);
+    let w = waitingSets.get(m.fightId);
+    if (!w) {
+      w = new Set();
+      waitingSets.set(m.fightId, w);
     }
-    s.add(m.userId);
+    w.add(m.userId);
+    if (!m.notificationSent) {
+      let p = pendingSets.get(m.fightId);
+      if (!p) {
+        p = new Set();
+        pendingSets.set(m.fightId, p);
+      }
+      p.add(m.userId);
+    }
   }
 
-  const perFight: Record<string, number> = {};
-  for (const [fightId, set] of perFightSets) perFight[fightId] = set.size;
+  const perFight: Record<string, FightExpectationDetail> = {};
+  for (const [fightId, set] of waitingSets) {
+    perFight[fightId] = {
+      waiting: set.size,
+      pending: pendingSets.get(fightId)?.size ?? 0,
+    };
+  }
 
   return { totalUsers: allUsers.size, perFight };
 }
