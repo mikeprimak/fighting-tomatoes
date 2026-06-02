@@ -16,6 +16,7 @@ import { PrismaClient } from '@prisma/client';
 import { isProductionScraper, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { notifyEventSectionStart, notifyFightStartViaRules } from './notificationService';
+import { checkAndAlertNewExpectations } from './notificationExpectations';
 
 const prisma = new PrismaClient();
 
@@ -593,6 +594,17 @@ export async function runEventLifecycleCheck(): Promise<{
     }
   } catch (error: any) {
     console.error('[Lifecycle] Step 3 (LIVE→COMPLETED) error:', error.message);
+  }
+
+  // === STEP 4: Alert operator about NEW notification expectations ===
+  // If a user starts waiting on a notification for a LIVE or imminent event, push
+  // the admin account(s) so the operator can go monitor + send manually (relevant
+  // until every org has an automatic live tracker). Cursor-based: alerts once per
+  // new expectation. Best-effort; never blocks the lifecycle.
+  try {
+    await checkAndAlertNewExpectations(prisma, now);
+  } catch (error: any) {
+    console.error('[Lifecycle] Step 4 (expectation alerts) error:', error.message);
   }
 
   // Log summary if anything happened
