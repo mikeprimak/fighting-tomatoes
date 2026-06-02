@@ -13,7 +13,9 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
+import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../utils/email';
+import { runStartTimeDiscovery } from './startTimeDiscovery/run';
 
 // Import functions from each parser
 import { importBKFCData } from './bkfcDataParser';
@@ -330,6 +332,23 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
     console.log(`   ${r.organization}: ${r.success ? '✅' : '❌'} (${r.duration}s)`);
   });
   console.log('========================================\n');
+
+  // Best-effort: resolve real first-bell (prelim) start times for events whose
+  // source only published the main-card time, so they flip LIVE on time. Never
+  // fatal to the scrape run. (Also runs standalone daily via start-time-discovery.yml.)
+  try {
+    console.log('[All Scrapers] Resolving missing prelim/early start times...');
+    const prisma = new PrismaClient();
+    try {
+      const outcomes = await runStartTimeDiscovery(prisma);
+      const applied = outcomes.filter(o => o.result?.applied).length;
+      console.log(`[All Scrapers] Start-time discovery: ${applied}/${outcomes.length} events updated.`);
+    } finally {
+      await prisma.$disconnect();
+    }
+  } catch (err: any) {
+    console.warn('[All Scrapers] Start-time discovery failed (non-fatal):', err?.message ?? err);
+  }
 
   return results;
 }

@@ -284,7 +284,16 @@ model Event {
   earlyPrelimStartTime DateTime?
   prelimStartTime      DateTime?
   mainStartTime        DateTime?
-  
+
+  // Start-time discovery provenance (services/startTimeDiscovery). Most aggregators
+  // (Tapology) publish only the main-card time; this records when/how the earlier
+  // section times were inferred from web sources so the daily resolver never
+  // clobbers a more-authoritative scraper/admin value.
+  startTimeSource      String?   // "discovery" | "scraper" | "manual" (null = legacy/unknown)
+  startTimeConfidence  Float?    // 0-1 confidence of the last discovery write
+  startTimeSourceUrls  String[]  // grounding URLs for the discovered times
+  startTimeDiscoveredAt DateTime? // last discovery attempt (used to throttle retries)
+
   // Media
   bannerImage       String?
   
