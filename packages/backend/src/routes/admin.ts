@@ -16,6 +16,7 @@ import {
 import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
 import { getActiveEventExpectations, getEventFightExpectations } from '../services/notificationExpectations';
+import { sendPushNotifications } from '../services/notificationService';
 import {
   triggerDailyUFCScraper,
   triggerEventLifecycleCheck,
@@ -698,6 +699,20 @@ export async function adminRoutes(fastify: FastifyInstance) {
   }, async (_request, reply) => {
     const events = await getActiveEventExpectations(prisma);
     return reply.send({ events });
+  });
+
+  // Fire a test push to the calling admin's own account — confirms the phone-push
+  // plumbing works without waiting for the 5-min expectation alert job.
+  fastify.post('/admin/notification-expectations/test-alert', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const userId = (request as any).user.id as string;
+    const result = await sendPushNotifications([userId], {
+      title: '🔔 Test alert',
+      body: 'Expectation alerts are wired up. This is what a "someone is waiting" ping looks like.',
+      data: { type: 'admin_expectation_alert_test' },
+    });
+    return reply.send(result); // { success, failed }
   });
 
   // Per-fight expectation counts for a single event.
