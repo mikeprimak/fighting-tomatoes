@@ -174,6 +174,16 @@ Reliable-tracker gate: `hasReliableLiveTracker(scraperType, promotion)`. The cur
 
 Promotion onboarding playbook: `docs/playbooks/onboard-new-promotion.md` and the registry at `packages/backend/src/config/promotionRegistry.ts`. Adding a new tracker should also update those.
 
+## Operator tooling: manual notification fallback (2026-06-02)
+
+The graceful-fallback principle (every tracker degrades to manual without code change) now has real admin-panel surface. Until every org has a reliable tracker, the operator delivers the "we'll notify you" promise by hand — these tools make that fast and safe. All live in `packages/backend/public/admin.html` + `services/notificationExpectations.ts`.
+
+- **Event list defaults to Live.** `bootstrapAdminView()` flips the admin event filter to **Live** when any event is live (mirrors mobile), so the operator lands on what's happening now.
+- **Notification expectation tracker ("who's waiting on a ping").** Source of truth = active `FightNotificationMatch` rows (rule engine: fighter follows, hype rules). A board under the live-count notice shows, per LIVE/UPCOMING event, distinct waiting users, LIVE/SOON badge, `+N new` (last 24h), and ⚠️ for events with no auto tracker. Per-fight 🔔 badges show waiting users on each bout. Endpoints: `GET /admin/notification-expectations`, `GET /admin/events/:id/notification-expectations`. The point: the operator can ignore a card with nobody waiting and focus attention where users actually expect a ping.
+- **New-expectation alert.** `checkAndAlertNewExpectations()` (lifecycle Step 4, every 5 min, cursor in SystemConfig `notif_expectation_alert_cursor`) pushes the admin account when a *new* expectation lands on a LIVE/≤6h-imminent event — so a card the operator was ignoring (nobody waiting) pings them the moment someone signs up. In-panel desktop/audible alert covers the panel-open case. Server push targets `ADMIN_EMAILS` (prod `michaelsprimak@gmail.com`); only reaches a phone if that account has the app + notifications on. "🔔 Test phone alert" button (`POST /admin/notification-expectations/test-alert`) confirms the push plumbing on demand.
+- **Manual per-fight send (double-send safe).** "🔔 Send ping (N)" button per fight → `POST /admin/fights/:id/send-notification` → dispatches via `notifyFightStartViaRules`, which only pushes `notificationSent=false` rows then marks them sent. Repeat clicks send nothing. `getEventFightExpectations` returns `{ waiting, pending }`; `pending=0` ⇒ already fired ⇒ button shows "✓ Ping sent". This is the fix for the "tracker failed, I had to manually fire the Darren Till notif" scenario.
+- **Cancelled fights never notify.** A CANCELLED fight keeps its matches but is guarded at *every* dispatch path (`notifyFightStartViaRules`, `notifyEventSectionStart`, lifecycle section/all-fight-id builders, the manual-send endpoint). Matches are left active (not deleted) so a rebooked fight still notifies — the guard re-checks status on every dispatch. Admin panel shows "🚫 N had alerts set — won't send (cancelled)". See [[lesson_cancelled_fight_notification_guard]].
+
 ## Experiments log
 
 Every time we evaluate a new source, even if we reject it, log it here. Keeps the institutional memory.
@@ -317,13 +327,14 @@ Bleacher Report runs as a parallel cross-check on fight-end — if Sherdog's Off
 - **Boxing-only orgs** — BoxRec might be a structured source if Sherdog doesn't cover a particular boxing card. Reserve as a future fallback in the source ladder.
 - **Per-source rate limiting** — Sherdog at 30s = ~120 req/hr per active event. Multiple concurrent events could pile up. So far no signal of issues; revisit if we ever run >5 concurrent Sherdog-tracked cards.
 - **Quantify acceptable lag for non-priority fields** — winner/method/round/time. Probably 30 min is fine since the user's already opened the rating modal by then. Cement this somewhere so future trackers know the bar.
-- **Manual tracker UX polish** — when no automated source exists, the admin needs a fast "advance to next fight" button. `useManualLiveTracker` exists schema-side; usability could be better.
+- **Manual tracker UX polish** — when no automated source exists, the admin needs a fast "advance to next fight" button. `useManualLiveTracker` exists schema-side; usability could be better. (Partially addressed 2026-06-02 — see "Operator tooling: manual notification fallback" above: per-fight manual send + expectation tracker + cancelled-fight guard now shipped. A one-tap "advance to next fight" is still the missing piece.)
 - **Cross-promotion fighter linking via Sherdog IDs** — the scraper captures `sherdogId` per fighter from the PBP page but we don't use it yet. Storing it on `Fighter` would let us cross-link our DB to Sherdog for future enrichment (records, history, recency).
 
 ## Related memories
 
 - [[lesson_tapology_tracker_overwrites_lifecycle]] — the canonical "don't reverse COMPLETED" lesson
 - [[lesson_vps_supported_scrapers]] — VPS dispatch only covers some scraperTypes
+- [[lesson_cancelled_fight_notification_guard]] — cancelled fights guarded at dispatch layer; matches left active for rebooks
 - [[lesson_tapology_event_lookup_ufcurl_only]] — name-fallback merges sibling events; tracker lookups must use stable IDs
 - [[lesson_ufc_com_ja3_blocking]] — ufc.com TLS fingerprinting; relevant if a future tracker tries Node fetch against a bot-protected source
 - [[lesson_ufc_live_parser_diacritic_signature]] — name-signature matching needs diacritic normalization; reusable for any name-based result matcher
