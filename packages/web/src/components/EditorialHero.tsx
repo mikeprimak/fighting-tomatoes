@@ -26,7 +26,9 @@ function formatDate(date: string): string {
   if (!date) return '';
   const d = new Date(date);
   if (isNaN(d.getTime())) return date;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  // Force UTC so this client-rendered date matches the server-rendered article
+  // page (which runs in UTC). Without it, browsers behind UTC show day-1.
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 }
 
 /**
