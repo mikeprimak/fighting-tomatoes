@@ -249,35 +249,45 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     },
   });
 
-  // Helper to optimistically update events cache
+  // Patch this fight wherever it lives in the query cache so a hype / comment /
+  // notify change shows instantly on the exact card the user tapped — the
+  // events list, the home rails (topUpcomingFights), a fighter page
+  // (fighterFights), an event's fights, or any infinite-scroll page. We deep-walk
+  // the active queries and patch any fight-shaped node with a matching id (UUID
+  // ids make the shape guard collision-safe), returning the same reference when
+  // nothing changed so untouched queries don't re-render.
   const updateEventsCache = useCallback((updates: Record<string, any>) => {
     if (!fight) return;
-    queryClient.setQueriesData({ queryKey: ['upcomingEvents'] }, (old: any) => {
-      if (!old?.pages) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page: any) => ({
-          ...page,
-          events: page.events.map((event: any) => ({
-            ...event,
-            fights: event.fights?.map((f: any) =>
-              f.id === fight.id ? { ...f, ...updates } : f
-            ) || [],
-          })),
-        })),
-      };
-    });
-    if (fight.event?.id) {
-      queryClient.setQueryData(['eventFights', fight.event.id], (old: any) => {
-        if (!old?.fights) return old;
-        return {
-          ...old,
-          fights: old.fights.map((f: any) =>
-            f.id === fight.id ? { ...f, ...updates } : f
-          ),
-        };
-      });
-    }
+    const targetId = fight.id;
+    const patch = (node: any): any => {
+      if (Array.isArray(node)) {
+        let changed = false;
+        const next = node.map((item) => {
+          const r = patch(item);
+          if (r !== item) changed = true;
+          return r;
+        });
+        return changed ? next : node;
+      }
+      if (node && typeof node === 'object') {
+        if (
+          node.id === targetId &&
+          ('userHypePrediction' in node || 'averageHype' in node || 'fighter1' in node)
+        ) {
+          return { ...node, ...updates };
+        }
+        let changed = false;
+        const next: Record<string, any> = {};
+        for (const key of Object.keys(node)) {
+          const r = patch(node[key]);
+          if (r !== node[key]) changed = true;
+          next[key] = r;
+        }
+        return changed ? next : node;
+      }
+      return node;
+    };
+    queryClient.setQueriesData({ type: 'active' }, (old: any) => (old ? patch(old) : old));
   }, [fight, queryClient]);
 
   // Save hype prediction

@@ -19,7 +19,7 @@ import { useAuth } from '../../store/AuthContext';
 import { useSpoilerFree } from '../../store/SpoilerFreeContext';
 import { useCustomAlert } from '../../hooks/useCustomAlert';
 import { CustomAlert } from '../../components/CustomAlert';
-import { CommentCard, PreFightCommentCard } from '../../components';
+import { CommentCard, PreFightCommentCard, SearchBar } from '../../components';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
 import { notificationService } from '../../services/notificationService';
@@ -609,6 +609,8 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['left', 'right']}>
+      {/* Pinned search bar — shown when the header magnifying glass is toggled */}
+      <SearchBar />
       <ScrollView
         contentContainerStyle={styles.scrollContainer}
         refreshControl={
