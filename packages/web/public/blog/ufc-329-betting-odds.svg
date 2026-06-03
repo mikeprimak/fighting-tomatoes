@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1200" height="630" fill="#181818"/>
+
+  <text x="60" y="72" fill="#ffffff" font-size="44" font-weight="700">Betting Odds</text>
+  <text x="60" y="108" fill="#9ca3af" font-size="22">McGregor vs Holloway 2 &#183; UFC 329 &#183; opening lines</text>
+  <image href="../good-fights-hand.png" x="1088" y="18" width="56" height="56"/>
+  <text x="1072" y="56" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
+
+  <!-- McGregor -->
+  <text x="310" y="205" fill="#F5C518" font-size="30" font-weight="700" text-anchor="middle">CONOR McGREGOR</text>
+  <text x="310" y="290" fill="#ffffff" font-size="72" font-weight="700" text-anchor="middle">+350</text>
+  <text x="310" y="330" fill="#9ca3af" font-size="20" font-weight="700" text-anchor="middle" letter-spacing="2">UNDERDOG</text>
+
+  <!-- Holloway -->
+  <text x="890" y="205" fill="#F5C518" font-size="30" font-weight="700" text-anchor="middle">MAX HOLLOWAY</text>
+  <text x="890" y="290" fill="#ffffff" font-size="72" font-weight="700" text-anchor="middle">-450</text>
+  <text x="890" y="330" fill="#9ca3af" font-size="20" font-weight="700" text-anchor="middle" letter-spacing="2">FAVORITE</text>
+
+  <line x1="600" y1="170" x2="600" y2="345" stroke="#2e2e2e" stroke-width="1"/>
+
+  <!-- Implied win probability bar -->
+  <text x="600" y="410" fill="#9ca3af" font-size="17" font-weight="700" text-anchor="middle" letter-spacing="1.5">IMPLIED WIN PROBABILITY</text>
+  <rect x="150" y="430" width="198" height="56" rx="8" fill="#4b5563"/>
+  <rect x="348" y="430" width="702" height="56" rx="8" fill="#F5C518"/>
+  <rect x="150" y="430" width="198" height="56" rx="8" fill="#4b5563"/>
+  <text x="174" y="467" fill="#ffffff" font-size="26" font-weight="700">22%</text>
+  <text x="1026" y="467" fill="#181818" font-size="26" font-weight="700" text-anchor="end">78%</text>
+
+  <text x="60" y="560" fill="#9ca3af" font-size="20">Holloway's lines ran roughly -400 to -550 across major books.</text>
+  <text x="60" y="588" fill="#9ca3af" font-size="20">Reportedly the longest underdog price of McGregor's UFC career.</text>
+  <text x="60" y="616" fill="#6b7280" font-size="16">Opening odds, late May 2026. Lines move. Not betting advice.</text>
+  <text x="1140" y="616" fill="#9ca3af" font-size="18" text-anchor="end">goodfights.app</text>
+</svg>
