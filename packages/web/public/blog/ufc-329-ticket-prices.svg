@@ -3,7 +3,8 @@
 
   <text x="60" y="72" fill="#ffffff" font-size="44" font-weight="700">What a UFC 329 ticket costs</text>
   <text x="60" y="108" fill="#9ca3af" font-size="22">McGregor vs Holloway 2 &#183; T-Mobile Arena &#183; July 11, 2026</text>
-  <text x="1140" y="66" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
+  <image href="../good-fights-hand.png" x="1088" y="18" width="56" height="56"/>
+  <text x="1072" y="56" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
 
   <!-- Rows: bar widths are log-scaled so $622 and $88k both read -->
   <!-- Upper level -->
@@ -32,4 +33,5 @@
   <text x="1140" y="515" fill="#ef4444" font-size="30" font-weight="700" text-anchor="end">~$88,000</text>
 
   <text x="60" y="600" fill="#6b7280" font-size="18">Presale and resale snapshot, late May 2026. Prices move. Bars shown on a log scale.</text>
+  <text x="1140" y="600" fill="#9ca3af" font-size="18" text-anchor="end">goodfights.app</text>
 </svg>
