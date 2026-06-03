@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1200" height="630" fill="#181818"/>
+
+  <text x="60" y="72" fill="#ffffff" font-size="44" font-weight="700">What a UFC 329 ticket costs</text>
+  <text x="60" y="108" fill="#9ca3af" font-size="22">McGregor vs Holloway 2 &#183; T-Mobile Arena &#183; July 11, 2026</text>
+  <text x="1140" y="66" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
+
+  <!-- Rows: bar widths are log-scaled so $622 and $88k both read -->
+  <!-- Upper level -->
+  <text x="60" y="201" fill="#ffffff" font-size="26">Upper level</text>
+  <rect x="300" y="178" width="75" height="34" rx="6" fill="#F5C518"/>
+  <text x="1140" y="203" fill="#F5C518" font-size="30" font-weight="700" text-anchor="end">$622</text>
+
+  <!-- Lower bowl -->
+  <text x="60" y="279" fill="#ffffff" font-size="26">Lower bowl</text>
+  <rect x="300" y="256" width="151" height="34" rx="6" fill="#F5C518"/>
+  <text x="1140" y="281" fill="#F5C518" font-size="30" font-weight="700" text-anchor="end">$1,227</text>
+
+  <!-- Floor -->
+  <text x="60" y="357" fill="#ffffff" font-size="26">Floor</text>
+  <rect x="300" y="334" width="285" height="34" rx="6" fill="#F5C518"/>
+  <text x="1140" y="359" fill="#F5C518" font-size="30" font-weight="700" text-anchor="end">$4,110</text>
+
+  <!-- Front row -->
+  <text x="60" y="435" fill="#ffffff" font-size="26">Front row</text>
+  <rect x="300" y="412" width="546" height="34" rx="6" fill="#F5C518"/>
+  <text x="1140" y="437" fill="#F5C518" font-size="30" font-weight="700" text-anchor="end">$43,050</text>
+
+  <!-- Resale peak -->
+  <text x="60" y="513" fill="#ffffff" font-size="26">Resale peak</text>
+  <rect x="300" y="490" width="626" height="34" rx="6" fill="#ef4444"/>
+  <text x="1140" y="515" fill="#ef4444" font-size="30" font-weight="700" text-anchor="end">~$88,000</text>
+
+  <text x="60" y="600" fill="#6b7280" font-size="18">Presale and resale snapshot, late May 2026. Prices move. Bars shown on a log scale.</text>
+</svg>

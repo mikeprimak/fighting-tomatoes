@@ -90,8 +90,8 @@ McGregor vs Holloway 2 is a **welterweight bout (170 pounds)**, and it is a **no
 
 Yes. They fought once before, more than a decade ago, and **Conor McGregor won by unanimous decision**. The two met on August 17, 2013 at a UFC Fight Night card in Boston, early in both of their careers. McGregor was a brash Irish prospect the American audience was just getting to know. Holloway was a 21-year-old up-and-comer. McGregor controlled the fight and took a clear decision on all three judges' scorecards.
 
-![Conor McGregor and Max Holloway during their first fight in Boston in 2013](/blog/mcgregor-holloway-2013-first-fight.jpg)
-*McGregor on his way to a unanimous-decision win over a 21-year-old Max Holloway. Boston, August 2013.*
+![Conor McGregor on the UFC 189 World Tour in 2015](/blog/mcgregor-ufc189-2015.jpg)
+*Conor McGregor on the UFC 189 World Tour, 2015. Photo: Andrius Petrucenia / CC BY-SA 2.0 (cropped).*
 
 ## What happened in the first McGregor vs Holloway fight?
 
@@ -100,6 +100,9 @@ Here is the wild part, and the detail that makes this rematch so strange: McGreg
 ## How have McGregor and Holloway changed since 2013?
 
 Completely. In 2013 they were both prospects. Since then, McGregor became a two-division UFC champion, the face of the sport, and the biggest pay-per-view draw in its history, then spent years split between fighting, boxing, business, and injury recovery. Holloway went on an entirely different trajectory: he became one of the greatest featherweights of all time, set the UFC record for significant strikes landed, captured the BMF title with a legendary buzzer-beater knockout of Justin Gaethje, and built a reputation as one of the toughest, highest-output fighters the sport has ever seen. The kid McGregor beat does not exist anymore.
+
+![Max Holloway in 2018](/blog/holloway-dod-2018.jpg)
+*Max Holloway in 2018, by then a UFC featherweight champion. Photo: U.S. Department of Defense (public domain).*
 
 ## Why are McGregor and Holloway fighting again?
 
@@ -162,12 +165,16 @@ Nobody knows, and McGregor himself has gone back and forth on retirement for yea
 
 A lot, and that is the headline. McGregor's return has turned UFC 329 into one of the hottest tickets in combat sports, and the prices show it. When the UFC Fight Club presale went live in late May 2026, it sold out in minutes across both early-access windows. McGregor's own reaction to the instant sellout was a single laughing emoji.
 
+<blockquote class="twitter-tweet" data-dnt="true"><a href="https://x.com/i/status/2059736311972417585"></a></blockquote>
+
 Here is roughly where presale pricing landed (figures move constantly, so treat them as a snapshot, not a fixed price):
 
 - **Upper level:** from around $622 per seat
 - **Lower bowl:** from around $1,227 per seat
 - **Floor:** from around $4,110 per seat
 - **Front row:** listed as high as $43,050 per seat
+
+![UFC 329 ticket prices by section, from $622 in the upper level to a resale peak near $88,000](/blog/ufc-329-ticket-prices.png)
 
 That is before the resale market got involved. Multiple reports pegged some official seats at **more than $24,000 each**, and once the event sold out, listings on secondary platforms climbed toward a reported **$88,000 to $90,000** for the best seats in the house. For context, those are numbers you normally associate with a Super Bowl or a heavyweight boxing megafight, not a non-title UFC bout. It is the clearest possible proof that, five years out of the cage, McGregor is still the biggest draw the sport has.
 

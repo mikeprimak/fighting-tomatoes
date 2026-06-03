@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { getPost, getPostSlugs, DEFAULT_POST_IMAGE } from '@/lib/posts';
 import { SITE_URL } from '@/lib/site';
 import { ShareButtons } from '@/components/ShareButtons';
+import { TweetEmbeds } from '@/components/TweetEmbeds';
 
 export function generateStaticParams() {
   return getPostSlugs().map((slug) => ({ slug }));
@@ -174,6 +175,7 @@ export default async function BlogPostPage({
       </div>
 
       <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
+      <TweetEmbeds />
 
       <ShareButtons url={`${SITE_URL}/blog/${post.slug}`} title={post.title} />
 
