@@ -4,7 +4,7 @@ slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
-tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "preview"]
+tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
 image: "/blog/mcgregor-holloway-banner.png"
 draft: false
 featured: false
@@ -21,6 +21,8 @@ event:
 ---
 
 Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
+
+*Last updated: June 3, 2026.*
 
 ## When is McGregor vs Holloway 2?
 
@@ -156,9 +158,22 @@ For Holloway, this is the rare chance to settle an old score and cash the bigges
 
 Nobody knows, and McGregor himself has gone back and forth on retirement for years. What is clear is that, at 37 going on 38 and five years removed from his last bout, the result of this fight will heavily shape whatever comes next. A loss could push him toward legacy and exhibition-style fights. A win would likely keep him fighting at the top for at least another bout or two. Treat any "final fight" talk as speculation until he says so himself.
 
+## How much are UFC 329 tickets?
+
+A lot, and that is the headline. McGregor's return has turned UFC 329 into one of the hottest tickets in combat sports, and the prices show it. When the UFC Fight Club presale went live in late May 2026, it sold out in minutes across both early-access windows. McGregor's own reaction to the instant sellout was a single laughing emoji.
+
+Here is roughly where presale pricing landed (figures move constantly, so treat them as a snapshot, not a fixed price):
+
+- **Upper level:** from around $622 per seat
+- **Lower bowl:** from around $1,227 per seat
+- **Floor:** from around $4,110 per seat
+- **Front row:** listed as high as $43,050 per seat
+
+That is before the resale market got involved. Multiple reports pegged some official seats at **more than $24,000 each**, and once the event sold out, listings on secondary platforms climbed toward a reported **$88,000 to $90,000** for the best seats in the house. For context, those are numbers you normally associate with a Super Bowl or a heavyweight boxing megafight, not a non-title UFC bout. It is the clearest possible proof that, five years out of the cage, McGregor is still the biggest draw the sport has.
+
 ## How do I get tickets to UFC 329?
 
-Tickets for UFC 329 are sold through the official UFC ticketing channels and the T-Mobile Arena box office, with resale available on the usual secondary markets. Because this is McGregor's return and the International Fight Week headliner, demand is extremely high and prices reflect it. If you want to be in the building, buy through official or reputable verified-resale sources only, and be cautious of scalpers and fake listings around an event this big.
+Tickets for UFC 329 are sold through the official UFC ticketing channels (general public sales ran through AXS, with an eight-ticket limit per buyer) and the T-Mobile Arena box office, with resale available on the usual secondary markets. Because this is McGregor's return and the International Fight Week headliner, the building is effectively sold out and any remaining inventory is on resale at a steep premium. If you want to be there, buy through official or reputable verified-resale sources only, and be cautious of scalpers and fake listings around an event this big.
 
 ## Could there be a McGregor vs Holloway 3?
 
@@ -173,6 +188,7 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
 - **Favorite:** Max Holloway (roughly -400 to -550)
+- **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 
 ## Related reading
