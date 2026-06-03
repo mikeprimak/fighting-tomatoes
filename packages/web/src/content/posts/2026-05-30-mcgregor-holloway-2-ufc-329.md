@@ -48,6 +48,8 @@ The schedule for UFC 329 is built around U.S. prime time. Here are the expected 
 - Prelims: 7 p.m. ET / 4 p.m. PT
 - Main card: 9 p.m. ET / 6 p.m. PT
 
+![UFC 329 start-times timeline: early prelims 5pm ET, prelims 7pm ET, main card 9pm ET, main event around 11:30pm ET](/blog/ufc-329-start-times.png)
+
 The McGregor vs Holloway main event is the last fight of the night. As a rule of thumb, the headliners walk out somewhere between two and three hours after the main card begins, so plan for a late-night ring entrance.
 
 <a id="watch-other-countries"></a>
@@ -55,6 +57,8 @@ The McGregor vs Holloway main event is the last fight of the night. As a rule of
 ## How can I watch McGregor vs Holloway 2 outside the US? (Canada, UK, Ireland, Australia, Europe)
 
 Paramount+ is the UFC's home in the United States, but the rest of the world is a patchwork of different broadcasters and, in some places, the old pay-per-view model. Here is where to find UFC 329 in the major markets. Confirm the exact channel and price closer to fight night, since rights and PPV pricing shift:
+
+![Where to watch UFC 329 by country: US Paramount+, Canada Sportsnet+, UK and Ireland TNT Sports, Australia Main Event, Europe DAZN](/blog/ufc-329-where-to-watch.png)
 
 - **Canada:** UFC still runs on a pay-per-view model here. The main card is on **Sportsnet+** (subscription from around C$30 per month), with the pay-per-view itself priced around C$60 for the event, while early prelims air on linear Sportsnet and TSN.
 - **United Kingdom:** **TNT Sports** carries the card, streamed through discovery+, with replays available on HBO Max. Because of the time difference the main card starts around 2 a.m. BST on Sunday, July 12, and the McGregor walkout lands a couple of hours after that.
@@ -116,6 +120,8 @@ A long time. McGregor's last fight was in **July 2021**, when he suffered a grue
 
 Here is how the two compare heading into the fight:
 
+![Tale of the tape, McGregor vs Holloway 2: records, age, height, reach, stance and calling cards compared](/blog/ufc-329-tale-of-the-tape.png)
+
 - **Age:** McGregor is 37 (turning 38 days after the fight), Holloway is 34
 - **Height:** McGregor 5 foot 9, Holloway 5 foot 11
 - **Reach:** McGregor 74 inches, Holloway 69 inches
@@ -128,6 +134,8 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 ## What are the betting odds for McGregor vs Holloway 2?
 
 The opening odds tell the whole story of how the fight is viewed. **Max Holloway is a heavy favorite**, with lines ranging from roughly -400 to -550 across major sportsbooks. **Conor McGregor is the underdog at +350 or longer**, which is reported to be the longest underdog price of his entire UFC career. Those numbers imply Holloway has roughly an 80 percent chance to win. Lines will move as fight week approaches and money comes in, so check current odds before placing anything.
+
+![UFC 329 betting odds: Max Holloway favorite at -450, Conor McGregor underdog at +350, implied win probability roughly 78 to 22 percent](/blog/ufc-329-betting-odds.png)
 
 ## Why is McGregor such a big underdog?
 

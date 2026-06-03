@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1200" height="630" fill="#181818"/>
+
+  <text x="60" y="72" fill="#ffffff" font-size="44" font-weight="700">Tale of the Tape</text>
+  <text x="60" y="108" fill="#9ca3af" font-size="22">McGregor vs Holloway 2 &#183; UFC 329 &#183; July 11, 2026</text>
+  <image href="../good-fights-hand.png" x="1088" y="18" width="56" height="56"/>
+  <text x="1072" y="56" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
+
+  <!-- Column headers -->
+  <text x="310" y="182" fill="#F5C518" font-size="30" font-weight="700" text-anchor="middle">CONOR McGREGOR</text>
+  <text x="600" y="180" fill="#9ca3af" font-size="22" font-weight="700" text-anchor="middle">VS</text>
+  <text x="890" y="182" fill="#F5C518" font-size="30" font-weight="700" text-anchor="middle">MAX HOLLOWAY</text>
+
+  <!-- Row dividers -->
+  <g stroke="#2e2e2e" stroke-width="1">
+    <line x1="150" y1="210" x2="1050" y2="210"/>
+    <line x1="150" y1="272" x2="1050" y2="272"/>
+    <line x1="150" y1="334" x2="1050" y2="334"/>
+    <line x1="150" y1="396" x2="1050" y2="396"/>
+    <line x1="150" y1="458" x2="1050" y2="458"/>
+    <line x1="150" y1="520" x2="1050" y2="520"/>
+    <line x1="150" y1="582" x2="1050" y2="582"/>
+  </g>
+  <line x1="600" y1="210" x2="600" y2="582" stroke="#2e2e2e" stroke-width="1"/>
+
+  <!-- Center labels -->
+  <g fill="#9ca3af" font-size="17" font-weight="700" text-anchor="middle" letter-spacing="1.5">
+    <text x="600" y="247">RECORD</text>
+    <text x="600" y="309">AGE</text>
+    <text x="600" y="371">HEIGHT</text>
+    <text x="600" y="433">REACH</text>
+    <text x="600" y="495">STANCE</text>
+    <text x="600" y="557">CALLING CARD</text>
+  </g>
+
+  <!-- McGregor values -->
+  <g fill="#ffffff" font-size="30" text-anchor="middle">
+    <text x="310" y="249">22-6</text>
+    <text x="310" y="311">37</text>
+    <text x="310" y="373">5'9"</text>
+    <text x="310" y="435">74"</text>
+    <text x="310" y="497">Southpaw</text>
+    <text x="310" y="559">Left hand</text>
+  </g>
+
+  <!-- Holloway values -->
+  <g fill="#ffffff" font-size="30" text-anchor="middle">
+    <text x="890" y="249">27-9</text>
+    <text x="890" y="311">34</text>
+    <text x="890" y="373">5'11"</text>
+    <text x="890" y="435">69"</text>
+    <text x="890" y="497">Orthodox</text>
+    <text x="890" y="559">Volume</text>
+  </g>
+
+  <text x="60" y="612" fill="#6b7280" font-size="17">Records per UFC.com. Welterweight, non-title.</text>
+  <text x="1140" y="612" fill="#9ca3af" font-size="18" text-anchor="end">goodfights.app</text>
+</svg>

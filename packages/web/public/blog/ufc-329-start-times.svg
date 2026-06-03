@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="1200" height="630" fill="#181818"/>
+
+  <text x="60" y="72" fill="#ffffff" font-size="44" font-weight="700">What Time Does UFC 329 Start?</text>
+  <text x="60" y="108" fill="#9ca3af" font-size="22">All times Eastern &#183; Saturday, July 11, 2026</text>
+  <image href="../good-fights-hand.png" x="1088" y="18" width="56" height="56"/>
+  <text x="1072" y="56" fill="#F5C518" font-size="24" font-weight="700" text-anchor="end">GOOD FIGHTS</text>
+
+  <!-- Timeline -->
+  <line x1="200" y1="350" x2="1040" y2="350" stroke="#2e2e2e" stroke-width="3"/>
+
+  <!-- Node 1: Early prelims -->
+  <text x="200" y="300" fill="#F5C518" font-size="34" font-weight="700" text-anchor="middle">5:00 PM</text>
+  <circle cx="200" cy="350" r="11" fill="#F5C518"/>
+  <text x="200" y="400" fill="#9ca3af" font-size="20" font-weight="700" text-anchor="middle">Early prelims</text>
+
+  <!-- Node 2: Prelims -->
+  <text x="480" y="300" fill="#F5C518" font-size="34" font-weight="700" text-anchor="middle">7:00 PM</text>
+  <circle cx="480" cy="350" r="11" fill="#F5C518"/>
+  <text x="480" y="400" fill="#9ca3af" font-size="20" font-weight="700" text-anchor="middle">Prelims</text>
+
+  <!-- Node 3: Main card -->
+  <text x="760" y="300" fill="#F5C518" font-size="34" font-weight="700" text-anchor="middle">9:00 PM</text>
+  <circle cx="760" cy="350" r="11" fill="#F5C518"/>
+  <text x="760" y="400" fill="#9ca3af" font-size="20" font-weight="700" text-anchor="middle">Main card</text>
+
+  <!-- Node 4: Main event -->
+  <text x="1040" y="298" fill="#ffffff" font-size="34" font-weight="700" text-anchor="middle">~11:30 PM</text>
+  <circle cx="1040" cy="350" r="15" fill="#ef4444"/>
+  <text x="1040" y="402" fill="#ffffff" font-size="20" font-weight="700" text-anchor="middle">Main event</text>
+
+  <text x="60" y="500" fill="#9ca3af" font-size="21">The McGregor vs Holloway walkouts are the last of the night. As a rule of thumb,</text>
+  <text x="60" y="528" fill="#9ca3af" font-size="21">headliners enter two to three hours after the main card begins, so plan for a late one.</text>
+  <text x="60" y="600" fill="#6b7280" font-size="16">Segment start times are expected; exact walkout time shifts with how the undercard plays out.</text>
+  <text x="1140" y="600" fill="#9ca3af" font-size="18" text-anchor="end">goodfights.app</text>
+</svg>
