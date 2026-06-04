@@ -79,9 +79,14 @@ function topFights(event: any): any[] {
 }
 
 export function WeekendEventsSection() {
+  // Upcoming events come back soonest-first, so this weekend's cards are always
+  // among the first handful. Keep this list small: includeFights makes the
+  // backend aggregate hype for every fight on every event returned, so a big
+  // limit is what made this above-the-fold band the slowest to load. 16 safely
+  // covers a full week of events (incl. the Monday-spans-next-week window).
   const { data } = useQuery({
     queryKey: ['home', 'weekend-events'],
-    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 30 }),
+    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 16 }),
     staleTime: 5 * 60 * 1000,
   });
 
