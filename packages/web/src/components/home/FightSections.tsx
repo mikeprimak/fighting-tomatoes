@@ -77,7 +77,7 @@ export function ClassicGoodFightsSection() {
 
   return (
     <section className="mb-8">
-      <SectionHeading title="Classic Good Fights" icon={History} />
+      <SectionHeading title="Classic Good Fights" icon={History} href="/fights/top?period=all" />
       <FightCardList>
         {fights.map((fight: any) => (
           <CompletedFightCard key={fight.id} fight={fight} showEvent />
