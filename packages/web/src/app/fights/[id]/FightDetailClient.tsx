@@ -8,7 +8,7 @@ import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAuth } from '@/lib/auth';
-import { Flame, Star, MessageSquare, Loader2 } from 'lucide-react';
+import { Flame, Star, MessageSquare, Loader2, BookOpen, Target } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
@@ -189,6 +189,45 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
           </div>
         </div>
       )}
+
+      {/* The Story (upcoming, AI enrichment) */}
+      {isUpcoming && fight.aiConfidence != null && fight.aiConfidence >= 0.5 && fight.aiPreviewShort && (
+        <div className="mb-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <BookOpen size={16} className="text-primary" />
+            The Story
+          </h3>
+          <div className="rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-text-secondary">
+            {fight.aiPreviewShort}
+          </div>
+        </div>
+      )}
+
+      {/* The Stakes (upcoming, AI enrichment) */}
+      {isUpcoming && (() => {
+        if (fight.aiConfidence == null || fight.aiConfidence < 0.5) return null;
+        const stakesRaw = fight.aiTags && typeof fight.aiTags === 'object' ? (fight.aiTags as any).stakes : null;
+        const stakes: string[] = Array.isArray(stakesRaw)
+          ? stakesRaw.filter((s: unknown): s is string => typeof s === 'string' && s.trim().length > 0)
+          : [];
+        if (stakes.length === 0) return null;
+        return (
+          <div className="mb-6">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <Target size={16} className="text-primary" />
+              The Stakes
+            </h3>
+            <ul className="space-y-2 rounded-lg border border-border bg-card p-4">
+              {stakes.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
+                  <span className="text-primary">•</span>
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
 
       {/* Hype section (upcoming) */}
       {isUpcoming && stats && (

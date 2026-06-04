@@ -629,18 +629,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             </View>
           </View>
 
-          {/* AI preview one-liner — full text under the fighter row */}
-          {(() => {
-            const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
-            const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
-            if (!aiPreviewShort || aiConfidence == null || aiConfidence < 0.5) return null;
-            return (
-              <Text style={[styles.aiPreviewShort, { color: colors.textSecondary }]}>
-                {aiPreviewShort}
-              </Text>
-            );
-          })()}
-
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
             <View style={styles.flameWheelWindow}>
@@ -897,35 +885,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: 1,
-  },
-  aiPreviewShort: {
-    fontSize: 13,
-    fontStyle: 'italic',
-    lineHeight: 17,
-    textAlign: 'center',
-    paddingHorizontal: 24,
-    marginTop: 12,
-  },
-  stakesContainer: {
-    alignSelf: 'stretch',
-    marginTop: 10,
-    paddingHorizontal: 28,
-    gap: 4,
-  },
-  stakesRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-  },
-  stakesBullet: {
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '600',
-  },
-  stakesText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 16,
   },
   flameWheelContainer: {
     alignItems: 'center',
