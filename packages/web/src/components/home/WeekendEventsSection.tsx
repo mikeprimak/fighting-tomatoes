@@ -67,7 +67,7 @@ export function WeekendEventsSection() {
               href={`/events/${event.id}`}
               className="group flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/40"
             >
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md bg-background-secondary">
+              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-background-secondary">
                 {event.bannerImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
