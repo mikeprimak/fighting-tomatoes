@@ -1230,7 +1230,7 @@ export default function UpcomingFightDetailScreen({
         </Text>
       </TouchableOpacity>
 
-      {/* AI preview one-liner + stakes bullets */}
+      {/* The Story + The Stakes (AI enrichment) */}
       {(() => {
         const aiPreviewShort = (fight as any).aiPreviewShort as string | null | undefined;
         const aiConfidence = (fight as any).aiConfidence as number | null | undefined;
@@ -1241,21 +1241,42 @@ export default function UpcomingFightDetailScreen({
           ? stakesRaw.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
           : [];
         if (!aiPreviewShort && stakes.length === 0) return null;
+        const sectionTitle = {
+          fontSize: 12,
+          fontWeight: '700' as const,
+          letterSpacing: 0.5,
+          textTransform: 'uppercase' as const,
+          color: colors.textSecondary,
+          marginBottom: 8,
+        };
+        const card = {
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: 12,
+          backgroundColor: colors.card,
+          padding: 14,
+        };
         return (
-          <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+          <View style={{ paddingHorizontal: 16, marginBottom: 16, gap: 12 }}>
             {aiPreviewShort ? (
-              <Text style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 18, color: colors.textSecondary, textAlign: 'center' }}>
-                {aiPreviewShort}
-              </Text>
+              <View style={card}>
+                <Text style={sectionTitle}>The Story</Text>
+                <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text }}>
+                  {aiPreviewShort}
+                </Text>
+              </View>
             ) : null}
             {stakes.length > 0 ? (
-              <View style={{ marginTop: aiPreviewShort ? 12 : 0, gap: 6 }}>
-                {stakes.map((s, i) => (
-                  <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                    <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
-                    <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{s}</Text>
-                  </View>
-                ))}
+              <View style={card}>
+                <Text style={sectionTitle}>The Stakes</Text>
+                <View style={{ gap: 6 }}>
+                  {stakes.map((s, i) => (
+                    <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                      <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
+                      <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             ) : null}
           </View>
