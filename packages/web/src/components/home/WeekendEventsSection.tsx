@@ -57,6 +57,12 @@ function fighterName(f: any): string {
   return f?.lastName || f?.firstName || 'TBD';
 }
 
+/** Promotion label for display — some are stored with underscores (e.g.
+ *  "TOP_RANK"); show them with spaces. */
+function promotionLabel(promotion: string | null | undefined): string {
+  return (promotion ?? '').replace(/_/g, ' ');
+}
+
 /** The card's most-hyped bouts: hype > 7 with at least 3 user hype ratings,
  *  ordered by hype desc, max 3. */
 function topFights(event: any): any[] {
@@ -106,14 +112,14 @@ export function WeekendEventsSection() {
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-wide text-text-secondary">
-                    {event.promotion ?? 'TBD'}
+                    {promotionLabel(event.promotion) || 'TBD'}
                   </div>
                 )}
               </div>
               <div className="flex min-w-0 flex-1 items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
                   <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                    {event.promotion ?? 'Event'}
+                    {promotionLabel(event.promotion) || 'Event'}
                     <span className="font-normal normal-case tracking-normal text-text-secondary">
                       · {formatDay(event.mainStartTime ?? event.date)}
                       {firstStart ? ` · ${formatTime(firstStart)}` : ''}
