@@ -71,52 +71,54 @@ export function WeekendEventsSection() {
   return (
     <section className="mb-8">
       <SectionHeading title="This Weekend" icon={CalendarDays} href="/events/upcoming" />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-3">
         {events.map((event: any) => {
           const hyped = topFights(event);
           return (
             <Link
               key={event.id}
               href={`/events/${event.id}`}
-              className="group flex items-center gap-3 overflow-hidden rounded-lg border border-border bg-card p-3 transition-colors hover:border-primary/40"
+              className="group flex items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
             >
-              <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-md bg-background-secondary">
+              <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
                 {event.bannerImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={event.bannerImage}
                     alt=""
                     aria-hidden="true"
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                    className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] font-bold uppercase tracking-wide text-text-secondary">
+                  <div className="absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-wide text-text-secondary">
                     {event.promotion ?? 'TBD'}
                   </div>
                 )}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
-                  {event.promotion ?? 'Event'}
-                  <span className="font-normal normal-case tracking-normal text-text-secondary">
-                    · {formatDay(event.mainStartTime ?? event.date)}
-                  </span>
-                </div>
-                <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
-                  {event.name}
-                </h3>
-                {hyped.length > 0 && (
-                  <div className="mt-1 text-[11px] leading-snug text-text-secondary">
-                    <span className="font-semibold text-foreground">Top Fights:</span>
-                    {hyped.map((f: any) => (
-                      <span key={f.id} className="block truncate">
-                        {fighterName(f.fighter1)} vs {fighterName(f.fighter2)}
-                      </span>
-                    ))}
+              <div className="flex min-w-0 flex-1 items-center gap-3 p-3">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                    {event.promotion ?? 'Event'}
+                    <span className="font-normal normal-case tracking-normal text-text-secondary">
+                      · {formatDay(event.mainStartTime ?? event.date)}
+                    </span>
                   </div>
-                )}
+                  <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
+                    {event.name}
+                  </h3>
+                  {hyped.length > 0 && (
+                    <div className="mt-1 text-[11px] leading-snug text-text-secondary">
+                      <span className="font-semibold text-foreground">Top Fights:</span>
+                      {hyped.map((f: any) => (
+                        <span key={f.id} className="block truncate">
+                          {fighterName(f.fighter1)} vs {fighterName(f.fighter2)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <ChevronRight size={16} className="shrink-0 text-text-secondary group-hover:text-primary" />
               </div>
-              <ChevronRight size={16} className="shrink-0 text-text-secondary group-hover:text-primary" />
             </Link>
           );
         })}
