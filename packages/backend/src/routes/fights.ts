@@ -342,6 +342,23 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hypeByFight.set(pred.fightId, existing);
       }
 
+      // Batch the community winner-pick split per fight (one groupBy, no N+1).
+      const winnerCounts = await fastify.prisma.fightPrediction.groupBy({
+        by: ['fightId', 'predictedWinner'],
+        where: {
+          fightId: { in: fightIds },
+          predictedWinner: { not: null },
+        },
+        _count: { _all: true },
+      });
+      const winnerByFight = new Map<string, Map<string, number>>();
+      for (const row of winnerCounts) {
+        if (!row.predictedWinner) continue;
+        const inner = winnerByFight.get(row.fightId) || new Map<string, number>();
+        inner.set(row.predictedWinner, row._count._all);
+        winnerByFight.set(row.fightId, inner);
+      }
+
       // Load notify-allowed promotions for notificationsAllowed field
       const notifyPromotions = await getNotifyPromotions(fastify.prisma);
 
@@ -370,6 +387,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
           transformed.averageHype = 0;
         }
         transformed.hypeCount = hypeData?.count || 0;
+
+        // Community winner-pick split (counts; card derives the % bar)
+        const winnerMap = winnerByFight.get(fight.id);
+        transformed.winnerPredictionFighter1 = winnerMap?.get(fight.fighter1Id) || 0;
+        transformed.winnerPredictionFighter2 = winnerMap?.get(fight.fighter2Id) || 0;
 
         // Add comment count and review count
         transformed.commentCount = fight._count?.preFightComments || 0;

@@ -303,21 +303,25 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               where: {
                 OR: [
                   { userId },
-                  { predictedRating: { not: null } }
+                  { predictedRating: { not: null } },
+                  { predictedWinner: { not: null } },
                 ]
               },
               select: {
                 predictedRating: true,
+                predictedWinner: true,
                 userId: true,
               },
             } : {
               where: {
-                predictedRating: {
-                  not: null,
-                },
+                OR: [
+                  { predictedRating: { not: null } },
+                  { predictedWinner: { not: null } },
+                ],
               },
               select: {
                 predictedRating: true,
+                predictedWinner: true,
               },
             },
             ...(userId ? {
@@ -362,6 +366,11 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               ? fight.predictions.find((p: any) => p.userId === userId)
               : null;
             const userHypePrediction = userPrediction?.predictedRating || null;
+            const userPredictedWinner = userPrediction?.predictedWinner || null;
+
+            // Community winner-pick split (counts; card derives the % bar)
+            const winnerPredictionFighter1 = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter1Id).length;
+            const winnerPredictionFighter2 = fight.predictions.filter((p: any) => p.predictedWinner === fight.fighter2Id).length;
 
             const transformed: any = {
               ...fight,
@@ -370,6 +379,9 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               _count: undefined,
               averageHype,
               userHypePrediction,
+              userPredictedWinner,
+              winnerPredictionFighter1,
+              winnerPredictionFighter2,
               hypeCount: allHypes.length,
               commentCount: fight._count?.preFightComments || 0,
               ...(userId && fight.preFightComments ? { userCommentCount: fight.preFightComments.length } : {}),
