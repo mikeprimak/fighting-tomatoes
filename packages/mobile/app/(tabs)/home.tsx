@@ -66,6 +66,47 @@ const relAgoPhrase = (dateStr: string): string => {
   return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
 };
 
+// Promotion label for the per-event group heading — strip underscores
+// (e.g. "TOP_RANK" -> "TOP RANK"). Rendered uppercase by the heading style.
+const promotionLabel = (promotion: string | null | undefined): string =>
+  (promotion ?? '').replace(/_/g, ' ');
+
+// "today" / "tomorrow" / "in 9 days" / "in 2 weeks" — relative time to an event
+// by calendar day (matches the web "Hyped Upcoming Fights" group headings, which
+// show days up to 14 before switching to weeks).
+const eventRelativePhrase = (iso: string | null | undefined): string => {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const now = new Date();
+  const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const startEvent = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const days = Math.round((startEvent.getTime() - startToday.getTime()) / 86_400_000);
+  if (days <= 0) return 'today';
+  if (days === 1) return 'tomorrow';
+  if (days < 14) return `in ${days} days`;
+  const weeks = Math.round(days / 7);
+  return `in ${weeks} week${weeks === 1 ? '' : 's'}`;
+};
+
+// Group a flat, hype-sorted fight list by event, preserving first-appearance
+// order so the soonest/most-hyped event leads (mirrors the web grouping).
+const groupByEvent = (fights: any[]): { event: any; fights: any[] }[] => {
+  const groups: { event: any; fights: any[] }[] = [];
+  const byId = new Map<string, { event: any; fights: any[] }>();
+  for (const f of fights) {
+    const id = f.event?.id ?? 'unknown';
+    let g = byId.get(id);
+    if (!g) {
+      g = { event: f.event, fights: [] };
+      byId.set(id, g);
+      groups.push(g);
+    }
+    g.fights.push(f);
+  }
+  return groups;
+};
+
 // Whole-day epoch index — bump this and the rotation advances by one window.
 const epochDay = () => Math.floor(Date.now() / 86_400_000);
 
@@ -762,15 +803,27 @@ export default function HomeScreen() {
         {isUpcomingLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : upcomingFights.length > 0 ? (
-          upcomingFights.map((fight: any, index: number) => (
-            <UpcomingFightCard
-              key={fight.id}
-              fight={fight}
-              onPress={() => setModalFight(fight)}
-              showEvent={true}
-              index={index}
-            />
-          ))
+          (() => {
+            // Running index across groups so the alternating card backgrounds
+            // stay continuous instead of resetting per event.
+            let flatIndex = 0;
+            return groupByEvent(upcomingFights).map((g, gi) => (
+              <View key={g.event?.id ?? gi} style={{ marginBottom: 8 }}>
+                <Text style={styles.fightGroupHeading}>
+                  {`${promotionLabel(g.event?.promotion) || 'Event'} ${eventRelativePhrase(g.event?.mainStartTime ?? g.event?.date)}`.trim()}
+                </Text>
+                {g.fights.map((fight: any) => (
+                  <UpcomingFightCard
+                    key={fight.id}
+                    fight={fight}
+                    onPress={() => setModalFight(fight)}
+                    showEvent={false}
+                    index={flatIndex++}
+                  />
+                ))}
+              </View>
+            ));
+          })()
         ) : (
           <Empty styles={styles} text="No upcoming fights found" />
         )}
@@ -1027,6 +1080,16 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 20,
       fontWeight: 'bold',
       color: colors.text,
+    },
+    fightGroupHeading: {
+      fontSize: 12,
+      fontWeight: '600',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: colors.textSecondary,
+      marginHorizontal: 16,
+      marginBottom: 6,
+      marginTop: 4,
     },
     seeAllButton: {
       flexDirection: 'row',
