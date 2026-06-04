@@ -24,7 +24,6 @@ import { apiService, type FanDNACommittedLine } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { getFighterImage } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
-import FollowFighterButton from './FollowFighterButton';
 import HypeRevealModal from './HypeRevealModal';
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
@@ -75,6 +74,11 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   const queryClient = useQueryClient();
 
   const [selectedHype, setSelectedHype] = useState<number | null>(null);
+  // Winner pick — the falsifiable half of the pre-fight take. Holds the picked
+  // fighter's id (fighter1Id / fighter2Id) or null. Co-equal peer to hype; both
+  // persist via the same /prediction upsert, so every save sends BOTH values to
+  // avoid the upsert nulling the other (backend writes `field || null`).
+  const [selectedWinner, setSelectedWinner] = useState<string | null>(null);
   const [fighter1ImgError, setFighter1ImgError] = useState(false);
   const [fighter2ImgError, setFighter2ImgError] = useState(false);
   const [localNotified, setLocalNotified] = useState(false);
@@ -163,6 +167,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     if (fight && visible) {
       const hype = fight.userHypePrediction ?? null;
       setSelectedHype(hype);
+      setSelectedWinner(fight.userPredictedWinner ?? null);
       setFighter1ImgError(false);
       setFighter2ImgError(false);
       const hasNotif = fight.notificationReasons?.reasons?.some(
@@ -290,19 +295,22 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     queryClient.setQueriesData({ type: 'active' }, (old: any) => (old ? patch(old) : old));
   }, [fight, queryClient]);
 
-  // Save hype prediction
+  // Save the pre-fight take (hype + winner pick). Both inputs persist through
+  // the same upsert, so every call sends the FULL current state of both — the
+  // backend writes `predictedRating: rating || null` / `predictedWinner: winner
+  // || null`, so omitting one would wipe it. Winner method is preserved if set.
   const hypeMutation = useMutation({
-    mutationFn: (args: { hypeLevel: number | null; dnaCommittedLine?: FanDNACommittedLine }) => {
+    mutationFn: (args: { hypeLevel: number | null; winner: string | null; dnaCommittedLine?: FanDNACommittedLine }) => {
       return apiService.createFightPrediction(fight!.id, {
         predictedRating: args.hypeLevel ?? undefined,
-        predictedWinner: fight!.userPredictedWinner || undefined,
+        predictedWinner: args.winner ?? undefined,
         predictedMethod: (fight!.userPredictedMethod as any) || undefined,
         dnaCommittedLine: args.dnaCommittedLine,
       });
     },
     onMutate: async (args) => {
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
-      updateEventsCache({ userHypePrediction: args.hypeLevel });
+      updateEventsCache({ userHypePrediction: args.hypeLevel, userPredictedWinner: args.winner });
     },
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
@@ -493,13 +501,26 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       // Fire-and-forget — handleDone uses prefetched stats + a local delta to
       // render the reveal instantly, so we don't await the mutation here.
       // Pass the pre-peeked line so the backend records the impression for
-      // the exact line we showed.
+      // the exact line we showed. Send the current winner so it isn't wiped.
       hypeMutation.mutate({
         hypeLevel: newHype,
+        winner: selectedWinner,
         dnaCommittedLine: preLine ?? undefined,
       });
     }
-  }, [isAuthenticated, selectedHype, animateToNumber, hypeMutation, peekedDna]);
+  }, [isAuthenticated, selectedHype, selectedWinner, animateToNumber, hypeMutation, peekedDna]);
+
+  const handleWinnerSelection = useCallback((fighterId: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    // Toggle: tapping the current pick clears it (a pick is never forced).
+    const newWinner = selectedWinner === fighterId ? null : fighterId;
+    setSelectedWinner(newWinner);
+    if (isAuthenticated) {
+      // Persist the take. Send the current hype so the upsert keeps it. No
+      // reveal beat for winner this sprint — the hype reveal stays the payoff.
+      hypeMutation.mutate({ hypeLevel: selectedHype, winner: newWinner });
+    }
+  }, [isAuthenticated, selectedHype, selectedWinner, hypeMutation]);
 
   const handleNotifyPress = useCallback(() => {
     if (!isAuthenticated || !fight) return;
@@ -585,49 +606,52 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               scrollEnabled={keyboardVisible}
               contentContainerStyle={styles.scrollContent}
             >
-            {/* Title */}
-          <Text style={[styles.mainTitle, { color: colors.text }]}>
-            How Hyped Are You?
+            {/* Title — the matchup */}
+          <Text style={[styles.matchupTitle, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+            {fight.fighter1.lastName} vs {fight.fighter2.lastName}
           </Text>
 
-          {/* Compact fighter row */}
-          <View style={styles.fightersRow}>
-            <View style={styles.fighterImageWrap}>
-              <Image
-                source={fighter1Img}
-                style={styles.fighterImage}
-                onError={() => setFighter1ImgError(true)}
-              />
-              <FollowFighterButton
-                fighterId={fight.fighter1.id}
-                isFollowing={fight.isFollowingFighter1 ?? false}
-                style={styles.followBadge}
-                onFollowed={() => { if (!localNotified) handleNotifyPress(); }}
-              />
-            </View>
-            <View style={styles.fighterNamesBlock}>
-              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                {fight.fighter1.lastName}
-              </Text>
-              <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
-              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                {fight.fighter2.lastName}
-              </Text>
-            </View>
-            <View style={styles.fighterImageWrap}>
-              <Image
-                source={fighter2Img}
-                style={styles.fighterImage}
-                onError={() => setFighter2ImgError(true)}
-              />
-              <FollowFighterButton
-                fighterId={fight.fighter2.id}
-                isFollowing={fight.isFollowingFighter2 ?? false}
-                style={styles.followBadge}
-                onFollowed={() => { if (!localNotified) handleNotifyPress(); }}
-              />
-            </View>
+          {/* Winner pick — co-equal peer to hype. Tap a headshot to crown it. */}
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>My Winner Pick</Text>
+          <View style={styles.winnerRow}>
+            {([
+              { fighter: fight.fighter1, img: fighter1Img, onErr: () => setFighter1ImgError(true) },
+              { fighter: fight.fighter2, img: fighter2Img, onErr: () => setFighter2ImgError(true) },
+            ] as const).map(({ fighter, img, onErr }) => {
+              const isPicked = selectedWinner === fighter.id;
+              return (
+                <TouchableOpacity
+                  key={fighter.id}
+                  style={styles.winnerOption}
+                  activeOpacity={0.8}
+                  onPress={() => handleWinnerSelection(fighter.id)}
+                >
+                  <View
+                    style={[
+                      styles.winnerImageWrap,
+                      isPicked && { borderColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.6, elevation: 6 },
+                    ]}
+                  >
+                    <Image source={img} style={styles.winnerImage} onError={onErr} />
+                    {isPicked && (
+                      <View style={[styles.pickBadge, { backgroundColor: colors.primary }]}>
+                        <FontAwesome6 name="check" size={12} color="#000" />
+                      </View>
+                    )}
+                  </View>
+                  <Text
+                    style={[styles.winnerName, { color: isPicked ? colors.primary : colors.text }]}
+                    numberOfLines={1}
+                  >
+                    {fighter.lastName}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
+
+          {/* Hype — co-equal peer to the winner pick */}
+          <Text style={[styles.sectionLabel, styles.hypeLabel, { color: colors.text }]}>How Hyped Are You?</Text>
 
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
@@ -706,51 +730,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             })}
           </View>
 
-          {/* Comment input */}
-          {isAuthenticated && (
-            <View style={styles.commentSection}>
-              <View style={[
-                styles.commentInputContainer,
-                {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                }
-              ]}>
-                <TextInput
-                  style={[
-                    styles.commentInput,
-                    { color: colors.text }
-                  ]}
-                  placeholder={
-                    selectedHype && selectedHype > 0
-                      ? `Why are you ${selectedHype}/10 hyped?`
-                      : "Why are you hyped?"
-                  }
-                  placeholderTextColor={colors.textSecondary}
-                  multiline
-                  numberOfLines={3}
-                  maxLength={500}
-                  value={preFightComment}
-                  onChangeText={handleCommentChange}
-                />
-              </View>
-              <TouchableOpacity
-                style={styles.seeCommentsLink}
-                onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}` as any); }}
-              >
-                <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
-                  {(() => {
-                    const totalComments = (preFightCommentsData?.comments?.reduce(
-                      (acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0
-                    ) || 0);
-                    return totalComments > 0
-                      ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
-                      : 'See Comments >';
-                  })()}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Comment input removed for now (display only — wiring retained above
+              so it can be restored). */}
 
           {/* Bottom row: notify bell + done button */}
           <View style={styles.bottomRow}>
@@ -849,6 +830,66 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     opacity: 0.7,
     marginBottom: 16,
+  },
+  matchupTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    textAlign: 'center',
+    marginBottom: 18,
+    paddingHorizontal: 8,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    opacity: 0.7,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  hypeLabel: {
+    marginTop: 24,
+  },
+  winnerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    gap: 40,
+  },
+  winnerOption: {
+    alignItems: 'center',
+    gap: 8,
+    width: 96,
+  },
+  winnerImageWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    borderColor: 'transparent',
+    position: 'relative',
+    shadowOffset: { width: 0, height: 0 },
+    shadowRadius: 8,
+  },
+  winnerImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 40,
+  },
+  pickBadge: {
+    position: 'absolute',
+    bottom: -2,
+    right: -2,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  winnerName: {
+    fontSize: 15,
+    fontWeight: '700',
+    textAlign: 'center',
   },
   fightersRow: {
     flexDirection: 'row',
