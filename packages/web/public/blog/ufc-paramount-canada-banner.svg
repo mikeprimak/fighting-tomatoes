@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c1c1c"/>
+      <stop offset="1" stop-color="#0f0f0f"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Top bar: brand + Canadian flag -->
+  <text x="60" y="64" fill="#F5C518" font-size="26" font-weight="700" letter-spacing="1">GOOD FIGHTS</text>
+  <svg x="1004" y="36" width="136" height="68" viewBox="0 0 9600 4800" preserveAspectRatio="xMidYMid meet">
+    <path fill="#d52b1e" d="m0 0h2400l99 99h4602l99-99h2400v4800h-2400l-99-99h-4602l-99 99H0z"/>
+    <path fill="#ffffff" d="m2400 0h4800v4800h-4800zm2490 4430-45-863a95 95 0 0 1 111-98l859 151-116-320a65 65 0 0 1 20-73l941-762-212-99a65 65 0 0 1-34-79l186-572-542 115a65 65 0 0 1-73-38l-105-247-423 454a65 65 0 0 1-111-57l204-1052-327 189a65 65 0 0 1-91-27l-332-652-332 652a65 65 0 0 1-91 27l-327-189 204 1052a65 65 0 0 1-111 57l-423-454-105 247a65 65 0 0 1-73 38l-542-115 186 572a65 65 0 0 1-34 79l-212 99 941 762a65 65 0 0 1 20 73l-116 320 859-151a95 95 0 0 1 111 98l-45 863z"/>
+  </svg>
+
+  <!-- Eyebrow -->
+  <text x="60" y="178" fill="#9ca3af" font-size="22" font-weight="700" letter-spacing="2">PARAMOUNT+ DEAL &#183; BEGINNING 2027</text>
+
+  <!-- Headline -->
+  <text x="58" y="262" fill="#ffffff" font-size="76" font-weight="800">UFC Pay-Per-View</text>
+  <text x="58" y="344" fill="#ffffff" font-size="76" font-weight="800">Is Going <tspan fill="#F5C518">Free</tspan> in Canada</text>
+
+  <!-- Subhead -->
+  <text x="60" y="404" fill="#cbd5e1" font-size="28">Every numbered main card, live on Paramount+, at no extra cost to subscribers.</text>
+
+  <!-- Price contrast -->
+  <g>
+    <text x="60" y="520" fill="#6b7280" font-size="26" font-weight="700">OLD PPV</text>
+    <text x="60" y="566" fill="#9ca3af" font-size="52" font-weight="800" text-decoration="line-through">$69.99</text>
+    <line x1="60" y1="549" x2="262" y2="549" stroke="#ef4444" stroke-width="5"/>
+
+    <text x="430" y="544" fill="#9ca3af" font-size="44">&#8594;</text>
+
+    <text x="560" y="520" fill="#6b7280" font-size="26" font-weight="700">PARAMOUNT+ FROM</text>
+    <text x="560" y="566" fill="#F5C518" font-size="52" font-weight="800">$7.99<tspan fill="#9ca3af" font-size="28" font-weight="400"> / month</tspan></text>
+  </g>
+
+  <!-- Footer -->
+  <text x="1140" y="602" fill="#9ca3af" font-size="20" text-anchor="end">goodfights.app</text>
+</svg>
