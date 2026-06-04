@@ -612,7 +612,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           </Text>
 
           {/* Winner pick — co-equal peer to hype. Tap a headshot to crown it. */}
-          <Text style={[styles.sectionLabel, { color: colors.text }]}>My Winner Pick</Text>
+          <Text style={[styles.sectionLabel, { color: colors.text }]}>Your Winner Pick</Text>
           <View style={styles.winnerRow}>
             {([
               { fighter: fight.fighter1, img: fighter1Img, onErr: () => setFighter1ImgError(true) },
@@ -629,7 +629,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                   <View
                     style={[
                       styles.winnerImageWrap,
-                      isPicked && { borderColor: colors.primary, shadowColor: colors.primary, shadowOpacity: 0.6, elevation: 6 },
+                      isPicked && { borderColor: colors.primary },
                     ]}
                   >
                     <Image source={img} style={styles.winnerImage} onError={onErr} />
@@ -642,6 +642,8 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                   <Text
                     style={[styles.winnerName, { color: isPicked ? colors.primary : colors.text }]}
                     numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.7}
                   >
                     {fighter.lastName}
                   </Text>
@@ -730,8 +732,23 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             })}
           </View>
 
-          {/* Comment input removed for now (display only — wiring retained above
-              so it can be restored). */}
+          {/* Comment input box removed for now (display only — wiring retained
+              above so it can be restored). The See Comments link stays. */}
+          <TouchableOpacity
+            style={styles.seeCommentsLink}
+            onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}` as any); }}
+          >
+            <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
+              {(() => {
+                const totalComments = (preFightCommentsData?.comments?.reduce(
+                  (acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0
+                ) || 0);
+                return totalComments > 0
+                  ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
+                  : 'See Comments >';
+              })()}
+            </Text>
+          </TouchableOpacity>
 
           {/* Bottom row: notify bell + done button */}
           <View style={styles.bottomRow}>
@@ -854,12 +871,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    gap: 40,
+    gap: 28,
   },
   winnerOption: {
     alignItems: 'center',
     gap: 8,
-    width: 96,
+    width: 120,
   },
   winnerImageWrap: {
     width: 80,
@@ -868,8 +885,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'transparent',
     position: 'relative',
-    shadowOffset: { width: 0, height: 0 },
-    shadowRadius: 8,
   },
   winnerImage: {
     width: '100%',
