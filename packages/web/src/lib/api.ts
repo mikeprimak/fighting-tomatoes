@@ -591,6 +591,42 @@ export async function getHighlightedFighter() {
   return makeRequest<{ data: HighlightedFighter | null }>('/community/highlighted-fighter');
 }
 
+export async function getHotFighters() {
+  return makeRequest<{
+    data: {
+      recent: Array<{
+        fighter: any;
+        avgRating: number;
+        fightCount: number;
+        lastFightDate?: string;
+        opponentName?: string;
+        rating?: number;
+      }>;
+      upcoming: Array<{
+        fighter: any;
+        avgRating: number;
+        fightCount: number;
+        nextFightDate?: string;
+        opponentName?: string;
+        hype?: number;
+      }>;
+    };
+  }>('/community/hot-fighters');
+}
+
+export async function getRecentlyBookedFighters() {
+  return makeRequest<{
+    data: Array<{
+      fighter: any;
+      ratingCount: number;
+      bookedAt: string;
+      event: { id: string; name: string; date: string };
+      nextFightDate: string;
+      opponentName: string;
+    }>;
+  }>('/community/recently-booked-fighters');
+}
+
 export async function getTopPreFightComments() {
   return makeRequest<{ data: any[] }>('/community/top-pre-fight-comments');
 }

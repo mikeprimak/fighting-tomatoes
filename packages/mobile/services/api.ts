@@ -1394,6 +1394,15 @@ class ApiService {
     return this.makeRequest('/community/hot-fighters');
   }
 
+  async getHighlightedFighter(): Promise<{
+    data: {
+      fighter: any;
+      topFight: any | null;
+    } | null;
+  }> {
+    return this.makeRequest('/community/highlighted-fighter');
+  }
+
   // Pre-fight comment methods
   async createPreFightComment(fightId: string, content: string): Promise<{
     comment: {
