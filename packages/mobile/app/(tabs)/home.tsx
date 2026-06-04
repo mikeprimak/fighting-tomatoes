@@ -3,18 +3,16 @@ import {
   View,
   Text,
   ScrollView,
-  FlatList,
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
   ActivityIndicator,
   Image,
   RefreshControl,
-  Linking,
   Animated,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
@@ -22,7 +20,7 @@ import { apiService, resolveBlogImageUrl } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
-import { normalizeEventName, getFighterImage, getFighterName } from '../../components/fight-cards/shared/utils';
+import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
@@ -505,22 +503,11 @@ export default function HomeScreen() {
     staleTime: 30 * 60 * 1000,
   });
 
-  // Aggregated combat-sports news (MMA Fighting, Bloody Elbow, UFC, Sherdog, …),
-  // refreshed daily by the news scraper. Shown as a vertical list at the bottom of
-  // Home; pages are lazy-loaded as the user scrolls toward the end.
-  const {
-    data: newsData,
-    isLoading: isNewsLoading,
-    fetchNextPage: fetchMoreNews,
-    hasNextPage: hasMoreNews,
-    isFetchingNextPage: isFetchingMoreNews,
-  } = useInfiniteQuery({
-    queryKey: ['news', 'home'],
-    queryFn: ({ pageParam = 1 }) => apiService.getNews({ page: pageParam, limit: 8 }),
-    getNextPageParam: (lastPage) =>
-      lastPage.pagination.page < lastPage.pagination.totalPages
-        ? lastPage.pagination.page + 1
-        : undefined,
+  // Daily-rotating AI-enriched fighter, shown big with bio + their top-rated
+  // fight (mirrors the web "Highlighted Fighter" home band).
+  const { data: highlightedFighterData } = useQuery({
+    queryKey: ['highlightedFighter'],
+    queryFn: () => apiService.getHighlightedFighter(),
     staleTime: 30 * 60 * 1000,
   });
 
@@ -581,7 +568,21 @@ export default function HomeScreen() {
   const comments = (topComments?.data || []).slice(0, 3);
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
-  const news = (newsData?.pages || []).flatMap((p: any) => p.articles || []);
+
+  // Highlighted fighter — portrait prefers the action shot, bio prefers the
+  // structured tldr, then falls back to the summary string.
+  const highlight = highlightedFighterData?.data || null;
+  const highlightFighter = highlight?.fighter || null;
+  const highlightTopFight = highlight?.topFight || null;
+  const highlightSummary = highlightFighter
+    ? highlightFighter.aiProfile?.tldr || highlightFighter.aiProfileSummary || ''
+    : '';
+  const highlightRecord = (() => {
+    if (!highlightFighter) return '';
+    const w = highlightFighter.wins ?? 0, l = highlightFighter.losses ?? 0, d = highlightFighter.draws ?? 0;
+    if (w + l + d === 0) return '';
+    return d > 0 ? `${w}-${l}-${d}` : `${w}-${l}`;
+  })();
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -625,91 +626,20 @@ export default function HomeScreen() {
     router.push(`/blog/${slug}` as any);
   };
 
-  // News articles are external links (MMA Fighting, UFC, etc.) — open in the
-  // device browser rather than navigating in-app.
-  const openNewsArticle = async (url: string) => {
-    try {
-      if (await Linking.canOpenURL(url)) await Linking.openURL(url);
-    } catch {
-      // no-op — a malformed/unsupported URL just does nothing
-    }
-  };
-
-  // Lazy-load the next page of news when the FlatList nears its end.
-  const loadMoreNews = React.useCallback(() => {
-    if (hasMoreNews && !isFetchingMoreNews) fetchMoreNews();
-  }, [hasMoreNews, isFetchingMoreNews, fetchMoreNews]);
-
   const styles = makeStyles(colors);
-
-  // News rows are the FlatList's virtualized items, so only the cards near the
-  // viewport stay mounted — that's what keeps scrolling smooth as pages append.
-  const renderNewsItem = React.useCallback(
-    ({ item }: { item: any }) => {
-      const imageUri =
-        item.imageUrl ||
-        (item.localImagePath ? `${apiService.baseURL}${item.localImagePath}` : null);
-      return (
-        <TouchableOpacity
-          style={styles.newsCard}
-          activeOpacity={0.85}
-          onPress={() => openNewsArticle(item.url)}
-        >
-          {imageUri ? (
-            <Image
-              source={{ uri: imageUri }}
-              style={styles.newsImage}
-              resizeMode="cover"
-              resizeMethod="resize"
-              fadeDuration={150}
-            />
-          ) : (
-            <View style={[styles.newsImage, styles.newsImagePlaceholder]}>
-              <FontAwesome6 name="newspaper" size={24} color={colors.textSecondary} />
-            </View>
-          )}
-          <View style={styles.newsBody}>
-            <Text style={styles.newsSource} numberOfLines={1}>
-              {item.source}
-            </Text>
-            <Text style={styles.newsHeadline} numberOfLines={3}>
-              {item.headline}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      );
-    },
-    [styles, colors],
-  );
 
   return (
     <View style={styles.container}>
     {/* Pinned search bar — shown when the header magnifying glass is toggled */}
     <SearchBar />
-    <FlatList
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
-      data={news}
-      keyExtractor={(item: any) => item.id}
-      renderItem={renderNewsItem}
-      onEndReached={loadMoreNews}
-      onEndReachedThreshold={0.6}
-      initialNumToRender={6}
-      maxToRenderPerBatch={6}
-      windowSize={9}
-      removeClippedSubviews
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
       }
-      ListFooterComponent={
-        isFetchingMoreNews ? (
-          <View style={styles.newsFooter}>
-            <ActivityIndicator size="small" color={colors.primary} />
-          </View>
-        ) : null
-      }
-      ListHeaderComponent={
+    >
         <View>
       {/* Editorial / Blog ---------------------------------------------------*/}
       <Section
@@ -853,6 +783,52 @@ export default function HomeScreen() {
           <Empty styles={styles} text="No recent fights found" />
         )}
       </Section>
+
+      {/* Highlighted Fighter — daily-rotating AI-enriched fighter ------------*/}
+      {highlightFighter && (
+        <Section colors={colors} styles={styles} title="Highlighted Fighter" icon="user-circle" iconLib="fa6">
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.highlightCard}
+            onPress={() => router.push(`/fighter/${highlightFighter.id}` as any)}
+          >
+            <Image
+              source={getFighterImage({
+                ...highlightFighter,
+                profileImage: highlightFighter.actionImage || highlightFighter.profileImage,
+              })}
+              style={styles.highlightImage}
+              resizeMode="cover"
+            />
+            <View style={styles.highlightBody}>
+              {highlightFighter.nickname ? (
+                <Text style={styles.highlightNickname}>&ldquo;{highlightFighter.nickname}&rdquo;</Text>
+              ) : null}
+              <Text style={styles.highlightName}>{getFighterDisplayName(highlightFighter)}</Text>
+              {(highlightRecord || highlightFighter.weightClass) ? (
+                <Text style={styles.highlightMeta}>
+                  {[highlightRecord, highlightFighter.weightClass].filter(Boolean).join(' · ')}
+                </Text>
+              ) : null}
+              {highlightSummary ? (
+                <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
+              ) : null}
+              <Text style={styles.highlightLink}>Full profile ›</Text>
+            </View>
+          </TouchableOpacity>
+          {highlightTopFight ? (
+            <View style={{ marginTop: 4 }}>
+              <Text style={styles.fightGroupHeading}>Top-rated fight</Text>
+              <CompletedFightCard
+                fight={highlightTopFight}
+                onPress={() => router.push(`/fight/${highlightTopFight.id}?mode=completed` as any)}
+                showEvent={true}
+                index={0}
+              />
+            </View>
+          ) : null}
+        </Section>
+      )}
 
       {/* Hot Fighters -------------------------------------------------------*/}
       <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
@@ -1022,24 +998,8 @@ export default function HomeScreen() {
         <FeatureSpotlight colors={colors} styles={styles} onNavigate={(route) => router.push(route as any)} />
       </Section>
 
-      {/* Latest News header — the article rows below are the FlatList items,
-          so they virtualize and stay smooth as more pages lazy-load. ---------*/}
-      {(isNewsLoading || news.length > 0) && (
-        <View style={styles.newsHeader}>
-          <View style={styles.sectionTitleRow}>
-            <FontAwesome6 name="newspaper" size={20} color={colors.primary} />
-            <Text style={styles.sectionTitle}>Latest News</Text>
-          </View>
-          {isNewsLoading && (
-            <View style={{ marginTop: 12 }}>
-              <Loading colors={colors} styles={styles} />
-            </View>
-          )}
         </View>
-      )}
-        </View>
-      }
-    />
+    </ScrollView>
 
     {/* Upcoming fight hype quick-view modal (Hyped Upcoming Fights section) */}
     <UpcomingFightModal
@@ -1232,52 +1192,50 @@ function makeStyles(colors: ThemeColors) {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
-    // News vertical list (external-link headlines, lazy-loaded FlatList rows)
-    newsHeader: {
+    // Highlighted Fighter card (portrait + bio + top fight)
+    highlightCard: {
       marginHorizontal: 16,
-      marginBottom: 12,
-    },
-    newsCard: {
-      flexDirection: 'row',
-      backgroundColor: colors.card,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
+      backgroundColor: colors.card,
       overflow: 'hidden',
-      marginHorizontal: 16,
-      marginBottom: 12,
     },
-    newsImage: {
-      width: 104,
-      height: 104,
+    highlightImage: {
+      width: '100%',
+      height: 240,
       backgroundColor: colors.border,
     },
-    newsImagePlaceholder: {
-      justifyContent: 'center',
-      alignItems: 'center',
+    highlightBody: {
+      padding: 16,
     },
-    newsBody: {
-      flex: 1,
-      padding: 12,
-      justifyContent: 'center',
+    highlightNickname: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginBottom: 2,
     },
-    newsSource: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: colors.tint,
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
-      marginBottom: 6,
-    },
-    newsHeadline: {
-      fontSize: 14,
-      fontWeight: '700',
+    highlightName: {
+      fontSize: 22,
+      fontWeight: 'bold',
       color: colors.text,
-      lineHeight: 19,
     },
-    newsFooter: {
-      paddingVertical: 16,
-      alignItems: 'center',
+    highlightMeta: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    highlightSummary: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSecondary,
+      marginTop: 10,
+    },
+    highlightLink: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.primary,
+      marginTop: 12,
     },
     // Feature spotlight card
     spotlightCard: {

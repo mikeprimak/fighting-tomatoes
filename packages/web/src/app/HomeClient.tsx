@@ -16,12 +16,14 @@ import {
 } from '@/components/home/FightSections';
 import { TopCommentsSection, ClassicCommentsSection } from '@/components/home/CommentSections';
 import { HighlightedFighterSection } from '@/components/home/HighlightedFighterSection';
+import { HotFightersSection, RecentlyBookedSection } from '@/components/home/FighterSections';
 
 /**
  * Web home screen — the default landing page. Mirrors the mobile home: an
  * editorial band (the blog growth engine) on top, then curated community bands
- * (weekend events, hot upcoming, recent + classic good fights, top + classic
- * comments, a highlighted fighter). The blog appears ONLY here on web — the
+ * (weekend events, hot upcoming, recent good fights, top comments, highlighted
+ * fighter, hot fighters, recently booked, classic good fights + comments). The
+ * blog appears ONLY here on web — the
  * Live / Upcoming / Past / Good Fights tabs no longer carry the editorial band.
  *
  * No external news section (that's mobile-only by design).
@@ -47,10 +49,12 @@ export function HomeClient() {
         <WeekendEventsSection />
         <HotUpcomingFightsSection />
         <RecentGoodFightsSection />
-        <ClassicGoodFightsSection />
         <TopCommentsSection />
-        <ClassicCommentsSection />
         <HighlightedFighterSection />
+        <HotFightersSection />
+        <RecentlyBookedSection />
+        <ClassicGoodFightsSection />
+        <ClassicCommentsSection />
 
         <Link
           href="/blog"
