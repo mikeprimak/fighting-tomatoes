@@ -126,7 +126,27 @@ function mapWeightClass(weightClassStr: string): WeightClass | null {
     "Women's Featherweight": WeightClass.WOMENS_FEATHERWEIGHT,
   };
 
-  return mapping[weightClassStr] || null;
+  // Normalize away interim/sponsor decoration before matching the base class
+  // (e.g. "Heavyweight Interim" or a stray "Pres. by CRYPTO.COM" → "Heavyweight")
+  const normalized = weightClassStr
+    .replace(/\bInterim\b/gi, '')
+    .replace(/\s*Pres(?:ented|\.)?\s*by\s+.+$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  return mapping[weightClassStr] || mapping[normalized] || null;
+}
+
+/**
+ * Build a clean, user-facing title-fight name, stripping any sponsor decoration
+ * that leaks through from UFC.com (e.g. "Heavyweight InterimPres. by CRYPTO.COM").
+ */
+function buildTitleName(weightClassStr: string): string {
+  const clean = weightClassStr
+    .replace(/\s*Pres(?:ented|\.)?\s*by\s+.+$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return `UFC ${clean} Championship`;
 }
 
 /**
@@ -653,7 +673,7 @@ async function importEvents(
       });
 
       // Upsert fight using eventId + fighter1Id + fighter2Id unique constraint
-      const titleName = fightData.isTitle ? `UFC ${fightData.weightClass} Championship` : undefined;
+      const titleName = fightData.isTitle ? buildTitleName(fightData.weightClass) : undefined;
 
       const upsertedFight = await upsertFightSwapAware(
         prisma,
