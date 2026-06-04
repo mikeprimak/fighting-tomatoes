@@ -20,7 +20,7 @@ import { apiService, resolveBlogImageUrl } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
-import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
+import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName, getFighterPrimaryName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { formatEventDate } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
@@ -446,21 +446,13 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Mirror the web "Recent Good Fights" rule exactly: highest community-rated
+  // bouts from the past month (page 1, top 6). No week-first/month-fallback
+  // logic, so mobile and web surface the same fights in this section.
   const { data: topRecentFights, isLoading: isRecentLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, 'week'],
-    queryFn: () => apiService.getTopRecentFights('week'),
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fallback: if the week has fewer than 4 highly-rated fights, broaden to the
-  // past month so the section is never thin/empty.
-  const weekRecentFights = topRecentFights?.data || [];
-  const needRecentFallback = !isRecentLoading && weekRecentFights.length < 4;
-  const { data: topRecentFightsMonth } = useQuery({
     queryKey: ['topRecentFights', isAuthenticated, 'month'],
-    queryFn: () => apiService.getTopRecentFights('month'),
+    queryFn: () => apiService.getTopRecentFights('month', undefined, 1, 6),
     staleTime: 5 * 60 * 1000,
-    enabled: needRecentFallback,
   });
 
   const { data: hotFighters, isLoading: isFightersLoading } = useQuery({
@@ -547,9 +539,7 @@ export default function HomeScreen() {
     });
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
-  const recentFights = (
-    weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
-  ).slice(0, 5);
+  const recentFights = (topRecentFights?.data || []).slice(0, 6);
 
   // Hot fighters: three who recently fought, then three who fight next — grouped,
   // not interleaved. Each side rotates daily within the pool the backend returns.
@@ -739,7 +729,7 @@ export default function HomeScreen() {
             let flatIndex = 0;
             return groupByEvent(upcomingFights).map((g, gi) => (
               <View key={g.event?.id ?? gi} style={{ marginBottom: 8 }}>
-                <Text style={styles.fightGroupHeading}>
+                <Text style={[styles.fightGroupHeading, styles.hypedGroupHeading]}>
                   {`${promotionLabel(g.event?.promotion) || 'Event'} ${eventRelativePhrase(g.event?.mainStartTime ?? g.event?.date)}`.trim()}
                 </Text>
                 {g.fights.map((fight: any) => (
@@ -813,20 +803,18 @@ export default function HomeScreen() {
               {highlightSummary ? (
                 <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
               ) : null}
+              {highlightTopFight ? (
+                <Text style={styles.highlightTopFight}>
+                  <Text style={styles.highlightTopFightLabel}>Top-rated fight: </Text>
+                  {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
+                  {highlightTopFight.averageRating != null && highlightTopFight.averageRating > 0
+                    ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : highlightTopFight.averageRating.toFixed(1)}`
+                    : ''}
+                </Text>
+              ) : null}
               <Text style={styles.highlightLink}>Full profile ›</Text>
             </View>
           </TouchableOpacity>
-          {highlightTopFight ? (
-            <View style={{ marginTop: 4 }}>
-              <Text style={styles.fightGroupHeading}>Top-rated fight</Text>
-              <CompletedFightCard
-                fight={highlightTopFight}
-                onPress={() => router.push(`/fight/${highlightTopFight.id}?mode=completed` as any)}
-                showEvent={true}
-                index={0}
-              />
-            </View>
-          ) : null}
         </Section>
       )}
 
@@ -1051,6 +1039,11 @@ function makeStyles(colors: ThemeColors) {
       marginBottom: 6,
       marginTop: 4,
     },
+    // Hyped Upcoming Fights group heading sits near the screen edge (overrides
+    // the shared 16pt horizontal margin) so the "UFC in 2 days" label reads left.
+    hypedGroupHeading: {
+      marginLeft: 4,
+    },
     seeAllButton: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1230,6 +1223,19 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       color: colors.textSecondary,
       marginTop: 10,
+    },
+    highlightTopFight: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+      marginTop: 12,
+    },
+    highlightTopFightLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: colors.textSecondary,
     },
     highlightLink: {
       fontSize: 14,
