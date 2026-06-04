@@ -632,7 +632,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   const winnerTotal = winnerCount1 + winnerCount2;
   const winner1Pct = winnerTotal > 0 ? Math.round((winnerCount1 / winnerTotal) * 100) : 0;
   const winner2Pct = winnerTotal > 0 ? 100 - winner1Pct : 0;
-  const showWinnerBar = selectedWinner != null;
 
   return (
     <Modal
@@ -703,42 +702,47 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
             })}
           </View>
 
-          {/* Community winner-pick bar — appears once a pick is made, grows out
-              from the center line, with % labels at the far left/right. */}
-          {showWinnerBar && (
-            <View style={styles.winnerBarRow} pointerEvents="none">
-              <Animated.Text style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}>
-                {winner1Pct}%
-              </Animated.Text>
-              <View style={styles.winnerBarTrack}>
-                <View style={styles.winnerBarHalfLeft}>
-                  <Animated.View
-                    style={{
-                      width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner1Pct}%`] }),
-                      height: '100%',
-                      borderTopLeftRadius: 5,
-                      borderBottomLeftRadius: 5,
-                      backgroundColor: winner1Pct >= winner2Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
-                    }}
-                  />
-                </View>
-                <View style={styles.winnerBarHalfRight}>
-                  <Animated.View
-                    style={{
-                      width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner2Pct}%`] }),
-                      height: '100%',
-                      borderTopRightRadius: 5,
-                      borderBottomRightRadius: 5,
-                      backgroundColor: winner2Pct > winner1Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
-                    }}
-                  />
-                </View>
+          {/* Community winner-pick bar — always occupies its slot (so the modal
+              height never jumps); contents fade/grow in from the center line
+              once a pick is made, with % labels at the far left/right. */}
+          <View style={styles.winnerBarRow} pointerEvents="none">
+            <Animated.Text
+              style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}
+              numberOfLines={1}
+            >
+              {winner1Pct}%
+            </Animated.Text>
+            <View style={styles.winnerBarTrack}>
+              <View style={styles.winnerBarHalfLeft}>
+                <Animated.View
+                  style={{
+                    width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner1Pct}%`] }),
+                    height: '100%',
+                    borderTopLeftRadius: 5,
+                    borderBottomLeftRadius: 5,
+                    backgroundColor: winner1Pct >= winner2Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                  }}
+                />
               </View>
-              <Animated.Text style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}>
-                {winner2Pct}%
-              </Animated.Text>
+              <View style={styles.winnerBarHalfRight}>
+                <Animated.View
+                  style={{
+                    width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner2Pct}%`] }),
+                    height: '100%',
+                    borderTopRightRadius: 5,
+                    borderBottomRightRadius: 5,
+                    backgroundColor: winner2Pct > winner1Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                  }}
+                />
+              </View>
             </View>
-          )}
+            <Animated.Text
+              style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}
+              numberOfLines={1}
+            >
+              {winner2Pct}%
+            </Animated.Text>
+          </View>
 
           {/* Hype — co-equal peer to the winner pick */}
           <Text style={[styles.sectionLabel, styles.hypeLabel, { color: colors.text }]}>How Hyped Are You?</Text>
@@ -953,15 +957,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   hypeLabel: {
-    marginTop: 24,
+    marginTop: 12,
   },
   winnerBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'center',
     width: 250,
-    marginTop: 16,
-    marginBottom: 2,
+    marginTop: 6,
+    marginBottom: 0,
     gap: 8,
   },
   winnerBarTrack: {
@@ -984,7 +988,7 @@ const styles = StyleSheet.create({
   winnerBarPct: {
     fontSize: 13,
     fontWeight: '700',
-    width: 32,
+    width: 40,
     textAlign: 'center',
   },
   winnerRow: {
