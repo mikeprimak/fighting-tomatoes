@@ -957,7 +957,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   hypeLabel: {
-    marginTop: 12,
+    marginTop: 24, // more breathing room above (toward the winner bar)
+    marginBottom: 0, // tighter below (toward the flame wheel)
   },
   winnerBarRow: {
     flexDirection: 'row',
@@ -1068,7 +1069,7 @@ const styles = StyleSheet.create({
   },
   flameWheelContainer: {
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 4,
     marginBottom: 4,
   },
   flameWheelWindow: {
