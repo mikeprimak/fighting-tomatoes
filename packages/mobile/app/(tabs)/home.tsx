@@ -447,11 +447,11 @@ export default function HomeScreen() {
   });
 
   // Mirror the web "Recent Good Fights" rule exactly: highest community-rated
-  // bouts from the past month (page 1, top 6). No week-first/month-fallback
+  // bouts from the past 2 weeks (page 1, top 6). No week-first/month-fallback
   // logic, so mobile and web surface the same fights in this section.
   const { data: topRecentFights, isLoading: isRecentLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, 'month'],
-    queryFn: () => apiService.getTopRecentFights('month', undefined, 1, 6),
+    queryKey: ['topRecentFights', isAuthenticated, '2weeks'],
+    queryFn: () => apiService.getTopRecentFights('2weeks', undefined, 1, 6),
     staleTime: 5 * 60 * 1000,
   });
 
