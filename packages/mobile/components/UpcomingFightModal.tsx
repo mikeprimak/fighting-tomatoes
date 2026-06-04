@@ -30,6 +30,11 @@ const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.
 const FLAME_HOLLOW = require('../assets/flame-hollow-alpha-thicker-truealpha.png');
 const FLAME_HOLLOW_GREY = require('../assets/flame-hollow-alpha-colored.png');
 
+// Community winner-pick bar colors — accent = favored side, muted = underdog.
+// Matches the colors used on UpcomingFightCard so the bar reads the same.
+const COMMUNITY_BAR_ACCENT = '#4A90D9';
+const COMMUNITY_BAR_MUTED = 'rgba(255,255,255,0.15)';
+
 interface Fighter {
   id: string;
   firstName: string;
@@ -103,6 +108,11 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
   // The user's hype value at modal-open time — load-bearing for the delta
   // computation in handleDone (we need to know what to decrement, if any).
   const previousHypeRef = useRef<number | null>(null);
+  // Community winner-pick bar: anim drives a center-out grow (0 = hidden, 1 =
+  // full). previousWinnerRef is the user's pick at open, so the bar's % math
+  // can delta the session pick against the already-counted base.
+  const winnerBarAnim = useRef(new Animated.Value(0)).current;
+  const previousWinnerRef = useRef<string | null>(null);
   // Authoritative post-commit hype stats from the mutation response. Preferred
   // over prefetch+delta in handleDone — the prefetch races with the mutation
   // and can pick up the user's just-saved hype, which makes the delta math
@@ -167,7 +177,11 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     if (fight && visible) {
       const hype = fight.userHypePrediction ?? null;
       setSelectedHype(hype);
-      setSelectedWinner(fight.userPredictedWinner ?? null);
+      const existingWinner = fight.userPredictedWinner ?? null;
+      setSelectedWinner(existingWinner);
+      previousWinnerRef.current = existingWinner;
+      // Bar hidden on a fresh open; shown (already grown) if a pick exists.
+      winnerBarAnim.setValue(existingWinner ? 1 : 0);
       setFighter1ImgError(false);
       setFighter2ImgError(false);
       const hasNotif = fight.notificationReasons?.reasons?.some(
@@ -514,13 +528,33 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     // Toggle: tapping the current pick clears it (a pick is never forced).
     const newWinner = selectedWinner === fighterId ? null : fighterId;
+    if (newWinner) {
+      // First pick this session → grow the community bar out from the center
+      // line. Switching picks keeps it visible (widths update on re-render).
+      if (!selectedWinner) {
+        winnerBarAnim.setValue(0);
+        Animated.timing(winnerBarAnim, {
+          toValue: 1,
+          duration: 450,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        }).start();
+      }
+    } else {
+      // Cleared the pick → collapse the bar back to the center line.
+      Animated.timing(winnerBarAnim, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: false,
+      }).start();
+    }
     setSelectedWinner(newWinner);
     if (isAuthenticated) {
       // Persist the take. Send the current hype so the upsert keeps it. No
       // reveal beat for winner this sprint — the hype reveal stays the payoff.
       hypeMutation.mutate({ hypeLevel: selectedHype, winner: newWinner });
     }
-  }, [isAuthenticated, selectedHype, selectedWinner, hypeMutation]);
+  }, [isAuthenticated, selectedHype, selectedWinner, hypeMutation, winnerBarAnim]);
 
   const handleNotifyPress = useCallback(() => {
     if (!isAuthenticated || !fight) return;
@@ -582,6 +616,23 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
   const fighter1Img = fighter1ImgError ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter1 as any);
   const fighter2Img = fighter2ImgError ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter2 as any);
+
+  // Community winner split shown under the pick once the user has chosen. Base
+  // counts come from the fight payload (falling back to the prefetched stats),
+  // adjusted by the user's session pick delta so the % reflects their choice.
+  const baseWinner1 = (fight as any).winnerPredictionFighter1 ?? prefetchedStats?.winnerPredictions?.fighter1?.predictions ?? 0;
+  const baseWinner2 = (fight as any).winnerPredictionFighter2 ?? prefetchedStats?.winnerPredictions?.fighter2?.predictions ?? 0;
+  let winnerCount1 = baseWinner1;
+  let winnerCount2 = baseWinner2;
+  const prevWinner = previousWinnerRef.current;
+  if (prevWinner === fight.fighter1.id) winnerCount1 = Math.max(0, winnerCount1 - 1);
+  else if (prevWinner === fight.fighter2.id) winnerCount2 = Math.max(0, winnerCount2 - 1);
+  if (selectedWinner === fight.fighter1.id) winnerCount1 += 1;
+  else if (selectedWinner === fight.fighter2.id) winnerCount2 += 1;
+  const winnerTotal = winnerCount1 + winnerCount2;
+  const winner1Pct = winnerTotal > 0 ? Math.round((winnerCount1 / winnerTotal) * 100) : 0;
+  const winner2Pct = winnerTotal > 0 ? 100 - winner1Pct : 0;
+  const showWinnerBar = selectedWinner != null;
 
   return (
     <Modal
@@ -651,6 +702,43 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               );
             })}
           </View>
+
+          {/* Community winner-pick bar — appears once a pick is made, grows out
+              from the center line, with % labels at the far left/right. */}
+          {showWinnerBar && (
+            <View style={styles.winnerBarRow} pointerEvents="none">
+              <Animated.Text style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}>
+                {winner1Pct}%
+              </Animated.Text>
+              <View style={styles.winnerBarTrack}>
+                <View style={styles.winnerBarHalfLeft}>
+                  <Animated.View
+                    style={{
+                      width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner1Pct}%`] }),
+                      height: '100%',
+                      borderTopLeftRadius: 5,
+                      borderBottomLeftRadius: 5,
+                      backgroundColor: winner1Pct >= winner2Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                    }}
+                  />
+                </View>
+                <View style={styles.winnerBarHalfRight}>
+                  <Animated.View
+                    style={{
+                      width: winnerBarAnim.interpolate({ inputRange: [0, 1], outputRange: ['0%', `${winner2Pct}%`] }),
+                      height: '100%',
+                      borderTopRightRadius: 5,
+                      borderBottomRightRadius: 5,
+                      backgroundColor: winner2Pct > winner1Pct ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                    }}
+                  />
+                </View>
+              </View>
+              <Animated.Text style={[styles.winnerBarPct, { color: colors.textSecondary, opacity: winnerBarAnim }]}>
+                {winner2Pct}%
+              </Animated.Text>
+            </View>
+          )}
 
           {/* Hype — co-equal peer to the winner pick */}
           <Text style={[styles.sectionLabel, styles.hypeLabel, { color: colors.text }]}>How Hyped Are You?</Text>
@@ -866,6 +954,38 @@ const styles = StyleSheet.create({
   },
   hypeLabel: {
     marginTop: 24,
+  },
+  winnerBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    width: 250,
+    marginTop: 16,
+    marginBottom: 2,
+    gap: 8,
+  },
+  winnerBarTrack: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 10,
+  },
+  winnerBarHalfLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // fill grows leftward from the center divider
+    overflow: 'hidden',
+  },
+  winnerBarHalfRight: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start', // fill grows rightward from the center divider
+    overflow: 'hidden',
+  },
+  winnerBarPct: {
+    fontSize: 13,
+    fontWeight: '700',
+    width: 32,
+    textAlign: 'center',
   },
   winnerRow: {
     flexDirection: 'row',
