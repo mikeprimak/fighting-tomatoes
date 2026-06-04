@@ -39,6 +39,19 @@ function formatDay(iso: string | null | undefined): string {
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+/** Short display name for a fighter — last name, falling back to first. */
+function fighterName(f: any): string {
+  return f?.lastName || f?.firstName || 'TBD';
+}
+
+/** The card's most-hyped bouts: hype > 7, ordered by hype desc, max 3. */
+function topFights(event: any): any[] {
+  return (Array.isArray(event.fights) ? event.fights : [])
+    .filter((f: any) => (f.averageHype ?? 0) > 7)
+    .sort((a: any, b: any) => (b.averageHype ?? 0) - (a.averageHype ?? 0))
+    .slice(0, 3);
+}
+
 export function WeekendEventsSection() {
   const { data } = useQuery({
     queryKey: ['home', 'weekend-events'],
@@ -60,7 +73,7 @@ export function WeekendEventsSection() {
       <SectionHeading title="This Weekend" icon={CalendarDays} href="/events/upcoming" />
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {events.map((event: any) => {
-          const fightCount = Array.isArray(event.fights) ? event.fights.length : 0;
+          const hyped = topFights(event);
           return (
             <Link
               key={event.id}
@@ -92,8 +105,15 @@ export function WeekendEventsSection() {
                 <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
                   {event.name}
                 </h3>
-                {fightCount > 0 && (
-                  <p className="mt-0.5 text-[11px] text-text-secondary">{fightCount} fights</p>
+                {hyped.length > 0 && (
+                  <div className="mt-1 text-[11px] leading-snug text-text-secondary">
+                    <span className="font-semibold text-foreground">Top Fights:</span>
+                    {hyped.map((f: any) => (
+                      <span key={f.id} className="block truncate">
+                        {fighterName(f.fighter1)} vs {fighterName(f.fighter2)}
+                      </span>
+                    ))}
+                  </div>
                 )}
               </div>
               <ChevronRight size={16} className="shrink-0 text-text-secondary group-hover:text-primary" />
