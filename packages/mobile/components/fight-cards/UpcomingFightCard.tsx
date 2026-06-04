@@ -14,6 +14,11 @@ import Svg, { Circle } from 'react-native-svg';
 // Hoisted outside component to avoid recreation on every render
 const DEFAULT_FIGHTER_IMAGE = require('../../assets/fighters/fighter-default-alpha.png');
 
+// Community winner-pick bar colors: accent = the favored fighter's share, muted
+// = the underdog's share. Distinct from the user's own yellow pick indicator.
+const COMMUNITY_BAR_ACCENT = '#4A90D9';
+const COMMUNITY_BAR_MUTED = 'rgba(255,255,255,0.15)';
+
 // PredictionArc component - moved outside to prevent recreation on every render
 // Draws a 1/6 circle arc (60°)
 // Blue: 9 to 7 o'clock (left side) - rotation 120°
@@ -272,6 +277,21 @@ function UpcomingFightCard({
   const isEvenRow = index !== undefined && index % 2 === 0;
   const cardBgColor = isEvenRow ? '#222222' : '#181818';
 
+  // Community winner-pick split bar. Two proportional segments (fighter1 left,
+  // fighter2 right); the fighter with more picks gets the accent color, the
+  // other a muted track. Hidden when nobody has picked a winner yet.
+  const communitySplit = useMemo(() => {
+    const f1 = (fight as any).winnerPredictionFighter1 || 0;
+    const f2 = (fight as any).winnerPredictionFighter2 || 0;
+    const total = f1 + f2;
+    if (total === 0) return null;
+    return {
+      f1Pct: (f1 / total) * 100,
+      f2Pct: (f2 / total) * 100,
+      f1Dominant: f1 >= f2,
+    };
+  }, [(fight as any).winnerPredictionFighter1, (fight as any).winnerPredictionFighter2]);
+
   return (
     <TouchableOpacity
       onPress={handleCardPress}
@@ -494,6 +514,29 @@ function UpcomingFightCard({
 
           </View>
 
+          {/* Community winner-pick split bar — accent side = fighter with more
+              picks, sized to the % of all winner predictions on this fight. */}
+          {communitySplit && (
+            <View style={styles.communityBarRow} pointerEvents="none">
+              <View style={styles.communityBarTrack}>
+                <View
+                  style={{
+                    width: `${communitySplit.f1Pct}%`,
+                    height: '100%',
+                    backgroundColor: communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                  }}
+                />
+                <View
+                  style={{
+                    width: `${communitySplit.f2Pct}%`,
+                    height: '100%',
+                    backgroundColor: !communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+                  }}
+                />
+              </View>
+            </View>
+          )}
+
       </View>
 
       </View>
@@ -616,6 +659,18 @@ const styles = StyleSheet.create({
   predictionBarContainer: {
     marginTop: 3,
     gap: 4,
+  },
+  communityBarRow: {
+    alignItems: 'center',
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  communityBarTrack: {
+    flexDirection: 'row',
+    width: 116,
+    height: 7,
+    borderRadius: 4,
+    overflow: 'hidden',
   },
   fighterNamesRow: {
     flexDirection: 'row',

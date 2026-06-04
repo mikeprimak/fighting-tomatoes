@@ -551,6 +551,25 @@ export async function registerRoutes(fastify: FastifyInstance) {
             hypeByFight.set(pred.fightId, existing);
           }
 
+          // Batch the community winner-pick split per fight (one groupBy, no N+1).
+          // Keyed by fightId → (predictedWinner fighter id → pick count). The
+          // card resolves fighter1/fighter2 counts from this in the transform.
+          const winnerCounts = await fastify.prisma.fightPrediction.groupBy({
+            by: ['fightId', 'predictedWinner'],
+            where: {
+              fightId: { in: allFightIds },
+              predictedWinner: { not: null },
+            },
+            _count: { _all: true },
+          });
+          const winnerByFight = new Map<string, Map<string, number>>();
+          for (const row of winnerCounts) {
+            if (!row.predictedWinner) continue;
+            const inner = winnerByFight.get(row.fightId) || new Map<string, number>();
+            inner.set(row.predictedWinner, row._count._all);
+            winnerByFight.set(row.fightId, inner);
+          }
+
           // Fetch user-specific data if authenticated (parallel queries for performance)
           let userRatingsByFight = new Map<string, number>();
           let userPredictionsByFight = new Map<string, { predictedRating: number | null; predictedWinner: string | null; predictedMethod: string | null }>();
@@ -687,6 +706,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               const userRating = userRatingsByFight.get(fight.id);
               const userPrediction = userPredictionsByFight.get(fight.id);
               const notificationReasons = notificationReasonsByFight.get(fight.id);
+              const winnerMap = winnerByFight.get(fight.id);
 
               return {
                 ...fight,
@@ -694,6 +714,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   ? Math.round((hypeData.total / hypeData.count) * 10) / 10
                   : 0,
                 hypeCount: hypeData?.count || 0,
+                // Community winner-pick split (counts; card derives the % bar)
+                winnerPredictionFighter1: winnerMap?.get(fight.fighter1?.id) || 0,
+                winnerPredictionFighter2: winnerMap?.get(fight.fighter2?.id) || 0,
                 commentCount: fight._count?.preFightComments || 0,
                 reviewCount: fight._count?.reviews || 0,
                 // User-specific data (null if not authenticated or no data)
