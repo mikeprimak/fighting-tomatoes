@@ -8,8 +8,6 @@ import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { EditorialHero } from '@/components/EditorialHero';
-import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Trophy } from 'lucide-react';
 
 const PAGE_SIZE = 25;
@@ -47,10 +45,7 @@ export default function TopFightsPage() {
   const fights = data?.pages.flatMap(p => p.data) ?? [];
 
   return (
-    <>
-      <EditorialHero />
-      <EditorialSecondary />
-      <SidebarLayout>
+    <SidebarLayout>
         <div className="mb-4">
           <div className="mb-3 flex items-center gap-2">
             <Trophy className="text-primary" size={20} />
@@ -107,7 +102,6 @@ export default function TopFightsPage() {
             No rated fights found for this period.
           </p>
         )}
-      </SidebarLayout>
-    </>
+    </SidebarLayout>
   );
 }

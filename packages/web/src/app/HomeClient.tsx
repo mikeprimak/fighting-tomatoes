@@ -1,28 +1,37 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { getEvents } from '@/lib/api';
-import { useOrgFilter } from '@/lib/orgFilter';
-import { isEventLiveNow } from '@/lib/eventStatus';
+import { ArrowRight } from 'lucide-react';
 import { useAnyLiveEvent } from '@/lib/useAnyLiveEvent';
-import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
-import { EventCard } from '@/components/EventCard';
-import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
 import { EditorialHero } from '@/components/EditorialHero';
 import { EditorialSecondary } from '@/components/EditorialSecondary';
-import { Loader2 } from 'lucide-react';
+import { WeekendEventsSection } from '@/components/home/WeekendEventsSection';
+import {
+  HotUpcomingFightsSection,
+  RecentGoodFightsSection,
+  ClassicGoodFightsSection,
+} from '@/components/home/FightSections';
+import { TopCommentsSection, ClassicCommentsSection } from '@/components/home/CommentSections';
+import { HighlightedFighterSection } from '@/components/home/HighlightedFighterSection';
 
+/**
+ * Web home screen — the default landing page. Mirrors the mobile home: an
+ * editorial band (the blog growth engine) on top, then curated community bands
+ * (weekend events, hot upcoming, recent + classic good fights, top + classic
+ * comments, a highlighted fighter). The blog appears ONLY here on web — the
+ * Live / Upcoming / Past / Good Fights tabs no longer carry the editorial band.
+ *
+ * No external news section (that's mobile-only by design).
+ */
 export function HomeClient() {
-  const { filterEventsByOrg } = useOrgFilter();
   const router = useRouter();
   const hasLiveEvent = useAnyLiveEvent();
 
-  // Mirror the mobile app: when something is live, land on the Live tab. Guard
-  // with a per-session flag so it fires once on entry and doesn't bounce the
-  // user back to /events/live every time they deliberately open Upcoming.
+  // Mirror the mobile app: when something is live, bounce to the Live tab once
+  // per session so it doesn't fight a user who deliberately navigates back home.
   useEffect(() => {
     if (!hasLiveEvent || typeof window === 'undefined') return;
     if (sessionStorage.getItem('gf_live_redirect')) return;
@@ -30,64 +39,26 @@ export function HomeClient() {
     router.replace('/events/live');
   }, [hasLiveEvent, router]);
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    error,
-  } = useInfiniteQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: ({ pageParam = 1 }) =>
-      getEvents({ page: pageParam, limit: 5, type: 'upcoming', includeFights: true }),
-    getNextPageParam: (lastPage) => {
-      const { page, totalPages } = lastPage.pagination;
-      return page < totalPages ? page + 1 : undefined;
-    },
-    initialPageParam: 1,
-  });
-
-  const allEvents = data?.pages.flatMap(page => page.events) ?? [];
-  const filteredEvents = filterEventsByOrg(allEvents.filter((e: any) => !isEventLiveNow(e)));
-
   return (
     <>
       <EditorialHero />
       <EditorialSecondary />
       <SidebarLayout>
-        <div className="mb-4">
-          <h1 className="mb-3 text-lg font-bold text-foreground">Upcoming Events</h1>
-          <OrgFilterTabs />
-        </div>
+        <WeekendEventsSection />
+        <HotUpcomingFightsSection />
+        <RecentGoodFightsSection />
+        <ClassicGoodFightsSection />
+        <TopCommentsSection />
+        <ClassicCommentsSection />
+        <HighlightedFighterSection />
 
-        {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        )}
-
-        {error && (
-          <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
-            Failed to load events. Please try again.
-          </div>
-        )}
-
-        {filteredEvents.map(event => (
-          <EventCard key={event.id} event={event} mode="upcoming" />
-        ))}
-
-        {!isLoading && filteredEvents.length === 0 && !error && (
-          <p className="py-12 text-center text-sm text-text-secondary">
-            No upcoming events found for the selected promotions.
-          </p>
-        )}
-
-        <LoadMoreSentinel
-          hasMore={!!hasNextPage}
-          isFetching={isFetchingNextPage}
-          onIntersect={fetchNextPage}
-        />
+        <Link
+          href="/blog"
+          className="flex items-center justify-center gap-1 rounded-lg border border-border bg-card py-3 text-sm font-medium text-text-secondary transition-colors hover:border-primary/30 hover:text-primary"
+        >
+          More from the blog
+          <ArrowRight size={15} />
+        </Link>
       </SidebarLayout>
     </>
   );
