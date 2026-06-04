@@ -39,6 +39,19 @@ function formatDay(iso: string | null | undefined): string {
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+function formatTime(iso: string | null | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+/** When the card's first fight starts — earliest known bell (early prelims →
+ *  prelims → main card). */
+function firstFightStart(event: any): string | null {
+  return event.earlyPrelimStartTime ?? event.prelimStartTime ?? event.mainStartTime ?? null;
+}
+
 /** Short display name for a fighter — last name, falling back to first. */
 function fighterName(f: any): string {
   return f?.lastName || f?.firstName || 'TBD';
@@ -74,11 +87,12 @@ export function WeekendEventsSection() {
       <div className="flex flex-col gap-3">
         {events.map((event: any) => {
           const hyped = topFights(event);
+          const firstStart = firstFightStart(event);
           return (
             <Link
               key={event.id}
               href={`/events/${event.id}`}
-              className="group flex items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
+              className="group flex h-28 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
             >
               <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
                 {event.bannerImage ? (
@@ -101,20 +115,19 @@ export function WeekendEventsSection() {
                     {event.promotion ?? 'Event'}
                     <span className="font-normal normal-case tracking-normal text-text-secondary">
                       · {formatDay(event.mainStartTime ?? event.date)}
+                      {firstStart ? ` · ${formatTime(firstStart)}` : ''}
                     </span>
                   </div>
                   <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
                     {event.name}
                   </h3>
                   {hyped.length > 0 && (
-                    <div className="mt-1 text-[11px] leading-snug text-text-secondary">
-                      <span className="font-semibold text-foreground">Top Fights:</span>
-                      {hyped.map((f: any) => (
-                        <span key={f.id} className="block truncate">
-                          {fighterName(f.fighter1)} vs {fighterName(f.fighter2)}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-text-secondary">
+                      <span className="font-semibold">Top Fights: </span>
+                      {hyped
+                        .map((f: any) => `${fighterName(f.fighter1)} vs ${fighterName(f.fighter2)}`)
+                        .join(', ')}
+                    </p>
                   )}
                 </div>
                 <ChevronRight size={16} className="shrink-0 text-text-secondary group-hover:text-primary" />
