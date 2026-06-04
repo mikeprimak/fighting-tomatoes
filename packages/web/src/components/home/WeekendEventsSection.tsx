@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, ChevronRight } from 'lucide-react';
 import { getEvents } from '@/lib/api';
-import { useOrgFilter } from '@/lib/orgFilter';
 import { isEventLiveNow } from '@/lib/eventStatus';
 import { SectionHeading } from './SectionHeading';
 
@@ -41,16 +40,17 @@ function formatDay(iso: string | null | undefined): string {
 }
 
 export function WeekendEventsSection() {
-  const { filterEventsByOrg } = useOrgFilter();
-
   const { data } = useQuery({
     queryKey: ['home', 'weekend-events'],
     queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 30 }),
     staleTime: 5 * 60 * 1000,
   });
 
-  const events = filterEventsByOrg(
-    (data?.events ?? []).filter((e: any) => !isEventLiveNow(e) && isThisWeekend(e)),
+  // The home screen is org-agnostic by design: every section shows content from
+  // all promotions, regardless of the user's org filter selection (which only
+  // governs the Live / Upcoming / Past / Good Fights tabs). Don't filter here.
+  const events = (data?.events ?? []).filter(
+    (e: any) => !isEventLiveNow(e) && isThisWeekend(e),
   );
 
   if (events.length === 0) return null;
