@@ -105,7 +105,7 @@ export function WeekendEventsSection() {
             <Link
               key={event.id}
               href={`/events/${event.id}`}
-              className="group flex h-28 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
+              className="group flex h-32 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
             >
               <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
                 {event.bannerImage ? (
@@ -124,14 +124,14 @@ export function WeekendEventsSection() {
               </div>
               <div className="flex min-w-0 flex-1 items-center gap-3 p-3">
                 <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  <div className="mb-0.5 flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
                     {promotionLabel(event.promotion) || 'Event'}
-                    <span className="font-normal normal-case tracking-normal text-text-secondary">
+                    <span className="text-[11px] font-normal normal-case tracking-normal text-text-secondary">
                       · {formatDay(event.mainStartTime ?? event.date)}
                       {firstStart ? ` · ${formatTime(firstStart)}` : ''}
                     </span>
                   </div>
-                  <h3 className="line-clamp-2 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
+                  <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-primary">
                     {event.name}
                   </h3>
                   {hyped.length > 0 && (
