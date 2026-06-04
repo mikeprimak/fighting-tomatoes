@@ -1,5 +1,42 @@
 # HANDOFF — Vercel web auto-deploy stopped firing (2026-06-04)
 
+**Status:** RESOLVED — misdiagnosis. Auto-deploy was never broken. Do NOT
+reconnect the Git integration; it is intact and working.
+
+## RESOLUTION (2026-06-04, fresh investigation)
+
+Verified live: the push of `29afb04` (a real `packages/web` change) at 08:21:00
+triggered a production build at 08:21:06 that went Ready and aliased to
+**goodfights.app** carrying the alias
+`https://web-git-main-michael-primaks-projects.vercel.app`. That `web-git-main-…`
+branch alias is assigned **only** to Git-push-triggered deployments — a manual CLI
+deploy never gets it. So the GitHub→Vercel webhook and Git link are demonstrably
+live.
+
+**Why the original diagnosis was wrong.** The "three commits, none auto-deployed"
+list mixed two kinds of commit:
+
+- `25909d8` (`docs(video):…`) and `6b78b5c` (`docs: log daily…`) **do not touch
+  `packages/web`.** The project's `ignoreCommand` (`packages/web/vercel.json`):
+  `git diff HEAD^ HEAD --quiet ./` runs from the root dir `packages/web` and
+  **correctly skips** any commit that didn't change web files → those are the
+  expected ~14s **"Canceled"** rows (Ignored Build Step working as designed).
+- Only `a7a5ede` was a real web commit. It was manually deployed before the auto
+  build was confirmed, and the expected Canceled docs-commit rows were
+  misread as "webhook didn't fire." There was never any evidence the Git link
+  was disconnected (the `/v9/projects` `link` check in the original handoff could
+  not be completed — the cached CLI API token was expired, so any "link: null"
+  reading from raw curl is a stale-token error, not a real disconnection).
+
+**Action required: none.** The manual CLI deploy in the original session was
+harmless but unnecessary. Pushes to `main` that touch `packages/web` auto-deploy
+to goodfights.app within seconds; pushes that don't touch web are intentionally
+Canceled by the Ignored Build Step.
+
+---
+
+## ORIGINAL (incorrect) diagnosis below — kept for the record
+
 **Status:** Open. Needs someone to reconnect / repair the GitHub→Vercel
 integration on the `web` project. Not fixed in this session (worked around with a
 manual CLI deploy).
