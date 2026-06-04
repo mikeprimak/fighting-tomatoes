@@ -57,10 +57,11 @@ function fighterName(f: any): string {
   return f?.lastName || f?.firstName || 'TBD';
 }
 
-/** The card's most-hyped bouts: hype > 7, ordered by hype desc, max 3. */
+/** The card's most-hyped bouts: hype > 7 with at least 3 user hype ratings,
+ *  ordered by hype desc, max 3. */
 function topFights(event: any): any[] {
   return (Array.isArray(event.fights) ? event.fights : [])
-    .filter((f: any) => (f.averageHype ?? 0) > 7)
+    .filter((f: any) => (f.averageHype ?? 0) > 7 && (f.hypeCount ?? 0) >= 3)
     .sort((a: any, b: any) => (b.averageHype ?? 0) - (a.averageHype ?? 0))
     .slice(0, 3);
 }
