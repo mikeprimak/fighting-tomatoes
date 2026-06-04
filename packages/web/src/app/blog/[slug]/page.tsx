@@ -164,15 +164,27 @@ export default async function BlogPostPage({
         {formatDate(post.date)} · {post.author}
       </div>
 
-      <div className="mb-8 aspect-[16/9] w-full overflow-hidden rounded-xl bg-background-secondary">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={post.image || DEFAULT_POST_IMAGE}
-          alt=""
-          aria-hidden="true"
-          className="h-full w-full object-cover"
-        />
-      </div>
+      {post.imageFit === 'contain' ? (
+        <div className="mb-8 flex w-full justify-center overflow-hidden rounded-xl bg-background-secondary">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.image || DEFAULT_POST_IMAGE}
+            alt=""
+            aria-hidden="true"
+            className="max-h-[70vh] w-auto object-contain"
+          />
+        </div>
+      ) : (
+        <div className="mb-8 aspect-[16/9] w-full overflow-hidden rounded-xl bg-background-secondary">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.image || DEFAULT_POST_IMAGE}
+            alt=""
+            aria-hidden="true"
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
 
       <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
       <TweetEmbeds />

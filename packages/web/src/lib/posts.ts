@@ -30,6 +30,10 @@ export type PostMeta = {
   event: PostEvent | null;
   /** Hero/share image path (e.g. /blog/my-slug.jpg). Empty string = use DEFAULT_POST_IMAGE. */
   image: string;
+  /** How the hero image fills its frame. `cover` (default) crops to a 16:9 box;
+   *  `contain` shows the whole image centered (use for tall portrait photos whose
+   *  faces would otherwise be cropped). */
+  imageFit: 'cover' | 'contain';
   /** Pins this post to the EditorialHero band on the main pages. The newest
    *  `featured: true` post wins; if none are featured we fall back to newest. */
   featured: boolean;
@@ -112,6 +116,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     draft: data.draft === true,
     event: (data.event as PostEvent) || null,
     image: (data.image as string) || '',
+    imageFit: data.imageFit === 'contain' ? 'contain' : 'cover',
     featured: data.featured === true,
     hideFromHome: data.hideFromHome === true,
   };
