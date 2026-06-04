@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { getTopRecentFights } from '@/lib/api';
 import { useOrgFilter } from '@/lib/orgFilter';
@@ -21,7 +22,30 @@ const TIME_PERIODS = [
 ];
 
 export default function TopFightsPage() {
-  const [period, setPeriod] = useState('month');
+  return (
+    <Suspense
+      fallback={
+        <SidebarLayout>
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        </SidebarLayout>
+      }
+    >
+      <TopFightsPageInner />
+    </Suspense>
+  );
+}
+
+function TopFightsPageInner() {
+  const searchParams = useSearchParams();
+  // Allow deep links like /fights/top?period=all (e.g. the home "Classic Good
+  // Fights" See all). Fall back to This Month for an unknown/absent param.
+  const initialPeriod = (() => {
+    const p = searchParams.get('period');
+    return TIME_PERIODS.some(tp => tp.value === p) ? (p as string) : 'month';
+  })();
+  const [period, setPeriod] = useState(initialPeriod);
   const { selectedOrgs } = useOrgFilter();
 
   const promotions = selectedOrgs.size > 0 ? Array.from(selectedOrgs).join(',') : undefined;
