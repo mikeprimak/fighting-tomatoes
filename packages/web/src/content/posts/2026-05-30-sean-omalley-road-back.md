@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Sean O'Malley was the face of the bantamweight division, a former champion and one of the UFC's biggest draws, until two losses to Merab Dvalishvili knocked him off the throne. He got back in the win column against Song Yadong, and now he is rebuilding toward another title shot with a tricky test against Aiemann Zahabi at UFC Freedom 250. Here is the full story of Suga's rise, his fall, and what comes next."
 tags: ["sean-omalley", "ufc-freedom-250", "aiemann-zahabi", "ufc", "feature"]
-image: "/blog/sean-omalley.png"
+image: "/blog/sean-omalley.jpg"
 draft: false
 hideFromHome: true
 ---
@@ -48,3 +48,5 @@ He can, but the margin is thin. A clean, exciting win over a surging contender l
 - [Who is Josh Hokit? The ex-NFL athlete turned undefeated UFC heavyweight](/blog/josh-hokit-nfl-to-ufc)
 
 *Rate O'Malley vs Zahabi, log your prediction, and track every fight on UFC Freedom 250 on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Musicmakestheworldgoround, [CC0](https://creativecommons.org/publicdomain/zero/1.0/), via Wikimedia Commons.</sub>

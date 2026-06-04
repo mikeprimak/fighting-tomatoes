@@ -5,7 +5,7 @@ date: "2026-05-25"
 author: "Good Fights"
 excerpt: "She threw the most famous head kick in MMA history and never found that height again. Now, at 44, Holly Holm has gone back to the sport that made her, and on May 30 she gets a second crack at the only thing missing from her boxing resume. A love letter, an honest accounting, and a hope."
 tags: ["holly-holm", "boxing", "mvp", "ufc", "feature"]
-image: "/blog/holly-holm-hero.png"
+image: "/blog/holly-holm-hero.jpg"
 draft: false
 ---
 
@@ -54,3 +54,5 @@ But this is the fighter who walked into a stadium as an eleven-to-one underdog a
 We have spent a decade watching her measured against one perfect night. On May 30 she gets to write a different ending, in the sport that knew her first. We don't know if she wins. We know we'll be watching, and we know which corner we're in.
 
 *Rate Holly Holm's next fight, and every fight that matters, on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: MMAnytt, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0), via Wikimedia Commons.</sub>

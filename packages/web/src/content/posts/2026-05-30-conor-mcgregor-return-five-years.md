@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Conor McGregor last fought in July 2021, the night his leg snapped against Dustin Poirier. A broken leg, a comeback that fell apart, a broken toe, and five years of everything except fighting. Here is the full timeline of why the biggest star in UFC history has been gone so long, and what he is walking back into at UFC 329."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc", "feature"]
-image: "/blog/conor-mcgregor-hero.png"
+image: "/blog/conor-mcgregor-hero.jpg"
 draft: false
 ---
 
@@ -50,3 +50,5 @@ A win would be one of the great comeback stories combat sports has ever seen, an
 For the full breakdown of the rematch, the card, the odds, the start times, and how to watch, see our [complete McGregor vs Holloway 2 guide](/blog/mcgregor-holloway-2-ufc-329).
 
 *Rate McGregor's return, and every fight that matters, on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Andrius Petrucenia, [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0), via Wikimedia Commons.</sub>
