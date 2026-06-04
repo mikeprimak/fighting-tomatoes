@@ -5,7 +5,7 @@ date: "2026-05-24"
 author: "Good Fights"
 excerpt: "For about eighteen months, Darren Till was the most exciting thing happening in the UFC welterweight division and the funniest man with a microphone in front of him. Then it all came apart. On May 30 he fights bare knuckle in his own backyard, and we still can't shake the feeling that we got cheated out of the career he should have had."
 tags: ["darren-till", "bkfc", "ufc", "boxing", "feature"]
-image: "/blog/darren-till-hero.jpeg"
+image: "/blog/darren-till-hero.png"
 draft: false
 ---
 
@@ -86,3 +86,5 @@ But there is something fitting about him ending up here, in a sport that asks fo
 We wanted so much more for Darren Till than the UFC gave him room to be. We still do. And we will absolutely be watching to see if, just this once, the format finally suits the fighter.
 
 *Rate Darren Till's bare-knuckle debut, and every fight that matters, on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Anything Goes With James English, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0), via Wikimedia Commons.</sub>

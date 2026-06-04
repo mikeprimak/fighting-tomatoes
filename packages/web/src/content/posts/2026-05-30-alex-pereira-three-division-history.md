@@ -56,3 +56,5 @@ Gane is one of the most graceful and technical big men heavyweight has ever prod
 - [Who is Josh Hokit? The ex-NFL athlete turned undefeated UFC heavyweight](/blog/josh-hokit-nfl-to-ufc)
 
 *Rate Pereira vs Gane, log your prediction, and track every fight on UFC Freedom 250 on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Chamatkar Sandhu, [CC BY 3.0](https://creativecommons.org/licenses/by/3.0), via Wikimedia Commons.</sub>

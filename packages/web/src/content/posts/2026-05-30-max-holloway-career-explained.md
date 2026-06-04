@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "In 2013, a 21-year-old Max Holloway lost a decision to a brash newcomer named Conor McGregor. Over the next decade he became one of the greatest featherweights in history, threw more strikes than anyone who has ever done it, and produced one of the most iconic knockouts the sport has ever seen. Here is the full story, and why the UFC 329 rematch is so strange."
 tags: ["max-holloway", "conor-mcgregor", "ufc-329", "ufc", "feature"]
-image: "/blog/max-holloway-hero.png"
+image: "/blog/max-holloway-hero.jpg"
 draft: false
 ---
 
@@ -58,3 +58,5 @@ This is why the rematch is so strange and so good. Two men met as prospects in 2
 The kid McGregor beat does not exist anymore. What McGregor gets instead is a legend, on the slide but still dangerous, with thirteen years of unfinished business. For the full breakdown of the rematch, our [complete McGregor vs Holloway 2 guide](/blog/mcgregor-holloway-2-ufc-329) has the card, the odds, how to watch, and a prediction. And if you want the other half of this story, here is [why McGregor himself has been gone for five years](/blog/conor-mcgregor-return-five-years).
 
 *Rate McGregor vs Holloway 2, and every fight that matters, on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Chairman of the Joint Chiefs of Staff, [CC BY 2.0](https://creativecommons.org/licenses/by/2.0), via Wikimedia Commons.</sub>

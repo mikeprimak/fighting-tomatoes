@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Ilia Topuria is 17-0, a two-division champion, and the first man to win belts in two weight classes without ever losing. He knocked out Alexander Volkanovski, handed Max Holloway the first knockout loss of his career, and flattened Charles Oliveira in a round. Here is the full story of the most feared finisher in the sport, ahead of his lightweight title defense against Justin Gaethje at UFC Freedom 250."
 tags: ["ilia-topuria", "ufc-freedom-250", "justin-gaethje", "ufc", "feature"]
-image: "/blog/ilia-topuria.png"
+image: "/blog/ilia-topuria.jpg"
 draft: false
 hideFromHome: true
 ---
@@ -56,3 +56,5 @@ That is the question Justin Gaethje is being paid to answer at Freedom 250. On p
 - [Who is Josh Hokit? The ex-NFL athlete turned undefeated UFC heavyweight](/blog/josh-hokit-nfl-to-ufc)
 
 *Rate Topuria vs Gaethje, log your prediction, and track every fight on UFC Freedom 250 on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+
+<sub>Photo: Administration of the President of Georgia, [CC BY 4.0](https://creativecommons.org/licenses/by/4.0), via Wikimedia Commons.</sub>
