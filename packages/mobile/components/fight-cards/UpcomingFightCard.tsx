@@ -514,30 +514,39 @@ function UpcomingFightCard({
 
           </View>
 
-          {/* Community winner-pick split bar — accent side = fighter with more
-              picks, sized to the % of all winner predictions on this fight. */}
-          {communitySplit && (
-            <View style={styles.communityBarRow} pointerEvents="none">
-              <View style={styles.communityBarTrack}>
-                <View
-                  style={{
-                    width: `${communitySplit.f1Pct}%`,
-                    height: '100%',
-                    backgroundColor: communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
-                  }}
-                />
-                <View
-                  style={{
-                    width: `${communitySplit.f2Pct}%`,
-                    height: '100%',
-                    backgroundColor: !communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
-                  }}
-                />
-              </View>
-            </View>
-          )}
-
       </View>
+
+      {/* Community winner-pick bar — breakpoint fixed at the center between the
+          two fighters; each side extends OUTWARD from center proportional to
+          its share, so the fill looks offset toward the favorite. Rendered
+          below the padded box (not inside it) so it extends the card downward
+          without nudging the headshots/names off the hype-box baseline. */}
+      {communitySplit && (
+        <View style={styles.communityBarRow} pointerEvents="none">
+          <View style={styles.communityBarHalfLeft}>
+            <View
+              style={{
+                width: `${communitySplit.f1Pct}%`,
+                height: '100%',
+                borderTopLeftRadius: 4,
+                borderBottomLeftRadius: 4,
+                backgroundColor: communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+              }}
+            />
+          </View>
+          <View style={styles.communityBarHalfRight}>
+            <View
+              style={{
+                width: `${communitySplit.f2Pct}%`,
+                height: '100%',
+                borderTopRightRadius: 4,
+                borderBottomRightRadius: 4,
+                backgroundColor: !communitySplit.f1Dominant ? COMMUNITY_BAR_ACCENT : COMMUNITY_BAR_MUTED,
+              }}
+            />
+          </View>
+        </View>
+      )}
 
       </View>
     </TouchableOpacity>
@@ -661,15 +670,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   communityBarRow: {
-    alignItems: 'center',
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  communityBarTrack: {
     flexDirection: 'row',
-    width: 116,
+    alignSelf: 'center',
+    width: 180,
     height: 7,
-    borderRadius: 4,
+    marginTop: 2,
+    marginBottom: 10,
+  },
+  communityBarHalfLeft: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end', // fill grows leftward from the center divider
+    overflow: 'hidden',
+  },
+  communityBarHalfRight: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start', // fill grows rightward from the center divider
     overflow: 'hidden',
   },
   fighterNamesRow: {
