@@ -122,7 +122,7 @@ export function WeekendEventsSection() {
                   </div>
                 )}
               </div>
-              <div className="flex min-w-0 flex-1 items-center gap-3 p-3">
+              <div className="flex min-w-0 flex-1 items-start gap-3 p-3">
                 <div className="min-w-0 flex-1">
                   <div className="mb-0.5 flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
                     {promotionLabel(event.promotion) || 'Event'}
@@ -143,7 +143,7 @@ export function WeekendEventsSection() {
                     </p>
                   )}
                 </div>
-                <ChevronRight size={16} className="shrink-0 text-text-secondary group-hover:text-primary" />
+                <ChevronRight size={16} className="shrink-0 self-center text-text-secondary group-hover:text-primary" />
               </div>
             </Link>
           );
