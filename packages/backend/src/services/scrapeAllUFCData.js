@@ -397,7 +397,12 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           const weightClassEl = element.querySelector('.c-listing-fight__class-text');
           let weightClass = weightClassEl?.textContent?.trim() || '';
           const isTitle = weightClass.toLowerCase().includes('title');
-          weightClass = weightClass.replace(/\s*Title\s*/gi, '').replace(/\s*Bout\s*/gi, '').trim();
+          weightClass = weightClass
+            .replace(/\s*Pres(?:ented|\.)?\s*by\s+.+?(?=\s*(?:Title|Bout)\b|$)/gi, ' ')  // strip sponsor ("Pres. by CRYPTO.COM")
+            .replace(/\s*Title\s*/gi, ' ')
+            .replace(/\s*Bout\s*/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
 
           const redName = element.querySelector('.c-listing-fight__corner-name--red')?.textContent?.replace(/\s+/g, ' ').trim() || '';
 
@@ -511,7 +516,12 @@ async function scrapeEventPage(browser, eventUrl, eventName) {
           const weightClassEl = element.querySelector('.c-listing-fight__class-text');
           let weightClass = weightClassEl?.textContent?.trim() || '';
           const isTitle = weightClass.toLowerCase().includes('title');
-          weightClass = weightClass.replace(/\s*Title\s*/gi, '').replace(/\s*Bout\s*/gi, '').trim();
+          weightClass = weightClass
+            .replace(/\s*Pres(?:ented|\.)?\s*by\s+.+?(?=\s*(?:Title|Bout)\b|$)/gi, ' ')  // strip sponsor ("Pres. by CRYPTO.COM")
+            .replace(/\s*Title\s*/gi, ' ')
+            .replace(/\s*Bout\s*/gi, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
 
           const redName = element.querySelector('.c-listing-fight__corner-name--red')?.textContent?.replace(/\s+/g, ' ').trim() || '';
 
