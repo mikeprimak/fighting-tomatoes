@@ -7,8 +7,6 @@ import { isEventLiveNow } from '@/lib/eventStatus';
 import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { EditorialHero } from '@/components/EditorialHero';
-import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2, Radio } from 'lucide-react';
 
 export default function LiveEventsPage() {
@@ -42,10 +40,7 @@ export default function LiveEventsPage() {
         : `${orgs.slice(0, -1).join(', ')}, and ${orgs[orgs.length - 1]}`;
 
   return (
-    <>
-      <EditorialHero />
-      <EditorialSecondary />
-      <SidebarLayout>
+    <SidebarLayout>
         <div className="mb-4">
           <div className="mb-3 flex items-center gap-2">
             <Radio className="text-danger" size={20} />
@@ -91,7 +86,6 @@ export default function LiveEventsPage() {
             )}
           </div>
         )}
-      </SidebarLayout>
-    </>
+    </SidebarLayout>
   );
 }

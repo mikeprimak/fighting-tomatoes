@@ -677,6 +677,108 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // Highlighted fighter: a single AI-enriched fighter featured big on the web
+  // home, with their top-rated fight. Picks from fighters that carry a confident
+  // bio + an image to feature, and rotates by UTC day so the spotlight changes
+  // daily. Returns { data: { fighter, topFight } } or { data: null } if there's
+  // no enriched fighter to show yet.
+  fastify.get('/highlighted-fighter', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (_request, reply) => {
+    try {
+      // Candidate pool: enriched fighters with a confident bio and a portrait.
+      // aiProfileConfidence gate mirrors the render-gate used elsewhere (0.5).
+      const pool = await fastify.prisma.fighter.findMany({
+        where: {
+          aiProfileSummary: { not: null },
+          aiProfileConfidence: { gte: 0.5 },
+          profileImage: { not: null },
+        },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          nickname: true,
+          wins: true,
+          losses: true,
+          draws: true,
+          weightClass: true,
+          profileImage: true,
+          actionImage: true,
+          aiProfile: true,
+          aiProfileSummary: true,
+        },
+        orderBy: { id: 'asc' },
+        take: 300,
+      });
+
+      if (pool.length === 0) {
+        return reply.send({ data: null });
+      }
+
+      // Rotate the pool by the UTC day so the featured fighter changes daily
+      // (with wrap-around) instead of always surfacing the same person.
+      const daySeed = Math.floor(Date.now() / 86_400_000);
+      const start = daySeed % pool.length;
+      const rotated = [...pool.slice(start), ...pool.slice(0, start)];
+
+      // Walk the rotated pool until we find a fighter with a top-rated fight to
+      // feature. Bounded so a thin DB doesn't scan the whole pool every request.
+      let chosen: any = null;
+      let topFight: any = null;
+      for (const fighter of rotated.slice(0, 25)) {
+        const fight = await fastify.prisma.fight.findFirst({
+          where: {
+            OR: [{ fighter1Id: fighter.id }, { fighter2Id: fighter.id }],
+            fightStatus: 'COMPLETED',
+            averageRating: { gt: 0 },
+            totalRatings: { gte: 3 },
+            event: {
+              NOT: HIDDEN_PROMOTIONS.map(p => ({
+                promotion: { contains: p, mode: 'insensitive' as const },
+              })),
+            },
+          },
+          include: {
+            fighter1: true,
+            fighter2: true,
+            event: true,
+            _count: { select: { reviews: true, preFightComments: true } },
+          },
+          orderBy: [
+            { averageRating: 'desc' },
+            { totalRatings: 'desc' },
+          ],
+        });
+        if (fight) {
+          chosen = fighter;
+          topFight = {
+            ...fight,
+            reviewCount: fight._count?.reviews || 0,
+            commentCount: fight._count?.preFightComments || 0,
+            userRating: null,
+          };
+          break;
+        }
+      }
+
+      // Fall back to the first rotated candidate even without a rated fight, so
+      // the section still has a fighter + bio to show.
+      if (!chosen) {
+        chosen = rotated[0];
+        topFight = null;
+      }
+
+      return reply.send({ data: { fighter: chosen, topFight } });
+    } catch (error) {
+      console.error('Error fetching highlighted fighter:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch highlighted fighter',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
   // Get hot predictions (fights with strong prediction consensus, next 20 days)
   fastify.get('/hot-predictions', {
     preHandler: optionalAuthenticateMiddleware,

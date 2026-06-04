@@ -2,15 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone } from 'lucide-react';
+import { Search, User, Menu, X, Home, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth, useHasApp } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAnyLiveEvent } from '@/lib/useAnyLiveEvent';
 
 const navLinks = [
+  { href: '/', label: 'Home', icon: Home },
   { href: '/events/live', label: 'Live', icon: Radio },
-  { href: '/', label: 'Upcoming', icon: Flame },
+  { href: '/events/upcoming', label: 'Upcoming', icon: Flame },
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },
 ];
@@ -28,7 +29,7 @@ export function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/' || pathname === '/events/upcoming';
+    if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
 

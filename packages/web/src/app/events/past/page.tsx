@@ -7,8 +7,6 @@ import { OrgFilterTabs } from '@/components/layout/OrgFilterTabs';
 import { EventCard } from '@/components/EventCard';
 import { LoadMoreSentinel } from '@/components/layout/LoadMoreSentinel';
 import { SidebarLayout } from '@/components/layout/SidebarLayout';
-import { EditorialHero } from '@/components/EditorialHero';
-import { EditorialSecondary } from '@/components/EditorialSecondary';
 import { Loader2 } from 'lucide-react';
 
 // Priority orgs float above everyone else *within the same day*; days themselves
@@ -70,10 +68,7 @@ export default function PastEventsPage() {
   const filteredEvents = sortPastEvents(filterEventsByOrg(allEvents));
 
   return (
-    <>
-      <EditorialHero />
-      <EditorialSecondary />
-      <SidebarLayout>
+    <SidebarLayout>
         <div className="mb-4">
           <h1 className="mb-3 text-lg font-bold text-foreground">Past Events</h1>
           <OrgFilterTabs />
@@ -106,7 +101,6 @@ export default function PastEventsPage() {
           isFetching={isFetchingNextPage}
           onIntersect={fetchNextPage}
         />
-      </SidebarLayout>
-    </>
+    </SidebarLayout>
   );
 }

@@ -560,7 +560,35 @@ export async function checkDisplayNameAvailability(displayName: string) {
 // ==================== COMMUNITY ====================
 
 export async function getTopComments() {
-  return makeRequest<{ data: any[] }>('/community/top-comments');
+  // `throwback` is a single older-fight comment (1+ year old) used for the
+  // home "Classic Comments" section; may be null when there's no eligible one.
+  return makeRequest<{ data: any[]; throwback: any | null }>('/community/top-comments');
+}
+
+export async function getClassicFights(limit = 8) {
+  return makeRequest<{ data: any[] }>(`/community/classic-fights?limit=${limit}`);
+}
+
+export interface HighlightedFighter {
+  fighter: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    nickname?: string | null;
+    wins: number;
+    losses: number;
+    draws: number;
+    weightClass?: string | null;
+    profileImage?: string | null;
+    actionImage?: string | null;
+    aiProfile?: { tldr?: string } & Record<string, any> | null;
+    aiProfileSummary?: string | null;
+  };
+  topFight: any | null;
+}
+
+export async function getHighlightedFighter() {
+  return makeRequest<{ data: HighlightedFighter | null }>('/community/highlighted-fighter');
 }
 
 export async function getTopPreFightComments() {
