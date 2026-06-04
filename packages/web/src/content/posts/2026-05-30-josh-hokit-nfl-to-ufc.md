@@ -5,7 +5,7 @@ date: "2026-05-30"
 author: "Good Fights"
 excerpt: "Josh Hokit was an All-American wrestler, a college football player, and an NFL practice-squad athlete before he ever threw a professional punch. Now he is 9-0, fresh off beating Curtis Blaydes, and the most polarizing personality on the UFC Freedom 250 card. Here is the full story of his unlikely rise and his White House fight against knockout king Derrick Lewis."
 tags: ["josh-hokit", "ufc-freedom-250", "derrick-lewis", "ufc", "feature"]
-image: "/blog/josh-hokit.jpg"
+image: "/blog/josh-hokit.png"
 draft: false
 hideFromHome: true
 ---
@@ -52,5 +52,3 @@ The odds favor him, but the danger is real. Hokit is the younger, fresher, more 
 - [Sean O'Malley's road back: from champion to the comeback trail](/blog/sean-omalley-road-back)
 
 *Rate Hokit vs Lewis, log your prediction, and track every fight on UFC Freedom 250 on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
-
-<sub>Photo: [via Wikimedia Commons](https://commons.wikimedia.org/wiki/File:JoshHokit.jpg), [CC BY 4.0](https://creativecommons.org/licenses/by/4.0).</sub>
