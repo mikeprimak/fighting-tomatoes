@@ -451,8 +451,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       // UFC (high engagement): 3, 10, 15, 20, 25
       // Other orgs (lower engagement): 3, 5, 7, 10, 10
       const thresholds = isUfcOnly
-        ? { week: 3, month: 10, '3months': 15, year: 20, all: 25 }
-        : { week: 3, month: 5, '3months': 7, year: 10, all: 10 };
+        ? { week: 3, '2weeks': 5, month: 10, '3months': 15, year: 20, all: 25 }
+        : { week: 3, '2weeks': 4, month: 5, '3months': 7, year: 10, all: 10 };
 
       // Calculate time range and minimum rating count based on period
       const now = new Date();
@@ -463,6 +463,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         case 'week':
           startDate.setDate(now.getDate() - 7);
           minRatingCount = thresholds.week;
+          break;
+        case '2weeks':
+          startDate.setDate(now.getDate() - 14);
+          minRatingCount = thresholds['2weeks'];
           break;
         case 'month':
           startDate.setMonth(now.getMonth() - 1);

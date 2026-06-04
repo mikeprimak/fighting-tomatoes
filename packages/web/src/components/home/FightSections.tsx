@@ -93,11 +93,11 @@ export function HotUpcomingFightsSection() {
   );
 }
 
-/** Recent Good Fights: the highest community-rated bouts from the last month. */
+/** Recent Good Fights: the highest community-rated bouts from the last 2 weeks. */
 export function RecentGoodFightsSection() {
   const { data } = useQuery({
     queryKey: ['home', 'recent-good'],
-    queryFn: () => getTopRecentFights('month', undefined, 1, MAX),
+    queryFn: () => getTopRecentFights('2weeks', undefined, 1, MAX),
     staleTime: 5 * 60 * 1000,
   });
 
