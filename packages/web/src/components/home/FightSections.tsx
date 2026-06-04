@@ -18,7 +18,7 @@ function FightCardList({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Hot Fights — Upcoming: the most-hyped upcoming bouts (avg hype ≥ 7). */
+/** Hyped Upcoming Fights: the most-hyped upcoming bouts (avg hype ≥ 7). */
 export function HotUpcomingFightsSection() {
   const { data } = useQuery({
     queryKey: ['home', 'hot-upcoming'],
@@ -31,10 +31,10 @@ export function HotUpcomingFightsSection() {
 
   return (
     <section className="mb-8">
-      <SectionHeading title="Hot Fights" icon={Flame} href="/events/upcoming" />
+      <SectionHeading title="Hyped Upcoming Fights" icon={Flame} href="/events/upcoming" />
       <FightCardList>
         {fights.map((fight: any) => (
-          <UpcomingFightCard key={fight.id} fight={fight} />
+          <UpcomingFightCard key={fight.id} fight={fight} showEvent />
         ))}
       </FightCardList>
     </section>
