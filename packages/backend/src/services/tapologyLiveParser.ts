@@ -207,13 +207,18 @@ function createFightSignature(fighter1LastName: string, fighter2LastName: string
  */
 async function notifyNextFight(eventId: string, completedFightOrder: number): Promise<void> {
   try {
+    // Cards run MAIN-EVENT-LAST: orderOnCard 1 is the headliner (the event's named
+    // matchup, e.g. "Bivol vs Eifert" = ord 1), so bouts compete in DESCENDING
+    // orderOnCard. The next fight up is the UPCOMING fight with the highest
+    // orderOnCard BELOW the completed one — lt + desc, not gt + asc. (gt/asc
+    // returned NULL every time, silently dropping every up-next ping.)
     const nextFight = await prisma.fight.findFirst({
       where: {
         eventId,
-        orderOnCard: { gt: completedFightOrder },
+        orderOnCard: { lt: completedFightOrder },
         fightStatus: 'UPCOMING',
       },
-      orderBy: { orderOnCard: 'asc' },
+      orderBy: { orderOnCard: 'desc' },
       include: {
         fighter1: { select: { firstName: true, lastName: true } },
         fighter2: { select: { firstName: true, lastName: true } },
