@@ -87,15 +87,19 @@ function getWinnerFighterId(
  */
 async function notifyNextFight(eventId: string, completedFightOrder: number): Promise<void> {
   try {
-    // Find the next fight that hasn't started yet
-    // ONE FC fights go in ascending order (1 = first fight of the night)
+    // Cards run MAIN-EVENT-LAST: orderOnCard 1 is the headliner (top of the card,
+    // fights last), so bouts compete in DESCENDING orderOnCard. The next fight up
+    // after the one that just finished is the UPCOMING fight with the highest
+    // orderOnCard BELOW it — lt + desc, not gt + asc. (The old "1 = first fight"
+    // assumption was wrong: gt/asc returned NULL every time, so the up-next ping
+    // never fired — verified ONE Fight Night 43 headliner Tang vs Gasanov = ord 1.)
     const nextFight = await prisma.fight.findFirst({
       where: {
         eventId,
-        orderOnCard: { gt: completedFightOrder },
+        orderOnCard: { lt: completedFightOrder },
         fightStatus: 'UPCOMING',
       },
-      orderBy: { orderOnCard: 'asc' },
+      orderBy: { orderOnCard: 'desc' },
       include: {
         fighter1: { select: { firstName: true, lastName: true } },
         fighter2: { select: { firstName: true, lastName: true } },
