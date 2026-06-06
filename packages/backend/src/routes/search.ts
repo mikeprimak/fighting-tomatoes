@@ -1,10 +1,9 @@
+import { prisma } from '../lib/prisma';
 import { FastifyInstance } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 import { optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
 
-const prisma = new PrismaClient();
 
 /**
  * Search routes - unified search across fighters, fights, events, and promotions

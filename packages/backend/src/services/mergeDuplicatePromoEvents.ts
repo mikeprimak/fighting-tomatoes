@@ -13,9 +13,9 @@
  * dropped so the canonical wins.
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Prisma } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 const DATE_WINDOW_HOURS = 36;
 

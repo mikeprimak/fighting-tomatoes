@@ -6,12 +6,12 @@
  * Similar to ufcLiveParser.ts but adapted for Matchroom Boxing events
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import { MatchroomEventData, MatchroomFightData } from './matchroomLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 // ============== UTILITY FUNCTIONS ==============
 

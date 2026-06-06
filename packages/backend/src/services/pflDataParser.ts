@@ -1,4 +1,5 @@
 // PFL Data Parser - Imports scraped JSON data into database
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -16,7 +17,6 @@ import {
   isScrapeHealthyForCancellation,
 } from './cancellationGuards';
 
-const prisma = new PrismaClient();
 
 // ============== TYPE DEFINITIONS ==============
 

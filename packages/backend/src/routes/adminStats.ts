@@ -1,7 +1,6 @@
+import { prisma } from '../lib/prisma';
 import { FastifyPluginAsync } from 'fastify';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   /**

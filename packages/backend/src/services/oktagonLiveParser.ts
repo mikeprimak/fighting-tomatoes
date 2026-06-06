@@ -4,12 +4,11 @@
  * Detects changes in event status, fight status, and results
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { OktagonEventData, OktagonFightData } from './oktagonLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 // ============== UTILITY FUNCTIONS ==============
 

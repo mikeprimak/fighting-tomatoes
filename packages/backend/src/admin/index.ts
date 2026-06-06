@@ -1,10 +1,9 @@
+import { prisma } from '../lib/prisma';
 import AdminJS from 'adminjs';
 import AdminJSFastify from '@adminjs/fastify';
 import * as AdminJSPrisma from '@adminjs/prisma';
-import { PrismaClient } from '@prisma/client';
 import { FastifyInstance } from 'fastify';
 
-const prisma = new PrismaClient();
 
 // Register AdminJS adapter
 AdminJS.registerAdapter({
