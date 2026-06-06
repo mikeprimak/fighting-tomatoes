@@ -6,6 +6,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 - **Always ask before starting EAS builds** — build credits are limited
 - **Never use local DB** — always use Render External URL unless explicitly asked
+- **🚨 NEVER run `prisma migrate dev`, `db push`, `migrate diff`, or `migrate reset` against the DB.** Because `DATABASE_URL` always points at the **production** Render Postgres (rule above), these run against **prod** — and `migrate dev`/`diff`/`db push` create a `prisma_migrate_shadow_db_*` (a `CREATE DATABASE` + full replay of every migration). On the 256 MB instance this OOM-crashes Postgres; doing it repeatedly while iterating crash-loops the whole app. This caused the **2026-06-06 DB outage** (9 orphaned shadow DBs). To **apply** a migration use `prisma migrate deploy` (or `pnpm db:migrate:deploy`) only — it never creates a shadow DB. To **author** a new migration, point `DATABASE_URL`/`SHADOW_DATABASE_URL` at a throwaway LOCAL Postgres, generate the SQL there, then `migrate deploy` to prod. The `db:migrate` script (`= migrate dev`) and `db:reset` are footguns — do not run them. See `docs/daily/2026-06-06.md` + memory `prisma-never-migrate-dev-on-prod`.
 - **Document your work** — at end of every session, create or update `docs/daily/YYYY-MM-DD.md`. If you changed how an area works, update the relevant `docs/areas/*.md`. See `docs/README.md` for templates. Do this without being asked.
 - **Vercel CLI is installed** — manage Vercel things yourself (deploys, env vars, project linking, logs). Don't make the user run Vercel commands. Projects: `packages/web` (Next.js, **prod at goodfights.app**) and `packages/landing` (static). Both auto-deploy from `main` — a `git push` usually suffices. **`web-jet-gamma-12.vercel.app` is the old `packages/web` URL and is now an unused dev area — use goodfights.app, never web-jet-gamma-12.**
 - **Log recurring tasks** — when a session surfaces a *recurring* operator task (weekly attribution review, quarterly trait refresh, scraper health audits, etc.), append it to `docs/operations/maintenance.md` under the right cadence section. One-offs don't belong there.
@@ -84,6 +85,13 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **Debugging**: config audit first → add logging → check for multiple PrismaClient instances
 - **Rule**: if 3+ fixes fail → STOP → audit all config files
 - **File ops**: prefer editing existing files over creating new ones
+- **DB connections — NEVER `new PrismaClient()` in backend code.** Always
+  `import { prisma } from '../lib/prisma'` (the process-wide singleton with a
+  bounded `connection_limit`). Each `new PrismaClient()` opens its OWN pool;
+  ~50 of them across route/service/parser modules exhausted Render Postgres's
+  `max_connections` (103) and crash-looped the DB on a fight night (2026-06-06).
+  This applies to scripts too. See `docs/daily/2026-06-06.md` and the
+  `prisma-single-client-rule` memory.
 
 ## Reference
 

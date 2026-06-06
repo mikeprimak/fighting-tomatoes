@@ -23,12 +23,11 @@
  * Exit codes: 0 success (applied or dry-run); 1 fatal (bad args/event, scrape error).
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { YahooLiveBlogScraper } from '../services/yahooLiveBlogScraper';
 import { parseSherdogLiveData } from '../services/sherdogLiveParser';
 import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 interface CliArgs {
   eventId: string | null;

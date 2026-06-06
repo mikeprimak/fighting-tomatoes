@@ -22,10 +22,11 @@ import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
 import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
-import { formatEventDate } from '../../utils/dateFormatters';
+import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
+import { useEventBroadcasts } from '../../components/HowToWatch';
 import FighterCard from '../../components/FighterCard';
 import { SearchBar } from '../../components';
 
@@ -42,16 +43,19 @@ const relUntilPhrase = (dateStr: string): string => {
   return weeks === 1 ? 'in 1 week' : `in ${weeks} weeks`;
 };
 
-// Event.date is a UTC-hour placeholder, so compare its UTC calendar day to
-// today's local calendar day (matches formatTimeUntil's day comparison).
-const isEventToday = (dateStr: string): boolean => {
+// "Events Today" / "Events Tomorrow" / "Events Saturday" — heading for a
+// weekend event's per-day group. Event.date is a UTC-hour placeholder, so
+// derive the day from its UTC calendar day vs the user's local today.
+const eventDayLabel = (dateStr: string): string => {
   const d = new Date(dateStr);
   const now = new Date();
-  return (
-    d.getUTCFullYear() === now.getFullYear() &&
-    d.getUTCMonth() === now.getMonth() &&
-    d.getUTCDate() === now.getDate()
-  );
+  const todayK = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const evK = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const days = Math.round((evK - todayK) / 86_400_000);
+  if (days <= 0) return 'Events Today';
+  if (days === 1) return 'Events Tomorrow';
+  const weekday = new Date(evK).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  return `Events ${weekday}`;
 };
 
 // "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
@@ -131,6 +135,8 @@ interface Event {
   eventStatus: string;
   bannerImage?: string | null;
   mainStartTime?: string | null;
+  aiEventSummary?: string | null;
+  aiEventConfidence?: number | null;
 }
 
 // --- Presentational helpers (module scope so they don't remount on state change) ---
@@ -139,6 +145,7 @@ function Section({
   colors,
   styles,
   title,
+  subtitle,
   icon,
   iconLib = 'fa',
   onSeeAll,
@@ -147,6 +154,7 @@ function Section({
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   title: string;
+  subtitle?: string;
   icon: string;
   iconLib?: 'fa' | 'fa6';
   onSeeAll?: () => void;
@@ -155,13 +163,16 @@ function Section({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          {iconLib === 'fa6' ? (
-            <FontAwesome6 name={icon as any} size={20} color={colors.primary} />
-          ) : (
-            <FontAwesome name={icon as any} size={20} color={colors.primary} />
-          )}
-          <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.sectionTitleCol}>
+          <View style={styles.sectionTitleRow}>
+            {iconLib === 'fa6' ? (
+              <FontAwesome6 name={icon as any} size={20} color={colors.primary} />
+            ) : (
+              <FontAwesome name={icon as any} size={20} color={colors.primary} />
+            )}
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
+          {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
         </View>
         {onSeeAll && (
           <TouchableOpacity
@@ -195,14 +206,21 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
   );
 }
 
-/** Half-width event thumbnail for the Events This Weekend grid. */
-function EventThumbnail({
+/**
+ * Full-width horizontal event card: image on the left, event name + date/start
+ * time and a one-line AI "why care" blurb on the right. `description` is the
+ * existing aiPreviewShort of the event's main event — already confidence-gated
+ * by the caller — so a fan sees at a glance what's worth tuning in for.
+ */
+function EventRow({
   event,
+  description,
   colors,
   styles,
   onPress,
 }: {
   event: Event;
+  description?: string | null;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
@@ -212,53 +230,48 @@ function EventThumbnail({
     : getDefaultBanner(event.promotion || '');
   const name = normalizeEventName(event.name, event.promotion);
 
-  // Top-align the crop for portrait/tall images (faces/posters live at the top).
-  // We measure the box width + image aspect, then pin tall images to top:0 so the
-  // overflow is clipped from the bottom instead of center-cropping.
-  const CONTAINER_ASPECT = 16 / 9;
-  const [boxWidth, setBoxWidth] = React.useState(0);
-  const [imgAspect, setImgAspect] = React.useState<number | null>(null);
-  const isTall = imgAspect !== null && imgAspect < CONTAINER_ASPECT;
-  const handleImageLoad = (e: any) => {
-    const { width: w, height: h } = e.nativeEvent.source;
-    if (w > 0 && h > 0) setImgAspect(w / h);
-  };
+  // Real start instant lives in mainStartTime (event.date is a UTC-hour
+  // placeholder) — only show a time when we actually have one, in the user's
+  // local zone with its abbreviation (e.g. "8:00 PM ET").
+  const startTime = event.mainStartTime
+    ? `${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
+    : null;
+
+  // Main-card broadcast channel for the user's region, shown beside the time.
+  // Prefer the MAIN_CARD entry (matches mainStartTime), then a whole-event one.
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const channel = React.useMemo(() => {
+    const bs = broadcastsData?.broadcasts || [];
+    const entry =
+      bs.find((b) => b.cardSection === 'MAIN_CARD') ||
+      bs.find((b) => b.cardSection === null) ||
+      bs[0];
+    return entry?.channel?.name || null;
+  }, [broadcastsData]);
+
+  // Date now lives once under the day's section heading — the card meta line is
+  // just the start time + broadcast channel.
+  const dateLine = [startTime, channel].filter(Boolean).join(' · ');
 
   return (
-    <TouchableOpacity style={styles.eventThumb} activeOpacity={0.85} onPress={onPress}>
-      <View
-        style={styles.eventThumbImageWrap}
-        onLayout={(e) => setBoxWidth(e.nativeEvent.layout.width)}
-      >
+    <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
+      <View style={styles.eventRowImageWrap}>
         {imageSource ? (
-          <Image
-            source={imageSource}
-            style={
-              isTall && boxWidth
-                ? { position: 'absolute', top: 0, left: 0, width: boxWidth, height: boxWidth / imgAspect! }
-                : styles.eventThumbImage
-            }
-            resizeMode={isTall && boxWidth ? undefined : 'cover'}
-            onLoad={handleImageLoad}
-          />
+          <Image source={imageSource} style={styles.eventRowImage} resizeMode="cover" />
         ) : (
-          <View style={[styles.eventThumbImage, styles.eventThumbPlaceholder]}>
-            <PromotionLogo promotion={event.promotion || ''} size={40} color="#FFFFFF" />
+          <View style={[styles.eventRowImage, styles.eventThumbPlaceholder]}>
+            <PromotionLogo promotion={event.promotion || ''} size={32} color="#FFFFFF" />
           </View>
         )}
-        {event.promotion ? (
-          <View style={styles.eventThumbLogo}>
-            <PromotionLogo promotion={event.promotion} size={18} color="#FFFFFF" />
-          </View>
-        ) : null}
       </View>
-      <View style={styles.eventThumbBody}>
-        <Text style={styles.eventThumbName} numberOfLines={2}>
+      <View style={styles.eventRowBody}>
+        <Text style={styles.eventRowName} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={styles.eventThumbDate}>
-          {isEventToday(event.date) ? 'Today' : formatEventDate(event.date)}
-        </Text>
+        <Text style={styles.eventRowDate}>{dateLine}</Text>
+        {description ? (
+          <Text style={styles.eventRowDesc}>{description}</Text>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -435,8 +448,12 @@ export default function HomeScreen() {
   });
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: () => apiService.getEvents({ type: 'upcoming' }),
+    queryKey: ['events', 'upcoming', 'withFights'],
+    // Home event cards show only the event + its AI "why care" summary (no fight
+    // list), so don't pull fight cards here — includeFights makes the backend
+    // aggregate hype/counts for every fight on every event (slow + heavy). The
+    // events SCREENS still use includeFights; the home doesn't need it.
+    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: false }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -546,6 +563,25 @@ export default function HomeScreen() {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
+  // Group the weekend events by calendar day so each day renders under its own
+  // heading (Today / Tomorrow / Saturday …), first-appearance order preserved
+  // (upcomingEvents is already day-sorted with UFC floated up within each day).
+  const eventsByDay: { label: string; events: Event[] }[] = (() => {
+    const groups: { label: string; events: Event[] }[] = [];
+    const byKey = new Map<number, { label: string; events: Event[] }>();
+    for (const e of upcomingEvents) {
+      const k = eventDayKey(e.date);
+      let g = byKey.get(k);
+      if (!g) {
+        g = { label: eventDayLabel(e.date), events: [] };
+        byKey.set(k, g);
+        groups.push(g);
+      }
+      g.events.push(e);
+    }
+    return groups;
+  })();
+
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   const recentFights = (
     weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
@@ -641,86 +677,62 @@ export default function HomeScreen() {
       }
     >
         <View>
-      {/* Editorial / Blog ---------------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="The Latest"
-        icon="newspaper-o"
-        onSeeAll={() => router.push('/blog' as any)}
-      >
-        {isEditorialLoading ? (
+      {/* Events by day — Today / Tomorrow / Saturday … ---------------------*/}
+      {isEventsLoading ? (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="This Weekend"
+          icon="fire-flame-curved"
+          iconLib="fa6"
+        >
           <Loading colors={colors} styles={styles} />
-        ) : editorial && editorial.posts.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        </Section>
+      ) : eventsByDay.length > 0 ? (
+        eventsByDay.map((day, di) => (
+          <Section
+            key={day.label}
+            colors={colors}
+            styles={styles}
+            title={day.label}
+            subtitle={formatEventDate(day.events[0].date)}
+            icon="calendar"
+            onSeeAll={di === 0 ? () => router.push('/(tabs)/events' as any) : undefined}
           >
-            {editorial.posts.map((post) => (
-              <TouchableOpacity
-                key={post.slug}
-                style={styles.blogCard}
-                activeOpacity={0.85}
-                onPress={() => openBlogPost(post.slug)}
-              >
-                <Image
-                  source={{ uri: resolveBlogImageUrl(post.image) }}
-                  style={styles.blogImage}
-                  resizeMode="cover"
-                />
-                <View style={styles.blogBody}>
-                  <Text style={styles.blogTitle} numberOfLines={2}>
-                    {post.title}
-                  </Text>
-                  <Text style={styles.blogExcerpt} numberOfLines={3}>
-                    {post.excerpt}
-                  </Text>
-                  <Text style={styles.blogDate}>
-                    {post.date
-                      ? new Date(post.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                      : ''}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        ) : (
-          <Empty styles={styles} text="No articles yet" />
-        )}
-      </Section>
-
-      {/* Events This Weekend ------------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="Events This Weekend"
-        icon="fire-flame-curved"
-        iconLib="fa6"
-        onSeeAll={() => router.push('/(tabs)/events' as any)}
-      >
-        {isEventsLoading ? (
-          <Loading colors={colors} styles={styles} />
-        ) : upcomingEvents.length > 0 ? (
-          <View style={styles.eventGrid}>
-            {upcomingEvents.map((event) => (
-              <EventThumbnail
-                key={event.id}
-                event={event}
-                colors={colors}
-                styles={styles}
-                onPress={() => router.push(`/event/${event.id}` as any)}
-              />
-            ))}
-          </View>
-        ) : (
+            <View style={styles.eventList}>
+              {day.events.map((event) => {
+                // Card-wide AI "why care" blurb, gated on the same confidence
+                // floor the fight screens use (>= 0.5). Event-level summary only —
+                // the home no longer loads fights, so there's no per-fight fallback.
+                const description =
+                  event.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary
+                    ? event.aiEventSummary
+                    : null;
+                return (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    description={description}
+                    colors={colors}
+                    styles={styles}
+                    onPress={() => router.push(`/event/${event.id}` as any)}
+                  />
+                );
+              })}
+            </View>
+          </Section>
+        ))
+      ) : (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="This Weekend"
+          icon="fire-flame-curved"
+          iconLib="fa6"
+        >
           <Empty styles={styles} text="No events this weekend" />
-        )}
-      </Section>
+        </Section>
+      )}
 
       {/* Most Hyped Upcoming Fights ----------------------------------------*/}
       <Section
@@ -829,6 +841,59 @@ export default function HomeScreen() {
           ) : null}
         </Section>
       )}
+
+      {/* The Latest / Editorial blog (moved below Highlighted Fighter) ------*/}
+      <Section
+        colors={colors}
+        styles={styles}
+        title="The Latest"
+        icon="newspaper-o"
+        onSeeAll={() => router.push('/blog' as any)}
+      >
+        {isEditorialLoading ? (
+          <Loading colors={colors} styles={styles} />
+        ) : editorial && editorial.posts.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {editorial.posts.map((post) => (
+              <TouchableOpacity
+                key={post.slug}
+                style={styles.blogCard}
+                activeOpacity={0.85}
+                onPress={() => openBlogPost(post.slug)}
+              >
+                <Image
+                  source={{ uri: resolveBlogImageUrl(post.image) }}
+                  style={styles.blogImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.blogBody}>
+                  <Text style={styles.blogTitle} numberOfLines={2}>
+                    {post.title}
+                  </Text>
+                  <Text style={styles.blogExcerpt} numberOfLines={3}>
+                    {post.excerpt}
+                  </Text>
+                  <Text style={styles.blogDate}>
+                    {post.date
+                      ? new Date(post.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          <Empty styles={styles} text="No articles yet" />
+        )}
+      </Section>
 
       {/* Hot Fighters -------------------------------------------------------*/}
       <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
@@ -1031,6 +1096,9 @@ function makeStyles(colors: ThemeColors) {
       marginHorizontal: 16,
       marginBottom: 12,
     },
+    sectionTitleCol: {
+      flexShrink: 1,
+    },
     sectionTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1040,6 +1108,13 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 20,
       fontWeight: 'bold',
       color: colors.text,
+    },
+    sectionSubtitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginTop: 3,
+      marginLeft: 28,
     },
     fightGroupHeading: {
       fontSize: 12,
@@ -1075,62 +1150,61 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 14,
       color: colors.textSecondary,
     },
-    // Upcoming events 2×3 grid
-    eventGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+    // Full-width horizontal event cards (image left, details right)
+    eventList: {
       paddingHorizontal: 16,
-      justifyContent: 'space-between',
-      rowGap: 16,
+      gap: 12,
     },
-    eventThumb: {
-      width: '48%',
+    eventRow: {
+      flexDirection: 'row',
+      minHeight: 96,
       backgroundColor: colors.card,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: 'hidden',
     },
-    eventThumbImageWrap: {
+    eventRowImageWrap: {
       position: 'relative',
-      width: '100%',
-      aspectRatio: 16 / 9,
+      width: 120,
       backgroundColor: colors.border,
-      overflow: 'hidden',
     },
-    eventThumbImage: {
-      width: '100%',
-      height: '100%',
+    // Absolute-fill so the (remote) image can't drive the card height — the row
+    // height comes from the text column, and the image fills whatever that is.
+    eventRowImage: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
     },
     eventThumbPlaceholder: {
       backgroundColor: '#1a1a2e',
       justifyContent: 'center',
       alignItems: 'center',
     },
-    eventThumbLogo: {
-      position: 'absolute',
-      bottom: 6,
-      left: 6,
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      borderRadius: 6,
-      paddingHorizontal: 6,
-      paddingVertical: 4,
+    eventRowBody: {
+      flex: 1,
+      padding: 12,
     },
-    eventThumbBody: {
-      padding: 10,
-    },
-    eventThumbName: {
-      fontSize: 14,
+    eventRowName: {
+      fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: 6,
     },
-    eventThumbDate: {
+    eventRowDate: {
       fontSize: 11,
       fontWeight: '600',
       color: colors.textSecondary,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+    },
+    eventRowDesc: {
+      marginTop: 6,
+      fontSize: 11,
+      lineHeight: 15,
+      color: colors.textSecondary,
     },
     // Most Followed horizontal chip
     followChip: {

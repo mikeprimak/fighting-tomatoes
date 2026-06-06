@@ -15,18 +15,27 @@ import Anthropic from '@anthropic-ai/sdk';
 const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 4096;
 
+// Minimum fan ratings before a fight's hype is trustworthy enough to show the LLM.
+// Below this it's noise (a single 10/10 rating is not "fans are hyped"), so we omit
+// it entirely rather than rely on the prompt to ignore it.
+const HYPE_MIN_SAMPLE = 5;
+
 const SYSTEM_PROMPT = `You are a combat-sports analyst enriching a fight card for a fight-rating app.
 
 You will be given:
   - A promotion (e.g. "UFC")
   - An event name (e.g. "UFC Fight Night Allen vs Costa")
-  - A CARD: the authoritative list of fights on this event, each with a fightId, fighter names, weight class, card section, and order on card.
+  - A CARD: the authoritative list of fights on this event, each with a fightId, fighter names, weight class, card section, order on card, and (when fans have rated it) a fanHype score + sample size.
   - One or more source excerpts (preview articles, official event pages).
 
 Your job: emit ONE record per fightId that the editorial actually covers. Skip fightIds the editorial doesn't speak to — do NOT invent narrative from training data.
 
 Output STRICT JSON (no prose, no markdown, no fences):
 {
+  "event": {                                       // card-wide summary — see "Event summary rules" below
+    "summary": "1-2 short sentences (LAST NAMES ONLY) that SELL the whole card to a fan deciding whether to watch. Lead with the hook (style clash, guaranteed action, marquee stakes), not a neutral 'X faces Y' recap. See 'Event summary rules'. null if you can't ground a real card-wide read.",
+    "confidence": 0.7                              // 0.0-1.0, YOUR confidence the event summary is accurate and useful
+  },
   "fights": [
     {
       "fightId": "abc-123-...",                   // copied verbatim from the CARD
@@ -62,7 +71,32 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
     Pace inference does NOT require editorial to say "this will be fast" — it requires you to recognize the matchup. You are an analyst; act like one.
   - "styleTags" follow the same rule: emit contrast tags when fighters' established styles imply a clash, even if the editorial doesn't spell it out. Common patterns: "striker vs grappler", "wrestler vs striker", "kickboxer vs boxer", "veteran vs prospect". Skip when the matchup is symmetrical with no contrast hook.
   - Rematches/trilogies: when editorial confirms (or strongly implies) a prior meeting between the two named fighters, ALWAYS include the literal word "rematch" (or "trilogy" for a third meeting) in storylines, plus the prior outcome when given. Example: "rematch of 2024 FOTY (Allen UD)". This token is load-bearing for downstream personalization.
-  - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.`;
+  - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.
+
+Event summary rules (the "event" object) — SELL the night, don't just describe it:
+  - GOAL: make a fan WANT to watch. This is ad copy for the card, not a neutral listing. Lead with the hook that makes the night exciting; never settle for a flat "X faces Y for the title" recap when a sharper sell is available.
+  - LENGTH: 1 sentence preferred; up to 2 short sentences when a second hook genuinely adds a sell. Keep it tight (~15-30 words, fits three lines on a phone card). Plain English, no jargon.
+  - LAST NAMES ONLY ("Muhammad vs Bonfim", not "Belal Muhammad vs Gabriel Bonfim"), except where a first name is genuinely needed to tell apart two fighters who share a surname.
+  - LEAN ON STYLE FIRST — this is your strongest and PREFERRED selling tool, ahead of stakes. Before writing, look at the "styleTags" and "pace" you assigned to the main event (and co-main). If they imply an action hook, LEAD with it. The matchup's style is what makes a fan press play.
+      • MMA style clash: "Striker Muhammad takes on grappler Bonfim in a classic styles clash for the welterweight crown."
+      • Boxing style (no grappling — use boxing terms): "boxer-puncher vs slick technician", "pressure fighter vs counterpuncher", "heavy-handed", "knockout artist", "switch-hitter". e.g. "Heavy-handed Rozicki tries to spoil the slicker Billam-Smith's homecoming."
+      • Guaranteed action: "a stand-up war that won't reach the judges", "both men always bring it", "two finishers who never leave it to the cards".
+    These style/pace reads are ANALYSIS, not fabrication — same standing as the per-fight pace/styleTags inference, so apply them whenever the matchup gives a clear hook. But do NOT assert a style the fighters don't support (don't call a wrestler-vs-wrestler bout a "stand-up war", or two cautious counter-fighters a "guaranteed firefight").
+  - STAKES ARE THE FALLBACK, NOT THE LEAD. Generic stakes language ("divisional implications", "title on the line", "with title-shot stakes") is the WEAKEST hook — use it only when there is genuinely no style or action angle, and never as the whole line.
+  - ONLY NAME FIGHTERS ON THIS CARD. Every fighter you mention in the summary MUST appear in the CARD above. Do NOT name an outside fighter — a champion in another promotion, a hypothetical future opponent, anyone not booked on this event. This is a hard rule.
+  - NEVER CROSS-WIRE FIGHTERS BETWEEN BOUTS. Each fighter faces ONLY their listed opponent in the CARD. When you reference a fight other than the main event (e.g. the co-main), name BOTH fighters in THAT bout ("Massey vs Clarke in the co-main"), and never imply a fighter is pursuing, eyeing, or will meet someone from a DIFFERENT bout. Do not suggest the co-main winner faces the headliner, etc.
+  - NO SPECULATIVE NEXT FIGHTS. Sell THIS card, never a hypothetical future one. Banned phrasings: "could set up a megafight with X", "if results align", "a potential future rival", "with X implications if the winner prevails", "the winner could/may next face...".
+      BAD:  "Rodriguez challenges Vargas for the bantamweight title, with a potential mega-fight against Inoue on the line if Rodriguez prevails." (Inoue is not on the card; sells a hypothetical fight)
+      GOOD: "Undefeated Rodriguez challenges champion Vargas for the bantamweight belt in a can't-miss title fight." (sells the fight on the card)
+  - Reason across the CARD, not one fight: count of TITLE fights (use the CARD's TITLE flags), the main event and its hook, notable returns/debuts, marquee names. Pick the 1-2 hooks that best SELL the night, don't list every bout.
+  - FAN HYPE: some CARD fights show fanHype (scale 1-10, the average of fans' pre-fight excitement ratings, where 8+ is strong) and n (how many fans rated it). Only fights with enough ratings to be trustworthy carry this field, so a shown fanHype is always meaningful. Compare it RELATIVELY across the fights that show it. Use it to INFORM the line, never to dictate it: the main event still anchors.
+    ONLY when a NON-main fight clearly leads on the shown hype (notably higher than the main event, or strongly hyped when the main event shows no hype) you MUST name that fan excitement EXPLICITLY using the word "fans". Do NOT swap in generic stakes language ("divisional implications", "with title-shot stakes") for the fan angle, and do NOT just restate the number. Worked example for a card whose co-main out-hypes the main event:
+      GOOD: "Muhammad vs Bonfim headlines, but fans are most hyped for the Allen vs Shahbazyan co-main."
+      BAD:  "Muhammad vs Bonfim headlines; Allen and Shahbazyan meet in the co-main with divisional implications." (mentions the fight but hides the fan excitement)
+    If NO fight shows fanHype, or no non-main fight clearly out-hypes the main event, do NOT mention hype at all, just frame the headliner normally. Never invent fan excitement that the hype numbers don't support.
+  - Do NOT fabricate FACTUAL claims (records, results, prior meetings, title lineage) — those still require editorial. Style/pace framing does not (it is analysis, per above). If only the main event is grounded, selling the headliner alone is fine. If you have nothing beyond names and no real style read, set "summary" to null.
+  - "confidence": editorial covers multiple fights / clear card-wide story ⇒ 0.7+. Only the main event grounded ⇒ 0.5-0.6. Thin/namedrop-only ⇒ below 0.5 (it will be hidden).
+  - House style: no em dashes or en dashes (use commas, "and", or periods).`;
 
 export interface CardItem {
   fightId: string;
@@ -73,6 +107,10 @@ export interface CardItem {
   orderOnCard: number | null;
   isMainEvent: boolean;
   isTitle: boolean;
+  /** Average of fans' pre-fight excitement ratings (0-100), null if none. */
+  fanHype?: number | null;
+  /** How many fans contributed to fanHype (sample size). */
+  hypeCount?: number;
 }
 
 export interface FightEnrichmentInput {
@@ -99,8 +137,14 @@ export interface FightEnrichmentRecord {
   confidence: number;
 }
 
+export interface EventSummary {
+  summary: string;
+  confidence: number;
+}
+
 export interface FightEnrichmentResult {
   fights: FightEnrichmentRecord[];
+  event: EventSummary | null; // card-wide one-liner; null when ungrounded
   ghostFightIds: string[]; // fightIds returned by LLM that aren't in the card (dropped)
   usage: {
     inputTokens: number;
@@ -128,6 +172,12 @@ export async function extractFightEnrichment(
   const resp = await client().messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
+    // Low temperature: this is rule-bound extraction (anchor to the card, no
+    // off-card fighters, no speculation), not creative writing. The API default
+    // (1.0) made event summaries drift run-to-run and intermittently break the
+    // on-card-only / no-speculation rules; 0.4 keeps them adherent and stable
+    // while leaving a little room for the "selling" phrasing.
+    temperature: 0.4,
     system: [
       {
         type: 'text',
@@ -145,11 +195,12 @@ export async function extractFightEnrichment(
     .trim();
 
   const validIds = new Set(input.card.map((c) => c.fightId));
-  const { records, ghosts } = parseFights(text, validIds);
+  const { records, event, ghosts } = parseFights(text, validIds);
 
   const usage = resp.usage as any;
   return {
     fights: records,
+    event,
     ghostFightIds: ghosts,
     usage: {
       inputTokens: usage?.input_tokens ?? 0,
@@ -176,6 +227,9 @@ function buildUserMessage(input: FightEnrichmentInput): string {
     if (c.orderOnCard !== null) bits.push(`order=${c.orderOnCard}`);
     if (c.isMainEvent) bits.push('MAIN_EVENT');
     if (c.isTitle) bits.push('TITLE');
+    if (c.fanHype != null && c.hypeCount && c.hypeCount >= HYPE_MIN_SAMPLE) {
+      bits.push(`fanHype=${c.fanHype.toFixed(1)}/10(n=${c.hypeCount})`);
+    }
     lines.push(`- ${bits.join(' | ')}`);
   }
   lines.push('');
@@ -197,19 +251,20 @@ function buildUserMessage(input: FightEnrichmentInput): string {
 function parseFights(
   raw: string,
   validIds: Set<string>,
-): { records: FightEnrichmentRecord[]; ghosts: string[] } {
+): { records: FightEnrichmentRecord[]; event: EventSummary | null; ghosts: string[] } {
   const jsonText = extractFirstJsonObject(raw);
   if (!jsonText) {
     console.warn('[aiEnrichment.extract] no JSON object found; raw:', raw.slice(0, 200));
-    return { records: [], ghosts: [] };
+    return { records: [], event: null, ghosts: [] };
   }
   let parsed: any;
   try {
     parsed = JSON.parse(jsonText);
   } catch {
     console.warn('[aiEnrichment.extract] JSON parse failed; text:', jsonText.slice(0, 200));
-    return { records: [], ghosts: [] };
+    return { records: [], event: null, ghosts: [] };
   }
+  const event = parseEventSummary(parsed?.event);
   const fights: any[] = parsed?.fights ?? [];
   const PACES = ['fast', 'tactical', 'grinding'];
   const RISK = ['lopsided', 'favorite-leans', 'pickem'];
@@ -250,7 +305,23 @@ function parseFights(
     });
   }
 
-  return { records, ghosts };
+  return { records, event, ghosts };
+}
+
+function parseEventSummary(raw: any): EventSummary | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const summary = typeof raw.summary === 'string' ? stripDashes(raw.summary.trim()) : '';
+  if (!summary || /^(null|n\/a|none)$/i.test(summary)) return null;
+  const confidence = typeof raw.confidence === 'number'
+    ? Math.max(0, Math.min(1, raw.confidence))
+    : 0.5;
+  return { summary, confidence };
+}
+
+// House style: the cron auto-publishes with no human sweep, so guarantee no
+// em/en dashes even if the prompt rule slips (mirrors the fighter-profile parser).
+function stripDashes(s: string): string {
+  return s.replace(/\s*[—–]\s*/g, ', ');
 }
 
 function extractFirstJsonObject(raw: string): string | null {
