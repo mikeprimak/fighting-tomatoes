@@ -8,16 +8,19 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import type { FightEnrichmentRecord, CardItem } from './extractFightEnrichment';
+import type { FightEnrichmentRecord, CardItem, EventSummary } from './extractFightEnrichment';
 
 export interface PersistOptions {
   dryRun?: boolean;
+  /** Event-level summary to write onto the Event row (card-wide one-liner). */
+  event?: { id: string; summary: EventSummary | null };
 }
 
 export interface PersistResult {
   wroteCount: number;
   writtenFightIds: string[];
   uncoveredFightIds: string[]; // card fightIds the LLM didn't return a record for
+  wroteEventSummary: boolean;
 }
 
 export async function persistEnrichment(
@@ -56,6 +59,22 @@ export async function persistEnrichment(
     }
   }
 
+  // Event-level summary. Written even when null so a later pass that loses
+  // grounding clears a stale line rather than leaving an old one stuck.
+  let wroteEventSummary = false;
+  if (opts.event && !opts.dryRun) {
+    const s = opts.event.summary;
+    await prisma.event.update({
+      where: { id: opts.event.id },
+      data: {
+        aiEventSummary: s?.summary ?? null,
+        aiEventConfidence: s?.confidence ?? null,
+        aiEventEnrichedAt: new Date(),
+      },
+    });
+    wroteEventSummary = !!s;
+  }
+
   const uncoveredFightIds = card
     .map((c) => c.fightId)
     .filter((id) => !covered.has(id));
@@ -64,6 +83,7 @@ export async function persistEnrichment(
     wroteCount: written.length,
     writtenFightIds: written,
     uncoveredFightIds,
+    wroteEventSummary,
   };
 }
 

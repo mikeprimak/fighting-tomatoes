@@ -49,6 +49,7 @@ export interface EnrichOneEventResult {
   uncoveredFightIds: string[];  // card fights LLM didn't speak to (no editorial coverage)
   ghostFightIds: string[];      // LLM tried to emit fightIds not on the card (dropped)
   wroteCount: number;
+  eventSummary?: string | null; // card-wide one-liner written this pass (null if ungrounded)
   costUsd: number;
   elapsedMs: number;
   persistResult: PersistResult;
@@ -83,7 +84,7 @@ export async function enrichOneEvent(
       wroteCount: 0,
       costUsd: 0,
       elapsedMs: 0,
-      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: [] },
+      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: [], wroteEventSummary: false },
       abortedReason: 'no_upcoming_fights',
     };
   }
@@ -137,7 +138,7 @@ export async function enrichOneEvent(
       wroteCount: 0,
       costUsd: 0,
       elapsedMs: 0,
-      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: card.map((c) => c.fightId) },
+      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: card.map((c) => c.fightId), wroteEventSummary: false },
       abortedReason: 'no_sources',
     };
   }
@@ -168,7 +169,7 @@ export async function enrichOneEvent(
     card,
     result.fights,
     sources.map((s) => s.url),
-    { dryRun: !!opts.dryRun },
+    { dryRun: !!opts.dryRun, event: { id: event.id, summary: result.event } },
   );
 
   return {
@@ -179,6 +180,7 @@ export async function enrichOneEvent(
     uncoveredFightIds: persistResult.uncoveredFightIds,
     ghostFightIds: result.ghostFightIds,
     wroteCount: persistResult.wroteCount,
+    eventSummary: result.event?.summary ?? null,
     costUsd,
     elapsedMs,
     persistResult,

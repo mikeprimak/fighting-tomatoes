@@ -135,6 +135,8 @@ interface Event {
   eventStatus: string;
   bannerImage?: string | null;
   mainStartTime?: string | null;
+  aiEventSummary?: string | null;
+  aiEventConfidence?: number | null;
 }
 
 // --- Presentational helpers (module scope so they don't remount on state change) ---
@@ -706,13 +708,17 @@ export default function HomeScreen() {
           >
             <View style={styles.eventList}>
               {day.events.map((event) => {
-                // Main event (final fight) AI "why care" blurb, gated on the same
-                // confidence floor the fight screens use (>= 0.5).
+                // Card-wide AI "why care" blurb, gated on the same confidence
+                // floor the fight screens use (>= 0.5). Prefer the event-level
+                // summary (reasons across the whole card); fall back to the main
+                // event's per-fight line until the event pass has run.
                 const main = mainEventFight(event);
                 const description =
-                  main && main.aiConfidence != null && main.aiConfidence >= 0.5
-                    ? main.aiPreviewShort
-                    : null;
+                  event.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary
+                    ? event.aiEventSummary
+                    : main && main.aiConfidence != null && main.aiConfidence >= 0.5
+                      ? main.aiPreviewShort
+                      : null;
                 return (
                   <EventRow
                     key={event.id}
