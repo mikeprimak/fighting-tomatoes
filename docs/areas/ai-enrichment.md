@@ -188,21 +188,35 @@ Original Phase 1 flow asked the LLM to extract fights from editorial text, then 
 - Render `aiPreview` raw or with a small "AI-generated" disclosure? (Lean: disclosure on web SEO pages for transparency; no disclosure on the in-app "why care" snippet since it reads as editorial.)
 - Do we localize? (Defer — English only for now.)
 
-## Idea backlog — event "why to care" summary (2026-06-05)
+## Planned — event-level "why to care" enrichment job (decided 2026-06-06)
 
-Mike wants a 1–2 line "what to tune in for" blurb on each home-screen event card.
-**Recommendation: compose from existing data first; do not build a new per-event bot yet.**
+**Decision: build a dedicated, event-specific AI enrichment job.** As of 2026-06-06 the
+home-screen event card shows the *main event's* existing `aiPreviewShort` (interim,
+composed from per-fight data — see "Interim" below). That's only one fight's framing;
+Mike wants a genuine **event-level** blurb that reasons across the whole card, e.g.
+*"3 title fights, two ranked-LW eliminators, and a returning ex-champ"* — the kind of
+"what to tune in for" line that requires looking at the card as a whole, not one bout.
 
-- Fights already carry `aiPreviewShort` + `aiConfidence` from the existing enrichment
-  cron. An event-level blurb can be derived for **zero marginal cost** from the
-  card's headline / highest-hype fight preview, optionally prefixed with the hype
-  signal we already compute (`/top-upcoming-fights` gives hype count + average).
-- A dedicated per-event enrichment pass (new Haiku bot, event-level prompt) is the
-  "nicer" version but adds cost + a new cron + a new column, and is only worth it if
-  the composed version reads thin. Gate it on that.
-- If we do build it: follow the broadcast-discovery template, Haiku 4.5 + prompt
-  caching, confidence floor before display (mirror the `aiConfidence < 0.5` hide rule
-  used for `aiPreviewShort`).
+What the new job needs to produce (event-scoped, not fight-scoped):
+- A 1–2 line event summary that can reference card-wide facts: count of title fights,
+  number of ranked matchups, headliner stakes, notable returns/debuts, divisions.
+- Inputs it should be given: every fight on the card (fighters, `isTitle`/`titleName`,
+  weight class, ranking if available, `orderOnCard`), plus the existing per-fight
+  `aiPreviewShort`/`aiTags` so it can synthesize rather than re-derive.
+
+Build notes (carry over from the original plan):
+- Follow the broadcast-discovery template (`services/broadcastDiscovery/`).
+- Haiku 4.5 + prompt caching; cost ceiling stays under the workstream's <$300/yr.
+- New `Event`-level columns (e.g. `aiEventSummary`, `aiEventConfidence`,
+  `aiEventEnrichedAt`) — mirror the fight columns.
+- Confidence floor before display (same `< 0.5` hide rule the card already applies).
+- Cadence: align with the start-time / upcoming-event refresh so summaries refresh as
+  cards fill in (T-10/T-5/T-2 like the fight enrichment, or on schedule change).
+
+### Interim (shipped 2026-06-06)
+The card currently reuses the **main event's** `aiPreviewShort` (lowest `orderOnCard`
+= headliner), confidence-gated at ≥ 0.5. Zero marginal cost, but single-fight framing —
+the dedicated job above replaces this with a true event-level line.
 
 ## Session protocol
 
