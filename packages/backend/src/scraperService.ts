@@ -587,17 +587,16 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
   const twelveHoursAgo = new Date(now.getTime() - TWELVE_HOURS_MS);
   const sixHoursFromNow = new Date(now.getTime() + SIX_HOURS_MS);
 
-  // Tapology is excluded — its tracker overwrites lifecycle no-tracker
-  // completions back to UPCOMING when Tapology hasn't yet posted results,
-  // so all tapology orgs run via the lifecycle no-tracker path instead.
-  // Sherdog is layered on top — events keep their native scraperType (often
-  // 'tapology') for daily data scraping but get tracked via Sherdog live
-  // when Event.sherdogPbpUrl is set.
+  // Tapology re-enabled 2026-06-06: all tapology promotions live-track on the VPS
+  // and auto-publish. The earlier exclusion (its tracker overwrote lifecycle
+  // no-tracker completions back to UPCOMING) no longer applies — reliable tapology
+  // orgs are no longer bulk-completed, so there is no premature completion to
+  // overwrite. Sherdog is still layered on top via Event.sherdogPbpUrl.
   const liveEvents = await prisma.event.findMany({
     where: {
       eventStatus: 'LIVE',
       OR: [
-        { scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl'] } },
+        { scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'tapology'] } },
         { sherdogPbpUrl: { not: null } },
       ],
     },

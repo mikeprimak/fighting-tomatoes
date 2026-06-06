@@ -110,9 +110,13 @@ export function getEventTrackerType(event: {
 
 /**
  * Determine whether a scraper should auto-publish to published fields.
- * Only production-ready scrapers auto-publish.
+ * Production-ready scrapers auto-publish. Tapology is also trusted to publish
+ * live results to user-facing fields (operator decision 2026-06-06: "tapology is
+ * reliable enough"); previously its results landed in shadow fields only and
+ * relied on a post-event backfill, so live cards never advanced in the app.
  */
 export function shouldAutoPublish(scraperType: string | null | undefined): boolean {
+  if (scraperType === 'tapology') return true;
   return isProductionScraper(scraperType);
 }
 
