@@ -479,6 +479,7 @@ export async function runEventLifecycleCheck(): Promise<{
         id: true,
         name: true,
         date: true,
+        promotion: true,
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
@@ -498,6 +499,12 @@ export async function runEventLifecycleCheck(): Promise<{
       // Skip events handled by a production scraper — their live tracker
       // handles fight-by-fight completion with accurate timestamps.
       if (isProductionScraper(event.scraperType)) continue;
+
+      // Skip tapology-tracked promotions whose live tracker is reliable
+      // (e.g. Zuffa Boxing). isProductionScraper('tapology') is false, but the
+      // VPS Tapology tracker advances these fight-by-fight — bulk-completing
+      // here would wipe the whole card to COMPLETED the moment it goes LIVE.
+      if (hasReliableLiveTracker(event.scraperType, event.promotion)) continue;
 
       // Skip manual-tracker events — admin advances fights one at a time
       // via admin set-status. The no-tracker bulk-flip below would defeat
@@ -540,6 +547,7 @@ export async function runEventLifecycleCheck(): Promise<{
         id: true,
         name: true,
         date: true,
+        promotion: true,
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
@@ -552,8 +560,15 @@ export async function runEventLifecycleCheck(): Promise<{
       const startTime = getStartTime(event);
       const numFights = event._count.fights;
 
+      // Reliable-tracker tapology events (e.g. Zuffa Boxing) advance fight-by-
+      // fight like production scrapers, so use the duration-based estimate rather
+      // than the fixed no-tracker live window.
+      const trackerBacked =
+        isProductionScraper(event.scraperType) ||
+        hasReliableLiveTracker(event.scraperType, event.promotion);
+
       let completionMs: number;
-      if (!isProductionScraper(event.scraperType)) {
+      if (!trackerBacked) {
         // No-tracker events: fixed live window so users have time to rate
         // after watching. Independent of numFights.
         completionMs = NO_TRACKER_LIVE_WINDOW_HOURS * 60 * 60 * 1000;
