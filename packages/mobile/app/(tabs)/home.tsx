@@ -1196,7 +1196,7 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 3,
+      marginBottom: 6,
     },
     eventRowDate: {
       fontSize: 11,
@@ -1206,7 +1206,7 @@ function makeStyles(colors: ThemeColors) {
       letterSpacing: 0.5,
     },
     eventRowDesc: {
-      marginTop: 8,
+      marginTop: 6,
       fontSize: 11,
       lineHeight: 15,
       color: colors.textSecondary,
