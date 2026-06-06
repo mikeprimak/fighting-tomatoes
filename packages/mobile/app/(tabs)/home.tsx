@@ -335,16 +335,12 @@ function HypedFightRow({
         ) : null}
       </View>
 
-      {/* Community hype badge */}
-      <View style={styles.hypedBadgeWrap}>
-        <View style={[styles.hypedBadge, { backgroundColor: hypeColor }]}>
-          <FontAwesome6 name="fire-flame-curved" size={10} color="rgba(0,0,0,0.55)" />
-          <Text style={styles.hypedBadgeNum}>{hype === 10 ? '10' : hype.toFixed(1)}</Text>
-        </View>
+      {/* Community hype square — identical to UpcomingFightCard's left box:
+          heatmap fill, white hype number, user count in parentheses, no flame. */}
+      <View style={[styles.hypedBadge, { backgroundColor: hypeColor }]}>
+        <Text style={styles.hypedBadgeNum}>{hype === 10 ? '10' : hype.toFixed(1)}</Text>
         {hypeCount > 0 ? (
-          <Text style={styles.hypedBadgeCount}>
-            {hypeCount} {hypeCount === 1 ? 'hype' : 'hypes'}
-          </Text>
+          <Text style={styles.hypedBadgeCount}>({hypeCount})</Text>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -1439,30 +1435,28 @@ function makeStyles(colors: ThemeColors) {
       textTransform: 'uppercase',
       letterSpacing: 0.4,
     },
-    hypedBadgeWrap: {
-      alignItems: 'center',
-      width: 50,
-    },
+    // Mirrors UpcomingFightCard's `hypeSquare` (left box) exactly.
     hypedBadge: {
-      width: 44,
-      height: 44,
-      borderRadius: 11,
+      width: 48,
+      height: 48,
+      borderRadius: 8,
       alignItems: 'center',
       justifyContent: 'center',
     },
     hypedBadgeNum: {
-      fontSize: 16,
-      fontWeight: '800',
-      color: '#000000',
-      lineHeight: 18,
+      color: '#FFFFFF',
+      fontSize: 18,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      textShadowColor: 'rgba(0,0,0,0.7)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
     },
     hypedBadgeCount: {
-      marginTop: 3,
+      color: 'rgba(0,0,0,0.6)',
       fontSize: 9,
       fontWeight: '600',
-      color: colors.textSecondary,
-      textTransform: 'uppercase',
-      letterSpacing: 0.3,
+      textAlign: 'center',
     },
     // Most Followed horizontal chip
     followChip: {
