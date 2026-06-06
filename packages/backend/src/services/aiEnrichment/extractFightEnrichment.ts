@@ -33,7 +33,7 @@ Your job: emit ONE record per fightId that the editorial actually covers. Skip f
 Output STRICT JSON (no prose, no markdown, no fences):
 {
   "event": {                                       // card-wide summary — see "Event summary rules" below
-    "summary": "ONE short line (~1 sentence, LAST NAMES ONLY) framing the whole card. See 'Event summary rules'. null if you can't ground a real card-wide read.",
+    "summary": "1-2 short sentences (LAST NAMES ONLY) that SELL the whole card to a fan deciding whether to watch. Lead with the hook (style clash, guaranteed action, marquee stakes), not a neutral 'X faces Y' recap. See 'Event summary rules'. null if you can't ground a real card-wide read.",
     "confidence": 0.7                              // 0.0-1.0, YOUR confidence the event summary is accurate and useful
   },
   "fights": [
@@ -73,16 +73,28 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
   - Rematches/trilogies: when editorial confirms (or strongly implies) a prior meeting between the two named fighters, ALWAYS include the literal word "rematch" (or "trilogy" for a third meeting) in storylines, plus the prior outcome when given. Example: "rematch of 2024 FOTY (Allen UD)". This token is load-bearing for downstream personalization.
   - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.
 
-Event summary rules (the "event" object):
-  - ONE tight line that frames the WHOLE card for a fan deciding whether to tune in. Keep it SHORT: roughly 15-25 words that fit three lines on a phone card. Plain English, no jargon. Lead with the main event in a few words (last names + the hook), then at most one more clause.
-  - Use LAST NAMES ONLY ("Muhammad vs Bonfim", not "Belal Muhammad vs Gabriel Bonfim"), except where a first name is genuinely needed to tell apart two fighters who share a surname.
-  - Reason across the CARD, not one fight: count of TITLE fights (use the CARD's TITLE flags), the main event and its stakes, notable returns/debuts, marquee names. Don't list every bout, pick the 1-2 hooks that sell the night.
+Event summary rules (the "event" object) — SELL the night, don't just describe it:
+  - GOAL: make a fan WANT to watch. This is ad copy for the card, not a neutral listing. Lead with the hook that makes the night exciting; never settle for a flat "X faces Y for the title" recap when a sharper sell is available.
+  - LENGTH: 1 sentence preferred; up to 2 short sentences when a second hook genuinely adds a sell. Keep it tight (~15-30 words, fits three lines on a phone card). Plain English, no jargon.
+  - LAST NAMES ONLY ("Muhammad vs Bonfim", not "Belal Muhammad vs Gabriel Bonfim"), except where a first name is genuinely needed to tell apart two fighters who share a surname.
+  - LEAN ON STYLE FIRST — this is your strongest and PREFERRED selling tool, ahead of stakes. Before writing, look at the "styleTags" and "pace" you assigned to the main event (and co-main). If they imply an action hook, LEAD with it. The matchup's style is what makes a fan press play.
+      • MMA style clash: "Striker Muhammad takes on grappler Bonfim in a classic styles clash for the welterweight crown."
+      • Boxing style (no grappling — use boxing terms): "boxer-puncher vs slick technician", "pressure fighter vs counterpuncher", "heavy-handed", "knockout artist", "switch-hitter". e.g. "Heavy-handed Rozicki tries to spoil the slicker Billam-Smith's homecoming."
+      • Guaranteed action: "a stand-up war that won't reach the judges", "both men always bring it", "two finishers who never leave it to the cards".
+    These style/pace reads are ANALYSIS, not fabrication — same standing as the per-fight pace/styleTags inference, so apply them whenever the matchup gives a clear hook. But do NOT assert a style the fighters don't support (don't call a wrestler-vs-wrestler bout a "stand-up war", or two cautious counter-fighters a "guaranteed firefight").
+  - STAKES ARE THE FALLBACK, NOT THE LEAD. Generic stakes language ("divisional implications", "title on the line", "with title-shot stakes") is the WEAKEST hook — use it only when there is genuinely no style or action angle, and never as the whole line.
+  - ONLY NAME FIGHTERS ON THIS CARD. Every fighter you mention in the summary MUST appear in the CARD above. Do NOT name an outside fighter — a champion in another promotion, a hypothetical future opponent, anyone not booked on this event. This is a hard rule.
+  - NEVER CROSS-WIRE FIGHTERS BETWEEN BOUTS. Each fighter faces ONLY their listed opponent in the CARD. When you reference a fight other than the main event (e.g. the co-main), name BOTH fighters in THAT bout ("Massey vs Clarke in the co-main"), and never imply a fighter is pursuing, eyeing, or will meet someone from a DIFFERENT bout. Do not suggest the co-main winner faces the headliner, etc.
+  - NO SPECULATIVE NEXT FIGHTS. Sell THIS card, never a hypothetical future one. Banned phrasings: "could set up a megafight with X", "if results align", "a potential future rival", "with X implications if the winner prevails", "the winner could/may next face...".
+      BAD:  "Rodriguez challenges Vargas for the bantamweight title, with a potential mega-fight against Inoue on the line if Rodriguez prevails." (Inoue is not on the card; sells a hypothetical fight)
+      GOOD: "Undefeated Rodriguez challenges champion Vargas for the bantamweight belt in a can't-miss title fight." (sells the fight on the card)
+  - Reason across the CARD, not one fight: count of TITLE fights (use the CARD's TITLE flags), the main event and its hook, notable returns/debuts, marquee names. Pick the 1-2 hooks that best SELL the night, don't list every bout.
   - FAN HYPE: some CARD fights show fanHype (scale 1-10, the average of fans' pre-fight excitement ratings, where 8+ is strong) and n (how many fans rated it). Only fights with enough ratings to be trustworthy carry this field, so a shown fanHype is always meaningful. Compare it RELATIVELY across the fights that show it. Use it to INFORM the line, never to dictate it: the main event still anchors.
     ONLY when a NON-main fight clearly leads on the shown hype (notably higher than the main event, or strongly hyped when the main event shows no hype) you MUST name that fan excitement EXPLICITLY using the word "fans". Do NOT swap in generic stakes language ("divisional implications", "with title-shot stakes") for the fan angle, and do NOT just restate the number. Worked example for a card whose co-main out-hypes the main event:
       GOOD: "Muhammad vs Bonfim headlines, but fans are most hyped for the Allen vs Shahbazyan co-main."
       BAD:  "Muhammad vs Bonfim headlines; Allen and Shahbazyan meet in the co-main with divisional implications." (mentions the fight but hides the fan excitement)
     If NO fight shows fanHype, or no non-main fight clearly out-hypes the main event, do NOT mention hype at all, just frame the headliner normally. Never invent fan excitement that the hype numbers don't support.
-  - Do NOT fabricate. If only the main event is grounded, framing the headliner alone is fine. If you have nothing beyond names, set "summary" to null.
+  - Do NOT fabricate FACTUAL claims (records, results, prior meetings, title lineage) — those still require editorial. Style/pace framing does not (it is analysis, per above). If only the main event is grounded, selling the headliner alone is fine. If you have nothing beyond names and no real style read, set "summary" to null.
   - "confidence": editorial covers multiple fights / clear card-wide story ⇒ 0.7+. Only the main event grounded ⇒ 0.5-0.6. Thin/namedrop-only ⇒ below 0.5 (it will be hidden).
   - House style: no em dashes or en dashes (use commas, "and", or periods).`;
 
@@ -160,6 +172,12 @@ export async function extractFightEnrichment(
   const resp = await client().messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
+    // Low temperature: this is rule-bound extraction (anchor to the card, no
+    // off-card fighters, no speculation), not creative writing. The API default
+    // (1.0) made event summaries drift run-to-run and intermittently break the
+    // on-card-only / no-speculation rules; 0.4 keeps them adherent and stable
+    // while leaving a little room for the "selling" phrasing.
+    temperature: 0.4,
     system: [
       {
         type: 'text',
