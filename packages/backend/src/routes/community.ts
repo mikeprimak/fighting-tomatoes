@@ -677,40 +677,127 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Highlighted fighter: a single AI-enriched fighter featured big on the web
-  // home, with their top-rated fight. Picks from fighters that carry a confident
-  // bio + an image to feature, and rotates by UTC day so the spotlight changes
-  // daily. Returns { data: { fighter, topFight } } or { data: null } if there's
-  // no enriched fighter to show yet.
+  // Highlighted fighter: a single AI-enriched fighter featured big on the web +
+  // mobile home, with their top-rated fight. Surfaces *relevant stars* rather
+  // than anyone enriched: the pool is fighters who fought in the last month or
+  // are booked in the next two months, ranked by fan engagement (career rating
+  // volume), then rotated by UTC day so the spotlight changes daily within that
+  // star set. Falls back to the broader enriched pool if the relevance window is
+  // thin. Returns { data: { fighter, topFight } } or { data: null }.
+  const FIGHTER_SELECT = {
+    id: true,
+    firstName: true,
+    lastName: true,
+    nickname: true,
+    wins: true,
+    losses: true,
+    draws: true,
+    weightClass: true,
+    profileImage: true,
+    actionImage: true,
+    aiProfile: true,
+    aiProfileSummary: true,
+  } as const;
+
   fastify.get('/highlighted-fighter', {
     preHandler: optionalAuthenticateMiddleware,
   }, async (_request, reply) => {
     try {
-      // Candidate pool: enriched fighters with a confident bio and a portrait.
-      // aiProfileConfidence gate mirrors the render-gate used elsewhere (0.5).
-      const pool = await fastify.prisma.fighter.findMany({
+      const now = new Date();
+      const monthAgo = new Date(now);
+      monthAgo.setDate(now.getDate() - 31);
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const twoMonthsAhead = new Date(now);
+      twoMonthsAhead.setDate(now.getDate() + 62);
+      const hidden = HIDDEN_PROMOTIONS.map(p => ({
+        promotion: { contains: p, mode: 'insensitive' as const },
+      }));
+
+      // Relevance window: fighters who fought in the last month (engagement-
+      // ranked via most-rated completed fights) or are booked in the next two
+      // months. Select only fighter ids — cheap; we hydrate the chosen one later.
+      const [recentWindow, upcomingWindow] = await Promise.all([
+        fastify.prisma.fight.findMany({
+          where: {
+            fightStatus: 'COMPLETED',
+            totalRatings: { gte: 1 },
+            event: { date: { gte: monthAgo, lte: now }, NOT: hidden },
+          },
+          select: { fighter1Id: true, fighter2Id: true },
+          orderBy: { totalRatings: 'desc' },
+          take: 100,
+        }),
+        fastify.prisma.fight.findMany({
+          where: {
+            fightStatus: { in: ['UPCOMING', 'LIVE'] },
+            event: { date: { gte: startOfToday, lte: twoMonthsAhead }, NOT: hidden },
+          },
+          select: { fighter1Id: true, fighter2Id: true },
+          take: 200,
+        }),
+      ]);
+
+      // Recent fighters first (already engagement-ordered), then upcoming, then
+      // cap — keeps the cost of the engagement aggregation below bounded while
+      // retaining the most-rated recent names.
+      const candidateIds = ([
+        ...new Set(
+          [...recentWindow, ...upcomingWindow].flatMap(f => [f.fighter1Id, f.fighter2Id]),
+        ),
+      ].filter(Boolean) as string[]).slice(0, 300);
+
+      // Star ranking: career rating volume (sum of Fight.totalRatings per
+      // fighter). Fighter.totalRatings is unreliable ("fields that lie"), so we
+      // aggregate from the fights. Bounded by the candidate set above.
+      const careerRatingCounts = async (ids: string[]) => {
+        const idSet = new Set(ids);
+        const fights = ids.length === 0 ? [] : await fastify.prisma.fight.findMany({
+          where: { OR: [{ fighter1Id: { in: ids } }, { fighter2Id: { in: ids } }] },
+          select: { fighter1Id: true, fighter2Id: true, totalRatings: true },
+        });
+        const counts = new Map<string, number>();
+        for (const f of fights) {
+          if (idSet.has(f.fighter1Id)) counts.set(f.fighter1Id, (counts.get(f.fighter1Id) || 0) + (f.totalRatings || 0));
+          if (idSet.has(f.fighter2Id)) counts.set(f.fighter2Id, (counts.get(f.fighter2Id) || 0) + (f.totalRatings || 0));
+        }
+        return counts;
+      };
+
+      // The candidates that are actually featurable: a confident bio + a
+      // portrait (the 0.5 gate mirrors the render-gate used elsewhere).
+      let pool = candidateIds.length === 0 ? [] : await fastify.prisma.fighter.findMany({
         where: {
+          id: { in: candidateIds },
           aiProfileSummary: { not: null },
           aiProfileConfidence: { gte: 0.5 },
           profileImage: { not: null },
         },
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          nickname: true,
-          wins: true,
-          losses: true,
-          draws: true,
-          weightClass: true,
-          profileImage: true,
-          actionImage: true,
-          aiProfile: true,
-          aiProfileSummary: true,
-        },
-        orderBy: { id: 'asc' },
-        take: 300,
+        select: FIGHTER_SELECT,
       });
+
+      // Rank by engagement and keep the top tier — the "stars" — so the daily
+      // rotation surfaces big names rather than anyone who happened to be booked.
+      if (pool.length > 0) {
+        const counts = await careerRatingCounts(pool.map((f: any) => f.id));
+        pool = pool
+          .sort((a: any, b: any) => (counts.get(b.id) || 0) - (counts.get(a.id) || 0))
+          .slice(0, 40);
+      }
+
+      // Fallback: if nobody relevant is enriched yet, use the broader enriched
+      // pool so the section still renders (legacy behaviour).
+      if (pool.length === 0) {
+        pool = await fastify.prisma.fighter.findMany({
+          where: {
+            aiProfileSummary: { not: null },
+            aiProfileConfidence: { gte: 0.5 },
+            profileImage: { not: null },
+          },
+          select: FIGHTER_SELECT,
+          orderBy: { id: 'asc' },
+          take: 300,
+        });
+      }
 
       if (pool.length === 0) {
         return reply.send({ data: null });
