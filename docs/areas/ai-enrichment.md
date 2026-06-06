@@ -188,6 +188,22 @@ Original Phase 1 flow asked the LLM to extract fights from editorial text, then 
 - Render `aiPreview` raw or with a small "AI-generated" disclosure? (Lean: disclosure on web SEO pages for transparency; no disclosure on the in-app "why care" snippet since it reads as editorial.)
 - Do we localize? (Defer — English only for now.)
 
+## Idea backlog — event "why to care" summary (2026-06-05)
+
+Mike wants a 1–2 line "what to tune in for" blurb on each home-screen event card.
+**Recommendation: compose from existing data first; do not build a new per-event bot yet.**
+
+- Fights already carry `aiPreviewShort` + `aiConfidence` from the existing enrichment
+  cron. An event-level blurb can be derived for **zero marginal cost** from the
+  card's headline / highest-hype fight preview, optionally prefixed with the hype
+  signal we already compute (`/top-upcoming-fights` gives hype count + average).
+- A dedicated per-event enrichment pass (new Haiku bot, event-level prompt) is the
+  "nicer" version but adds cost + a new cron + a new column, and is only worth it if
+  the composed version reads thin. Gate it on that.
+- If we do build it: follow the broadcast-discovery template, Haiku 4.5 + prompt
+  caching, confidence floor before display (mirror the `aiConfidence < 0.5` hide rule
+  used for `aiPreviewShort`).
+
 ## Session protocol
 
 See `CLAUDE.md` → "AI Enrichment Sessions" for how to start a session on this workstream.
