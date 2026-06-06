@@ -253,6 +253,8 @@ function EventRow({
   // just the start time + broadcast channel.
   const dateLine = [startTime, channel].filter(Boolean).join(' · ');
 
+  const isLive = event.eventStatus === 'LIVE';
+
   return (
     <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.eventRowImageWrap}>
@@ -263,6 +265,12 @@ function EventRow({
             <PromotionLogo promotion={event.promotion || ''} size={32} color="#FFFFFF" />
           </View>
         )}
+        {isLive ? (
+          <View style={styles.liveBadge}>
+            <View style={styles.liveDot} />
+            <Text style={styles.liveBadgeText}>LIVE</Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.eventRowBody}>
         <Text style={styles.eventRowName} numberOfLines={2}>
@@ -551,7 +559,9 @@ export default function HomeScreen() {
   if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
   const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
   const upcomingEvents: Event[] = (eventsData?.events || [])
-    .filter((e: Event) => e.eventStatus === 'UPCOMING')
+    // Keep LIVE events in the list (badged "LIVE" on the card) alongside the
+    // UPCOMING ones — a card that just went live shouldn't vanish from the day.
+    .filter((e: Event) => e.eventStatus === 'UPCOMING' || e.eventStatus === 'LIVE')
     .filter((e: Event) => {
       const k = eventDayKey(e.date);
       return k >= todayKey && k < nextMondayKey;
@@ -559,6 +569,10 @@ export default function HomeScreen() {
     .sort((a: Event, b: Event) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
       if (dayDiff !== 0) return dayDiff;
+      // Live events float to the top of their day — they're happening right now.
+      const aLive = a.eventStatus === 'LIVE';
+      const bLive = b.eventStatus === 'LIVE';
+      if (aLive !== bLive) return aLive ? -1 : 1;
       if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
@@ -1177,6 +1191,30 @@ function makeStyles(colors: ThemeColors) {
       left: 0,
       right: 0,
       bottom: 0,
+    },
+    liveBadge: {
+      position: 'absolute',
+      top: 6,
+      left: 6,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#E11D2A',
+      paddingHorizontal: 6,
+      paddingVertical: 3,
+      borderRadius: 4,
+    },
+    liveDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: '#FFFFFF',
+      marginRight: 4,
+    },
+    liveBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 0.5,
     },
     eventThumbPlaceholder: {
       backgroundColor: '#1a1a2e',
