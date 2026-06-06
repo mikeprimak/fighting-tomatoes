@@ -1,6 +1,7 @@
 // Mock Event Generator
 // Creates fake UFC events for testing live event workflows
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
 
 interface MockEventOptions {
@@ -9,7 +10,6 @@ interface MockEventOptions {
   includeTitle?: boolean;
 }
 
-const prisma = new PrismaClient();
 
 // Pool of mock fighter names
 const FIGHTER_NAMES = [

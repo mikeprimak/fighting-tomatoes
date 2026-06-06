@@ -5,13 +5,13 @@
  * Matches fights by fighter last names and updates results.
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, Gender, Sport } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
 import { stripDiacritics, similarityScore } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
-const prisma = new PrismaClient();
 
 // ============== TYPE DEFINITIONS ==============
 

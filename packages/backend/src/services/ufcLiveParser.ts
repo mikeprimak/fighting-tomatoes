@@ -9,13 +9,13 @@
  * - inferGenderFromWeightClass: Determines fighter gender from division
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Gender, FightStatus } from '@prisma/client';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { decideStrike, CANCELLATION_STRIKE_THRESHOLD, MIN_HEALTHY_SCRAPE_FIGHTS, computeCancellationSafetyFloor, isScrapeHealthyForCancellation } from './cancellationGuards';
 
-const prisma = new PrismaClient();
 
 // ============== NAME UTILITIES ==============
 

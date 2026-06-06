@@ -1,10 +1,9 @@
+import { prisma } from '../lib/prisma';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { authenticateUser } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 
-const prisma = new PrismaClient();
 
 // Validation schemas
 const createRuleSchema = z.object({

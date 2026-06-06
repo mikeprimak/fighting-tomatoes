@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { sendPushNotifications } from './notificationService';
 
-const prisma = new PrismaClient();
 
 export const LIKE_TIERS = [1, 5, 10, 25, 50, 100] as const;
 export type LikeTier = typeof LIKE_TIERS[number];

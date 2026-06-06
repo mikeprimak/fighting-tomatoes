@@ -4,12 +4,11 @@
  * Matches fights by fighter last names, updates results via shadow field system.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { BKFCEventData, BKFCFightData } from './bkfcLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 // ============== UTILITY FUNCTIONS ==============
 
