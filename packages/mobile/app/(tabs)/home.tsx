@@ -20,15 +20,17 @@ import { apiService, resolveBlogImageUrl } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
-import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
+import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName, getFighterPrimaryName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
+import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { LinearGradient } from 'expo-linear-gradient';
 import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
-import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
-import UpcomingFightModal from '../../components/UpcomingFightModal';
 import { useEventBroadcasts } from '../../components/HowToWatch';
 import FighterCard from '../../components/FighterCard';
 import { SearchBar } from '../../components';
+
+const DEFAULT_FIGHTER_IMAGE = require('../../assets/fighters/fighter-default-alpha.png');
 
 const formatCount = (n: number): string =>
   n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}K` : `${n}`;
@@ -67,11 +69,6 @@ const relAgoPhrase = (dateStr: string): string => {
   const weeks = Math.round(days / 7);
   return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
 };
-
-// Promotion label for the per-event group heading — strip underscores
-// (e.g. "TOP_RANK" -> "TOP RANK"). Rendered uppercase by the heading style.
-const promotionLabel = (promotion: string | null | undefined): string =>
-  (promotion ?? '').replace(/_/g, ' ');
 
 // "today" / "tomorrow" / "in 9 days" / "in 2 weeks" — relative time to an event
 // by calendar day (matches the web "Hyped Upcoming Fights" group headings, which
@@ -290,6 +287,151 @@ function EventRow({
   );
 }
 
+/**
+ * One row inside a HypedEventCard: facing fighter headshots, the matchup, an
+ * optional weight-class / title tag, and a heatmap-colored community-hype badge
+ * with the number of fans who hyped it. Taps straight to the fight page (no
+ * modal). Deliberately leaves out "my hype" — this is a discovery surface.
+ */
+function HypedFightRow({
+  fight,
+  colors,
+  styles,
+  isLast,
+  onPress,
+}: {
+  fight: any;
+  colors: ThemeColors;
+  styles: ReturnType<typeof makeStyles>;
+  isLast: boolean;
+  onPress: () => void;
+}) {
+  const [img1Err, setImg1Err] = React.useState(false);
+  const [img2Err, setImg2Err] = React.useState(false);
+  const img1 = img1Err ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter1);
+  const img2 = img2Err ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter2);
+
+  const hype: number = fight.averageHype || 0;
+  const hypeColor = getHypeHeatmapColor(hype);
+  const hypeCount: number = fight.hypeCount || 0;
+
+  const name1 = getFighterPrimaryName(fight.fighter1);
+  const name2 = getFighterPrimaryName(fight.fighter2);
+  const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : (fight.weightClass || '');
+
+  return (
+    <TouchableOpacity
+      style={[styles.hypedRow, !isLast && styles.hypedRowDivider]}
+      activeOpacity={0.7}
+      onPress={onPress}
+    >
+      {/* Facing headshots */}
+      <View style={styles.hypedHeadshots}>
+        <Image source={img1} style={styles.hypedHeadshot} onError={() => setImg1Err(true)} />
+        <Image source={img2} style={[styles.hypedHeadshot, styles.hypedHeadshot2]} onError={() => setImg2Err(true)} />
+      </View>
+
+      {/* Matchup + tag */}
+      <View style={styles.hypedRowBody}>
+        <Text style={styles.hypedMatchup} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          <Text style={styles.hypedMatchupName}>{name1}</Text>
+          <Text style={styles.hypedVs}>  vs  </Text>
+          <Text style={styles.hypedMatchupName}>{name2}</Text>
+        </Text>
+        {tag ? (
+          <Text style={styles.hypedTag} numberOfLines={1}>
+            {tag}
+          </Text>
+        ) : null}
+      </View>
+
+      {/* Community hype badge */}
+      <View style={styles.hypedBadgeWrap}>
+        <View style={[styles.hypedBadge, { backgroundColor: hypeColor }]}>
+          <FontAwesome6 name="fire-flame-curved" size={10} color="rgba(0,0,0,0.55)" />
+          <Text style={styles.hypedBadgeNum}>{hype === 10 ? '10' : hype.toFixed(1)}</Text>
+        </View>
+        {hypeCount > 0 ? (
+          <Text style={styles.hypedBadgeCount}>
+            {hypeCount} {hypeCount === 1 ? 'hype' : 'hypes'}
+          </Text>
+        ) : null}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+/**
+ * Event-grouped card for "Hyped Upcoming Fights": a banner header (event image
+ * + name + relative date, tapping opens the event) over a list of that event's
+ * most-hyped fights (HypedFightRow). Mirrors the clean imagery of the This
+ * Weekend cards while listing every top fight on the card.
+ */
+function HypedEventCard({
+  event,
+  fights,
+  colors,
+  styles,
+  onPressEvent,
+  onPressFight,
+}: {
+  event: any;
+  fights: any[];
+  colors: ThemeColors;
+  styles: ReturnType<typeof makeStyles>;
+  onPressEvent: () => void;
+  onPressFight: (fight: any) => void;
+}) {
+  const imageSource = event?.bannerImage
+    ? { uri: event.bannerImage }
+    : getDefaultBanner(event?.promotion || '');
+  const name = normalizeEventName(event?.name || 'Event', event?.promotion);
+  const when = eventRelativePhrase(event?.mainStartTime ?? event?.date);
+
+  return (
+    <View style={styles.hypedCard}>
+      {/* Banner header — taps through to the event */}
+      <TouchableOpacity activeOpacity={0.9} onPress={onPressEvent}>
+        <View style={styles.hypedBanner}>
+          {imageSource ? (
+            <Image source={imageSource} style={styles.hypedBannerImage} resizeMode="cover" />
+          ) : (
+            <View style={[styles.hypedBannerImage, styles.eventThumbPlaceholder]}>
+              <PromotionLogo promotion={event?.promotion || ''} size={40} color="#FFFFFF" />
+            </View>
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.55)', 'rgba(0,0,0,0.88)']}
+            style={styles.hypedBannerOverlay}
+          />
+          <View style={styles.hypedBannerTextWrap}>
+            <Text style={styles.hypedBannerName} numberOfLines={1}>
+              {name}
+            </Text>
+            {when ? (
+              <Text style={styles.hypedBannerWhen}>{when}</Text>
+            ) : null}
+          </View>
+        </View>
+      </TouchableOpacity>
+
+      {/* Fights */}
+      <View style={styles.hypedFightList}>
+        {fights.map((fight, i) => (
+          <HypedFightRow
+            key={fight.id}
+            fight={fight}
+            colors={colors}
+            styles={styles}
+            isLast={i === fights.length - 1}
+            onPress={() => onPressFight(fight)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** Compact avatar chip for the Most Followed horizontal rail (web sidebar style). */
 function FollowedFighterChip({
   fighter,
@@ -451,7 +593,6 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = React.useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = React.useState<string | null>(null);
   // Hype quick-view modal for the "Most Hyped" upcoming cards.
-  const [modalFight, setModalFight] = React.useState<any | null>(null);
 
   // --- Data ---------------------------------------------------------------
   const { data: editorial, isLoading: isEditorialLoading } = useQuery({
@@ -764,27 +905,19 @@ export default function HomeScreen() {
         {isUpcomingLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : upcomingFights.length > 0 ? (
-          (() => {
-            // Running index across groups so the alternating card backgrounds
-            // stay continuous instead of resetting per event.
-            let flatIndex = 0;
-            return groupByEvent(upcomingFights).map((g, gi) => (
-              <View key={g.event?.id ?? gi} style={{ marginBottom: 8 }}>
-                <Text style={styles.fightGroupHeading}>
-                  {`${promotionLabel(g.event?.promotion) || 'Event'} ${eventRelativePhrase(g.event?.mainStartTime ?? g.event?.date)}`.trim()}
-                </Text>
-                {g.fights.map((fight: any) => (
-                  <UpcomingFightCard
-                    key={fight.id}
-                    fight={fight}
-                    onPress={() => setModalFight(fight)}
-                    showEvent={false}
-                    index={flatIndex++}
-                  />
-                ))}
-              </View>
-            ));
-          })()
+          groupByEvent(upcomingFights).map((g, gi) => (
+            <HypedEventCard
+              key={g.event?.id ?? gi}
+              event={g.event}
+              fights={g.fights}
+              colors={colors}
+              styles={styles}
+              onPressEvent={() =>
+                g.event?.id && router.push(`/event/${g.event.id}` as any)
+              }
+              onPressFight={(fight) => router.push(`/fight/${fight.id}` as any)}
+            />
+          ))
         ) : (
           <Empty styles={styles} text="No upcoming fights found" />
         )}
@@ -1084,13 +1217,6 @@ export default function HomeScreen() {
 
         </View>
     </ScrollView>
-
-    {/* Upcoming fight hype quick-view modal (Hyped Upcoming Fights section) */}
-    <UpcomingFightModal
-      visible={!!modalFight}
-      fight={modalFight}
-      onClose={() => setModalFight(null)}
-    />
     </View>
   );
 }
@@ -1253,6 +1379,139 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 11,
       lineHeight: 15,
       color: colors.textSecondary,
+    },
+    // --- Hyped Upcoming Fights: event-grouped cards ----------------------
+    hypedCard: {
+      marginHorizontal: 16,
+      marginBottom: 14,
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    hypedBanner: {
+      height: 104,
+      backgroundColor: colors.border,
+      position: 'relative',
+      justifyContent: 'flex-end',
+    },
+    hypedBannerImage: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      width: '100%',
+      height: '100%',
+    },
+    hypedBannerOverlay: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 80,
+    },
+    hypedBannerTextWrap: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+    },
+    hypedBannerName: {
+      fontSize: 18,
+      fontWeight: '800',
+      color: '#FFFFFF',
+      textShadowColor: 'rgba(0,0,0,0.6)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+    },
+    hypedBannerWhen: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: 'rgba(255,255,255,0.9)',
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginTop: 3,
+      textShadowColor: 'rgba(0,0,0,0.6)',
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 3,
+    },
+    hypedFightList: {
+      paddingHorizontal: 14,
+    },
+    hypedRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 11,
+      gap: 12,
+    },
+    hypedRowDivider: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    hypedHeadshots: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: 64,
+    },
+    hypedHeadshot: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: colors.border,
+      borderWidth: 2,
+      borderColor: colors.card,
+    },
+    hypedHeadshot2: {
+      marginLeft: -14,
+    },
+    hypedRowBody: {
+      flex: 1,
+    },
+    hypedMatchup: {
+      fontSize: 15,
+    },
+    hypedMatchupName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    hypedVs: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    hypedTag: {
+      marginTop: 2,
+      fontSize: 11,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    hypedBadgeWrap: {
+      alignItems: 'center',
+      width: 50,
+    },
+    hypedBadge: {
+      width: 44,
+      height: 44,
+      borderRadius: 11,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    hypedBadgeNum: {
+      fontSize: 16,
+      fontWeight: '800',
+      color: '#000000',
+      lineHeight: 18,
+    },
+    hypedBadgeCount: {
+      marginTop: 3,
+      fontSize: 9,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.3,
     },
     // Most Followed horizontal chip
     followChip: {
