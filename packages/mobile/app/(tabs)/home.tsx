@@ -198,21 +198,20 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
 }
 
 /**
- * Full-width horizontal event card: image on the left, event name + date and
- * the card's standout matchups on the right. `topFights` are the genuinely-hyped
- * fights for this event (>= 3 hypes, avg >= 7 — already filtered server-side),
- * shown as plain "A vs B" text so a fan can see at a glance what's worth tuning
- * in for.
+ * Full-width horizontal event card: image on the left, event name + date and a
+ * one-line AI "why care" blurb on the right. `description` is the existing
+ * aiPreviewShort of the event's top (most-hyped) fight — already confidence-gated
+ * by the caller — so a fan sees at a glance what's worth tuning in for.
  */
 function EventRow({
   event,
-  topFights,
+  description,
   colors,
   styles,
   onPress,
 }: {
   event: Event;
-  topFights: any[];
+  description?: string | null;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
@@ -243,14 +242,10 @@ function EventRow({
           {name}
         </Text>
         <Text style={styles.eventRowDate}>{formatEventDate(event.date)}</Text>
-        {topFights.length > 0 ? (
-          <View style={styles.eventRowFights}>
-            {topFights.map((f: any) => (
-              <Text key={f.id} style={styles.eventRowFightText} numberOfLines={1}>
-                {getFighterDisplayName(f.fighter1)} vs {getFighterDisplayName(f.fighter2)}
-              </Text>
-            ))}
-          </View>
+        {description ? (
+          <Text style={styles.eventRowDesc} numberOfLines={3}>
+            {description}
+          </Text>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -687,16 +682,25 @@ export default function HomeScreen() {
             onSeeAll={di === 0 ? () => router.push('/(tabs)/events' as any) : undefined}
           >
             <View style={styles.eventList}>
-              {day.events.map((event) => (
-                <EventRow
-                  key={event.id}
-                  event={event}
-                  topFights={(hypedByEvent.get(event.id) || []).slice(0, 4)}
-                  colors={colors}
-                  styles={styles}
-                  onPress={() => router.push(`/event/${event.id}` as any)}
-                />
-              ))}
+              {day.events.map((event) => {
+                // Top (most-hyped) fight's existing AI "why care" blurb, gated on
+                // the same confidence floor the fight screens use (>= 0.5).
+                const top = (hypedByEvent.get(event.id) || [])[0];
+                const description =
+                  top && top.aiConfidence != null && top.aiConfidence >= 0.5
+                    ? top.aiPreviewShort
+                    : null;
+                return (
+                  <EventRow
+                    key={event.id}
+                    event={event}
+                    description={description}
+                    colors={colors}
+                    styles={styles}
+                    onPress={() => router.push(`/event/${event.id}` as any)}
+                  />
+                );
+              })}
             </View>
           </Section>
         ))
@@ -1177,13 +1181,10 @@ function makeStyles(colors: ThemeColors) {
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
-    eventRowFights: {
+    eventRowDesc: {
       marginTop: 8,
-      gap: 2,
-    },
-    eventRowFightText: {
       fontSize: 13,
-      fontWeight: '500',
+      lineHeight: 18,
       color: colors.textSecondary,
     },
     // Most Followed horizontal chip
