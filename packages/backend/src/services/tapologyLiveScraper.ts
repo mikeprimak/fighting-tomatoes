@@ -10,6 +10,7 @@
  */
 
 import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -111,36 +112,60 @@ export class TapologyLiveScraper {
   }
 
   /**
-   * Fetch the event page, retrying on Tapology's rate-limit responses.
+   * Fetch the event page via Puppeteer (headless Chrome), retrying on Tapology's
+   * rate-limit / bot-protection responses.
    *
-   * Tapology throttles an IP (403/429) after sustained scraping. The VPS runs
-   * the live tracker plus several daily Tapology-org scrapers, so a live poll
-   * or the daily results backfill can land in a cooldown window and get a 403
-   * even though the IP is not actually blocked. A single 403 used to be fatal —
-   * back off and retry so transient throttling self-heals instead of silently
-   * dropping the scrape (which left results unpopulated).
+   * Tapology fronts its pages with bot protection that 403s a plain Node `fetch`
+   * (JA3/TLS fingerprinting) — the live tracker got a hard 403 on every poll,
+   * even from the VPS, while the daily Tapology org scrapers (which use Puppeteer)
+   * sailed through. A real browser presents a valid TLS fingerprint and passes.
+   * We still retry/back off on the occasional 403/429 cooldown so transient
+   * throttling self-heals instead of dropping the scrape.
    */
   private async fetchHtmlWithRetry(maxAttempts = 4): Promise<string> {
     let lastErr: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const response = await fetch(this.eventUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml',
-        },
-      });
-      if (response.ok) {
-        return response.text();
+      let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+      try {
+        browser = await puppeteer.launch({
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+        const page = await browser.newPage();
+        await page.setViewport({ width: 1920, height: 1080 });
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+
+        const response = await page.goto(this.eventUrl, {
+          waitUntil: 'networkidle2',
+          timeout: 60000,
+        });
+        const status = response?.status() ?? 0;
+
+        // Bot-protection / rate-limit cooldown — back off and retry.
+        if ((status === 403 || status === 429) && attempt < maxAttempts) {
+          lastErr = new Error(`HTTP ${status}`);
+          const waitMs = attempt * 30_000; // 30s, 60s, 90s
+          console.log(`[Tapology] HTTP ${status} — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
+          await browser.close();
+          browser = null;
+          await new Promise((r) => setTimeout(r, waitMs));
+          continue;
+        }
+
+        const html = await page.content();
+        await browser.close();
+        browser = null;
+        return html;
+      } catch (err: any) {
+        lastErr = err;
+        if (attempt < maxAttempts) {
+          const waitMs = attempt * 15_000; // 15s, 30s, 45s
+          console.log(`[Tapology] fetch error (${err.message}) — retrying in ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
+          await new Promise((r) => setTimeout(r, waitMs));
+        }
+      } finally {
+        if (browser) await browser.close().catch(() => {});
       }
-      lastErr = new Error(`HTTP ${response.status}: ${response.statusText}`);
-      // Only rate-limit / forbidden responses are worth retrying.
-      if ((response.status === 403 || response.status === 429) && attempt < maxAttempts) {
-        const waitMs = attempt * 30_000; // 30s, 60s, 90s
-        console.log(`[Tapology] HTTP ${response.status} — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
-        await new Promise((r) => setTimeout(r, waitMs));
-        continue;
-      }
-      break;
     }
     throw lastErr ?? new Error('Tapology fetch failed');
   }
