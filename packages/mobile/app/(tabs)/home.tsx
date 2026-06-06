@@ -265,17 +265,19 @@ function EventRow({
             <PromotionLogo promotion={event.promotion || ''} size={32} color="#FFFFFF" />
           </View>
         )}
-        {isLive ? (
-          <View style={styles.liveBadge}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveBadgeText}>LIVE</Text>
-          </View>
-        ) : null}
       </View>
       <View style={styles.eventRowBody}>
-        <Text style={styles.eventRowName} numberOfLines={2}>
-          {name}
-        </Text>
+        <View style={styles.eventRowTitleLine}>
+          {isLive ? (
+            <View style={styles.liveBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveBadgeText}>LIVE</Text>
+            </View>
+          ) : null}
+          <Text style={[styles.eventRowName, styles.eventRowNameFlex]} numberOfLines={2}>
+            {name}
+          </Text>
+        </View>
         <Text style={styles.eventRowDate}>{dateLine}</Text>
         {description ? (
           <Text style={styles.eventRowDesc}>{description}</Text>
@@ -1192,16 +1194,17 @@ function makeStyles(colors: ThemeColors) {
       right: 0,
       bottom: 0,
     },
+    // Inline LIVE pill, sits to the left of the event title (aligned with the
+    // title's first line).
     liveBadge: {
-      position: 'absolute',
-      top: 6,
-      left: 6,
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: '#E11D2A',
       paddingHorizontal: 6,
-      paddingVertical: 3,
+      paddingVertical: 2,
       borderRadius: 4,
+      marginRight: 6,
+      marginTop: 1,
     },
     liveDot: {
       width: 5,
@@ -1225,11 +1228,20 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       padding: 12,
     },
+    // Title line: optional LIVE pill + the event name on one row.
+    eventRowTitleLine: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      marginBottom: 6,
+    },
     eventRowName: {
       fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 6,
+    },
+    // Let the title take the remaining width so it wraps beside the pill.
+    eventRowNameFlex: {
+      flex: 1,
     },
     eventRowDate: {
       fontSize: 11,
