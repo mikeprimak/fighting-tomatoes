@@ -14,7 +14,7 @@
  *   RAF_EVENT_URL - Optional override for RAF event page URL
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { promisify } from 'util';
@@ -23,7 +23,6 @@ import { parseRAFLiveData, autoCompleteRAFEvent } from '../services/rafLiveParse
 import type { RAFLiveEventData } from '../services/rafLiveParser';
 
 const execAsync = promisify(exec);
-const prisma = new PrismaClient();
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;

@@ -16,11 +16,10 @@
  *   1 = Error
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import OktagonLiveScraper from '../services/oktagonLiveScraper';
 import { parseOktagonLiveData, autoCompleteOktagonEvent } from '../services/oktagonLiveParser';
 
-const prisma = new PrismaClient();
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;

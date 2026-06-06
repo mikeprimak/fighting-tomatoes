@@ -21,6 +21,8 @@ interface EventCardProps {
     earlyPrelimStartTime?: string | null;
     prelimStartTime?: string | null;
     mainStartTime?: string | null;
+    aiEventSummary?: string | null;
+    aiEventConfidence?: number | null;
   };
   mode: 'upcoming' | 'past' | 'live';
 }
@@ -103,6 +105,16 @@ export function EventCard({ event, mode }: EventCardProps) {
 
   const displayName = normalizeEventName(event.name, event.promotion);
 
+  // Card-wide AI "why care" one-liner, gated on the same >= 0.5 floor the fight
+  // surfaces use. Pre-fight framing, so not shown on past events.
+  const eventSummary =
+    mode !== 'past' &&
+    event.aiEventConfidence != null &&
+    event.aiEventConfidence >= 0.5 &&
+    event.aiEventSummary
+      ? event.aiEventSummary
+      : null;
+
   const pastBadge = formatTimeAgo(event.date);
   const timeBadge = mode === 'upcoming'
     ? formatTimeUntil(event.date, event.mainStartTime ?? undefined)
@@ -160,6 +172,11 @@ export function EventCard({ event, mode }: EventCardProps) {
           </div>
         )}
       </Link>
+
+      {/* Card-wide AI "why care" line */}
+      {eventSummary && (
+        <p className="mb-3 text-sm leading-snug text-text-secondary">{eventSummary}</p>
+      )}
 
       {/* Whole-event How to Watch — not shown for past events */}
       {mode !== 'past' && <HowToWatch eventId={event.id} />}

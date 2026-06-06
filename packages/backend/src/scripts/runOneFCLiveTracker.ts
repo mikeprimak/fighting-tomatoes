@@ -18,11 +18,10 @@
  *   1 = Error
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import OneFCLiveScraper from '../services/oneFCLiveScraper';
 import { parseOneFCLiveData, autoCompleteOneFCEvent } from '../services/oneFCLiveParser';
 
-const prisma = new PrismaClient();
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;

@@ -294,9 +294,18 @@ model Event {
   startTimeSourceUrls  String[]  // grounding URLs for the discovered times
   startTimeDiscoveredAt DateTime? // last discovery attempt (used to throttle retries)
 
+  // Event-level AI enrichment (services/aiEnrichment). A card-wide "why care"
+  // one-liner that reasons across the whole card ("3 title fights, a returning
+  // ex-champ"), unlike the per-fight aiPreviewShort. Written by the same
+  // enrichment pass that fills the per-fight fields; confidence-gated (>=0.5)
+  // before display, same rule the fight cards use.
+  aiEventSummary    String?
+  aiEventConfidence Float?
+  aiEventEnrichedAt DateTime?
+
   // Media
   bannerImage       String?
-  
+
   // Viewing info
   mainChannel       String?   // ESPN+, DAZN, etc.
   mainLink          String?

@@ -58,35 +58,30 @@ function firstFightStart(event: any): string | null {
   return event.earlyPrelimStartTime ?? event.prelimStartTime ?? event.mainStartTime ?? null;
 }
 
-/** Short display name for a fighter — last name, falling back to first. */
-function fighterName(f: any): string {
-  return f?.lastName || f?.firstName || 'TBD';
-}
-
 /** Promotion label for display — some are stored with underscores (e.g.
  *  "TOP_RANK"); show them with spaces. */
 function promotionLabel(promotion: string | null | undefined): string {
   return (promotion ?? '').replace(/_/g, ' ');
 }
 
-/** The card's most-hyped bouts: hype > 7 with at least 3 user hype ratings,
- *  ordered by hype desc, max 3. */
-function topFights(event: any): any[] {
-  return (Array.isArray(event.fights) ? event.fights : [])
-    .filter((f: any) => (f.averageHype ?? 0) > 7 && (f.hypeCount ?? 0) >= 3)
-    .sort((a: any, b: any) => (b.averageHype ?? 0) - (a.averageHype ?? 0))
-    .slice(0, 3);
+/** Card-wide AI "why care" blurb, gated on the same >= 0.5 confidence floor the
+ *  rest of the app uses. Null when there's no confident summary yet. */
+function aiSummary(event: any): string | null {
+  return event.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary
+    ? event.aiEventSummary
+    : null;
 }
 
 export function WeekendEventsSection() {
   // Upcoming events come back soonest-first, so this weekend's cards are always
-  // among the first handful. Keep this list small: includeFights makes the
-  // backend aggregate hype for every fight on every event returned, so a big
-  // limit is what made this above-the-fold band the slowest to load. 16 safely
-  // covers a full week of events (incl. the Monday-spans-next-week window).
+  // among the first handful. The home cards show only the event + its AI "why
+  // care" summary, so we do NOT request includeFights — that made the backend
+  // aggregate hype/counts for every fight on every event (the slowest part of
+  // this above-the-fold band). 16 safely covers a full week of events (incl. the
+  // Monday-spans-next-week window).
   const { data } = useQuery({
     queryKey: ['home', 'weekend-events'],
-    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 16 }),
+    queryFn: () => getEvents({ type: 'upcoming', includeFights: false, limit: 16 }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -104,7 +99,7 @@ export function WeekendEventsSection() {
       <SectionHeading title="This Weekend" icon={CalendarDays} href="/events/upcoming" />
       <div className="flex flex-col gap-3">
         {events.map((event: any) => {
-          const hyped = topFights(event);
+          const summary = aiSummary(event);
           const firstStart = firstFightStart(event);
           return (
             <Link
@@ -139,12 +134,9 @@ export function WeekendEventsSection() {
                   <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-primary">
                     {event.name}
                   </h3>
-                  {hyped.length > 0 && (
+                  {summary && (
                     <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-text-secondary">
-                      <span className="font-semibold">Top Fights: </span>
-                      {hyped
-                        .map((f: any) => `${fighterName(f.fighter1)} vs ${fighterName(f.fighter2)}`)
-                        .join(', ')}
+                      {summary}
                     </p>
                   )}
                 </div>

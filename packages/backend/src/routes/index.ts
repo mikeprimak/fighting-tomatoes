@@ -224,6 +224,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   earlyPrelimStartTime: { type: ['string', 'null'] },
                   prelimStartTime: { type: ['string', 'null'] },
                   mainStartTime: { type: ['string', 'null'] },
+                  aiEventSummary: { type: ['string', 'null'] },
+                  aiEventConfidence: { type: ['number', 'null'] },
+                  aiEventEnrichedAt: { type: ['string', 'null'] },
                   hasLiveTracking: { type: 'boolean' },
                   notificationsAllowed: { type: 'boolean' },
                   fights: { type: 'array' },
@@ -372,6 +375,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         mainStartTime: true,
         scraperType: true,
         useManualLiveTracker: true,
+        aiEventSummary: true,
+        aiEventConfidence: true,
+        aiEventEnrichedAt: true,
       };
 
       // Include fights if requested

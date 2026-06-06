@@ -49,6 +49,7 @@ export interface EnrichOneEventResult {
   uncoveredFightIds: string[];  // card fights LLM didn't speak to (no editorial coverage)
   ghostFightIds: string[];      // LLM tried to emit fightIds not on the card (dropped)
   wroteCount: number;
+  eventSummary?: string | null; // card-wide one-liner written this pass (null if ungrounded)
   costUsd: number;
   elapsedMs: number;
   persistResult: PersistResult;
@@ -83,7 +84,7 @@ export async function enrichOneEvent(
       wroteCount: 0,
       costUsd: 0,
       elapsedMs: 0,
-      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: [] },
+      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: [], wroteEventSummary: false },
       abortedReason: 'no_upcoming_fights',
     };
   }
@@ -137,7 +138,7 @@ export async function enrichOneEvent(
       wroteCount: 0,
       costUsd: 0,
       elapsedMs: 0,
-      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: card.map((c) => c.fightId) },
+      persistResult: { wroteCount: 0, writtenFightIds: [], uncoveredFightIds: card.map((c) => c.fightId), wroteEventSummary: false },
       abortedReason: 'no_sources',
     };
   }
@@ -168,7 +169,7 @@ export async function enrichOneEvent(
     card,
     result.fights,
     sources.map((s) => s.url),
-    { dryRun: !!opts.dryRun },
+    { dryRun: !!opts.dryRun, event: { id: event.id, summary: result.event } },
   );
 
   return {
@@ -179,6 +180,7 @@ export async function enrichOneEvent(
     uncoveredFightIds: persistResult.uncoveredFightIds,
     ghostFightIds: result.ghostFightIds,
     wroteCount: persistResult.wroteCount,
+    eventSummary: result.event?.summary ?? null,
     costUsd,
     elapsedMs,
     persistResult,
@@ -195,17 +197,40 @@ async function loadCard(prisma: PrismaClient, eventId: string): Promise<CardItem
     orderBy: { orderOnCard: 'asc' },
   });
 
+  // Fan hype = average of pre-fight excitement ratings (FightPrediction.predictedRating).
+  // Mirrors the per-fight hype the /api/events endpoint computes. Lets the LLM flag a
+  // non-main fight fans are unusually excited about, weighted by sample size.
+  const fightIds = fights.map((f) => f.id);
+  const hypeByFight = new Map<string, { total: number; count: number }>();
+  if (fightIds.length > 0) {
+    const preds = await prisma.fightPrediction.findMany({
+      where: { fightId: { in: fightIds }, predictedRating: { not: null } },
+      select: { fightId: true, predictedRating: true },
+    });
+    for (const p of preds) {
+      const cur = hypeByFight.get(p.fightId) ?? { total: 0, count: 0 };
+      cur.total += p.predictedRating ?? 0;
+      cur.count += 1;
+      hypeByFight.set(p.fightId, cur);
+    }
+  }
+
   // Main event = orderOnCard === 1 (per schema comment on Fight.orderOnCard).
-  return fights.map((f) => ({
-    fightId: f.id,
-    fighter1: fullName(f.fighter1),
-    fighter2: fullName(f.fighter2),
-    weightClass: f.weightClass ?? null,
-    cardSection: normalizeCardSection(f.cardType),
-    orderOnCard: f.orderOnCard ?? null,
-    isMainEvent: f.orderOnCard === 1,
-    isTitle: !!f.isTitle,
-  }));
+  return fights.map((f) => {
+    const h = hypeByFight.get(f.id);
+    return {
+      fightId: f.id,
+      fighter1: fullName(f.fighter1),
+      fighter2: fullName(f.fighter2),
+      weightClass: f.weightClass ?? null,
+      cardSection: normalizeCardSection(f.cardType),
+      orderOnCard: f.orderOnCard ?? null,
+      isMainEvent: f.orderOnCard === 1,
+      isTitle: !!f.isTitle,
+      fanHype: h && h.count > 0 ? h.total / h.count : null,
+      hypeCount: h?.count ?? 0,
+    };
+  });
 }
 
 function normalizeCardSection(cardType: string | null): string | null {

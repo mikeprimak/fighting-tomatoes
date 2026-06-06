@@ -188,6 +188,72 @@ Original Phase 1 flow asked the LLM to extract fights from editorial text, then 
 - Render `aiPreview` raw or with a small "AI-generated" disclosure? (Lean: disclosure on web SEO pages for transparency; no disclosure on the in-app "why care" snippet since it reads as editorial.)
 - Do we localize? (Defer — English only for now.)
 
+## Event-level "why to care" one-liner — SHIPPED 2026-06-06 (piggyback on fight enrichment)
+
+**Built as a piggyback on the existing fight-enrichment call, NOT a separate job.**
+Reassessed the "dedicated job" plan below and chose to extend the existing per-event
+LLM call instead: `enrichOneEvent` already loads the whole card + all editorial and
+makes one Haiku call per event, so the event summary is one extra output field on a
+call we already pay for (marginal cost ~0), rides the existing T-10/5/2 cron + 36h
+dedup, and is grounded in the same evidence as the per-fight lines (can't drift).
+A separate job would re-fetch the card + editorial for no gain. Article-length SEO
+generation was explicitly de-scoped (mass thin auto-pages = SEO/helpful-content risk +
+fabrication at length; keep articles a curated Opus-as-Claude-Code draft, human-gated).
+
+What shipped:
+- Schema: `Event.aiEventSummary` (text), `aiEventConfidence` (float), `aiEventEnrichedAt`
+  (migration `20260606000000_add_ai_event_summary_fields`). Mirrors the fight columns.
+- Extractor: `extractFightEnrichment` now emits an `event: { summary, confidence }` object
+  (new "Event summary rules" prompt section: reason across the whole card, count TITLE
+  fights, headliner stakes, returns/debuts; ≤2 sentences; don't fabricate; no em/en dashes).
+  Parser coerces null-ish + `stripDashes()` sanitizer (cron auto-publishes, no human sweep).
+- Persist: `persistEnrichment` writes the three Event columns (written even when null so a
+  later pass that loses grounding clears a stale line).
+- API: `/api/events` select + response schema carry the three fields (fast-json-stringify
+  strips unlisted props, so both the Prisma select AND the response schema were updated).
+- Render (both surfaces, gated ≥0.5): mobile Home "events today" `EventRow` prefers
+  `aiEventSummary`, falling back to the interim main-event `aiPreviewShort` until the first
+  event pass runs; web `EventCard` shows it as a one-liner under the header (non-past only).
+- Hype-informed + tight (refined 2026-06-06): the extractor receives per-fight `fanHype`
+  (avg `FightPrediction.predictedRating`, scale **1-10**) with sample size, but only for
+  fights with `n >= HYPE_MIN_SAMPLE` (5) — sub-threshold hype is omitted from the prompt
+  entirely so a lone 10/10 can't read as "fans are hyped". When a non-main fight clearly
+  out-hypes the main event, the line names it explicitly as fan excitement ("…but fans are
+  most hyped for the Allen co-main"); hype informs, never dictates. Output style: ~15-25
+  words, last names only. (Verified live 2026-06-06 across UFC/Zuffa/RIZIN/Top Rank/Oktagon.)
+- Built on branch `home-screen-redesign` (main lacks the Home event-card code). Backend +
+  web deploy and the cron (GH Actions on main) only pick this up after the branch merges.
+
+### Original plan (superseded by the piggyback above) — dedicated event-specific job
+
+**Decision: build a dedicated, event-specific AI enrichment job.** As of 2026-06-06 the
+home-screen event card shows the *main event's* existing `aiPreviewShort` (interim,
+composed from per-fight data — see "Interim" below). That's only one fight's framing;
+Mike wants a genuine **event-level** blurb that reasons across the whole card, e.g.
+*"3 title fights, two ranked-LW eliminators, and a returning ex-champ"* — the kind of
+"what to tune in for" line that requires looking at the card as a whole, not one bout.
+
+What the new job needs to produce (event-scoped, not fight-scoped):
+- A 1–2 line event summary that can reference card-wide facts: count of title fights,
+  number of ranked matchups, headliner stakes, notable returns/debuts, divisions.
+- Inputs it should be given: every fight on the card (fighters, `isTitle`/`titleName`,
+  weight class, ranking if available, `orderOnCard`), plus the existing per-fight
+  `aiPreviewShort`/`aiTags` so it can synthesize rather than re-derive.
+
+Build notes (carry over from the original plan):
+- Follow the broadcast-discovery template (`services/broadcastDiscovery/`).
+- Haiku 4.5 + prompt caching; cost ceiling stays under the workstream's <$300/yr.
+- New `Event`-level columns (e.g. `aiEventSummary`, `aiEventConfidence`,
+  `aiEventEnrichedAt`) — mirror the fight columns.
+- Confidence floor before display (same `< 0.5` hide rule the card already applies).
+- Cadence: align with the start-time / upcoming-event refresh so summaries refresh as
+  cards fill in (T-10/T-5/T-2 like the fight enrichment, or on schedule change).
+
+### Interim (shipped 2026-06-06)
+The card currently reuses the **main event's** `aiPreviewShort` (lowest `orderOnCard`
+= headliner), confidence-gated at ≥ 0.5. Zero marginal cost, but single-fight framing —
+the dedicated job above replaces this with a true event-level line.
+
 ## Session protocol
 
 See `CLAUDE.md` → "AI Enrichment Sessions" for how to start a session on this workstream.

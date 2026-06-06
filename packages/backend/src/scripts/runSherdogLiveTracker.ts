@@ -21,12 +21,11 @@
  *   1 — fatal error (no PBP page, scrape failure, bad event ID, etc.)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { SherdogLiveScraper } from '../services/sherdogLiveScraper';
 import { parseSherdogLiveData } from '../services/sherdogLiveParser';
 import { refreshProductionScrapersCache, isProductionScraper } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 interface CliArgs {
   eventId: string | null;
