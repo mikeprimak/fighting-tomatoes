@@ -81,12 +81,14 @@ export function EventCard({ event, mode }: EventCardProps) {
     return true;
   });
 
-  // The "up next" fight is the UPCOMING fight with the highest orderOnCard
-  // (last to walk out), and only counts when no fight is currently LIVE and
-  // at least one fight on the card has completed.
+  // The "up next" fight is the next bout to walk out: the UPCOMING fight with
+  // the highest orderOnCard (cards run from the opener at the highest order down
+  // to the main event at order 1). It shows whenever no fight is currently LIVE.
+  // Mirrors mobile's FightDisplayCardNew (status==='upcoming' && isNextFight &&
+  // !hasLiveFight) — note mobile does NOT require a completed fight, so a freshly
+  // live card with nothing finished yet (e.g. OKTAGON 89) still flags its opener.
   const hasLiveFight = fights.some((f: any) => f.fightStatus === 'LIVE');
-  const hasCompletedFight = fights.some((f: any) => f.fightStatus === 'COMPLETED');
-  const upNextFight = (!hasLiveFight && hasCompletedFight)
+  const upNextFight = !hasLiveFight
     ? [...fights]
         .filter((f: any) => f.fightStatus === 'UPCOMING')
         .sort((a: any, b: any) => (b.orderOnCard ?? 0) - (a.orderOnCard ?? 0))[0]
