@@ -88,9 +88,20 @@ export function WeekendEventsSection() {
   // The home screen is org-agnostic by design: every section shows content from
   // all promotions, regardless of the user's org filter selection (which only
   // governs the Live / Upcoming / Past / Good Fights tabs). Don't filter here.
-  const events = (data?.events ?? []).filter(
-    (e: any) => !isEventLiveNow(e) && isThisWeekend(e),
-  );
+  //
+  // Keep LIVE events in the band (badged "LIVE" on the card) alongside the
+  // upcoming ones — mirrors the mobile home, where a card that just went live
+  // shouldn't vanish. Live events float to the top since they're happening now.
+  const events = (data?.events ?? [])
+    .filter((e: any) => isThisWeekend(e))
+    .sort((a: any, b: any) => {
+      const aLive = isEventLiveNow(a);
+      const bLive = isEventLiveNow(b);
+      if (aLive !== bLive) return aLive ? -1 : 1;
+      const at = new Date(a.mainStartTime ?? a.date).getTime();
+      const bt = new Date(b.mainStartTime ?? b.date).getTime();
+      return at - bt;
+    });
 
   if (events.length === 0) return null;
 
@@ -101,6 +112,7 @@ export function WeekendEventsSection() {
         {events.map((event: any) => {
           const summary = aiSummary(event);
           const firstStart = firstFightStart(event);
+          const live = isEventLiveNow(event);
           return (
             <Link
               key={event.id}
@@ -124,12 +136,21 @@ export function WeekendEventsSection() {
               </div>
               <div className="flex min-w-0 flex-1 items-start gap-3 p-3">
                 <div className="min-w-0 flex-1">
-                  <div className="mb-0.5 flex flex-wrap items-baseline gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
+                  <div className="mb-0.5 flex flex-wrap items-center gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
                     {promotionLabel(event.promotion) || 'Event'}
-                    <span className="text-[11px] font-normal normal-case tracking-normal text-text-secondary">
-                      · {formatDay(event.mainStartTime ?? event.date)}
-                      {firstStart ? ` · ${formatTime(firstStart)}` : ''}
-                    </span>
+                    {live ? (
+                      // Live: a red LIVE pill takes the start-time slot (start
+                      // time dropped, just like the mobile home).
+                      <span className="inline-flex items-center gap-1 rounded bg-[#E11D2A] px-1.5 py-0.5 text-[10px] font-extrabold normal-case tracking-wide text-white">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                        LIVE
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-normal normal-case tracking-normal text-text-secondary">
+                        · {formatDay(event.mainStartTime ?? event.date)}
+                        {firstStart ? ` · ${formatTime(firstStart)}` : ''}
+                      </span>
+                    )}
                   </div>
                   <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-primary">
                     {event.name}
