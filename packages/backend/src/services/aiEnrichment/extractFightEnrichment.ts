@@ -15,20 +15,25 @@ import Anthropic from '@anthropic-ai/sdk';
 const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 4096;
 
+// Minimum fan ratings before a fight's hype is trustworthy enough to show the LLM.
+// Below this it's noise (a single 10/10 rating is not "fans are hyped"), so we omit
+// it entirely rather than rely on the prompt to ignore it.
+const HYPE_MIN_SAMPLE = 5;
+
 const SYSTEM_PROMPT = `You are a combat-sports analyst enriching a fight card for a fight-rating app.
 
 You will be given:
   - A promotion (e.g. "UFC")
   - An event name (e.g. "UFC Fight Night Allen vs Costa")
-  - A CARD: the authoritative list of fights on this event, each with a fightId, fighter names, weight class, card section, and order on card.
+  - A CARD: the authoritative list of fights on this event, each with a fightId, fighter names, weight class, card section, order on card, and (when fans have rated it) a fanHype score + sample size.
   - One or more source excerpts (preview articles, official event pages).
 
 Your job: emit ONE record per fightId that the editorial actually covers. Skip fightIds the editorial doesn't speak to — do NOT invent narrative from training data.
 
 Output STRICT JSON (no prose, no markdown, no fences):
 {
-  "event": {                                       // card-wide summary — see "Event summary" rules below
-    "summary": "1-2 sentence card-wide hook ('Three title fights and the return of an ex-champ headline a stacked night.'). Omit the field (or set null) if you can't ground a real card-wide read.",
+  "event": {                                       // card-wide summary — see "Event summary rules" below
+    "summary": "ONE short line (~1 sentence, LAST NAMES ONLY) framing the whole card. See 'Event summary rules'. null if you can't ground a real card-wide read.",
     "confidence": 0.7                              // 0.0-1.0, YOUR confidence the event summary is accurate and useful
   },
   "fights": [
@@ -69,12 +74,17 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
   - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.
 
 Event summary rules (the "event" object):
-  - This is ONE short line that frames the WHOLE card for a casual fan deciding whether to tune in — the kind of thing you'd put on a "what to watch tonight" card. 1-2 sentences max, plain English, no jargon.
-  - Reason across the entire CARD, not one fight. Lean on card-wide facts you can see or ground: count of TITLE fights (use the CARD's TITLE flags), the main event matchup and its stakes, notable returns/debuts/milestones mentioned in editorial, marquee names, divisions involved.
-  - Example shapes: "Three title fights and a returning ex-champ headline one of the deepest cards of the year." / "Topuria defends the lightweight belt against Gaethje, with Pereira chasing history in the co-main." / "A pivotal lightweight main event tops an otherwise regional card."
-  - Do NOT fabricate. If you only have one grounded fight (the main event) and no real card-wide angle, it's fine to frame the headliner alone. If editorial is silent on the whole card and the CARD itself gives you nothing beyond names, set "summary" to null.
-  - "confidence": editorial covers multiple fights / clear card-wide story ⇒ 0.7+. Only the main event is grounded ⇒ 0.5-0.6. Thin/namedrop-only ⇒ below 0.5 (it will be hidden).
-  - Keep house style: no em dashes or en dashes (use commas, "and", or periods).`;
+  - ONE tight line that frames the WHOLE card for a fan deciding whether to tune in. Keep it SHORT: roughly 15-25 words that fit three lines on a phone card. Plain English, no jargon. Lead with the main event in a few words (last names + the hook), then at most one more clause.
+  - Use LAST NAMES ONLY ("Muhammad vs Bonfim", not "Belal Muhammad vs Gabriel Bonfim"), except where a first name is genuinely needed to tell apart two fighters who share a surname.
+  - Reason across the CARD, not one fight: count of TITLE fights (use the CARD's TITLE flags), the main event and its stakes, notable returns/debuts, marquee names. Don't list every bout, pick the 1-2 hooks that sell the night.
+  - FAN HYPE: some CARD fights show fanHype (scale 1-10, the average of fans' pre-fight excitement ratings, where 8+ is strong) and n (how many fans rated it). Only fights with enough ratings to be trustworthy carry this field, so a shown fanHype is always meaningful. Compare it RELATIVELY across the fights that show it. Use it to INFORM the line, never to dictate it: the main event still anchors.
+    ONLY when a NON-main fight clearly leads on the shown hype (notably higher than the main event, or strongly hyped when the main event shows no hype) you MUST name that fan excitement EXPLICITLY using the word "fans". Do NOT swap in generic stakes language ("divisional implications", "with title-shot stakes") for the fan angle, and do NOT just restate the number. Worked example for a card whose co-main out-hypes the main event:
+      GOOD: "Muhammad vs Bonfim headlines, but fans are most hyped for the Allen vs Shahbazyan co-main."
+      BAD:  "Muhammad vs Bonfim headlines; Allen and Shahbazyan meet in the co-main with divisional implications." (mentions the fight but hides the fan excitement)
+    If NO fight shows fanHype, or no non-main fight clearly out-hypes the main event, do NOT mention hype at all, just frame the headliner normally. Never invent fan excitement that the hype numbers don't support.
+  - Do NOT fabricate. If only the main event is grounded, framing the headliner alone is fine. If you have nothing beyond names, set "summary" to null.
+  - "confidence": editorial covers multiple fights / clear card-wide story ⇒ 0.7+. Only the main event grounded ⇒ 0.5-0.6. Thin/namedrop-only ⇒ below 0.5 (it will be hidden).
+  - House style: no em dashes or en dashes (use commas, "and", or periods).`;
 
 export interface CardItem {
   fightId: string;
@@ -85,6 +95,10 @@ export interface CardItem {
   orderOnCard: number | null;
   isMainEvent: boolean;
   isTitle: boolean;
+  /** Average of fans' pre-fight excitement ratings (0-100), null if none. */
+  fanHype?: number | null;
+  /** How many fans contributed to fanHype (sample size). */
+  hypeCount?: number;
 }
 
 export interface FightEnrichmentInput {
@@ -195,6 +209,9 @@ function buildUserMessage(input: FightEnrichmentInput): string {
     if (c.orderOnCard !== null) bits.push(`order=${c.orderOnCard}`);
     if (c.isMainEvent) bits.push('MAIN_EVENT');
     if (c.isTitle) bits.push('TITLE');
+    if (c.fanHype != null && c.hypeCount && c.hypeCount >= HYPE_MIN_SAMPLE) {
+      bits.push(`fanHype=${c.fanHype.toFixed(1)}/10(n=${c.hypeCount})`);
+    }
     lines.push(`- ${bits.join(' | ')}`);
   }
   lines.push('');

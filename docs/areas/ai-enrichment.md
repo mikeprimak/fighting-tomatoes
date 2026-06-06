@@ -214,6 +214,13 @@ What shipped:
 - Render (both surfaces, gated ≥0.5): mobile Home "events today" `EventRow` prefers
   `aiEventSummary`, falling back to the interim main-event `aiPreviewShort` until the first
   event pass runs; web `EventCard` shows it as a one-liner under the header (non-past only).
+- Hype-informed + tight (refined 2026-06-06): the extractor receives per-fight `fanHype`
+  (avg `FightPrediction.predictedRating`, scale **1-10**) with sample size, but only for
+  fights with `n >= HYPE_MIN_SAMPLE` (5) — sub-threshold hype is omitted from the prompt
+  entirely so a lone 10/10 can't read as "fans are hyped". When a non-main fight clearly
+  out-hypes the main event, the line names it explicitly as fan excitement ("…but fans are
+  most hyped for the Allen co-main"); hype informs, never dictates. Output style: ~15-25
+  words, last names only. (Verified live 2026-06-06 across UFC/Zuffa/RIZIN/Top Rank/Oktagon.)
 - Built on branch `home-screen-redesign` (main lacks the Home event-card code). Backend +
   web deploy and the cron (GH Actions on main) only pick this up after the branch merges.
 
