@@ -42,16 +42,18 @@ const relUntilPhrase = (dateStr: string): string => {
   return weeks === 1 ? 'in 1 week' : `in ${weeks} weeks`;
 };
 
-// Event.date is a UTC-hour placeholder, so compare its UTC calendar day to
-// today's local calendar day (matches formatTimeUntil's day comparison).
-const isEventToday = (dateStr: string): boolean => {
+// "Today" / "Tomorrow" / weekday name ("Saturday") — heading for a weekend
+// event's per-day group. Event.date is a UTC-hour placeholder, so derive the
+// label from its UTC calendar day vs the user's local today.
+const eventDayLabel = (dateStr: string): string => {
   const d = new Date(dateStr);
   const now = new Date();
-  return (
-    d.getUTCFullYear() === now.getFullYear() &&
-    d.getUTCMonth() === now.getMonth() &&
-    d.getUTCDate() === now.getDate()
-  );
+  const todayK = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const evK = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const days = Math.round((evK - todayK) / 86_400_000);
+  if (days <= 0) return 'Today';
+  if (days === 1) return 'Tomorrow';
+  return new Date(evK).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
 };
 
 // "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
@@ -195,14 +197,22 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
   );
 }
 
-/** Half-width event thumbnail for the Events This Weekend grid. */
-function EventThumbnail({
+/**
+ * Full-width horizontal event card: image on the left, event name + date and
+ * the card's standout matchups on the right. `topFights` are the genuinely-hyped
+ * fights for this event (>= 3 hypes, avg >= 7 — already filtered server-side),
+ * shown as plain "A vs B" text so a fan can see at a glance what's worth tuning
+ * in for.
+ */
+function EventRow({
   event,
+  topFights,
   colors,
   styles,
   onPress,
 }: {
   event: Event;
+  topFights: any[];
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
@@ -212,53 +222,36 @@ function EventThumbnail({
     : getDefaultBanner(event.promotion || '');
   const name = normalizeEventName(event.name, event.promotion);
 
-  // Top-align the crop for portrait/tall images (faces/posters live at the top).
-  // We measure the box width + image aspect, then pin tall images to top:0 so the
-  // overflow is clipped from the bottom instead of center-cropping.
-  const CONTAINER_ASPECT = 16 / 9;
-  const [boxWidth, setBoxWidth] = React.useState(0);
-  const [imgAspect, setImgAspect] = React.useState<number | null>(null);
-  const isTall = imgAspect !== null && imgAspect < CONTAINER_ASPECT;
-  const handleImageLoad = (e: any) => {
-    const { width: w, height: h } = e.nativeEvent.source;
-    if (w > 0 && h > 0) setImgAspect(w / h);
-  };
-
   return (
-    <TouchableOpacity style={styles.eventThumb} activeOpacity={0.85} onPress={onPress}>
-      <View
-        style={styles.eventThumbImageWrap}
-        onLayout={(e) => setBoxWidth(e.nativeEvent.layout.width)}
-      >
+    <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
+      <View style={styles.eventRowImageWrap}>
         {imageSource ? (
-          <Image
-            source={imageSource}
-            style={
-              isTall && boxWidth
-                ? { position: 'absolute', top: 0, left: 0, width: boxWidth, height: boxWidth / imgAspect! }
-                : styles.eventThumbImage
-            }
-            resizeMode={isTall && boxWidth ? undefined : 'cover'}
-            onLoad={handleImageLoad}
-          />
+          <Image source={imageSource} style={styles.eventRowImage} resizeMode="cover" />
         ) : (
-          <View style={[styles.eventThumbImage, styles.eventThumbPlaceholder]}>
-            <PromotionLogo promotion={event.promotion || ''} size={40} color="#FFFFFF" />
+          <View style={[styles.eventRowImage, styles.eventThumbPlaceholder]}>
+            <PromotionLogo promotion={event.promotion || ''} size={32} color="#FFFFFF" />
           </View>
         )}
         {event.promotion ? (
-          <View style={styles.eventThumbLogo}>
-            <PromotionLogo promotion={event.promotion} size={18} color="#FFFFFF" />
+          <View style={styles.eventRowLogo}>
+            <PromotionLogo promotion={event.promotion} size={14} color="#FFFFFF" />
           </View>
         ) : null}
       </View>
-      <View style={styles.eventThumbBody}>
-        <Text style={styles.eventThumbName} numberOfLines={2}>
+      <View style={styles.eventRowBody}>
+        <Text style={styles.eventRowName} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={styles.eventThumbDate}>
-          {isEventToday(event.date) ? 'Today' : formatEventDate(event.date)}
-        </Text>
+        <Text style={styles.eventRowDate}>{formatEventDate(event.date)}</Text>
+        {topFights.length > 0 ? (
+          <View style={styles.eventRowFights}>
+            {topFights.map((f: any) => (
+              <Text key={f.id} style={styles.eventRowFightText} numberOfLines={1}>
+                {getFighterDisplayName(f.fighter1)} vs {getFighterDisplayName(f.fighter2)}
+              </Text>
+            ))}
+          </View>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -546,6 +539,37 @@ export default function HomeScreen() {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
+  // Hyped fights keyed by event id, so each weekend card can list its standout
+  // matchups. These come from /top-upcoming-fights, which already enforces the
+  // "genuinely hyped" floor (>= 3 hypes AND avg >= 7) server-side.
+  const hypedByEvent = new Map<string, any[]>();
+  for (const f of topUpcomingFights?.data || []) {
+    const id = f.event?.id;
+    if (!id) continue;
+    const arr = hypedByEvent.get(id);
+    if (arr) arr.push(f);
+    else hypedByEvent.set(id, [f]);
+  }
+
+  // Group the weekend events by calendar day so each day renders under its own
+  // heading (Today / Tomorrow / Saturday …), first-appearance order preserved
+  // (upcomingEvents is already day-sorted with UFC floated up within each day).
+  const eventsByDay: { label: string; events: Event[] }[] = (() => {
+    const groups: { label: string; events: Event[] }[] = [];
+    const byKey = new Map<number, { label: string; events: Event[] }>();
+    for (const e of upcomingEvents) {
+      const k = eventDayKey(e.date);
+      let g = byKey.get(k);
+      if (!g) {
+        g = { label: eventDayLabel(e.date), events: [] };
+        byKey.set(k, g);
+        groups.push(g);
+      }
+      g.events.push(e);
+    }
+    return groups;
+  })();
+
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   const recentFights = (
     weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
@@ -641,86 +665,52 @@ export default function HomeScreen() {
       }
     >
         <View>
-      {/* Editorial / Blog ---------------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="The Latest"
-        icon="newspaper-o"
-        onSeeAll={() => router.push('/blog' as any)}
-      >
-        {isEditorialLoading ? (
+      {/* Events by day — Today / Tomorrow / Saturday … ---------------------*/}
+      {isEventsLoading ? (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="This Weekend"
+          icon="fire-flame-curved"
+          iconLib="fa6"
+        >
           <Loading colors={colors} styles={styles} />
-        ) : editorial && editorial.posts.length > 0 ? (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+        </Section>
+      ) : eventsByDay.length > 0 ? (
+        eventsByDay.map((day, di) => (
+          <Section
+            key={day.label}
+            colors={colors}
+            styles={styles}
+            title={day.label}
+            icon="calendar"
+            onSeeAll={di === 0 ? () => router.push('/(tabs)/events' as any) : undefined}
           >
-            {editorial.posts.map((post) => (
-              <TouchableOpacity
-                key={post.slug}
-                style={styles.blogCard}
-                activeOpacity={0.85}
-                onPress={() => openBlogPost(post.slug)}
-              >
-                <Image
-                  source={{ uri: resolveBlogImageUrl(post.image) }}
-                  style={styles.blogImage}
-                  resizeMode="cover"
+            <View style={styles.eventList}>
+              {day.events.map((event) => (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  topFights={(hypedByEvent.get(event.id) || []).slice(0, 4)}
+                  colors={colors}
+                  styles={styles}
+                  onPress={() => router.push(`/event/${event.id}` as any)}
                 />
-                <View style={styles.blogBody}>
-                  <Text style={styles.blogTitle} numberOfLines={2}>
-                    {post.title}
-                  </Text>
-                  <Text style={styles.blogExcerpt} numberOfLines={3}>
-                    {post.excerpt}
-                  </Text>
-                  <Text style={styles.blogDate}>
-                    {post.date
-                      ? new Date(post.date).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })
-                      : ''}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        ) : (
-          <Empty styles={styles} text="No articles yet" />
-        )}
-      </Section>
-
-      {/* Events This Weekend ------------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="Events This Weekend"
-        icon="fire-flame-curved"
-        iconLib="fa6"
-        onSeeAll={() => router.push('/(tabs)/events' as any)}
-      >
-        {isEventsLoading ? (
-          <Loading colors={colors} styles={styles} />
-        ) : upcomingEvents.length > 0 ? (
-          <View style={styles.eventGrid}>
-            {upcomingEvents.map((event) => (
-              <EventThumbnail
-                key={event.id}
-                event={event}
-                colors={colors}
-                styles={styles}
-                onPress={() => router.push(`/event/${event.id}` as any)}
-              />
-            ))}
-          </View>
-        ) : (
+              ))}
+            </View>
+          </Section>
+        ))
+      ) : (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="This Weekend"
+          icon="fire-flame-curved"
+          iconLib="fa6"
+        >
           <Empty styles={styles} text="No events this weekend" />
-        )}
-      </Section>
+        </Section>
+      )}
 
       {/* Most Hyped Upcoming Fights ----------------------------------------*/}
       <Section
@@ -829,6 +819,59 @@ export default function HomeScreen() {
           ) : null}
         </Section>
       )}
+
+      {/* The Latest / Editorial blog (moved below Highlighted Fighter) ------*/}
+      <Section
+        colors={colors}
+        styles={styles}
+        title="The Latest"
+        icon="newspaper-o"
+        onSeeAll={() => router.push('/blog' as any)}
+      >
+        {isEditorialLoading ? (
+          <Loading colors={colors} styles={styles} />
+        ) : editorial && editorial.posts.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {editorial.posts.map((post) => (
+              <TouchableOpacity
+                key={post.slug}
+                style={styles.blogCard}
+                activeOpacity={0.85}
+                onPress={() => openBlogPost(post.slug)}
+              >
+                <Image
+                  source={{ uri: resolveBlogImageUrl(post.image) }}
+                  style={styles.blogImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.blogBody}>
+                  <Text style={styles.blogTitle} numberOfLines={2}>
+                    {post.title}
+                  </Text>
+                  <Text style={styles.blogExcerpt} numberOfLines={3}>
+                    {post.excerpt}
+                  </Text>
+                  <Text style={styles.blogDate}>
+                    {post.date
+                      ? new Date(post.date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })
+                      : ''}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        ) : (
+          <Empty styles={styles} text="No articles yet" />
+        )}
+      </Section>
 
       {/* Hot Fighters -------------------------------------------------------*/}
       <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
@@ -1075,30 +1118,26 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 14,
       color: colors.textSecondary,
     },
-    // Upcoming events 2×3 grid
-    eventGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
+    // Full-width horizontal event cards (image left, details right)
+    eventList: {
       paddingHorizontal: 16,
-      justifyContent: 'space-between',
-      rowGap: 16,
+      gap: 12,
     },
-    eventThumb: {
-      width: '48%',
+    eventRow: {
+      flexDirection: 'row',
       backgroundColor: colors.card,
       borderRadius: 12,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: 'hidden',
     },
-    eventThumbImageWrap: {
+    eventRowImageWrap: {
       position: 'relative',
-      width: '100%',
-      aspectRatio: 16 / 9,
+      width: 120,
+      alignSelf: 'stretch',
       backgroundColor: colors.border,
-      overflow: 'hidden',
     },
-    eventThumbImage: {
+    eventRowImage: {
       width: '100%',
       height: '100%',
     },
@@ -1107,30 +1146,40 @@ function makeStyles(colors: ThemeColors) {
       justifyContent: 'center',
       alignItems: 'center',
     },
-    eventThumbLogo: {
+    eventRowLogo: {
       position: 'absolute',
       bottom: 6,
       left: 6,
       backgroundColor: 'rgba(0, 0, 0, 0.85)',
       borderRadius: 6,
-      paddingHorizontal: 6,
-      paddingVertical: 4,
+      paddingHorizontal: 5,
+      paddingVertical: 3,
     },
-    eventThumbBody: {
-      padding: 10,
+    eventRowBody: {
+      flex: 1,
+      padding: 12,
     },
-    eventThumbName: {
-      fontSize: 14,
+    eventRowName: {
+      fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 4,
+      marginBottom: 3,
     },
-    eventThumbDate: {
+    eventRowDate: {
       fontSize: 11,
       fontWeight: '600',
       color: colors.textSecondary,
       textTransform: 'uppercase',
       letterSpacing: 0.5,
+    },
+    eventRowFights: {
+      marginTop: 8,
+      gap: 2,
+    },
+    eventRowFightText: {
+      fontSize: 13,
+      fontWeight: '500',
+      color: colors.textSecondary,
     },
     // Most Followed horizontal chip
     followChip: {
