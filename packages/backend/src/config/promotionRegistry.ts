@@ -216,7 +216,11 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     shortLabel: 'ZUFFA BOXING',
     fullLabel: 'Zuffa Boxing',
     scraperType: 'tapology',
-    hasReliableLiveTracker: false,
+    // Zuffa Boxing runs the generic Tapology live tracker (Hetzner VPS) and
+    // delivers reliable per-fight updates — treat it like a tracked promotion so
+    // the lifecycle does NOT bulk-complete its card (the no-tracker flow that
+    // marked all of Zuffa Boxing 7 COMPLETED on 2026-06-06).
+    hasReliableLiveTracker: true,
     logoKey: 'zuffa_boxing',
     userVisible: true,
     notificationEligible: true,
