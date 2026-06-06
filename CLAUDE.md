@@ -99,12 +99,14 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **API endpoints**: `docs/API.md`
 - **Doc system overview**: `docs/README.md`
 
-## Current Store Versions (as of May 30, 2026)
+## Current Store Versions (as of June 6, 2026)
 
 | Platform | Version | Build # | Status |
 |---|---|---|---|
-| Android (Play Store) | 2.1.0 | versionCode 38 | In review (uploaded 2026-06-01) |
-| iOS (App Store) | 2.1.1 | buildNumber 21 | In TestFlight (submitted 2026-06-01); not yet submitted for App Store review |
+| Android (Play Store) | 2.1.0 | versionCode 38 | **LIVE** (passed review ~early June 2026) |
+| iOS (App Store) | 2.1.1 | buildNumber 21 | **LIVE** (passed App Store review ~early June 2026) |
+
+- **Both store builds are live**, so production OTAs reach the full user base. OTA runtime targeting: **Android = `1.0.0`** (hardcoded `app.json` android `runtimeVersion`), **iOS = `2.1.1`** (`appVersion` policy). `eas update --branch production` auto-targets both. Verify the live runtime empirically with `eas update:list --branch production` before publishing.
 
 - **Android prod was versionCode 36 (2.0.x); 2.1.0 shipped as vc 37 then vc 38** (2026-06-01, profile redesign + biometric native build). Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
 - `build.gradle`: Android versionCode `38`, versionName `2.1.0`. `app.json`: version `2.1.1`, iOS buildNumber `21`. **Note iOS marketing version (2.1.1) is ahead of Android versionName (2.1.0)** — they diverged because the iOS 2.1.0 train was sealed (see below).
