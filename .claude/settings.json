@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate reset:*)",
+      "Bash(npx prisma migrate diff:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(prisma migrate dev:*)",
+      "Bash(prisma migrate reset:*)",
+      "Bash(prisma migrate diff:*)",
+      "Bash(prisma db push:*)",
+      "Bash(pnpm prisma migrate dev:*)",
+      "Bash(pnpm prisma migrate reset:*)",
+      "Bash(pnpm prisma db push:*)",
+      "Bash(pnpm db:migrate:*)",
+      "Bash(pnpm db:reset:*)",
+      "Bash(pnpm run db:migrate:*)",
+      "Bash(pnpm run db:reset:*)"
+    ]
+  }
+}
