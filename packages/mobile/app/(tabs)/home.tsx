@@ -26,6 +26,7 @@ import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../..
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
+import { useEventBroadcasts } from '../../components/HowToWatch';
 import FighterCard from '../../components/FighterCard';
 import { SearchBar } from '../../components';
 
@@ -228,7 +229,20 @@ function EventRow({
   const startTime = event.mainStartTime
     ? `${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
     : null;
-  const dateLine = [formatEventDate(event.date), startTime].filter(Boolean).join(' · ');
+
+  // Main-card broadcast channel for the user's region, shown beside the time.
+  // Prefer the MAIN_CARD entry (matches mainStartTime), then a whole-event one.
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const channel = React.useMemo(() => {
+    const bs = broadcastsData?.broadcasts || [];
+    const entry =
+      bs.find((b) => b.cardSection === 'MAIN_CARD') ||
+      bs.find((b) => b.cardSection === null) ||
+      bs[0];
+    return entry?.channel?.name || null;
+  }, [broadcastsData]);
+
+  const dateLine = [formatEventDate(event.date), startTime, channel].filter(Boolean).join(' · ');
 
   return (
     <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
