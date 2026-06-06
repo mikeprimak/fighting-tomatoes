@@ -133,11 +133,17 @@ export function hasReliableLiveTracker(
   promotion: string | null | undefined,
 ): boolean {
   if (!scraperType) return false;
-  if (!isProductionScraper(scraperType)) return false;
+  // Tapology is intentionally NOT in production_scrapers (it bulk-overwrote
+  // lifecycle completions, so it bypasses the production live-tracker path).
+  // Its per-fight live tracker is reliable only for a curated subset of
+  // promotions, so gate tapology purely on the reliable-promotion set — BEFORE
+  // the isProductionScraper guard below, which would otherwise short-circuit
+  // every tapology promotion (incl. reliable ones like Zuffa Boxing) to false.
   if (scraperType === 'tapology') {
     if (!promotion) return false;
     return RELIABLE_LIVE_TRACKER_PROMOTIONS_UPPER.has(promotion.toUpperCase());
   }
+  if (!isProductionScraper(scraperType)) return false;
   return true;
 }
 
