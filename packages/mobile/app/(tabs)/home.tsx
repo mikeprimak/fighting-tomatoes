@@ -423,8 +423,8 @@ export default function HomeScreen() {
   });
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
-    queryKey: ['events', 'upcoming'],
-    queryFn: () => apiService.getEvents({ type: 'upcoming' }),
+    queryKey: ['events', 'upcoming', 'withFights'],
+    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: true }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -534,17 +534,17 @@ export default function HomeScreen() {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-  // Hyped fights keyed by event id, so each weekend card can list its standout
-  // matchups. These come from /top-upcoming-fights, which already enforces the
-  // "genuinely hyped" floor (>= 3 hypes AND avg >= 7) server-side.
-  const hypedByEvent = new Map<string, any[]>();
-  for (const f of topUpcomingFights?.data || []) {
-    const id = f.event?.id;
-    if (!id) continue;
-    const arr = hypedByEvent.get(id);
-    if (arr) arr.push(f);
-    else hypedByEvent.set(id, [f]);
-  }
+  // The event's main event = the final fight to walk out = highest orderOnCard
+  // (fights arrive orderOnCard-asc, so it's the last one). Matches the app-wide
+  // "walks out last" convention used by the web event card's up-next logic.
+  const mainEventFight = (event: any): any | null => {
+    const fights = event?.fights || [];
+    if (fights.length === 0) return null;
+    return fights.reduce(
+      (best: any, f: any) => ((f.orderOnCard ?? 0) >= (best.orderOnCard ?? 0) ? f : best),
+      fights[0],
+    );
+  };
 
   // Group the weekend events by calendar day so each day renders under its own
   // heading (Today / Tomorrow / Saturday …), first-appearance order preserved
@@ -683,12 +683,12 @@ export default function HomeScreen() {
           >
             <View style={styles.eventList}>
               {day.events.map((event) => {
-                // Top (most-hyped) fight's existing AI "why care" blurb, gated on
-                // the same confidence floor the fight screens use (>= 0.5).
-                const top = (hypedByEvent.get(event.id) || [])[0];
+                // Main event (final fight) AI "why care" blurb, gated on the same
+                // confidence floor the fight screens use (>= 0.5).
+                const main = mainEventFight(event);
                 const description =
-                  top && top.aiConfidence != null && top.aiConfidence >= 0.5
-                    ? top.aiPreviewShort
+                  main && main.aiConfidence != null && main.aiConfidence >= 0.5
+                    ? main.aiPreviewShort
                     : null;
                 return (
                   <EventRow
