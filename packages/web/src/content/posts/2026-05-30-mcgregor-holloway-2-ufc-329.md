@@ -22,7 +22,7 @@ event:
 
 Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
 
-*Last updated: June 3, 2026.*
+*Last updated: June 6, 2026.*
 
 ## When is McGregor vs Holloway 2?
 
@@ -78,6 +78,7 @@ UFC 329 is a stacked 12-fight card. The announced lineup includes:
 - Gable Steveson vs Elisha Ellison (Heavyweight)
 - Cody Garbrandt vs Adrian Yanez (Bantamweight)
 - Tracy Cortez vs Wang Cong (Flyweight)
+- King Green vs Terrance McKinney (Lightweight)
 - Plus several more bouts across the prelims
 
 Card placement and matchups can change in the weeks before the event, so treat the undercard order as provisional until fight week.
@@ -133,9 +134,9 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 
 ## What are the betting odds for McGregor vs Holloway 2?
 
-The opening odds tell the whole story of how the fight is viewed. **Max Holloway is a heavy favorite**, with lines ranging from roughly -400 to -550 across major sportsbooks. **Conor McGregor is the underdog at +350 or longer**, which is reported to be the longest underdog price of his entire UFC career. Those numbers imply Holloway has roughly an 80 percent chance to win. Lines will move as fight week approaches and money comes in, so check current odds before placing anything.
+The opening odds tell the whole story of how the fight is viewed. **Max Holloway is a heavy favorite**. As of early June, lines vary meaningfully by book: DraftKings has Holloway at around -310 (McGregor +250), FanDuel sits near -410 (McGregor +290), and BetMGM is still in the -550 range (McGregor +350). **McGregor is an underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. The implied probability across markets puts Holloway's win chance somewhere between 75 and 85 percent. Lines will continue to move as fight week approaches and money comes in, so check current odds before placing anything.
 
-![UFC 329 betting odds: Max Holloway favorite at -450, Conor McGregor underdog at +350, implied win probability roughly 78 to 22 percent](/blog/ufc-329-betting-odds.png)
+![UFC 329 betting odds: Max Holloway favorite, Conor McGregor underdog, lines ranging from -310 to -550 depending on the sportsbook](/blog/ufc-329-betting-odds.png)
 
 ## Why is McGregor such a big underdog?
 
@@ -202,7 +203,7 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
 - **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
-- **Favorite:** Max Holloway (roughly -400 to -550)
+- **Favorite:** Max Holloway (lines range from roughly -310 to -550 across major books; McGregor +250 to +350)
 - **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 
