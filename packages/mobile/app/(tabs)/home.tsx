@@ -374,15 +374,29 @@ function HypedEventCard({
   const name = normalizeEventName(event?.name || 'Event', event?.promotion);
   const when = eventRelativePhrase(event?.mainStartTime ?? event?.date);
 
+  // Anchor the banner crop to the TOP of the image (faces sit near the top of
+  // fight posters; a centered cover crops to chests). Render the image full-width
+  // at its true aspect ratio, pinned to top, and let the fixed-height box clip the
+  // bottom. Seed a wide default so there's no resize flash before onLoad fires.
+  const [bannerRatio, setBannerRatio] = React.useState(16 / 9);
+
   return (
     <View style={styles.hypedCard}>
       {/* Banner header — taps through to the event */}
       <TouchableOpacity activeOpacity={0.9} onPress={onPressEvent}>
         <View style={styles.hypedBanner}>
           {imageSource ? (
-            <Image source={imageSource} style={styles.hypedBannerImage} resizeMode="cover" />
+            <Image
+              source={imageSource}
+              style={[styles.hypedBannerImage, { aspectRatio: bannerRatio }]}
+              resizeMode="cover"
+              onLoad={(e) => {
+                const src: any = e?.nativeEvent?.source;
+                if (src?.width && src?.height) setBannerRatio(src.width / src.height);
+              }}
+            />
           ) : (
-            <View style={[styles.hypedBannerImage, styles.eventThumbPlaceholder]}>
+            <View style={[styles.hypedBannerImage, styles.eventThumbPlaceholder, { aspectRatio: undefined, height: '100%' }]}>
               <PromotionLogo promotion={event?.promotion || ''} size={40} color="#FFFFFF" />
             </View>
           )}
@@ -868,8 +882,9 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Hyped Upcoming Fights"
-        icon="bolt"
+        title="Top Upcoming Fights"
+        icon="fire-flame-curved"
+        iconLib="fa6"
         onSeeAll={() => router.push('/(tabs)/events' as any)}
       >
         {isUpcomingLoading ? (
@@ -1342,15 +1357,16 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: colors.border,
       position: 'relative',
       justifyContent: 'flex-end',
+      overflow: 'hidden', // clip the full-height image so only its top shows
     },
+    // Full-width, true-aspect-ratio image pinned to the top; the 104px box clips
+    // the bottom so faces (top of the poster) stay visible instead of chests.
     hypedBannerImage: {
       position: 'absolute',
       top: 0,
       left: 0,
-      right: 0,
-      bottom: 0,
       width: '100%',
-      height: '100%',
+      minHeight: 104, // never shorter than the box (ultra-wide banners fall back to cover)
     },
     hypedBannerOverlay: {
       position: 'absolute',
