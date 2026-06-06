@@ -267,17 +267,11 @@ function EventRow({
         )}
       </View>
       <View style={styles.eventRowBody}>
-        <View style={styles.eventRowTitleLine}>
-          {isLive ? (
-            <View style={styles.liveBadge}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveBadgeText}>LIVE</Text>
-            </View>
-          ) : null}
-          <Text style={[styles.eventRowName, styles.eventRowNameFlex]} numberOfLines={2}>
-            {name}
-          </Text>
-        </View>
+        <Text style={styles.eventRowName} numberOfLines={2}>
+          {isLive ? <Text style={styles.liveTag}>{'  LIVE  '}</Text> : null}
+          {isLive ? ' ' : ''}
+          {name}
+        </Text>
         <Text style={styles.eventRowDate}>{dateLine}</Text>
         {description ? (
           <Text style={styles.eventRowDesc}>{description}</Text>
@@ -1194,28 +1188,14 @@ function makeStyles(colors: ThemeColors) {
       right: 0,
       bottom: 0,
     },
-    // Inline LIVE pill, sits to the left of the event title (aligned with the
-    // title's first line).
-    liveBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#E11D2A',
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 4,
-      marginRight: 6,
-      marginTop: 1,
-    },
-    liveDot: {
-      width: 5,
-      height: 5,
-      borderRadius: 2.5,
-      backgroundColor: '#FFFFFF',
-      marginRight: 4,
-    },
-    liveBadgeText: {
+    // Inline LIVE tag rendered INSIDE the title <Text> so the title's second
+    // line wraps full-width underneath it (a real rounded View pill can't have
+    // text wrap beneath it in RN). The padding-spaces in the string give the red
+    // background breathing room on each side.
+    liveTag: {
       color: '#FFFFFF',
-      fontSize: 10,
+      backgroundColor: '#E11D2A',
+      fontSize: 12,
       fontWeight: '800',
       letterSpacing: 0.5,
     },
@@ -1228,20 +1208,11 @@ function makeStyles(colors: ThemeColors) {
       flex: 1,
       padding: 12,
     },
-    // Title line: optional LIVE pill + the event name on one row.
-    eventRowTitleLine: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      marginBottom: 6,
-    },
     eventRowName: {
       fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-    },
-    // Let the title take the remaining width so it wraps beside the pill.
-    eventRowNameFlex: {
-      flex: 1,
+      marginBottom: 6,
     },
     eventRowDate: {
       fontSize: 11,
