@@ -84,6 +84,13 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **Debugging**: config audit first → add logging → check for multiple PrismaClient instances
 - **Rule**: if 3+ fixes fail → STOP → audit all config files
 - **File ops**: prefer editing existing files over creating new ones
+- **DB connections — NEVER `new PrismaClient()` in backend code.** Always
+  `import { prisma } from '../lib/prisma'` (the process-wide singleton with a
+  bounded `connection_limit`). Each `new PrismaClient()` opens its OWN pool;
+  ~50 of them across route/service/parser modules exhausted Render Postgres's
+  `max_connections` (103) and crash-looped the DB on a fight night (2026-06-06).
+  This applies to scripts too. See `docs/daily/2026-06-06.md` and the
+  `prisma-single-client-rule` memory.
 
 ## Reference
 
