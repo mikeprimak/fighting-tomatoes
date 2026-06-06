@@ -201,7 +201,7 @@ function EventDayCard({ event }: { event: any }) {
   return (
     <Link
       href={`/events/${event.id}`}
-      className="group flex h-32 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
+      className="group flex min-h-32 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
     >
       <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
         {event.bannerImage ? (
@@ -242,7 +242,7 @@ function EventDayCard({ event }: { event: any }) {
             {event.name}
           </h3>
           {summary && (
-            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-text-secondary">
+            <p className="mt-1 text-[11px] leading-snug text-text-secondary">
               {summary}
             </p>
           )}
