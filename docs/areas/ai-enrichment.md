@@ -188,7 +188,36 @@ Original Phase 1 flow asked the LLM to extract fights from editorial text, then 
 - Render `aiPreview` raw or with a small "AI-generated" disclosure? (Lean: disclosure on web SEO pages for transparency; no disclosure on the in-app "why care" snippet since it reads as editorial.)
 - Do we localize? (Defer — English only for now.)
 
-## Planned — event-level "why to care" enrichment job (decided 2026-06-06)
+## Event-level "why to care" one-liner — SHIPPED 2026-06-06 (piggyback on fight enrichment)
+
+**Built as a piggyback on the existing fight-enrichment call, NOT a separate job.**
+Reassessed the "dedicated job" plan below and chose to extend the existing per-event
+LLM call instead: `enrichOneEvent` already loads the whole card + all editorial and
+makes one Haiku call per event, so the event summary is one extra output field on a
+call we already pay for (marginal cost ~0), rides the existing T-10/5/2 cron + 36h
+dedup, and is grounded in the same evidence as the per-fight lines (can't drift).
+A separate job would re-fetch the card + editorial for no gain. Article-length SEO
+generation was explicitly de-scoped (mass thin auto-pages = SEO/helpful-content risk +
+fabrication at length; keep articles a curated Opus-as-Claude-Code draft, human-gated).
+
+What shipped:
+- Schema: `Event.aiEventSummary` (text), `aiEventConfidence` (float), `aiEventEnrichedAt`
+  (migration `20260606000000_add_ai_event_summary_fields`). Mirrors the fight columns.
+- Extractor: `extractFightEnrichment` now emits an `event: { summary, confidence }` object
+  (new "Event summary rules" prompt section: reason across the whole card, count TITLE
+  fights, headliner stakes, returns/debuts; ≤2 sentences; don't fabricate; no em/en dashes).
+  Parser coerces null-ish + `stripDashes()` sanitizer (cron auto-publishes, no human sweep).
+- Persist: `persistEnrichment` writes the three Event columns (written even when null so a
+  later pass that loses grounding clears a stale line).
+- API: `/api/events` select + response schema carry the three fields (fast-json-stringify
+  strips unlisted props, so both the Prisma select AND the response schema were updated).
+- Render (both surfaces, gated ≥0.5): mobile Home "events today" `EventRow` prefers
+  `aiEventSummary`, falling back to the interim main-event `aiPreviewShort` until the first
+  event pass runs; web `EventCard` shows it as a one-liner under the header (non-past only).
+- Built on branch `home-screen-redesign` (main lacks the Home event-card code). Backend +
+  web deploy and the cron (GH Actions on main) only pick this up after the branch merges.
+
+### Original plan (superseded by the piggyback above) — dedicated event-specific job
 
 **Decision: build a dedicated, event-specific AI enrichment job.** As of 2026-06-06 the
 home-screen event card shows the *main event's* existing `aiPreviewShort` (interim,

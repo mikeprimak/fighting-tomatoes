@@ -27,6 +27,10 @@ Your job: emit ONE record per fightId that the editorial actually covers. Skip f
 
 Output STRICT JSON (no prose, no markdown, no fences):
 {
+  "event": {                                       // card-wide summary — see "Event summary" rules below
+    "summary": "1-2 sentence card-wide hook ('Three title fights and the return of an ex-champ headline a stacked night.'). Omit the field (or set null) if you can't ground a real card-wide read.",
+    "confidence": 0.7                              // 0.0-1.0, YOUR confidence the event summary is accurate and useful
+  },
   "fights": [
     {
       "fightId": "abc-123-...",                   // copied verbatim from the CARD
@@ -62,7 +66,15 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
     Pace inference does NOT require editorial to say "this will be fast" — it requires you to recognize the matchup. You are an analyst; act like one.
   - "styleTags" follow the same rule: emit contrast tags when fighters' established styles imply a clash, even if the editorial doesn't spell it out. Common patterns: "striker vs grappler", "wrestler vs striker", "kickboxer vs boxer", "veteran vs prospect". Skip when the matchup is symmetrical with no contrast hook.
   - Rematches/trilogies: when editorial confirms (or strongly implies) a prior meeting between the two named fighters, ALWAYS include the literal word "rematch" (or "trilogy" for a third meeting) in storylines, plus the prior outcome when given. Example: "rematch of 2024 FOTY (Allen UD)". This token is load-bearing for downstream personalization.
-  - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.`;
+  - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.
+
+Event summary rules (the "event" object):
+  - This is ONE short line that frames the WHOLE card for a casual fan deciding whether to tune in — the kind of thing you'd put on a "what to watch tonight" card. 1-2 sentences max, plain English, no jargon.
+  - Reason across the entire CARD, not one fight. Lean on card-wide facts you can see or ground: count of TITLE fights (use the CARD's TITLE flags), the main event matchup and its stakes, notable returns/debuts/milestones mentioned in editorial, marquee names, divisions involved.
+  - Example shapes: "Three title fights and a returning ex-champ headline one of the deepest cards of the year." / "Topuria defends the lightweight belt against Gaethje, with Pereira chasing history in the co-main." / "A pivotal lightweight main event tops an otherwise regional card."
+  - Do NOT fabricate. If you only have one grounded fight (the main event) and no real card-wide angle, it's fine to frame the headliner alone. If editorial is silent on the whole card and the CARD itself gives you nothing beyond names, set "summary" to null.
+  - "confidence": editorial covers multiple fights / clear card-wide story ⇒ 0.7+. Only the main event is grounded ⇒ 0.5-0.6. Thin/namedrop-only ⇒ below 0.5 (it will be hidden).
+  - Keep house style: no em dashes or en dashes (use commas, "and", or periods).`;
 
 export interface CardItem {
   fightId: string;
@@ -99,8 +111,14 @@ export interface FightEnrichmentRecord {
   confidence: number;
 }
 
+export interface EventSummary {
+  summary: string;
+  confidence: number;
+}
+
 export interface FightEnrichmentResult {
   fights: FightEnrichmentRecord[];
+  event: EventSummary | null; // card-wide one-liner; null when ungrounded
   ghostFightIds: string[]; // fightIds returned by LLM that aren't in the card (dropped)
   usage: {
     inputTokens: number;
@@ -145,11 +163,12 @@ export async function extractFightEnrichment(
     .trim();
 
   const validIds = new Set(input.card.map((c) => c.fightId));
-  const { records, ghosts } = parseFights(text, validIds);
+  const { records, event, ghosts } = parseFights(text, validIds);
 
   const usage = resp.usage as any;
   return {
     fights: records,
+    event,
     ghostFightIds: ghosts,
     usage: {
       inputTokens: usage?.input_tokens ?? 0,
@@ -197,19 +216,20 @@ function buildUserMessage(input: FightEnrichmentInput): string {
 function parseFights(
   raw: string,
   validIds: Set<string>,
-): { records: FightEnrichmentRecord[]; ghosts: string[] } {
+): { records: FightEnrichmentRecord[]; event: EventSummary | null; ghosts: string[] } {
   const jsonText = extractFirstJsonObject(raw);
   if (!jsonText) {
     console.warn('[aiEnrichment.extract] no JSON object found; raw:', raw.slice(0, 200));
-    return { records: [], ghosts: [] };
+    return { records: [], event: null, ghosts: [] };
   }
   let parsed: any;
   try {
     parsed = JSON.parse(jsonText);
   } catch {
     console.warn('[aiEnrichment.extract] JSON parse failed; text:', jsonText.slice(0, 200));
-    return { records: [], ghosts: [] };
+    return { records: [], event: null, ghosts: [] };
   }
+  const event = parseEventSummary(parsed?.event);
   const fights: any[] = parsed?.fights ?? [];
   const PACES = ['fast', 'tactical', 'grinding'];
   const RISK = ['lopsided', 'favorite-leans', 'pickem'];
@@ -250,7 +270,23 @@ function parseFights(
     });
   }
 
-  return { records, ghosts };
+  return { records, event, ghosts };
+}
+
+function parseEventSummary(raw: any): EventSummary | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const summary = typeof raw.summary === 'string' ? stripDashes(raw.summary.trim()) : '';
+  if (!summary || /^(null|n\/a|none)$/i.test(summary)) return null;
+  const confidence = typeof raw.confidence === 'number'
+    ? Math.max(0, Math.min(1, raw.confidence))
+    : 0.5;
+  return { summary, confidence };
+}
+
+// House style: the cron auto-publishes with no human sweep, so guarantee no
+// em/en dashes even if the prompt rule slips (mirrors the fighter-profile parser).
+function stripDashes(s: string): string {
+  return s.replace(/\s*[—–]\s*/g, ', ');
 }
 
 function extractFirstJsonObject(raw: string): string | null {
