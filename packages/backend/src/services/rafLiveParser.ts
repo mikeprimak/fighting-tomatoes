@@ -4,11 +4,10 @@
  * Matches fights by fighter last names, updates results via shadow field system.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -70,13 +69,19 @@ function findFightByFighters(dbFights: any[], fighter1Name: string, fighter2Name
 
 async function notifyNextFight(eventId: string, completedFightOrder: number): Promise<void> {
   try {
+    // RAF cards run MAIN-EVENT-LAST: fight [1] is the headliner, so bouts
+    // compete in DESCENDING orderOnCard (highest prelim first, down to [1]).
+    // The "next fight up" after the one that just finished is therefore the
+    // UPCOMING fight with the highest orderOnCard BELOW the completed one —
+    // i.e. lt + desc, not gt + asc. (Using gt/asc here previously returned
+    // NULL for every result, so the up-next ping never fired.)
     const nextFight = await prisma.fight.findFirst({
       where: {
         eventId,
-        orderOnCard: { gt: completedFightOrder },
+        orderOnCard: { lt: completedFightOrder },
         fightStatus: 'UPCOMING',
       },
-      orderBy: { orderOnCard: 'asc' },
+      orderBy: { orderOnCard: 'desc' },
       include: {
         fighter1: { select: { firstName: true, lastName: true } },
         fighter2: { select: { firstName: true, lastName: true } },

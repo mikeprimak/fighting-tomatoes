@@ -4,6 +4,7 @@
  * Detects changes in event status, fight status, and results
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
 import { OneFCEventData, OneFCFightData } from './oneFCLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
@@ -11,7 +12,6 @@ import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '..
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { MIN_HEALTHY_SCRAPE_FIGHTS, computeCancellationSafetyFloor, isScrapeHealthyForCancellation } from './cancellationGuards';
 
-const prisma = new PrismaClient();
 
 // ============== UTILITY FUNCTIONS ==============
 

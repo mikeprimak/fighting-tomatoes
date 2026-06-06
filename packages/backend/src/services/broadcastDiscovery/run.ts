@@ -7,6 +7,7 @@
  *   - CLI: pnpm tsx src/services/broadcastDiscovery/run.ts
  */
 
+import { prisma } from '../../lib/prisma';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { braveSearch } from './searchBrave';
@@ -175,7 +176,6 @@ export async function runDiscovery(
 
 /** CLI entry. Usage: `pnpm tsx src/services/broadcastDiscovery/run.ts` */
 if (require.main === module) {
-  const prisma = new PrismaClient();
   runDiscovery(prisma)
     .then(summary => {
       console.log(JSON.stringify(summary, null, 2));

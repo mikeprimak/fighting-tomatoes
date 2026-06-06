@@ -11,7 +11,7 @@
  *   npx ts-node src/services/historical/mergeHistoricalData.ts --all --verbose
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../lib/prisma';
 import * as fs from 'fs';
 import * as path from 'path';
 import {
@@ -30,7 +30,6 @@ import {
   normalizeMethod,
 } from './matchingUtils';
 
-const prisma = new PrismaClient();
 
 // Scraped data directory
 const SCRAPED_DATA_DIR = path.join(__dirname, '../../../scraped-data/historical');

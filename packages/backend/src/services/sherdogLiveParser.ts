@@ -23,12 +23,11 @@
  * a GH Actions workflow, or the lifecycle service.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { SherdogEventData } from './sherdogLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { BackfillOptions } from '../config/liveTrackerConfig';
 
-const prisma = new PrismaClient();
 
 /**
  * "Up Next" buffer for Sherdog.

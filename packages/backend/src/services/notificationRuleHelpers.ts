@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { notificationRuleEngine } from './notificationRuleEngine';
 
-const prisma = new PrismaClient();
 
 /**
  * Manages the "Manual Fight Follow" notification rule for a specific fight.
