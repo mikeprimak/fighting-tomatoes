@@ -12,14 +12,14 @@ import {
 } from '@/components/home/FightSections';
 import { TopCommentsSection, ClassicCommentsSection } from '@/components/home/CommentSections';
 import { HighlightedFighterSection } from '@/components/home/HighlightedFighterSection';
-import { HotFightersSection, RecentlyBookedSection } from '@/components/home/FighterSections';
+import { RecentlyBookedSection } from '@/components/home/FighterSections';
 
 /**
  * Web home screen — the default landing page. The blog (growth engine) now lives
  * at the top of the sidebar (BlogSidebarBlock), so the page leads with the
  * weekend events feed + sidebar. Then curated community bands (hot upcoming,
- * recent good fights, top comments, highlighted fighter, hot fighters, recently
- * booked, classic good fights + comments). The blog appears ONLY here on web —
+ * recent good fights, top comments, highlighted fighter, recently booked,
+ * classic good fights + comments). The blog appears ONLY here on web —
  * the Live / Upcoming / Past / Good Fights tabs don't carry it.
  *
  * No external news section (that's mobile-only by design).
@@ -44,7 +44,6 @@ export function HomeClient() {
       <RecentGoodFightsSection />
       <TopCommentsSection />
       <HighlightedFighterSection />
-      <HotFightersSection />
       <RecentlyBookedSection />
       <ClassicGoodFightsSection />
       <ClassicCommentsSection />
