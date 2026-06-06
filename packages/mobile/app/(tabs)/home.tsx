@@ -22,7 +22,7 @@ import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
 import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
-import { formatEventDate } from '../../utils/dateFormatters';
+import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
@@ -42,18 +42,19 @@ const relUntilPhrase = (dateStr: string): string => {
   return weeks === 1 ? 'in 1 week' : `in ${weeks} weeks`;
 };
 
-// "Today" / "Tomorrow" / weekday name ("Saturday") — heading for a weekend
-// event's per-day group. Event.date is a UTC-hour placeholder, so derive the
-// label from its UTC calendar day vs the user's local today.
+// "Events Today" / "Events Tomorrow" / "Events Saturday" — heading for a
+// weekend event's per-day group. Event.date is a UTC-hour placeholder, so
+// derive the day from its UTC calendar day vs the user's local today.
 const eventDayLabel = (dateStr: string): string => {
   const d = new Date(dateStr);
   const now = new Date();
   const todayK = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const evK = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
   const days = Math.round((evK - todayK) / 86_400_000);
-  if (days <= 0) return 'Today';
-  if (days === 1) return 'Tomorrow';
-  return new Date(evK).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  if (days <= 0) return 'Events Today';
+  if (days === 1) return 'Events Tomorrow';
+  const weekday = new Date(evK).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  return `Events ${weekday}`;
 };
 
 // "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
@@ -198,9 +199,9 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
 }
 
 /**
- * Full-width horizontal event card: image on the left, event name + date and a
- * one-line AI "why care" blurb on the right. `description` is the existing
- * aiPreviewShort of the event's top (most-hyped) fight — already confidence-gated
+ * Full-width horizontal event card: image on the left, event name + date/start
+ * time and a one-line AI "why care" blurb on the right. `description` is the
+ * existing aiPreviewShort of the event's main event — already confidence-gated
  * by the caller — so a fan sees at a glance what's worth tuning in for.
  */
 function EventRow({
@@ -221,6 +222,14 @@ function EventRow({
     : getDefaultBanner(event.promotion || '');
   const name = normalizeEventName(event.name, event.promotion);
 
+  // Real start instant lives in mainStartTime (event.date is a UTC-hour
+  // placeholder) — only show a time when we actually have one, in the user's
+  // local zone with its abbreviation (e.g. "8:00 PM ET").
+  const startTime = event.mainStartTime
+    ? `${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
+    : null;
+  const dateLine = [formatEventDate(event.date), startTime].filter(Boolean).join(' · ');
+
   return (
     <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
       <View style={styles.eventRowImageWrap}>
@@ -231,17 +240,12 @@ function EventRow({
             <PromotionLogo promotion={event.promotion || ''} size={32} color="#FFFFFF" />
           </View>
         )}
-        {event.promotion ? (
-          <View style={styles.eventRowLogo}>
-            <PromotionLogo promotion={event.promotion} size={14} color="#FFFFFF" />
-          </View>
-        ) : null}
       </View>
       <View style={styles.eventRowBody}>
         <Text style={styles.eventRowName} numberOfLines={2}>
           {name}
         </Text>
-        <Text style={styles.eventRowDate}>{formatEventDate(event.date)}</Text>
+        <Text style={styles.eventRowDate}>{dateLine}</Text>
         {description ? (
           <Text style={styles.eventRowDesc} numberOfLines={3}>
             {description}
@@ -534,16 +538,15 @@ export default function HomeScreen() {
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
-  // The event's main event = the final fight to walk out = highest orderOnCard
-  // (fights arrive orderOnCard-asc, so it's the last one). Matches the app-wide
-  // "walks out last" convention used by the web event card's up-next logic.
+  // The event's main event = the headliner = LOWEST orderOnCard. orderOnCard is
+  // "position on the card" where 1 = top of the bill (e.g. UFC Fight Night
+  // "Muhammad vs Bonfim" has Muhammad vs Bonfim at orderOnCard 1), not walkout
+  // order. Treat null as last so a real headliner always wins.
   const mainEventFight = (event: any): any | null => {
     const fights = event?.fights || [];
     if (fights.length === 0) return null;
-    return fights.reduce(
-      (best: any, f: any) => ((f.orderOnCard ?? 0) >= (best.orderOnCard ?? 0) ? f : best),
-      fights[0],
-    );
+    const ord = (f: any) => (f.orderOnCard == null ? Number.POSITIVE_INFINITY : f.orderOnCard);
+    return fights.reduce((best: any, f: any) => (ord(f) < ord(best) ? f : best), fights[0]);
   };
 
   // Group the weekend events by calendar day so each day renders under its own
@@ -1154,15 +1157,6 @@ function makeStyles(colors: ThemeColors) {
       backgroundColor: '#1a1a2e',
       justifyContent: 'center',
       alignItems: 'center',
-    },
-    eventRowLogo: {
-      position: 'absolute',
-      bottom: 6,
-      left: 6,
-      backgroundColor: 'rgba(0, 0, 0, 0.85)',
-      borderRadius: 6,
-      paddingHorizontal: 5,
-      paddingVertical: 3,
     },
     eventRowBody: {
       flex: 1,
