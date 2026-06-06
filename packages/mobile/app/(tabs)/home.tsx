@@ -1125,6 +1125,7 @@ function makeStyles(colors: ThemeColors) {
     },
     eventRow: {
       flexDirection: 'row',
+      minHeight: 96,
       backgroundColor: colors.card,
       borderRadius: 12,
       borderWidth: 1,
@@ -1134,12 +1135,16 @@ function makeStyles(colors: ThemeColors) {
     eventRowImageWrap: {
       position: 'relative',
       width: 120,
-      alignSelf: 'stretch',
       backgroundColor: colors.border,
     },
+    // Absolute-fill so the (remote) image can't drive the card height — the row
+    // height comes from the text column, and the image fills whatever that is.
     eventRowImage: {
-      width: '100%',
-      height: '100%',
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
     },
     eventThumbPlaceholder: {
       backgroundColor: '#1a1a2e',
