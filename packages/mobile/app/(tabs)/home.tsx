@@ -449,7 +449,11 @@ export default function HomeScreen() {
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
     queryKey: ['events', 'upcoming', 'withFights'],
-    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: true }),
+    // Home event cards show only the event + its AI "why care" summary (no fight
+    // list), so don't pull fight cards here — includeFights makes the backend
+    // aggregate hype/counts for every fight on every event (slow + heavy). The
+    // events SCREENS still use includeFights; the home doesn't need it.
+    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: false }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -558,17 +562,6 @@ export default function HomeScreen() {
       if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
-
-  // The event's main event = the headliner = LOWEST orderOnCard. orderOnCard is
-  // "position on the card" where 1 = top of the bill (e.g. UFC Fight Night
-  // "Muhammad vs Bonfim" has Muhammad vs Bonfim at orderOnCard 1), not walkout
-  // order. Treat null as last so a real headliner always wins.
-  const mainEventFight = (event: any): any | null => {
-    const fights = event?.fights || [];
-    if (fights.length === 0) return null;
-    const ord = (f: any) => (f.orderOnCard == null ? Number.POSITIVE_INFINITY : f.orderOnCard);
-    return fights.reduce((best: any, f: any) => (ord(f) < ord(best) ? f : best), fights[0]);
-  };
 
   // Group the weekend events by calendar day so each day renders under its own
   // heading (Today / Tomorrow / Saturday …), first-appearance order preserved
@@ -709,16 +702,12 @@ export default function HomeScreen() {
             <View style={styles.eventList}>
               {day.events.map((event) => {
                 // Card-wide AI "why care" blurb, gated on the same confidence
-                // floor the fight screens use (>= 0.5). Prefer the event-level
-                // summary (reasons across the whole card); fall back to the main
-                // event's per-fight line until the event pass has run.
-                const main = mainEventFight(event);
+                // floor the fight screens use (>= 0.5). Event-level summary only —
+                // the home no longer loads fights, so there's no per-fight fallback.
                 const description =
                   event.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary
                     ? event.aiEventSummary
-                    : main && main.aiConfidence != null && main.aiConfidence >= 0.5
-                      ? main.aiPreviewShort
-                      : null;
+                    : null;
                 return (
                   <EventRow
                     key={event.id}
