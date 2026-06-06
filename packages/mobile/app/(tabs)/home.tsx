@@ -60,16 +60,6 @@ const eventDayLabel = (dateStr: string): string => {
   return `Events ${weekday}`;
 };
 
-// "3 weeks ago" / "yesterday" / "today" — reads after "Fought X ___".
-const relAgoPhrase = (dateStr: string): string => {
-  const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
-  if (days <= 0) return 'today';
-  if (days === 1) return 'yesterday';
-  if (days < 7) return `${days} days ago`;
-  const weeks = Math.round(days / 7);
-  return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-};
-
 // "today" / "tomorrow" / "in 9 days" / "in 2 weeks" — relative time to an event
 // by calendar day (matches the web "Hyped Upcoming Fights" group headings, which
 // show days up to 14 before switching to weeks).
@@ -592,7 +582,6 @@ export default function HomeScreen() {
   const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = React.useState(false);
   const [upvotingCommentId, setUpvotingCommentId] = React.useState<string | null>(null);
-  // Hype quick-view modal for the "Most Hyped" upcoming cards.
 
   // --- Data ---------------------------------------------------------------
   const { data: editorial, isLoading: isEditorialLoading } = useQuery({
@@ -632,12 +621,6 @@ export default function HomeScreen() {
     queryFn: () => apiService.getTopRecentFights('month'),
     staleTime: 5 * 60 * 1000,
     enabled: needRecentFallback,
-  });
-
-  const { data: hotFighters, isLoading: isFightersLoading } = useQuery({
-    queryKey: ['hotFighters'],
-    queryFn: () => apiService.getHotFighters(),
-    staleTime: 5 * 60 * 1000,
   });
 
   // Pull a deeper pool (18) so the home rail can rotate through the most-followed
@@ -746,15 +729,6 @@ export default function HomeScreen() {
   const recentFights = (
     weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
   ).slice(0, 5);
-
-  // Hot fighters: three who recently fought, then three who fight next — grouped,
-  // not interleaved. Each side rotates daily within the pool the backend returns.
-  const recentHot = hotFighters?.data.recent || [];
-  const upcomingHot = hotFighters?.data.upcoming || [];
-  const fighters: any[] = [
-    ...rotateDaily(recentHot, 3, dayKey),
-    ...rotateDaily(upcomingHot, 3, dayKey),
-  ];
 
   // Most-followed + recently-booked rails rotate daily over their top pools so
   // the home feed stays fresh between fight weekends (top comments / classic
@@ -1047,30 +1021,7 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Hot Fighters -------------------------------------------------------*/}
-      <Section colors={colors} styles={styles} title="Hot Fighters" icon="user" iconLib="fa6">
-        {isFightersLoading ? (
-          <Loading colors={colors} styles={styles} />
-        ) : fighters.length > 0 ? (
-          fighters.map((f: any) => {
-            // Upcoming (hyped) vs recent (rated) — distinguished by which date is set.
-            const subtitle = f.nextFightDate
-              ? `Fights ${f.opponentName} ${relUntilPhrase(f.nextFightDate)}`
-              : `Fought ${f.opponentName} ${relAgoPhrase(f.lastFightDate)}`;
-            return (
-              <FighterCard
-                key={f.fighter.id}
-                fighter={f.fighter}
-                subtitle={subtitle}
-                hideNickname
-                onPress={() => router.push(`/fighter/${f.fighter.id}` as any)}
-              />
-            );
-          })
-        ) : (
-          <Empty styles={styles} text="No hot fighters yet" />
-        )}
-      </Section>
+      {/* Hot Fighters — hidden from the home UI (removed per product). */}
 
       {/* Recently Booked Fighters ------------------------------------------*/}
       {(isBookedLoading || recentlyBooked.length > 0) && (

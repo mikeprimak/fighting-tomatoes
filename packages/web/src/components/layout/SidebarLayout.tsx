@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { ProfileSidebar } from '@/components/sidebar/ProfileSidebar';
+import { BlogSidebarBlock } from '@/components/sidebar/BlogSidebarBlock';
 import { IdentityBlock } from '@/components/sidebar/IdentityBlock';
 import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
 
@@ -20,8 +21,10 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-      {/* Shown below md: compact "About you" strip above the feed. */}
+      {/* Shown below md: blog block + compact "About you" strip above the feed
+          (the desktop sidebar is unreachable on narrow screens). */}
       <div className="mb-6 space-y-4 md:hidden">
+        <BlogSidebarBlock />
         <IdentityBlock />
         <FanDNABlock />
         {/* Profile link is meaningless logged out (it routes to a sign-in wall),
