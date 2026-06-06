@@ -1,6 +1,7 @@
 // Background Jobs Scheduler
 // Runs periodic tasks like event completion checking, news scraping, and live event tracking
 
+import { prisma } from '../lib/prisma';
 import * as cron from 'node-cron';
 import { MMANewsScraper } from './mmaNewsScraper';
 import { startEventLifecycle, stopEventLifecycle, runEventLifecycleCheck } from './eventLifecycle';
@@ -24,9 +25,7 @@ import {
   runAllOrganizationScrapers,
   OrganizationScraperResults,
 } from './dailyAllScrapers';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 let newsScraperJobs: cron.ScheduledTask[] = [];
 let dailyScraperJob: cron.ScheduledTask | null = null;

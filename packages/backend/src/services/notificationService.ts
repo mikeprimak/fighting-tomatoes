@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
 
-const prisma = new PrismaClient();
 const expo = new Expo();
 
 interface NotificationPayload {

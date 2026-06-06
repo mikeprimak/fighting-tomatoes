@@ -3,13 +3,12 @@
  * Control live event tracking (start/stop/status)
  */
 
+import { prisma } from '../lib/prisma';
 import { FastifyInstance } from 'fastify';
 import liveTracker, { startLiveTracking, stopLiveTracking, getLiveTrackingStatus } from '../services/liveEventTracker';
 import { getEventStatus } from '../services/ufcLiveParser';
 import { startOneFCLiveTracking, stopOneFCLiveTracking, getOneFCTrackingStatus } from '../services/oneFCLiveTracker';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
 
 export default async function liveEventsRoutes(fastify: FastifyInstance) {
   /**

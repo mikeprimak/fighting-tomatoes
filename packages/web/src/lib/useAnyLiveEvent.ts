@@ -12,8 +12,13 @@ import { isEventLiveNow } from '@/lib/eventStatus';
  */
 export function useAnyLiveEvent(): boolean {
   const { data } = useQuery({
+    // Liveness only needs event-level status/start-time fields (see isEventLiveNow),
+    // NOT the full fight cards. Requesting includeFights here ran the heavy
+    // /api/events aggregation (all fights + all hype predictions) every 60s per
+    // open tab — a top contributor to the 2026-06-06 DB connection crash-loop.
+    // Keep this poll cheap.
     queryKey: ['events', 'live'],
-    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 20 }),
+    queryFn: () => getEvents({ type: 'upcoming', includeFights: false, limit: 20 }),
     refetchInterval: 60000,
   });
 

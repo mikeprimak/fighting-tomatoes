@@ -1,10 +1,9 @@
 // News Scraper Service
 // Handles MMA news scraping and database storage
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { MMANewsScraper, NewsArticle } from './mmaNewsScraper';
 
-const prisma = new PrismaClient();
 
 export class NewsScraperService {
   private isScrapingInProgress = false;

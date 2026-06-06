@@ -1,7 +1,7 @@
 // Mock Live Event Simulator
 // Simulates real-time event progression with compressed timescales
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { generateOutcome, selectWinner } from './mockOutcomeGenerator';
 
 // Type definitions
@@ -53,7 +53,6 @@ interface ResetOptions {
   clearReviews?: boolean;
 }
 
-const prisma = new PrismaClient();
 
 interface SimulationData {
   eventId: string;

@@ -1,14 +1,13 @@
 // packages/backend/src/controllers/authController.ts
+import { prisma } from '../lib/prisma';
 import { Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { z } from 'zod'
-import { PrismaClient } from '@prisma/client'
 import { AuthRequest } from '../types/auth'
 import { JWTService } from '../utils/jwt'
 import { EmailService } from '../utils/email'
 import { OAuth2Client } from 'google-auth-library'
 
-const prisma = new PrismaClient()
 
 // GOOGLE_CLIENT_ID may be a comma-separated list of accepted audiences. During
 // rollouts of a new OAuth client, both the old and new client IDs need to be

@@ -12,13 +12,12 @@
  *   3. LIVE → COMPLETED: events past their estimated end time (or 10h hard cap)
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { isProductionScraper, hasReliableLiveTracker } from '../config/liveTrackerConfig';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { notifyEventSectionStart, notifyFightStartViaRules } from './notificationService';
 import { checkAndAlertNewExpectations } from './notificationExpectations';
 
-const prisma = new PrismaClient();
 
 const LIFECYCLE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const HARD_CAP_HOURS = 10;

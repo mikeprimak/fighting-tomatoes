@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { sendPushNotifications } from './notificationService';
 
-const prisma = new PrismaClient();
 
 interface PreEventReportData {
   eventName: string;

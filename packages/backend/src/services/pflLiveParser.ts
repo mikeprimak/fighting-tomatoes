@@ -13,6 +13,7 @@
  *     defensive — if it triggers, log loudly so we can investigate.
  */
 
+import { prisma } from '../lib/prisma';
 import { PrismaClient, WeightClass, Sport, Gender } from '@prisma/client';
 import { PFLEventData, PFLFightData } from './pflLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
@@ -20,7 +21,6 @@ import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '..
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { MIN_HEALTHY_SCRAPE_FIGHTS, computeCancellationSafetyFloor, isScrapeHealthyForCancellation } from './cancellationGuards';
 
-const prisma = new PrismaClient();
 
 // ============== UTILITY FUNCTIONS ==============
 

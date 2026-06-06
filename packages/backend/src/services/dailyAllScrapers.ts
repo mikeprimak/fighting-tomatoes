@@ -10,10 +10,10 @@
  * - BKFC, PFL, ONE FC, Matchroom, Golden Boy, Top Rank, Oktagon
  */
 
+import { prisma } from '../lib/prisma';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
-import { PrismaClient } from '@prisma/client';
 import { EmailService } from '../utils/email';
 import { runStartTimeDiscovery } from './startTimeDiscovery/run';
 
@@ -338,7 +338,6 @@ export async function runAllOrganizationScrapers(): Promise<OrganizationScraperR
   // fatal to the scrape run. (Also runs standalone daily via start-time-discovery.yml.)
   try {
     console.log('[All Scrapers] Resolving missing prelim/early start times...');
-    const prisma = new PrismaClient();
     try {
       const outcomes = await runStartTimeDiscovery(prisma);
       const applied = outcomes.filter(o => o.result?.applied).length;
