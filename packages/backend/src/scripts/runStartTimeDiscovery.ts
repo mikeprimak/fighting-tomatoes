@@ -14,10 +14,9 @@
  * Env: BRAVE_API_KEY, ANTHROPIC_API_KEY, DATABASE_URL.
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { runStartTimeDiscovery, discoverStartTimesForEvent } from '../services/startTimeDiscovery/run';
 
-const prisma = new PrismaClient();
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
