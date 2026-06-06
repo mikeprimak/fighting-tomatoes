@@ -268,11 +268,20 @@ function EventRow({
       </View>
       <View style={styles.eventRowBody}>
         <Text style={styles.eventRowName} numberOfLines={2}>
-          {isLive ? <Text style={styles.liveTag}>{'  LIVE  '}</Text> : null}
-          {isLive ? ' ' : ''}
           {name}
         </Text>
-        <Text style={styles.eventRowDate}>{dateLine}</Text>
+        {isLive ? (
+          // Live: the LIVE pill takes the start-time slot (start time dropped).
+          <View style={styles.eventRowMetaLine}>
+            <View style={styles.liveBadge}>
+              <View style={styles.liveDot} />
+              <Text style={styles.liveBadgeText}>LIVE</Text>
+            </View>
+            {channel ? <Text style={styles.eventRowDate}>{channel}</Text> : null}
+          </View>
+        ) : dateLine ? (
+          <Text style={styles.eventRowDate}>{dateLine}</Text>
+        ) : null}
         {description ? (
           <Text style={styles.eventRowDesc}>{description}</Text>
         ) : null}
@@ -1188,14 +1197,32 @@ function makeStyles(colors: ThemeColors) {
       right: 0,
       bottom: 0,
     },
-    // Inline LIVE tag rendered INSIDE the title <Text> so the title's second
-    // line wraps full-width underneath it (a real rounded View pill can't have
-    // text wrap beneath it in RN). The padding-spaces in the string give the red
-    // background breathing room on each side.
-    liveTag: {
-      color: '#FFFFFF',
+    // Meta line under the title: holds either the start-time/channel text, or
+    // (for live events) the LIVE pill in the start-time slot.
+    eventRowMetaLine: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    // Rounded red LIVE pill (sits in the meta row, so wrapping isn't a concern).
+    liveBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
       backgroundColor: '#E11D2A',
-      fontSize: 12,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+    },
+    liveDot: {
+      width: 5,
+      height: 5,
+      borderRadius: 2.5,
+      backgroundColor: '#FFFFFF',
+      marginRight: 4,
+    },
+    liveBadgeText: {
+      color: '#FFFFFF',
+      fontSize: 10,
       fontWeight: '800',
       letterSpacing: 0.5,
     },
