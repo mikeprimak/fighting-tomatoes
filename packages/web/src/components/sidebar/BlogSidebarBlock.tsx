@@ -54,7 +54,7 @@ export function BlogSidebarBlock() {
     <div className="rounded-lg border border-border bg-card p-3">
       <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Newspaper size={11} className="text-primary" />
-        From the blog
+        Next Big UFC Event
       </div>
 
       {/* Main / featured article */}
