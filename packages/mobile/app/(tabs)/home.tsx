@@ -22,7 +22,7 @@ import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
 import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
-import { formatEventDateLong, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
+import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
@@ -700,7 +700,7 @@ export default function HomeScreen() {
             colors={colors}
             styles={styles}
             title={day.label}
-            subtitle={formatEventDateLong(day.events[0].date)}
+            subtitle={formatEventDate(day.events[0].date)}
             icon="calendar"
             onSeeAll={di === 0 ? () => router.push('/(tabs)/events' as any) : undefined}
           >
