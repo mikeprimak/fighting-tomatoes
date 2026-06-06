@@ -22,7 +22,7 @@ import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
 import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
-import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
+import { formatEventDateLong, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import UpcomingFightCard from '../../components/fight-cards/UpcomingFightCard';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
@@ -143,6 +143,7 @@ function Section({
   colors,
   styles,
   title,
+  subtitle,
   icon,
   iconLib = 'fa',
   onSeeAll,
@@ -151,6 +152,7 @@ function Section({
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   title: string;
+  subtitle?: string;
   icon: string;
   iconLib?: 'fa' | 'fa6';
   onSeeAll?: () => void;
@@ -159,13 +161,16 @@ function Section({
   return (
     <View style={styles.section}>
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionTitleRow}>
-          {iconLib === 'fa6' ? (
-            <FontAwesome6 name={icon as any} size={20} color={colors.primary} />
-          ) : (
-            <FontAwesome name={icon as any} size={20} color={colors.primary} />
-          )}
-          <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.sectionTitleCol}>
+          <View style={styles.sectionTitleRow}>
+            {iconLib === 'fa6' ? (
+              <FontAwesome6 name={icon as any} size={20} color={colors.primary} />
+            ) : (
+              <FontAwesome name={icon as any} size={20} color={colors.primary} />
+            )}
+            <Text style={styles.sectionTitle}>{title}</Text>
+          </View>
+          {subtitle ? <Text style={styles.sectionSubtitle}>{subtitle}</Text> : null}
         </View>
         {onSeeAll && (
           <TouchableOpacity
@@ -242,7 +247,9 @@ function EventRow({
     return entry?.channel?.name || null;
   }, [broadcastsData]);
 
-  const dateLine = [formatEventDate(event.date), startTime, channel].filter(Boolean).join(' · ');
+  // Date now lives once under the day's section heading — the card meta line is
+  // just the start time + broadcast channel.
+  const dateLine = [startTime, channel].filter(Boolean).join(' · ');
 
   return (
     <TouchableOpacity style={styles.eventRow} activeOpacity={0.85} onPress={onPress}>
@@ -261,9 +268,7 @@ function EventRow({
         </Text>
         <Text style={styles.eventRowDate}>{dateLine}</Text>
         {description ? (
-          <Text style={styles.eventRowDesc} numberOfLines={3}>
-            {description}
-          </Text>
+          <Text style={styles.eventRowDesc}>{description}</Text>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -695,6 +700,7 @@ export default function HomeScreen() {
             colors={colors}
             styles={styles}
             title={day.label}
+            subtitle={formatEventDateLong(day.events[0].date)}
             icon="calendar"
             onSeeAll={di === 0 ? () => router.push('/(tabs)/events' as any) : undefined}
           >
@@ -1095,6 +1101,9 @@ function makeStyles(colors: ThemeColors) {
       marginHorizontal: 16,
       marginBottom: 12,
     },
+    sectionTitleCol: {
+      flexShrink: 1,
+    },
     sectionTitleRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1104,6 +1113,13 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 20,
       fontWeight: 'bold',
       color: colors.text,
+    },
+    sectionSubtitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginTop: 3,
+      marginLeft: 28,
     },
     fightGroupHeading: {
       fontSize: 12,
@@ -1191,8 +1207,8 @@ function makeStyles(colors: ThemeColors) {
     },
     eventRowDesc: {
       marginTop: 8,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: 11,
+      lineHeight: 15,
       color: colors.textSecondary,
     },
     // Most Followed horizontal chip
