@@ -1,10 +1,12 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, ChevronRight } from 'lucide-react';
 import { getEvents } from '@/lib/api';
 import { isEventLiveNow } from '@/lib/eventStatus';
+import { useEventBroadcasts } from '@/components/HowToWatch';
 import { SectionHeading } from './SectionHeading';
 
 /**
@@ -159,67 +161,94 @@ export function WeekendEventsSection() {
             href={di === 0 ? '/events/upcoming' : undefined}
           />
           <div className="flex flex-col gap-3">
-            {day.events.map((event: any) => {
-              const summary = aiSummary(event);
-              const firstStart = firstFightStart(event);
-              const live = isEventLiveNow(event);
-              return (
-                <Link
-                  key={event.id}
-                  href={`/events/${event.id}`}
-                  className="group flex h-32 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
-                >
-                  <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
-                    {event.bannerImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={event.bannerImage}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-wide text-text-secondary">
-                        {promotionLabel(event.promotion) || 'TBD'}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex min-w-0 flex-1 items-start gap-3 p-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-0.5 flex flex-wrap items-center gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
-                        {promotionLabel(event.promotion) || 'Event'}
-                        {live ? (
-                          // Live: a red LIVE pill takes the start-time slot (start
-                          // time dropped, just like the mobile home).
-                          <span className="inline-flex items-center gap-1 rounded bg-[#E11D2A] px-1.5 py-0.5 text-[10px] font-extrabold normal-case tracking-wide text-white">
-                            <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                            LIVE
-                          </span>
-                        ) : firstStart ? (
-                          // Date now lives in the day heading; the card meta is
-                          // just the start time.
-                          <span className="text-[11px] font-normal normal-case tracking-normal text-text-secondary">
-                            · {formatTime(firstStart)}
-                          </span>
-                        ) : null}
-                      </div>
-                      <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-primary">
-                        {event.name}
-                      </h3>
-                      {summary && (
-                        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-text-secondary">
-                          {summary}
-                        </p>
-                      )}
-                    </div>
-                    <ChevronRight size={16} className="shrink-0 self-center text-text-secondary group-hover:text-primary" />
-                  </div>
-                </Link>
-              );
-            })}
+            {day.events.map((event: any) => (
+              <EventDayCard key={event.id} event={event} />
+            ))}
           </div>
         </section>
       ))}
     </div>
+  );
+}
+
+/**
+ * One compact teaser card. Its own component so each can fetch its broadcast
+ * channel — shown right after the start time / LIVE pill, mirroring the mobile
+ * home's EventRow.
+ */
+function EventDayCard({ event }: { event: any }) {
+  const summary = aiSummary(event);
+  const firstStart = firstFightStart(event);
+  const live = isEventLiveNow(event);
+
+  // Main-card broadcast channel for the user's region, shown beside the time.
+  // Prefer the MAIN_CARD entry (matches the headline start time), then a
+  // whole-event one, then whatever's first — same precedence as mobile.
+  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const channel = useMemo(() => {
+    const bs = broadcastsData?.broadcasts ?? [];
+    const entry =
+      bs.find((b) => b.cardSection === 'MAIN_CARD') ||
+      bs.find((b) => b.cardSection === null) ||
+      bs[0];
+    return entry?.channel?.name ?? null;
+  }, [broadcastsData]);
+
+  // Meta line: start time (or LIVE pill) then the broadcast channel.
+  const timeText = !live && firstStart ? formatTime(firstStart) : null;
+  const metaText = [timeText, channel].filter(Boolean).join(' · ');
+
+  return (
+    <Link
+      href={`/events/${event.id}`}
+      className="group flex h-32 items-stretch overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-primary/40"
+    >
+      <div className="relative w-32 shrink-0 self-stretch overflow-hidden bg-background-secondary sm:w-48">
+        {event.bannerImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={event.bannerImage}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold uppercase tracking-wide text-text-secondary">
+            {promotionLabel(event.promotion) || 'TBD'}
+          </div>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-1 items-start gap-3 p-3">
+        <div className="min-w-0 flex-1">
+          <div className="mb-0.5 flex flex-wrap items-center gap-x-1.5 text-sm font-semibold uppercase tracking-wide text-primary">
+            {promotionLabel(event.promotion) || 'Event'}
+            {live ? (
+              // Live: a red LIVE pill takes the start-time slot (start time
+              // dropped, just like the mobile home); channel follows it.
+              <span className="inline-flex items-center gap-1 rounded bg-[#E11D2A] px-1.5 py-0.5 text-[10px] font-extrabold normal-case tracking-wide text-white">
+                <span className="h-1.5 w-1.5 rounded-full bg-white" />
+                LIVE
+              </span>
+            ) : null}
+            {metaText && (
+              // Date lives in the day heading; the card meta is the start time
+              // and/or broadcast channel.
+              <span className="text-[11px] font-normal normal-case tracking-normal text-text-secondary">
+                · {metaText}
+              </span>
+            )}
+          </div>
+          <h3 className="line-clamp-2 text-base font-bold leading-snug text-foreground group-hover:text-primary">
+            {event.name}
+          </h3>
+          {summary && (
+            <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-text-secondary">
+              {summary}
+            </p>
+          )}
+        </div>
+        <ChevronRight size={16} className="shrink-0 self-center text-text-secondary group-hover:text-primary" />
+      </div>
+    </Link>
   );
 }
