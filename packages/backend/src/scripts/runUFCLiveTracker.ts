@@ -12,7 +12,7 @@
  *   1 = Error
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
@@ -20,7 +20,6 @@ import * as fs from 'fs/promises';
 import { parseLiveEventData, getEventStatus, autoCompleteEvent } from '../services/ufcLiveParser';
 
 const execAsync = promisify(exec);
-const prisma = new PrismaClient();
 
 // ============== CONFIGURATION ==============
 

@@ -18,7 +18,7 @@
  *   1 = Error
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { promisify } from 'util';
@@ -27,7 +27,6 @@ import { parseBKFCLiveData, autoCompleteBKFCEvent } from '../services/bkfcLivePa
 import type { BKFCEventData } from '../services/bkfcLiveScraper';
 
 const execAsync = promisify(exec);
-const prisma = new PrismaClient();
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
