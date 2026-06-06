@@ -17,7 +17,13 @@ export function useAnyLiveEvent(): boolean {
     // /api/events aggregation (all fights + all hype predictions) every 60s per
     // open tab — a top contributor to the 2026-06-06 DB connection crash-loop.
     // Keep this poll cheap.
-    queryKey: ['events', 'live'],
+    //
+    // MUST use a key distinct from the Live Events page's ['events', 'live'].
+    // React Query caches by key alone, so sharing it let this cheap
+    // includeFights:false poll overwrite the page's cache entry with
+    // fight-less events — the Live tab then rendered "No fights announced yet"
+    // for every live event. Mobile avoids this with a separate 'liveCheck' key.
+    queryKey: ['events', 'live-check'],
     queryFn: () => getEvents({ type: 'upcoming', includeFights: false, limit: 20 }),
     refetchInterval: 60000,
   });
