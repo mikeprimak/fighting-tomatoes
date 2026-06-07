@@ -22,15 +22,6 @@ async function fetchEditorial(): Promise<{ posts: EditorialPost[] }> {
   return res.json();
 }
 
-function formatDate(date: string): string {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return date;
-  // Force UTC so this client-rendered date matches the server-rendered article
-  // page (which runs in UTC). Without it, browsers behind UTC show day-1.
-  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
-}
-
 /**
  * Blog block, pinned to the top of the "About you" sidebar. The feed arrives
  * already ordered — admin-pinned highlights first (set in the admin panel's Blog
@@ -68,10 +59,7 @@ export function BlogSidebarBlock() {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
           />
         </div>
-        {main.date && (
-          <div className="mt-2 text-[10px] font-normal text-text-secondary">{formatDate(main.date)}</div>
-        )}
-        <h3 className="mt-0.5 line-clamp-3 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
+        <h3 className="mt-2 line-clamp-3 text-sm font-bold leading-snug text-foreground group-hover:text-primary">
           {main.title}
         </h3>
       </Link>
