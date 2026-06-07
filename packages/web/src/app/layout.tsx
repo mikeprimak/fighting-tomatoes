@@ -58,6 +58,7 @@ export default function RootLayout({
           <Footer />
         </Providers>
       </body>
+      {/* GA4 — loads only when NEXT_PUBLIC_GA_ID is configured. */}
       {process.env.NEXT_PUBLIC_GA_ID && (
         <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
       )}
