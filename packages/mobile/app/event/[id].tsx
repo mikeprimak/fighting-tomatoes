@@ -221,8 +221,12 @@ export default function EventDetailScreen() {
 
   // Determine the next fight to start (highest orderOnCard that hasn't started)
   // Fights execute in reverse order: early prelims (high numbers) → prelims → main card (low numbers)
-  // Only show "Up Next" for events that have actually started
-  const eventHasStarted = eventIsLive || fights.some((f: Fight) => f.fightStatus === 'COMPLETED' || f.fightStatus === 'LIVE');
+  // Only show "Up Next" for events that have actually started. Gate on the event
+  // being live (status LIVE or its start time has passed) or a fight being LIVE —
+  // NOT on any COMPLETED fight existing, because a stray/phantom completed fight
+  // bleeding onto a still-upcoming event would otherwise flip the whole card into
+  // "up next" days before the event (see RAF 10, 2026-06-08).
+  const eventHasStarted = eventIsLive || hasLiveFight;
   const nextFight = eventHasStarted
     ? fights
         .filter((f: Fight) => f.fightStatus === 'UPCOMING')
@@ -375,6 +379,23 @@ export default function EventDetailScreen() {
                 />
               </View>
             )}
+            {/* Column headers aligned over the aggregate (left) and user (right)
+                score columns of each FightDisplayCard. Hype for upcoming events,
+                rating once the event is completed. */}
+            <View style={styles.colHeaderRow}>
+              <View style={styles.colHeaderCol}>
+                <Text style={[styles.colHeaderText, { color: colors.textSecondary }]}>ALL</Text>
+                <Text style={[styles.colHeaderText, { color: colors.textSecondary }]}>
+                  {event?.eventStatus === 'COMPLETED' ? 'RATING' : 'HYPE'}
+                </Text>
+              </View>
+              <View style={styles.colHeaderCol}>
+                <Text style={[styles.colHeaderText, { color: colors.textSecondary }]}>MY</Text>
+                <Text style={[styles.colHeaderText, { color: colors.textSecondary }]}>
+                  {event?.eventStatus === 'COMPLETED' ? 'RATING' : 'HYPE'}
+                </Text>
+              </View>
+            </View>
             {[...mainCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -605,6 +626,25 @@ const styles = StyleSheet.create({
   sectionTime: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  // Column-header row over the fight cards. Cards are flush to the screen edges
+  // with a 48px score square at each edge, so a space-between row of 48px-wide
+  // centered columns lines the labels up over those squares.
+  colHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  colHeaderCol: {
+    width: 48,
+    alignItems: 'center',
+  },
+  colHeaderText: {
+    fontSize: 9,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    lineHeight: 11,
   },
   columnHeaders: {
     flexDirection: 'column',

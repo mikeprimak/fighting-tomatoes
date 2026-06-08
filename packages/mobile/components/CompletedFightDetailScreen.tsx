@@ -1634,21 +1634,44 @@ export default function CompletedFightDetailScreen({
             ? stakesRaw.filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
             : [];
           if (!aiPreviewShort && stakes.length === 0) return null;
+          // Bordered, titled cards matching UpcomingFightDetailScreen ("The Story",
+          // "The Stakes").
+          const aiCard = {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+            backgroundColor: colors.card,
+            padding: 14,
+          } as const;
+          const aiCardTitle = {
+            fontSize: 12,
+            fontWeight: '700' as const,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase' as const,
+            color: colors.textSecondary,
+            marginBottom: 8,
+          };
           return (
-            <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
+            <View style={{ paddingHorizontal: 16, marginBottom: 16, gap: 12 }}>
               {aiPreviewShort ? (
-                <Text style={{ fontSize: 13, fontStyle: 'italic', lineHeight: 18, color: colors.textSecondary, textAlign: 'center' }}>
-                  {aiPreviewShort}
-                </Text>
+                <View style={aiCard}>
+                  <Text style={aiCardTitle}>The Story</Text>
+                  <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text }}>
+                    {aiPreviewShort}
+                  </Text>
+                </View>
               ) : null}
               {stakes.length > 0 ? (
-                <View style={{ marginTop: aiPreviewShort ? 12 : 0, gap: 6 }}>
-                  {stakes.map((s, i) => (
-                    <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                      <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
-                      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{s}</Text>
-                    </View>
-                  ))}
+                <View style={aiCard}>
+                  <Text style={aiCardTitle}>The Stakes</Text>
+                  <View style={{ gap: 6 }}>
+                    {stakes.map((s, i) => (
+                      <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                        <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
+                        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{s}</Text>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -1678,62 +1701,79 @@ export default function CompletedFightDetailScreen({
           const paragraphs = aiPostFightSummary ? splitSummaryIntoParagraphs(aiPostFightSummary) : [];
           const condensed = aiPostFightSummary ? condenseSummary(aiPostFightSummary, 50) : '';
           const isTruncatable = !!aiPostFightSummary && condensed.length < aiPostFightSummary.trim().length;
+          // Bordered, titled "The Outcome" card — mirrors The Story / The Stakes
+          // above and the upcoming screen's section styling.
+          const aiCard = {
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: 12,
+            backgroundColor: colors.card,
+            padding: 14,
+          } as const;
+          const aiCardTitle = {
+            fontSize: 12,
+            fontWeight: '700' as const,
+            letterSpacing: 0.5,
+            textTransform: 'uppercase' as const,
+            color: colors.textSecondary,
+            marginBottom: 8,
+          };
           return (
-            <View style={{ paddingHorizontal: 24, marginBottom: 16 }}>
-              <Text style={{ fontSize: 13, color: colors.textSecondary, marginBottom: 8, textAlign: 'center', fontWeight: '600' }}>
-                What happened
-              </Text>
-              {aiPostFightSummary ? (
-                <View>
-                  {postFightExpanded || !isTruncatable ? (
-                    paragraphs.map((p, i) => (
-                      <Text
-                        key={`p-${i}`}
-                        style={{
-                          fontSize: 13,
-                          lineHeight: 19,
-                          color: colors.textSecondary,
-                          marginTop: i === 0 ? 0 : 10,
-                        }}
+            <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+              <View style={aiCard}>
+                <Text style={aiCardTitle}>The Outcome</Text>
+                {aiPostFightSummary ? (
+                  <View>
+                    {postFightExpanded || !isTruncatable ? (
+                      paragraphs.map((p, i) => (
+                        <Text
+                          key={`p-${i}`}
+                          style={{
+                            fontSize: 14,
+                            lineHeight: 20,
+                            color: colors.text,
+                            marginTop: i === 0 ? 0 : 10,
+                          }}
+                        >
+                          {p}
+                        </Text>
+                      ))
+                    ) : (
+                      <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text }}>
+                        {condensed}
+                        {'…'}
+                      </Text>
+                    )}
+                    {isTruncatable ? (
+                      <TouchableOpacity
+                        onPress={() => setPostFightExpanded(v => !v)}
+                        style={{ marginTop: 6, alignSelf: 'flex-start' }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        {p}
-                      </Text>
-                    ))
-                  ) : (
-                    <Text style={{ fontSize: 13, lineHeight: 19, color: colors.textSecondary }}>
-                      {condensed}
-                      {'…'}
-                    </Text>
-                  )}
-                  {isTruncatable ? (
-                    <TouchableOpacity
-                      onPress={() => setPostFightExpanded(v => !v)}
-                      style={{ marginTop: 6, alignSelf: 'flex-start' }}
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>
-                        {postFightExpanded ? 'See less' : 'See all'}
-                      </Text>
-                    </TouchableOpacity>
-                  ) : null}
-                </View>
-              ) : null}
-              {(bonuses.length > 0 || fotyConsideration) ? (
-                <View style={{ marginTop: aiPostFightSummary ? 12 : 0, gap: 6 }}>
-                  {bonuses.map((s, i) => (
-                    <View key={`b-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                      <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
-                      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{s}</Text>
-                    </View>
-                  ))}
-                  {fotyConsideration ? (
-                    <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                      <Text style={{ fontSize: 13, lineHeight: 18, fontWeight: '600', color: colors.textSecondary }}>•</Text>
-                      <Text style={{ flex: 1, fontSize: 13, lineHeight: 18, color: colors.textSecondary }}>{fotyConsideration}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
+                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>
+                          {postFightExpanded ? 'See less' : 'See all'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null}
+                  </View>
+                ) : null}
+                {(bonuses.length > 0 || fotyConsideration) ? (
+                  <View style={{ marginTop: aiPostFightSummary ? 12 : 0, gap: 6 }}>
+                    {bonuses.map((s, i) => (
+                      <View key={`b-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                        <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
+                        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{s}</Text>
+                      </View>
+                    ))}
+                    {fotyConsideration ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                        <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
+                        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{fotyConsideration}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+              </View>
             </View>
           );
         })()}
