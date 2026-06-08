@@ -960,7 +960,28 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         ? { ...nextFightRaw, userHypePrediction: null }
         : null;
 
-      return reply.send({ data: { fighter: chosen, topFight, nextFight } });
+      // The featured fighter's most recent completed bout — shown (above the
+      // top-rated fight) when they have nothing upcoming, so the card still has
+      // a "what just happened" anchor. The client suppresses it when it would
+      // duplicate the top-rated fight.
+      const mostRecentRaw = await fastify.prisma.fight.findFirst({
+        where: {
+          OR: [{ fighter1Id: chosen.id }, { fighter2Id: chosen.id }],
+          fightStatus: 'COMPLETED',
+          event: {
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
+          },
+        },
+        include: { fighter1: true, fighter2: true, event: true },
+        orderBy: [{ event: { date: 'desc' } }],
+      });
+      const mostRecentFight = mostRecentRaw
+        ? { ...mostRecentRaw, userRating: null }
+        : null;
+
+      return reply.send({ data: { fighter: chosen, topFight, nextFight, mostRecentFight } });
     } catch (error) {
       console.error('Error fetching highlighted fighter:', error);
       return reply.status(500).send({

@@ -1405,6 +1405,7 @@ class ApiService {
       fighter: any;
       topFight: any | null;
       nextFight: any | null;
+      mostRecentFight: any | null;
     } | null;
   }> {
     return this.makeRequest('/community/highlighted-fighter');

@@ -1415,6 +1415,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           firstName: true,
           lastName: true,
           nickname: true,
+          gender: true,
           wins: true,
           losses: true,
           draws: true,
