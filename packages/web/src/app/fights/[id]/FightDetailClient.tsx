@@ -74,6 +74,7 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
   const { spoilerFreeMode } = useSpoilerFree();
   const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [outcomeRevealed, setOutcomeRevealed] = useState(false);
+  const [outcomeExpanded, setOutcomeExpanded] = useState(false);
   const [rateModalOpen, setRateModalOpen] = useState(false);
   const [hypeModalOpen, setHypeModalOpen] = useState(false);
 
@@ -259,6 +260,13 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         }
         const paragraphs = recap ? recap.split(/\n\n+/).map((p) => p.trim()).filter(Boolean) : [];
         if (paragraphs.length === 0 && accolades.length === 0) return null;
+        // Condense the recap to the first few lines with a See more toggle; the
+        // accolades live inside the expanded content (mirrors mobile).
+        const RECAP_WORD_LIMIT = 45;
+        const words = recap.split(/\s+/).filter(Boolean);
+        const isTruncatable = words.length > RECAP_WORD_LIMIT;
+        const condensed = isTruncatable ? `${words.slice(0, RECAP_WORD_LIMIT).join(' ')}…` : recap;
+        const showDetail = outcomeExpanded || !isTruncatable;
         return (
           <div className="mb-6">
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
@@ -266,13 +274,19 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
               The Outcome
             </h3>
             <div className="rounded-lg border border-border bg-card p-4">
-              {paragraphs.map((p, i) => (
-                <p key={i} className={`text-sm leading-relaxed text-text-secondary ${i > 0 ? 'mt-3' : ''}`}>
-                  {p}
-                </p>
-              ))}
-              {accolades.length > 0 && (
-                <ul className={`space-y-2 ${paragraphs.length > 0 ? 'mt-3' : ''}`}>
+              {recap && (
+                showDetail ? (
+                  paragraphs.map((p, i) => (
+                    <p key={i} className={`text-sm leading-relaxed text-text-secondary ${i > 0 ? 'mt-3' : ''}`}>
+                      {p}
+                    </p>
+                  ))
+                ) : (
+                  <p className="text-sm leading-relaxed text-text-secondary">{condensed}</p>
+                )
+              )}
+              {showDetail && accolades.length > 0 && (
+                <ul className={`space-y-2 ${recap ? 'mt-3' : ''}`}>
                   {accolades.map((s, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
                       <span className="text-primary">•</span>
@@ -280,6 +294,14 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
                     </li>
                   ))}
                 </ul>
+              )}
+              {isTruncatable && (
+                <button
+                  onClick={() => setOutcomeExpanded((v) => !v)}
+                  className="mt-3 text-sm font-semibold text-primary hover:underline"
+                >
+                  {outcomeExpanded ? 'See less' : 'See more'}
+                </button>
               )}
             </div>
           </div>

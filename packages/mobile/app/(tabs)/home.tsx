@@ -989,10 +989,9 @@ export default function HomeScreen() {
                   <Text style={styles.highlightFightLabel}>Most Recent Fight</Text>
                   <Text style={styles.highlightFightMatchup}>
                     {getFighterPrimaryName(highlightMostRecentFight.fighter1)} vs {getFighterPrimaryName(highlightMostRecentFight.fighter2)}
-                    {(() => {
-                      const d = highlightMostRecentFight.event?.mainStartTime ?? highlightMostRecentFight.event?.date;
-                      return d ? `  ·  ${formatEventDate(d)}` : '';
-                    })()}
+                    {highlightMostRecentFight.averageRating > 0
+                      ? `  ★ ${highlightMostRecentFight.averageRating === 10 ? '10' : Number(highlightMostRecentFight.averageRating).toFixed(1)}`
+                      : ''}
                   </Text>
                 </View>
               ) : null}
