@@ -18,6 +18,7 @@ import { useColorScheme } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { FightDisplayCard, ScreenHeader, HowToWatch } from '../../components';
+import { useEventBroadcasts } from '../../components/HowToWatch';
 import UpcomingFightModal from '../../components/UpcomingFightModal';
 import { useAuth } from '../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
@@ -98,6 +99,12 @@ export default function EventDetailScreen() {
 
   const event = eventData?.event;
   const fights = fightsData?.fights || [];
+
+  // Per-section broadcast presence. When a section has its own broadcast row,
+  // HowToWatch renders the "MAIN CARD" / "PRELIMS" label itself; when it does
+  // not (e.g. an event with no broadcast data), we fall back to a plain section
+  // title so Main Card and Prelims are always visually differentiated.
+  const { data: broadcastData } = useEventBroadcasts(id as string);
 
   // Debug: show alert when fights.length is 0 after loading (temporary debugging)
   useEffect(() => {
@@ -296,6 +303,11 @@ export default function EventDetailScreen() {
   const prelimCardStarted = hasCardSectionStarted(prelimCard);
   const earlyPrelimsStarted = hasCardSectionStarted(earlyPrelims);
 
+  // True when HowToWatch will render this section's label itself (so we skip our
+  // fallback title to avoid showing it twice).
+  const sectionHasBroadcasts = (section: 'MAIN_CARD' | 'PRELIMS' | 'EARLY_PRELIMS') =>
+    !!broadcastData?.broadcasts?.some((b: any) => b.cardSection === section);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={[]}>
       <StatusBar translucent backgroundColor="transparent" barStyle="light-content" />
@@ -379,6 +391,15 @@ export default function EventDetailScreen() {
                 />
               </View>
             )}
+            {/* Fallback section title when there's no broadcast row to carry it. */}
+            {!sectionHasBroadcasts('MAIN_CARD') && (
+              <View style={styles.sectionTitleFallback}>
+                <Text style={[styles.sectionTitleText, { color: colors.text }]}>MAIN CARD</Text>
+                {event.mainStartTime ? (
+                  <Text style={[styles.sectionTimeText, { color: colors.textSecondary }]}>{formatTime(event.mainStartTime)}</Text>
+                ) : null}
+              </View>
+            )}
             {/* Column headers aligned over the aggregate (left) and user (right)
                 score columns of each FightDisplayCard. Hype for upcoming events,
                 rating once the event is completed. */}
@@ -424,6 +445,14 @@ export default function EventDetailScreen() {
                 />
               </View>
             )}
+            {!sectionHasBroadcasts('PRELIMS') && (
+              <View style={styles.sectionTitleFallback}>
+                <Text style={[styles.sectionTitleText, { color: colors.text }]}>PRELIMS</Text>
+                {event.prelimStartTime ? (
+                  <Text style={[styles.sectionTimeText, { color: colors.textSecondary }]}>{formatTime(event.prelimStartTime)}</Text>
+                ) : null}
+              </View>
+            )}
             {[...prelimCard].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
               <FightDisplayCard
                 key={fight.id}
@@ -450,6 +479,14 @@ export default function EventDetailScreen() {
                   label="EARLY PRELIMS"
                   time={event.earlyPrelimStartTime ? formatTime(event.earlyPrelimStartTime) : undefined}
                 />
+              </View>
+            )}
+            {!sectionHasBroadcasts('EARLY_PRELIMS') && (
+              <View style={styles.sectionTitleFallback}>
+                <Text style={[styles.sectionTitleText, { color: colors.text }]}>EARLY PRELIMS</Text>
+                {event.earlyPrelimStartTime ? (
+                  <Text style={[styles.sectionTimeText, { color: colors.textSecondary }]}>{formatTime(event.earlyPrelimStartTime)}</Text>
+                ) : null}
               </View>
             )}
             {[...earlyPrelims].sort((a, b) => a.orderOnCard - b.orderOnCard).map((fight: Fight, index: number) => (
@@ -626,6 +663,24 @@ const styles = StyleSheet.create({
   sectionTime: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  // Standalone Main Card / Prelims / Early Prelims header, shown when there's no
+  // broadcast row to carry the section label.
+  sectionTitleFallback: {
+    alignItems: 'center',
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  sectionTitleText: {
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
+  sectionTimeText: {
+    fontSize: 11,
+    fontWeight: '500',
+    marginTop: 2,
   },
   // Column-header row over the fight cards. Cards are flush to the screen edges
   // with a 48px score square at each edge, so a space-between row of 48px-wide
