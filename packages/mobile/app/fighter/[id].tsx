@@ -245,6 +245,12 @@ export default function FighterDetailScreen() {
           const summary: string = fighter.aiProfileSummary || '';
           const profile = fighter.aiProfile || {};
           if (conf < 0.5 || (!summary && !profile.tldr)) return null;
+          // Gendered "why fans love/hate" headings (him/her from DB gender),
+          // falling back to the fighter's last name when gender is unknown.
+          const fanPronoun = fighter.gender === 'MALE' ? 'HIM' : fighter.gender === 'FEMALE' ? 'HER' : null;
+          const fanSubject = fanPronoun || (fighter.lastName ? String(fighter.lastName).toUpperCase() : 'THEM');
+          const loveLabel = `WHY FANS LOVE ${fanSubject}`;
+          const hateLabel = `WHY SOME FANS HATE ${fanSubject}`;
           const paragraphs = summary.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
           return (
             <View style={styles.aboutSection}>
@@ -259,13 +265,13 @@ export default function FighterDetailScreen() {
                 <View style={styles.drawContainer}>
                   {profile.whyFansLove ? (
                     <View style={styles.drawBlock}>
-                      <Text style={[styles.drawLabel, { color: colors.primary }]}>WHY FANS LOVE THEM</Text>
+                      <Text style={[styles.drawLabel, { color: colors.primary }]}>{loveLabel}</Text>
                       <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansLove}</Text>
                     </View>
                   ) : null}
                   {profile.whyFansHate ? (
                     <View style={styles.drawBlock}>
-                      <Text style={[styles.drawLabel, { color: colors.textSecondary }]}>WHY SOME FANS HATE THEM</Text>
+                      <Text style={[styles.drawLabel, { color: colors.textSecondary }]}>{hateLabel}</Text>
                       <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansHate}</Text>
                     </View>
                   ) : null}

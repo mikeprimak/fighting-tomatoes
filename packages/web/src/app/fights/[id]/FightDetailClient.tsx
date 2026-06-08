@@ -8,7 +8,7 @@ import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAuth } from '@/lib/auth';
-import { Flame, Star, MessageSquare, Loader2, BookOpen, Target } from 'lucide-react';
+import { Flame, Star, MessageSquare, Loader2, BookOpen, Target, Award } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
@@ -190,8 +190,8 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         </div>
       )}
 
-      {/* The Story (upcoming, AI enrichment) */}
-      {isUpcoming && fight.aiConfidence != null && fight.aiConfidence >= 0.5 && fight.aiPreviewShort && (
+      {/* The Story (pre-fight AI context — shown for upcoming and completed) */}
+      {(isUpcoming || isCompleted) && fight.aiConfidence != null && fight.aiConfidence >= 0.5 && fight.aiPreviewShort && (
         <div className="mb-6">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <BookOpen size={16} className="text-primary" />
@@ -203,8 +203,8 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         </div>
       )}
 
-      {/* The Stakes (upcoming, AI enrichment) */}
-      {isUpcoming && (() => {
+      {/* The Stakes (pre-fight AI context — shown for upcoming and completed) */}
+      {(isUpcoming || isCompleted) && (() => {
         if (fight.aiConfidence == null || fight.aiConfidence < 0.5) return null;
         const stakesRaw = fight.aiTags && typeof fight.aiTags === 'object' ? (fight.aiTags as any).stakes : null;
         const stakes: string[] = Array.isArray(stakesRaw)
@@ -225,6 +225,63 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
                 </li>
               ))}
             </ul>
+          </div>
+        );
+      })()}
+
+      {/* The Outcome (completed, post-fight AI enrichment) — spoiler-gated */}
+      {isCompleted && !hideSpoilers && (() => {
+        const recap: string = typeof fight.aiPostFightSummary === 'string' ? fight.aiPostFightSummary.trim() : '';
+        const tags = fight.aiPostFightTags && typeof fight.aiPostFightTags === 'object' ? (fight.aiPostFightTags as any) : null;
+        const bonusesRaw = tags && Array.isArray(tags.bonuses) ? tags.bonuses : [];
+        const bonuses: string[] = bonusesRaw.filter((s: unknown): s is string => typeof s === 'string' && s.trim().length > 0);
+        const fotyRaw = tags ? tags.fotyConsideration : null;
+        const foty: string | null =
+          typeof fotyRaw === 'string' && fotyRaw.trim() && fotyRaw.trim().toLowerCase() !== 'n/a' ? fotyRaw.trim() : null;
+        // Fold semantic duplicate accolades (FOTN/POTN/etc.) into one list.
+        const accoladeKey = (raw: string): string => {
+          const s = raw.toLowerCase();
+          if (/fight of the night|\bfotn\b/.test(s)) return 'FOTN';
+          if (/performance of the night|\bpotn\b/.test(s)) return 'POTN';
+          if (/knockout of the night|\bkotn\b/.test(s)) return 'KOTN';
+          if (/submission of the night|\bsotn\b/.test(s)) return 'SOTN';
+          if (/fight of the year|\bfoty\b/.test(s)) return 'FOTY';
+          if (/performance of the year|\bpoty\b/.test(s)) return 'POTY';
+          return s.trim().replace(/\s+/g, ' ');
+        };
+        const seen = new Set<string>();
+        const accolades: string[] = [];
+        for (const item of [...bonuses, ...(foty ? [foty] : [])]) {
+          const k = accoladeKey(item);
+          if (seen.has(k)) continue;
+          seen.add(k);
+          accolades.push(item);
+        }
+        const paragraphs = recap ? recap.split(/\n\n+/).map((p) => p.trim()).filter(Boolean) : [];
+        if (paragraphs.length === 0 && accolades.length === 0) return null;
+        return (
+          <div className="mb-6">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+              <Award size={16} className="text-primary" />
+              The Outcome
+            </h3>
+            <div className="rounded-lg border border-border bg-card p-4">
+              {paragraphs.map((p, i) => (
+                <p key={i} className={`text-sm leading-relaxed text-text-secondary ${i > 0 ? 'mt-3' : ''}`}>
+                  {p}
+                </p>
+              ))}
+              {accolades.length > 0 && (
+                <ul className={`space-y-2 ${paragraphs.length > 0 ? 'mt-3' : ''}`}>
+                  {accolades.map((s, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-text-secondary">
+                      <span className="text-primary">•</span>
+                      <span>{s}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         );
       })()}

@@ -758,6 +758,17 @@ export default function HomeScreen() {
   const highlightFighter = highlight?.fighter || null;
   const highlightTopFight = highlight?.topFight || null;
   const highlightNextFight = highlight?.nextFight || null;
+  const highlightMostRecentFight = highlight?.mostRecentFight || null;
+  // When the fighter has nothing booked, surface their most recent bout above
+  // the top-rated one. If that bout *is* the top-rated one, don't show it twice —
+  // just relabel the single line "Most Recent Fight" (task 1).
+  const highlightHasUpcoming = !!highlightNextFight;
+  const highlightSameRecentTop =
+    !!highlightMostRecentFight && !!highlightTopFight && highlightMostRecentFight.id === highlightTopFight.id;
+  const highlightShowMostRecent =
+    !highlightHasUpcoming && !!highlightMostRecentFight && !highlightSameRecentTop;
+  const highlightTopFightLabel =
+    !highlightHasUpcoming && highlightSameRecentTop ? 'Most Recent Fight' : 'Top-rated fight';
   const highlightSummary = highlightFighter
     ? highlightFighter.aiProfile?.tldr || highlightFighter.aiProfileSummary || ''
     : '';
@@ -971,11 +982,25 @@ export default function HomeScreen() {
               {highlightSummary ? (
                 <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
               ) : null}
+              {/* Most recent bout (only when nothing is booked and it differs
+                  from the top-rated fight), shown above the top-rated line. */}
+              {highlightShowMostRecent ? (
+                <View style={styles.highlightFightLine}>
+                  <Text style={styles.highlightFightLabel}>Most Recent Fight</Text>
+                  <Text style={styles.highlightFightMatchup}>
+                    {getFighterPrimaryName(highlightMostRecentFight.fighter1)} vs {getFighterPrimaryName(highlightMostRecentFight.fighter2)}
+                    {(() => {
+                      const d = highlightMostRecentFight.event?.mainStartTime ?? highlightMostRecentFight.event?.date;
+                      return d ? `  ·  ${formatEventDate(d)}` : '';
+                    })()}
+                  </Text>
+                </View>
+              ) : null}
               {/* Top-rated fight + next scheduled bout, inline inside the card's
                   border (replaces the separate full fight card). */}
               {highlightTopFight ? (
                 <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Top-rated fight</Text>
+                  <Text style={styles.highlightFightLabel}>{highlightTopFightLabel}</Text>
                   <Text style={styles.highlightFightMatchup}>
                     {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
                     {highlightTopFight.averageRating > 0

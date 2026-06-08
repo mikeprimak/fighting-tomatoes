@@ -176,6 +176,12 @@ function FighterAbout({ fighter }: { fighter: any }) {
   const profile = fighter.aiProfile || {};
   if (conf < 0.5 || (!summary && !profile.tldr)) return null;
   const paragraphs = summary.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
+  // Gendered "why fans love/hate" headings (him/her from DB gender), falling
+  // back to the fighter's last name when gender is unknown.
+  const fanPronoun = fighter.gender === 'MALE' ? 'him' : fighter.gender === 'FEMALE' ? 'her' : null;
+  const fanSubject = fanPronoun || fighter.lastName || 'them';
+  const loveLabel = `Why fans love ${fanSubject}`;
+  const hateLabel = `Why some fans hate ${fanSubject}`;
   return (
     <section className="mb-6">
       <h2 className="mb-2 text-lg font-bold">About</h2>
@@ -190,7 +196,7 @@ function FighterAbout({ fighter }: { fighter: any }) {
           {profile.whyFansLove && (
             <div className="rounded-lg border border-border bg-card p-3">
               <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-                Why fans love them
+                {loveLabel}
               </h3>
               <p className="text-sm leading-relaxed">{profile.whyFansLove}</p>
             </div>
@@ -198,7 +204,7 @@ function FighterAbout({ fighter }: { fighter: any }) {
           {profile.whyFansHate && (
             <div className="rounded-lg border border-border bg-card p-3">
               <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
-                Why some fans hate them
+                {hateLabel}
               </h3>
               <p className="text-sm leading-relaxed">{profile.whyFansHate}</p>
             </div>
