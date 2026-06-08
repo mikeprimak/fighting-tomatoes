@@ -16,6 +16,20 @@ import Anthropic from '@anthropic-ai/sdk';
 const MODEL = 'claude-haiku-4-5-20251001';
 const MAX_TOKENS = 8192;
 
+// Collapse an accolade phrase to a canonical award key so semantic duplicates
+// ("Fight of the Night" vs "2025 FOTN Winner") fold together. Mirrors the same
+// helper in the mobile CompletedFightDetailScreen so render and data agree.
+function accoladeKey(raw: string): string {
+  const s = raw.toLowerCase();
+  if (/fight of the night|\bfotn\b/.test(s)) return 'FOTN';
+  if (/performance of the night|\bpotn\b/.test(s)) return 'POTN';
+  if (/knockout of the night|\bkotn\b/.test(s)) return 'KOTN';
+  if (/submission of the night|\bsotn\b/.test(s)) return 'SOTN';
+  if (/fight of the year|\bfoty\b/.test(s)) return 'FOTY';
+  if (/performance of the year|\bpoty\b/.test(s)) return 'POTY';
+  return s.trim().replace(/\s+/g, ' ');
+}
+
 const SYSTEM_PROMPT = `You are a combat-sports analyst writing POST-fight recaps for a fight-rating app.
 
 You will be given:
@@ -49,6 +63,7 @@ Hard rules:
   - "red" = fighter1 from the CARD, "blue" = fighter2. The recorded winner is given as a name; use it.
   - Everything in "summary", "methodNarrative", "momentDescription", "bonuses", "callouts", "aftermath", "fotyConsideration" MUST be grounded in the editorial text. The bare result line alone (e.g. "KO, Round 2") is NOT enough to write a narrative — if the editorial doesn't describe the fight, OMIT that fightId entirely. Do not pad.
   - Do NOT speculate about future bookings unless editorial states them. Do NOT invent bonuses or callouts.
+  - List each award ONCE. Do not repeat the same accolade with different wording (e.g. never both "Fight of the Night" and "2025 FOTN Winner"). "fotyConsideration" is ONLY for Fight/Performance of the YEAR framing — never restate a Night bonus there.
   - "confidence" reflects YOUR estimate. Editorial with a real round-by-round or finish description ⇒ 0.7+. Editorial that only confirms the result in passing ⇒ 0.4–0.5. No real coverage ⇒ omit the fight.
   - If editorial is silent on every fight, return {"fights": []}.
   - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
@@ -232,16 +247,32 @@ function parseFights(
       ghosts.push(fightId);
       continue;
     }
+    // Dedupe accolades by canonical award key so the same bonus can't appear
+    // twice (e.g. "Fight of the Night" + "2025 FOTN Winner"), and so
+    // fotyConsideration is dropped when it merely restates a Night bonus.
+    const rawBonuses = strArr(f.bonuses);
+    const seenAwards = new Set<string>();
+    const bonuses: string[] = [];
+    for (const b of rawBonuses) {
+      const key = accoladeKey(b);
+      if (seenAwards.has(key)) continue;
+      seenAwards.add(key);
+      bonuses.push(b);
+    }
+    let fotyConsideration = strOrNull(f.fotyConsideration);
+    if (fotyConsideration && seenAwards.has(accoladeKey(fotyConsideration))) {
+      fotyConsideration = null;
+    }
     records.push({
       fightId,
       summary: typeof f.summary === 'string' ? f.summary.trim() : '',
       tags: {
         methodNarrative: strOrNull(f.methodNarrative),
         momentDescription: strOrNull(f.momentDescription),
-        bonuses: strArr(f.bonuses),
+        bonuses,
         callouts: strArr(f.callouts),
         aftermath: strArr(f.aftermath),
-        fotyConsideration: strOrNull(f.fotyConsideration),
+        fotyConsideration,
       },
       confidence: typeof f.confidence === 'number' ? Math.max(0, Math.min(1, f.confidence)) : 0.5,
     });

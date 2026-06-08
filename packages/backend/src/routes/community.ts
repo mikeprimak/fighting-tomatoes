@@ -642,14 +642,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       });
 
       const byEvent = new Map<string, { event: any; fights: any[] }>();
-      const order: string[] = [];
       for (const f of fights) {
         let g = byEvent.get(f.eventId);
         if (!g) {
           g = { event: f.event, fights: [] };
           byEvent.set(f.eventId, g);
-          order.push(f.eventId);
         }
+        // Fights arrive rating-desc, so the first MAX_FIGHTS_PER_EVENT kept per
+        // event are that event's top-rated qualifying fights.
         if (g.fights.length < MAX_FIGHTS_PER_EVENT) {
           g.fights.push({
             ...f,
@@ -659,9 +659,16 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         }
       }
 
+      // Events ordered by recency (most recent first), not by best-fight rating.
+      const order = Array.from(byEvent.values()).sort((a, b) => {
+        const ad = new Date(a.event?.mainStartTime ?? a.event?.date ?? 0).getTime();
+        const bd = new Date(b.event?.mainStartTime ?? b.event?.date ?? 0).getTime();
+        return bd - ad;
+      });
+
       const data = order
         .slice(0, MAX_EVENTS)
-        .flatMap(eid => byEvent.get(eid)!.fights);
+        .flatMap(g => g.fights);
 
       return reply.send({ data });
     } catch (error) {

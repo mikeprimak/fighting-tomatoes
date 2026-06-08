@@ -137,6 +137,38 @@ const normalizeMethod = (method: string | null | undefined): string | null => {
   return null;
 };
 
+// Collapse a post-fight accolade string to a canonical key so semantic
+// duplicates ("Fight of the Night" vs "2025 FOTN Winner") fold together. The AI
+// post-fight enrichment sometimes lists the same award twice — once in
+// `bonuses` and once in `fotyConsideration` — with different phrasings; this
+// keys both to the same bucket so the UI only shows one. Strings that aren't a
+// recognised award fall through to their own (lowercased) text as the key.
+const accoladeKey = (raw: string): string => {
+  const s = raw.toLowerCase();
+  if (/fight of the night|\bfotn\b/.test(s)) return 'FOTN';
+  if (/performance of the night|\bpotn\b/.test(s)) return 'POTN';
+  if (/knockout of the night|\bkotn\b/.test(s)) return 'KOTN';
+  if (/submission of the night|\bsotn\b/.test(s)) return 'SOTN';
+  if (/fight of the year|\bfoty\b/.test(s)) return 'FOTY';
+  if (/performance of the year|\bpoty\b/.test(s)) return 'POTY';
+  return s.trim().replace(/\s+/g, ' ');
+};
+
+// Merge bonuses + fotyConsideration into one accolade list with semantic
+// duplicates removed (first occurrence wins). Shared by render here and mirrored
+// in the backend extractor so newly-written data is clean too.
+const dedupeAccolades = (bonuses: string[], foty: string | null): string[] => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of [...bonuses, ...(foty ? [foty] : [])]) {
+    const key = accoladeKey(item);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(item);
+  }
+  return out;
+};
+
 // Legacy fight tags from fightingtomatoes.com, organized by rating tiers
 // IDs match the normalized database tag names (lowercase, spaces to hyphens)
 const ALL_FIGHT_TAGS = [
@@ -1698,9 +1730,15 @@ export default function CompletedFightDetailScreen({
             ? fotyRaw.trim()
             : null;
           if (!aiPostFightSummary && bonuses.length === 0 && !fotyConsideration) return null;
+          // Fold semantic duplicates ("Fight of the Night" + "2025 FOTN Winner")
+          // into a single accolade list before rendering.
+          const accolades = dedupeAccolades(bonuses, fotyConsideration);
           const paragraphs = aiPostFightSummary ? splitSummaryIntoParagraphs(aiPostFightSummary) : [];
           const condensed = aiPostFightSummary ? condenseSummary(aiPostFightSummary, 50) : '';
           const isTruncatable = !!aiPostFightSummary && condensed.length < aiPostFightSummary.trim().length;
+          // The accolades live inside the "See all" content, so a long summary
+          // hides them until expanded.
+          const showDetail = postFightExpanded || !isTruncatable;
           // Bordered, titled "The Outcome" card — mirrors The Story / The Stakes
           // above and the upcoming screen's section styling.
           const aiCard = {
@@ -1724,7 +1762,7 @@ export default function CompletedFightDetailScreen({
                 <Text style={aiCardTitle}>The Outcome</Text>
                 {aiPostFightSummary ? (
                   <View>
-                    {postFightExpanded || !isTruncatable ? (
+                    {showDetail ? (
                       paragraphs.map((p, i) => (
                         <Text
                           key={`p-${i}`}
@@ -1744,34 +1782,30 @@ export default function CompletedFightDetailScreen({
                         {'…'}
                       </Text>
                     )}
-                    {isTruncatable ? (
-                      <TouchableOpacity
-                        onPress={() => setPostFightExpanded(v => !v)}
-                        style={{ marginTop: 6, alignSelf: 'flex-start' }}
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>
-                          {postFightExpanded ? 'See less' : 'See all'}
-                        </Text>
-                      </TouchableOpacity>
-                    ) : null}
                   </View>
                 ) : null}
-                {(bonuses.length > 0 || fotyConsideration) ? (
+                {/* Accolades live inside the expandable content (task e): only
+                    shown once the summary is expanded, or when nothing truncates. */}
+                {showDetail && accolades.length > 0 ? (
                   <View style={{ marginTop: aiPostFightSummary ? 12 : 0, gap: 6 }}>
-                    {bonuses.map((s, i) => (
-                      <View key={`b-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
+                    {accolades.map((s, i) => (
+                      <View key={`a-${i}`} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                         <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
                         <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{s}</Text>
                       </View>
                     ))}
-                    {fotyConsideration ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
-                        <Text style={{ fontSize: 14, lineHeight: 20, fontWeight: '600', color: colors.primary }}>•</Text>
-                        <Text style={{ flex: 1, fontSize: 14, lineHeight: 20, color: colors.text }}>{fotyConsideration}</Text>
-                      </View>
-                    ) : null}
                   </View>
+                ) : null}
+                {isTruncatable ? (
+                  <TouchableOpacity
+                    onPress={() => setPostFightExpanded(v => !v)}
+                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: colors.tint }}>
+                      {postFightExpanded ? 'See less' : 'See all'}
+                    </Text>
+                  </TouchableOpacity>
                 ) : null}
               </View>
             </View>
