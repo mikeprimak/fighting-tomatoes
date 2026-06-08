@@ -280,8 +280,9 @@ function EventRow({
 /**
  * One row inside a HypedEventCard: facing fighter headshots, the matchup, an
  * optional weight-class / title tag, and a heatmap-colored community-hype badge
- * with the number of fans who hyped it. Taps straight to the fight page (no
- * modal). Deliberately leaves out "my hype" — this is a discovery surface.
+ * with the number of fans who hyped it. Non-interactive — the whole card taps
+ * through to the event page. Deliberately leaves out "my hype" — this is a
+ * discovery surface.
  */
 function HypedFightRow({
   fight,
@@ -289,14 +290,12 @@ function HypedFightRow({
   styles,
   isLast,
   mode = 'hype',
-  onPress,
 }: {
   fight: any;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   isLast: boolean;
   mode?: 'hype' | 'rating';
-  onPress: () => void;
 }) {
   const [img1Err, setImg1Err] = React.useState(false);
   const [img2Err, setImg2Err] = React.useState(false);
@@ -316,11 +315,7 @@ function HypedFightRow({
   const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : formatWeightClass(fight.weightClass);
 
   return (
-    <TouchableOpacity
-      style={[styles.hypedRow, !isLast && styles.hypedRowDivider]}
-      activeOpacity={0.7}
-      onPress={onPress}
-    >
+    <View style={[styles.hypedRow, !isLast && styles.hypedRowDivider]}>
       {/* Facing headshots */}
       <View style={styles.hypedHeadshots}>
         <Image source={img1} style={styles.hypedHeadshot} onError={() => setImg1Err(true)} />
@@ -349,7 +344,7 @@ function HypedFightRow({
           <Text style={styles.hypedBadgeCount}>({hypeCount})</Text>
         ) : null}
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -366,7 +361,6 @@ function HypedEventCard({
   styles,
   mode = 'hype',
   onPressEvent,
-  onPressFight,
 }: {
   event: any;
   fights: any[];
@@ -374,7 +368,6 @@ function HypedEventCard({
   styles: ReturnType<typeof makeStyles>;
   mode?: 'hype' | 'rating';
   onPressEvent: () => void;
-  onPressFight: (fight: any) => void;
 }) {
   const imageSource = event?.bannerImage
     ? { uri: event.bannerImage }
@@ -393,9 +386,11 @@ function HypedEventCard({
   const [bannerRatio, setBannerRatio] = React.useState(16 / 9);
 
   return (
-    <View style={styles.hypedCard}>
-      {/* Banner header — taps through to the event */}
-      <TouchableOpacity activeOpacity={0.9} onPress={onPressEvent}>
+    // The whole card — banner and every fight row — taps through to the event;
+    // no part links to an individual fight page.
+    <TouchableOpacity style={styles.hypedCard} activeOpacity={0.9} onPress={onPressEvent}>
+      {/* Banner header */}
+      <View>
         <View style={styles.hypedBanner}>
           {imageSource ? (
             <Image
@@ -425,7 +420,7 @@ function HypedEventCard({
             ) : null}
           </View>
         </View>
-      </TouchableOpacity>
+      </View>
 
       {/* Fights */}
       <View style={styles.hypedFightList}>
@@ -437,11 +432,10 @@ function HypedEventCard({
             styles={styles}
             isLast={i === fights.length - 1}
             mode={mode}
-            onPress={() => onPressFight(fight)}
           />
         ))}
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -915,7 +909,6 @@ export default function HomeScreen() {
               onPressEvent={() =>
                 g.event?.id && router.push(`/event/${g.event.id}` as any)
               }
-              onPressFight={(fight) => router.push(`/fight/${fight.id}` as any)}
             />
           ))
         ) : (
@@ -945,7 +938,6 @@ export default function HomeScreen() {
               onPressEvent={() =>
                 g.event?.id && router.push(`/event/${g.event.id}` as any)
               }
-              onPressFight={(fight) => router.push(`/fight/${fight.id}?mode=completed` as any)}
             />
           ))
         ) : (
