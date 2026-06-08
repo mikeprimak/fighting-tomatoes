@@ -288,12 +288,14 @@ function HypedFightRow({
   colors,
   styles,
   isLast,
+  mode = 'hype',
   onPress,
 }: {
   fight: any;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   isLast: boolean;
+  mode?: 'hype' | 'rating';
   onPress: () => void;
 }) {
   const [img1Err, setImg1Err] = React.useState(false);
@@ -301,9 +303,13 @@ function HypedFightRow({
   const img1 = img1Err ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter1);
   const img2 = img2Err ? DEFAULT_FIGHTER_IMAGE : getFighterImage(fight.fighter2);
 
-  const hype: number = fight.averageHype || 0;
+  // The score badge is identical in shape for both surfaces — community HYPE for
+  // upcoming fights, community RATING for recent ones — only the source field and
+  // count differ. The heatmap palette is shared.
+  const isRating = mode === 'rating';
+  const hype: number = (isRating ? fight.averageRating : fight.averageHype) || 0;
   const hypeColor = getHypeHeatmapColor(hype);
-  const hypeCount: number = fight.hypeCount || 0;
+  const hypeCount: number = (isRating ? fight.totalRatings : fight.hypeCount) || 0;
 
   const name1 = getFighterPrimaryName(fight.fighter1);
   const name2 = getFighterPrimaryName(fight.fighter2);
@@ -358,6 +364,7 @@ function HypedEventCard({
   fights,
   colors,
   styles,
+  mode = 'hype',
   onPressEvent,
   onPressFight,
 }: {
@@ -365,6 +372,7 @@ function HypedEventCard({
   fights: any[];
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
+  mode?: 'hype' | 'rating';
   onPressEvent: () => void;
   onPressFight: (fight: any) => void;
 }) {
@@ -372,7 +380,11 @@ function HypedEventCard({
     ? { uri: event.bannerImage }
     : getDefaultBanner(event?.promotion || '');
   const name = normalizeEventName(event?.name || 'Event', event?.promotion);
-  const when = eventRelativePhrase(event?.mainStartTime ?? event?.date);
+  // Upcoming surface shows a forward relative date ("in 3 days"); the recent
+  // surface shows the actual (past) event date.
+  const when = mode === 'rating'
+    ? formatEventDate(event?.mainStartTime ?? event?.date)
+    : eventRelativePhrase(event?.mainStartTime ?? event?.date);
 
   // Anchor the banner crop to the TOP of the image (faces sit near the top of
   // fight posters; a centered cover crops to chests). Render the image full-width
@@ -424,6 +436,7 @@ function HypedEventCard({
             colors={colors}
             styles={styles}
             isLast={i === fights.length - 1}
+            mode={mode}
             onPress={() => onPressFight(fight)}
           />
         ))}
@@ -616,21 +629,12 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: topRecentFights, isLoading: isRecentLoading } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, 'week'],
-    queryFn: () => apiService.getTopRecentFights('week'),
+  // Recent Good Fights: best fights from the last couple weeks (rating > 7 with
+  // >= 3 ratings), grouped by event server-side (<= 3 events, <= 3 fights/event).
+  const { data: recentGoodFights, isLoading: isRecentLoading } = useQuery({
+    queryKey: ['recentGoodFights'],
+    queryFn: () => apiService.getRecentGoodFights(),
     staleTime: 5 * 60 * 1000,
-  });
-
-  // Fallback: if the week has fewer than 4 highly-rated fights, broaden to the
-  // past month so the section is never thin/empty.
-  const weekRecentFights = topRecentFights?.data || [];
-  const needRecentFallback = !isRecentLoading && weekRecentFights.length < 4;
-  const { data: topRecentFightsMonth } = useQuery({
-    queryKey: ['topRecentFights', isAuthenticated, 'month'],
-    queryFn: () => apiService.getTopRecentFights('month'),
-    staleTime: 5 * 60 * 1000,
-    enabled: needRecentFallback,
   });
 
   // Pull a deeper pool (18) so the home rail can rotate through the most-followed
@@ -736,9 +740,8 @@ export default function HomeScreen() {
   })();
 
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
-  const recentFights = (
-    weekRecentFights.length >= 4 ? weekRecentFights : (topRecentFightsMonth?.data || weekRecentFights)
-  ).slice(0, 5);
+  // Already capped + ordered server-side; group by event for the event-card UI.
+  const recentGoodGroups = groupByEvent(recentGoodFights?.data || []);
 
   // Most-followed + recently-booked rails rotate daily over their top pools so
   // the home feed stays fresh between fight weekends (top comments / classic
@@ -754,6 +757,7 @@ export default function HomeScreen() {
   const highlight = highlightedFighterData?.data || null;
   const highlightFighter = highlight?.fighter || null;
   const highlightTopFight = highlight?.topFight || null;
+  const highlightNextFight = highlight?.nextFight || null;
   const highlightSummary = highlightFighter
     ? highlightFighter.aiProfile?.tldr || highlightFighter.aiProfileSummary || ''
     : '';
@@ -918,14 +922,19 @@ export default function HomeScreen() {
       >
         {isRecentLoading ? (
           <Loading colors={colors} styles={styles} />
-        ) : recentFights.length > 0 ? (
-          recentFights.map((fight: any, index: number) => (
-            <CompletedFightCard
-              key={fight.id}
-              fight={fight}
-              onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
-              showEvent={true}
-              index={index}
+        ) : recentGoodGroups.length > 0 ? (
+          recentGoodGroups.map((g, gi) => (
+            <HypedEventCard
+              key={g.event?.id ?? gi}
+              event={g.event}
+              fights={g.fights}
+              colors={colors}
+              styles={styles}
+              mode="rating"
+              onPressEvent={() =>
+                g.event?.id && router.push(`/event/${g.event.id}` as any)
+              }
+              onPressFight={(fight) => router.push(`/fight/${fight.id}?mode=completed` as any)}
             />
           ))
         ) : (
@@ -962,20 +971,30 @@ export default function HomeScreen() {
               {highlightSummary ? (
                 <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
               ) : null}
+              {/* Top-rated fight + next scheduled bout, inline inside the card's
+                  border (replaces the separate full fight card). */}
+              {highlightTopFight ? (
+                <Text style={styles.highlightFightLine}>
+                  <Text style={styles.highlightFightLabel}>Top-rated fight: </Text>
+                  {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
+                  {highlightTopFight.averageRating > 0
+                    ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : Number(highlightTopFight.averageRating).toFixed(1)}`
+                    : ''}
+                </Text>
+              ) : null}
+              {highlightNextFight ? (
+                <Text style={styles.highlightFightLine}>
+                  <Text style={styles.highlightFightLabel}>Next fight: </Text>
+                  {getFighterPrimaryName(highlightNextFight.fighter1)} vs {getFighterPrimaryName(highlightNextFight.fighter2)}
+                  {(() => {
+                    const w = eventRelativePhrase(highlightNextFight.event?.mainStartTime ?? highlightNextFight.event?.date);
+                    return w ? `  ·  ${w}` : '';
+                  })()}
+                </Text>
+              ) : null}
               <Text style={styles.highlightLink}>Full profile ›</Text>
             </View>
           </TouchableOpacity>
-          {highlightTopFight ? (
-            <View style={{ marginTop: 4 }}>
-              <Text style={styles.fightGroupHeading}>Top-rated fight</Text>
-              <CompletedFightCard
-                fight={highlightTopFight}
-                onPress={() => router.push(`/fight/${highlightTopFight.id}?mode=completed` as any)}
-                showEvent={true}
-                index={0}
-              />
-            </View>
-          ) : null}
         </Section>
       )}
 
@@ -1572,6 +1591,19 @@ function makeStyles(colors: ThemeColors) {
       lineHeight: 20,
       color: colors.textSecondary,
       marginTop: 10,
+    },
+    highlightFightLine: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+      marginTop: 12,
+    },
+    highlightFightLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      letterSpacing: 0.5,
+      textTransform: 'uppercase',
+      color: colors.textSecondary,
     },
     highlightLink: {
       fontSize: 14,

@@ -596,6 +596,83 @@ export default async function communityRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // "Recent Good Fights" home rail: the best fights from the last couple weeks,
+  // grouped by event. A fight qualifies when its community rating is above 7 with
+  // at least 3 ratings. We surface up to 3 events (ranked by their best fight) and
+  // up to 3 fights per event. Returns a flat fight list (each carrying .event) so
+  // the client groups it by event exactly like the Top Upcoming Fights section.
+  fastify.get('/recent-good-fights', {
+    preHandler: optionalAuthenticateMiddleware,
+  }, async (request, reply) => {
+    try {
+      const MIN_RATING = 7;       // strictly above 7
+      const MIN_RATING_COUNT = 3; // at least 3 user ratings
+      const WINDOW_DAYS = 14;     // "last couple weeks"
+      const MAX_EVENTS = 3;
+      const MAX_FIGHTS_PER_EVENT = 3;
+
+      const now = new Date();
+      const startDate = new Date();
+      startDate.setDate(now.getDate() - WINDOW_DAYS);
+
+      const fights = await fastify.prisma.fight.findMany({
+        where: {
+          event: {
+            date: { gte: startDate, lte: now },
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
+          },
+          fightStatus: 'COMPLETED',
+          averageRating: { gt: MIN_RATING },
+          totalRatings: { gte: MIN_RATING_COUNT },
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+          event: true,
+          _count: { select: { reviews: true } },
+        },
+        // Global rating-desc order: the first time we see an event is via its
+        // highest-rated qualifying fight, so event order = best-fight order.
+        orderBy: [
+          { averageRating: 'desc' },
+          { id: 'asc' },
+        ],
+      });
+
+      const byEvent = new Map<string, { event: any; fights: any[] }>();
+      const order: string[] = [];
+      for (const f of fights) {
+        let g = byEvent.get(f.eventId);
+        if (!g) {
+          g = { event: f.event, fights: [] };
+          byEvent.set(f.eventId, g);
+          order.push(f.eventId);
+        }
+        if (g.fights.length < MAX_FIGHTS_PER_EVENT) {
+          g.fights.push({
+            ...f,
+            reviewCount: f._count?.reviews || 0,
+            _count: undefined,
+          });
+        }
+      }
+
+      const data = order
+        .slice(0, MAX_EVENTS)
+        .flatMap(eid => byEvent.get(eid)!.fights);
+
+      return reply.send({ data });
+    } catch (error) {
+      console.error('Error fetching recent good fights:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch recent good fights',
+        code: 'FETCH_ERROR',
+      });
+    }
+  });
+
   // Get classic fights: the highest-rated fights at least 3 years old that the
   // current user hasn't rated yet. A "watch this from the vault" recommendation
   // feed. Returns the same shape as top-recent-fights so CompletedFightCard can
@@ -856,7 +933,27 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         topFight = null;
       }
 
-      return reply.send({ data: { fighter: chosen, topFight } });
+      // The featured fighter's next scheduled bout (if any), shown below their
+      // top-rated fight so a fan can see what's coming up for them.
+      const nextFightRaw = await fastify.prisma.fight.findFirst({
+        where: {
+          OR: [{ fighter1Id: chosen.id }, { fighter2Id: chosen.id }],
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
+          event: {
+            date: { gte: startOfToday },
+            NOT: HIDDEN_PROMOTIONS.map(p => ({
+              promotion: { contains: p, mode: 'insensitive' as const },
+            })),
+          },
+        },
+        include: { fighter1: true, fighter2: true, event: true },
+        orderBy: [{ event: { date: 'asc' } }],
+      });
+      const nextFight = nextFightRaw
+        ? { ...nextFightRaw, userHypePrediction: null }
+        : null;
+
+      return reply.send({ data: { fighter: chosen, topFight, nextFight } });
     } catch (error) {
       console.error('Error fetching highlighted fighter:', error);
       return reply.status(500).send({

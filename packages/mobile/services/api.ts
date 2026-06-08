@@ -1359,6 +1359,12 @@ class ApiService {
     return this.makeRequest(`/community/classic-fights?limit=${limit}`);
   }
 
+  // Best fights from the last couple weeks (rating > 7, >= 3 ratings), grouped by
+  // event server-side (<= 3 events, <= 3 fights/event). Each fight carries .event.
+  async getRecentGoodFights(): Promise<{ data: Fight[] }> {
+    return this.makeRequest('/community/recent-good-fights');
+  }
+
   async getHotPredictions(): Promise<{
     data: Array<Fight & { totalPredictions: number; consensusPercentage: number }>;
   }> {
@@ -1398,6 +1404,7 @@ class ApiService {
     data: {
       fighter: any;
       topFight: any | null;
+      nextFight: any | null;
     } | null;
   }> {
     return this.makeRequest('/community/highlighted-fighter');

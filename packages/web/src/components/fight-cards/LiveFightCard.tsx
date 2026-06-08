@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MessageCircle, MessageSquareQuote, Star } from 'lucide-react';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
+import { formatWeightClass } from '@/utils/weightClass';
 import { RateFightModal } from '@/components/RateFightModal';
 
 interface Fighter {
@@ -190,8 +191,8 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
               </div>
             </div>
             {fight.weightClass && (
-              <div className="mt-1 text-[10px] uppercase tracking-wider text-text-secondary">
-                {fight.weightClass}
+              <div className="mt-1 text-[10px] tracking-wider text-text-secondary">
+                {formatWeightClass(fight.weightClass)}
               </div>
             )}
           </div>
