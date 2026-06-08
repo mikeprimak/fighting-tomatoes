@@ -20,7 +20,7 @@ import { apiService, resolveBlogImageUrl } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
 import { CommentCard } from '../../components';
 import { PromotionLogo } from '../../components/PromotionLogo';
-import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName, getFighterPrimaryName } from '../../components/fight-cards/shared/utils';
+import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName, getFighterPrimaryName, formatWeightClass } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -313,7 +313,7 @@ function HypedFightRow({
 
   const name1 = getFighterPrimaryName(fight.fighter1);
   const name2 = getFighterPrimaryName(fight.fighter2);
-  const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : (fight.weightClass || '');
+  const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : formatWeightClass(fight.weightClass);
 
   return (
     <TouchableOpacity
@@ -974,23 +974,27 @@ export default function HomeScreen() {
               {/* Top-rated fight + next scheduled bout, inline inside the card's
                   border (replaces the separate full fight card). */}
               {highlightTopFight ? (
-                <Text style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Top-rated fight: </Text>
-                  {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
-                  {highlightTopFight.averageRating > 0
-                    ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : Number(highlightTopFight.averageRating).toFixed(1)}`
-                    : ''}
-                </Text>
+                <View style={styles.highlightFightLine}>
+                  <Text style={styles.highlightFightLabel}>Top-rated fight</Text>
+                  <Text style={styles.highlightFightMatchup}>
+                    {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
+                    {highlightTopFight.averageRating > 0
+                      ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : Number(highlightTopFight.averageRating).toFixed(1)}`
+                      : ''}
+                  </Text>
+                </View>
               ) : null}
               {highlightNextFight ? (
-                <Text style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Next fight: </Text>
-                  {getFighterPrimaryName(highlightNextFight.fighter1)} vs {getFighterPrimaryName(highlightNextFight.fighter2)}
-                  {(() => {
-                    const w = eventRelativePhrase(highlightNextFight.event?.mainStartTime ?? highlightNextFight.event?.date);
-                    return w ? `  ·  ${w}` : '';
-                  })()}
-                </Text>
+                <View style={styles.highlightFightLine}>
+                  <Text style={styles.highlightFightLabel}>Next scheduled fight</Text>
+                  <Text style={styles.highlightFightMatchup}>
+                    {getFighterPrimaryName(highlightNextFight.fighter1)} vs {getFighterPrimaryName(highlightNextFight.fighter2)}
+                    {(() => {
+                      const w = eventRelativePhrase(highlightNextFight.event?.mainStartTime ?? highlightNextFight.event?.date);
+                      return w ? `  ·  ${w}` : '';
+                    })()}
+                  </Text>
+                </View>
               ) : null}
               <Text style={styles.highlightLink}>Full profile ›</Text>
             </View>
@@ -1593,9 +1597,6 @@ function makeStyles(colors: ThemeColors) {
       marginTop: 10,
     },
     highlightFightLine: {
-      fontSize: 14,
-      lineHeight: 20,
-      color: colors.text,
       marginTop: 12,
     },
     highlightFightLabel: {
@@ -1604,6 +1605,12 @@ function makeStyles(colors: ThemeColors) {
       letterSpacing: 0.5,
       textTransform: 'uppercase',
       color: colors.textSecondary,
+      marginBottom: 2,
+    },
+    highlightFightMatchup: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
     },
     highlightLink: {
       fontSize: 14,

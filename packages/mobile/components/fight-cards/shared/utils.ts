@@ -126,6 +126,18 @@ export const getFighterPrimaryName = (fighter: Fighter) => {
   return last || first;
 };
 
+// Format weight class enum (e.g. "WOMENS_STRAWWEIGHT") to display case
+// ("Women's Strawweight"). Handles the women's-division apostrophe.
+export const formatWeightClass = (weightClass?: string | null): string => {
+  if (!weightClass) return '';
+  return weightClass
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ')
+    .replace(/\bWomens\b/g, "Women's")
+    .replace(/\bMens\b/g, "Men's");
+};
+
 // Format date string
 export const formatDate = (dateString: string) => formatEventDate(dateString, { weekday: false, year: true });
 

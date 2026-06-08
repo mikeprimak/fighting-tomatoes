@@ -633,7 +633,7 @@ const styles = StyleSheet.create({
   colHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 2,
+    marginTop: 7,
     marginBottom: 4,
   },
   colHeaderCol: {
