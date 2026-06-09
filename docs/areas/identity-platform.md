@@ -274,8 +274,42 @@ discipline below is load-bearing.
 
 ---
 
+## Copy & variety principles (locked 2026-06-09)
+
+The user must never feel the app is repeating itself. Breadth of *tokens* (~194
+controlled values) is necessary but not sufficient — variety lives in the **copy
+layer**:
+
+1. **Human headline, number in the subline (load-bearing).** "You love wars" /
+   "You're a true lover of wars" is the headline; "you rate wars ~1.5 higher than
+   most fans" is small subline text. Never lead with a statistic.
+2. **Many phrasings per insight + combinatorial specificity.** Each insight family
+   carries a deep copy pool, and fills in the specific tag (division, finish type,
+   archetype) so one family yields many distinct lines. Lean on the Fan DNA engine's
+   existing 30-day per-line cooldown so nothing recurs.
+3. **Vary the word for "the community."** The shipped copy said "the room" ~125
+   times — a tic. New `services/fanDNA/copy/communityRef.ts` rotates across ~12
+   alternatives ("the community", "most fans", "the group", "the consensus"…) with
+   "the room" demoted to one of many (now ~9% of surfacings). **Existing "the room"
+   copy gets swept onto this helper as part of the copy pass.**
+
+## Fighter-taste sourcing (locked 2026-06-09)
+
+The fighter axis must NOT rely on followed fighters alone — follows are sparse and
+underutilized today. Aggregate the fighter-taste signal over **fighters in the
+user's highly-rated fights + hyped fighters + followed fighters** (ratings are
+dense: avocadomike has 1,234), weighting follows + high ratings most. A fan who
+never follows anyone but rates every Gaethje war a 9 still reads as drawn to
+pressure-fighting brawlers.
+
 ## Changelog
 
+- **2026-06-09 (5)** — Copy-variety toolkit + locked variety/sourcing principles.
+  Built `services/fanDNA/copy/communityRef.ts` (deterministic varied community-word
+  picker — drops "the room" from ~100% to ~9%; assert-test passes, typechecks clean).
+  Locked: human-headline/number-in-subline copy rule; many-variants + combinatorial
+  + cooldown for variety; **fighter-taste aggregates over highly-rated-fight fighters
+  + hyped + followed, not follows alone.**
 - **2026-06-09 (4)** — Added the **second taste axis**: fighter character. Per Mike,
   the identity system should learn what *types of fighter* a user likes, not just
   what types of fight. The fighter profile already had a controlled `personaType`
