@@ -60,10 +60,15 @@ The portfolio of potentially-sellable data the app produces:
 2. **Ratings density** — 1-10 ratings of completed fights. Letterboxd-style
    verdict data.
 3. **Hype scores** — pre-fight 1-10 excitement from engaged users.
-4. **Prediction calibration** — winner / method / round predictions, scored
-   against outcomes. **Currently NOT in the UI** — schema columns exist
-   (`FightPrediction.predictedWinner`, `predictedMethod`, `predictedRound`,
-   `accuracyScore`) but the feature was removed in 2026.
+4. **Allegiance graph** *(reframed 2026-06-08, was "prediction calibration")* —
+   per-fight **who the user is rooting for** (want-to-win, not predict-the-winner),
+   timestamped and locked pre-fight. Feeds a fan-favorite / people's-champ
+   sentiment signal and a per-user allegiance signature (underdog-rider,
+   style-loyal, rides-with-the-better-man). Prediction *calibration* (winner
+   scored vs outcome) is **deliberately not the product surface** — the same
+   `FightPrediction` schema can derive a calibration stat later if a "Pro Picks"
+   power-user mode is ever wanted (the sportsbook story), but the casual primary
+   captures allegiance, not forecasts. See "Allegiance over prediction" below.
 5. **Taste graph** — AI-enriched fight tags × user ratings = preference
    profile per user / per cohort.
 6. **Comment corpus** — user comments on fights and fighters. Sport-specific
@@ -119,10 +124,12 @@ Axios, Sportico, BuzzFeed News.
   as proof your users are valuable, not as a licensable product. Earlier
   framing of "license the prediction feed" was wrong; the actual deal is
   user acquisition with the data as strategic rationale.
-- **Predictions were removed from the UI** (2026). Schema columns still
-  exist. This is a sale-value-impacting product decision worth re-evaluating
-  once the user base grows — re-add to main UI, build a power-user "Pro
-  Picks" mode, or a separate web surface. **Defer.**
+- **Predictions were removed from the UI** (2026), and the re-introduction
+  question is now **resolved (2026-06-08): allegiance, not prediction.** The
+  revived feature ships as "who are you rooting for," reframing asset #4 from
+  prediction calibration to an allegiance graph. Prediction-as-product survives
+  only as a deferred "Pro Picks" power-user back-pocket. See "Allegiance over
+  prediction" below.
 - **Ratings density ≠ user count.** Both matter, separately. User count is
   the prerequisite (without users, no ratings). Density per fight is what
   makes a rating an asset vs noise.
@@ -136,6 +143,66 @@ Axios, Sportico, BuzzFeed News.
   to walkout. Trajectory only matters for outlier fights (viral pre-fight
   moments, late-notice replacements). At best a slicing dimension, not its
   own asset.
+
+---
+
+## Allegiance over prediction (2026-06-08 decision)
+
+The mostly-built winner-pick feature ships as **"who are you rooting for"**
+(want-to-win), **not** "who will win" (predict-the-winner). An identity-platform
+call with sale implications. Implementation details deferred; the framing is
+locked.
+
+**Why allegiance, not prediction:**
+- **Identity fit** — rooting-for is an *affiliation* (who you are); predicting is
+  a *judgment* (what you did once, then it evaporates). The pivot sells fans, not
+  scores — allegiance is the Letterboxd verb, prediction is the Rotten Tomatoes
+  verb in a fan costume.
+- **Participation** — predicting has a knowledge barrier (casuals abstain, "I
+  don't know enough"); rooting needs only a gut. Higher capture rate, which
+  matters most while fighting the cold-start / empty-room problem.
+- **Retention** — your fighter losing is *heartbreak* (brings you back for
+  redemption), not *failure* ("I'm bad at this," disengages). Accuracy punishes
+  the disengaged; allegiance never can.
+- **Richer DNA** — accuracy is one scalar; allegiance is a multidimensional taste
+  signature (underdog-rider, style-loyal, rides-with-the-better-man). More
+  "Letterboxd," better Fan DNA fuel.
+- **Founder signal** — Mike feels strongly about who he *wants* to win (Gaethje
+  over Topuria — "better man, given more to fans") and doesn't know or care who
+  *will* win; "picking doesn't express me." The founder using his own product is
+  the best data available at this scale.
+
+**The cost (held consciously):** this demotes prediction calibration — the single
+highest comp-anchored asset (Kalshi / Polymarket). Acceptable because it's
+unsellable at this scale anyway, the sportsbook "sharp users" story needs scale +
+genuinely sharp users we can't guarantee, and the allegiance graph feeds the
+promotion / streamer buyer (who commands emotional loyalty) — a more realistic
+buyer for a fan-identity app. **Bridge stays standing:** store the timestamped
+pick regardless of framing; `fight.winner` lets a calibration stat be derived
+later if a separate "Pro Picks" mode is ever built. What you *can't* undo is
+meaning — the first framing shipped sets what every historical pick meant, so
+this is decided now, not "ship the easy one and revisit."
+
+**Execution principle — communication is the hard part.** Every user arrives
+pre-trained by Tapology / sportsbooks / pick'em to read two headshots as "predict
+the winner." The reframe must defuse that reflex at every touchpoint, or users
+keep score in their heads and feel "wrong." Highest-leverage touchpoints:
+- **Verb:** lead with "Who are you rooting for?"; brand flavor "in your corner."
+  Never "pick the winner," "good luck," or any ✓/✗.
+- **Confirm moment:** "We'll remember you were in Gaethje's corner" — a record,
+  not a wager.
+- **Community split bar:** relabel as "Fan favorite" / "who fans are behind" — a
+  people's-champ sentiment meter (unique to us, shareable).
+- **Outcome moment (make-or-break):** the loser's backer sees "You were in his
+  corner," never a ✗. Heartbreak acknowledged, never scored. Get this wrong and
+  the whole frame collapses back to prediction.
+- **Profile payoff:** replace any accuracy % with an allegiance signature — the
+  thing someone screenshots.
+- **Keep distinct from Follow:** rooting is per-bout (you can root against your
+  own follow, or for someone you don't follow); don't collapse it into the follow
+  graph — the cross-signal (do people root for who they follow?) is valuable.
+- **Positioning wedge:** no other platform asks who you *want* to win. The
+  contrast is the marketing — say it loud, don't hide it.
 
 ---
 
@@ -156,8 +223,10 @@ Axios, Sportico, BuzzFeed News.
 
 ## What the app doesn't do (relative to buyers)
 
-- **No winner/method/round predictions in UI.** The #1 asset class is
-  missing. Schema columns exist; product surface doesn't.
+- **No winner/method/round predictions in UI** — and as of 2026-06-08 this is
+  **by design, not a gap**: the revived feature captures *allegiance* ("who are
+  you rooting for"), not predictions. Prediction-as-product is a deferred "Pro
+  Picks" back-pocket. See "Allegiance over prediction" above.
 - **No verified prediction accuracy scoring** or leaderboard.
 - **No backtest of hype scores** against real-world outcomes
   (PPV, viewership, line movement, Google Trends).
@@ -218,8 +287,10 @@ These stay open across sessions. The point is to monitor, not decide.
 - **Most plausible buyer type.** Currently: probably a sportsbook (user-
   acquisition story) or a promotion (first-party fan ID). Streamers are
   third. AI labs are a sleeper wildcard. Revisit as the landscape shifts.
-- **Re-introduce predictions to the product.** Open product question with
-  sale-value implications. Defer until user base supports it.
+- ~~**Re-introduce predictions to the product.**~~ **Resolved 2026-06-08** —
+  shipping as *allegiance* ("who are you rooting for"), not prediction. See
+  "Allegiance over prediction" above. Prediction-as-product ("Pro Picks") stays
+  a deferred power-user back-pocket, not the casual primary.
 - **Geographic expansion.** International users make us more attractive to
   global buyers (DAZN, ONE). Currently not prioritized; revisit.
 - **When to commission a formal valuation.** $5-15K externally. Don't pay
@@ -235,6 +306,7 @@ These stay open across sessions. The point is to monitor, not decide.
 - **[Sector Swell Monitor](../../memory/project_sector_swell_monitor.md)** — monthly briefing on timing landscape, build pending
 - **[Follow-fighter workstream](follow-fighter.md)** — feeds the interest graph asset
 - **[AI enrichment workstream](ai-enrichment.md)** — feeds the taste graph asset
+- **[Identity platform thesis](identity-platform.md)** — aggregator→identity ("Letterboxd, not RT") pivot. Reframes the whole asset story: we're selling *fans* (a proprietary behavioral graph), not aggregate scores. Adds controversy-poll sentiment as a candidate micro-asset.
 - **[Rewarding users workstream](rewarding-users.md)** — feeds engagement depth → ratings density
 - **[Live trackers workstream](live-trackers.md)** — feeds promotion coverage → first-party-fan story
 - **[AI Marketing Plan 2026](../../GOOD_FIGHTS_AI_MARKETING_PLAN_2026.md)** — feeds awareness → buyer recognition
@@ -244,6 +316,10 @@ These stay open across sessions. The point is to monitor, not decide.
 
 ## Changelog
 
+- **2026-06-08** — **Allegiance-over-prediction pivot.** Reframed asset #4 from
+  prediction calibration to an allegiance graph; resolved the "re-introduce
+  predictions" open question (allegiance, not prediction); added the "Allegiance
+  over prediction" decision section with the execution/communication playbook.
 - **2026-05-20** — Initial doc. Framework, buyer map, comp anchors,
   reframes captured from research thread. Two roadmap items seeded
   (hype backtest, B2B API).
