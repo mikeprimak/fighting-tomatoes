@@ -143,20 +143,94 @@ workstream doc; this lists them as one coherent system.
 
 ## Phase 1 strategic objectives
 
-Three hard pushes, planned in detail in this doc's sibling planning sections (and in
-the workstream docs). All three answer the same question: *when a user opens the
-app, do they immediately feel it's about them?*
+Three hard pushes. All three answer the same question: *when a user opens the app,
+do they immediately feel it's about them?* **Build order (locked 2026-06-09):
+enrichment first** — the taste insight is the real user payoff, and it gates the
+best home-screen cards and the rotating identity line, so we deepen the substrate
+before surfacing it.
 
-1. **Home screen above-the-fold** — the mirror. Greeting + personalized fact stack.
-   *Primary objective — this is the front door.*
-2. **Onboarding** — Letterboxd-style explain-then-rate flow that seeds an initial
-   persona + initial follows.
-3. **Fan DNA depth via better AI enrichment** — qualitative, comparative,
-   never-static insights; requires a deeper + wider historic-fight enrichment pass.
+1. **Fan DNA depth via better AI enrichment** *(BUILD FIRST)* — qualitative,
+   comparative, never-static insights; requires a deeper + wider historic-fight
+   enrichment pass (more fields, more tags, more coverage). **This is the heavy
+   investment** — "the real user payoff is when they learn things about themselves."
+   Includes group-comparison insights (non-denigrating) and pure group-data insights
+   ("75% of site users love back-and-forth brawls"). See `ai-enrichment.md` +
+   `rewarding-users.md`.
+2. **Home screen above-the-fold** — the mirror/dashboard (model locked below). Lights
+   up progressively as enrichment lands.
+3. **Onboarding** — Letterboxd-style explain-then-rate flow that seeds an initial
+   persona + initial follows. See `follow-fighter.md` Decisions §6/§7.
 
-> **Status:** thesis consolidated 2026-06-09. The three objectives are entering
-> hard planning. Detailed plans will be appended here and/or to the workstream docs
-> as they're worked.
+> **Status:** thesis consolidated 2026-06-09; home model + build order + working
+> model locked same day (see below). Enrichment/Fan DNA is the first build chunk.
+
+---
+
+## Home screen above-the-fold — model (locked 2026-06-09)
+
+**It's a dashboard, not a feed.** The user scans several data points and "gets their
+bearings on their week and themselves as a combat-sports fan." Two zones:
+
+**A. Fixed / pinned (urgency — perishable, stays put all week):**
+- **Hyped this weekend** — every fight the user hyped on an upcoming card stays
+  pinned all week as a reminder.
+- **Your fighter is fighting** — a followed fighter on an upcoming card, pinned.
+- **Event-live tiers** (distinct from a single fight being live):
+  - *Event today* — morning awareness: "an event with a fighter you follow is on
+    tonight."
+  - *Event live now* — "the event [X] is in is on right now."
+- These are deterministic and always shown when true — not rotated away.
+
+**B. Rotating / curated (the eclectic, interesting rail — the payoff):**
+- **Taste insights** *(the heavy investment)* — "last weekend you loved 3 fights and
+  they were all knockouts," "you love fights that go to the ground," "you're drawn to
+  women's MMA."
+- **Group comparisons** — "you rate grindy decisions higher than most fans." **Hard
+  rule: never denigrating to the user.** Framed as distinctive, never as deficient.
+- **Group-data insights** — "75% of site users love back-and-forth brawls." Not
+  strictly user data, but a fresh interesting fact each day is valuable; cheap
+  community-stat surface.
+- Goal: rotating, varied, eclectic — never the same two days running.
+
+**Greeting:** "Welcome back, Mike" + a **rotating qualitative identity line**
+(held until enrichment lands — no static "Hot Take Artist" label as the app's
+headline). The line itself is a taste insight ("This week you've been a knockout
+hunter").
+
+**Below the fold:** today's content feed (Top Upcoming, Recent Good Fights,
+Highlighted Fighter, etc.) survives as the discovery zone. Logged-out users get
+content-first.
+
+---
+
+## Phase 1 working model — long-lived branch, no prod publish until tested (2026-06-09)
+
+**Decision:** all of Phase 1 is built on the integration branch
+`claude/user-focused-pivot-l8l6mg`, tested in a dev environment, and **not published
+to prod** (main / Render / Vercel / OTA) until the whole epic is done and verified.
+This is a deliberate departure from the project's usual "build one feature → push to
+main same day → it's live" habit. Mike has limited experience with long-lived
+branches and has been burned by accidental cross-branch contamination, so the
+discipline below is load-bearing.
+
+**Rules:**
+- **`main` is frozen for Phase 1.** Nothing merges to main until the epic ships as
+  one coordinated release. Backend + web auto-deploy from main, so an untouched main
+  = an untouched prod.
+- **One integration branch.** All Phase 1 work lands on
+  `claude/user-focused-pivot-l8l6mg` (sub-branches may fan off it and merge back).
+- **No stray work on the branch.** A prod hotfix needed mid-epic branches off `main`
+  separately, ships to main, and never rides the epic branch. Claude states the
+  current branch + commit contents before every commit.
+- **Dev database, never prod, for build/test.** Enrichment adds fields + generates
+  data; doing that against prod is forbidden. Migrations authored against the dev DB
+  (shadow DB is safe there); `prisma migrate deploy` to prod only at release.
+- **Mobile stays un-OTA'd.** No `eas update` until release.
+- **Coordinated release at the end:** merge branch → main (reviewed), let backend +
+  web auto-deploy, run `migrate deploy`, then OTA mobile. One release, not a drip.
+
+> Dev-database mechanism (persistent cloud instance vs. local-from-dump) is the one
+> open infra decision — see daily log 2026-06-09.
 
 ---
 
@@ -166,9 +240,8 @@ app, do they immediately feel it's about them?*
   The mirror needs data to reflect. What's the graceful degradation path from
   "Welcome back, Mike + 5 personal facts" down to a zero-history user? (Onboarding
   is the bridge — it manufactures the first data.)
-- **Does the aggregator home still exist for logged-out / discovery, or does the
-  identity home fully replace it?** Likely: identity above the fold, content below
-  it; logged-out sees content-first.
+- ~~**Does the aggregator home still exist?**~~ **Resolved 2026-06-09:** identity
+  dashboard above the fold, content feed below it; logged-out sees content-first.
 - **How deep before Fan DNA is "interesting"?** The current labels are too thin.
   What's the minimum enrichment field-set + rating count that produces a genuinely
   surprising, screenshot-worthy insight?
@@ -195,6 +268,13 @@ app, do they immediately feel it's about them?*
 
 ## Changelog
 
+- **2026-06-09 (2)** — Locked Phase 1 decisions: **build order = enrichment/Fan DNA
+  first** (the taste insight is the payoff and gates the rest); **home above-the-fold
+  model** = dashboard with a fixed urgency rail (hyped-this-weekend, your-fighter-
+  fighting, event-today, event-live) + a rotating curated rail (taste insights, non-
+  denigrating group comparisons, group-data facts); greeting identity line held until
+  enrichment lands; **Phase 1 working model** = long-lived branch, dev-DB testing, no
+  prod publish until the epic ships as one coordinated release.
 - **2026-06-09** — Doc created. Consolidates the long-referenced but never-committed
   identity-platform thesis from `sale-value.md`, `rewarding-users.md`,
   `follow-fighter.md`, and project memories. Sets Phase 1's three objectives (home
