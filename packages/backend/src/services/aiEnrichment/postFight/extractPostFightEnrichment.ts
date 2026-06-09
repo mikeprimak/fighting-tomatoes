@@ -52,6 +52,27 @@ Output STRICT JSON (no prose, no markdown, no fences):
       "callouts": [],                            // post-fight callouts / mic moments ["called out Volkanovski"]. Empty if none.
       "aftermath": [],                           // consequences: ["broke his nose", "announced retirement", "moves to #1 contender", "suspended 6 months"]. Empty if none in editorial.
       "fotyConsideration": null,                 // "instant FOTY contender", "2026 FOTY frontrunner" etc. ONLY when editorial frames it that way. null otherwise.
+      "character": {                             // STRUCTURED classification of WHAT THE FIGHT ACTUALLY WAS — drives fan-taste analytics. Use ONLY the allowed values listed in "FIGHT CHARACTER" below. Fill each field from the recap + result; set any field to null (or [] for the arrays) when the coverage doesn't support a confident read. This is classification of what the recap describes — the same analytic standing as choosing a method, not fabrication.
+        "finish": null,                          // ko | tko | submission | decision | draw | no_contest | dq
+        "finishMoment": null,                    // one_punch_ko | flurry_finish | ground_and_pound | slick_submission | grinding_submission | strikes_to_submission | cut_stoppage | corner_stoppage | injury_tko | doctor_stoppage | buzzer_beater | went_distance
+        "finishTiming": null,                    // first_exchange | early | mid_fight | late | final_seconds | distance
+        "competitiveness": null,                 // blowout | one_sided | competitive | back_and_forth | razor_thin | controversial | robbery
+        "momentum": null,                        // wire_to_wire | one_comeback | multiple_swings | see_saw | late_surge | fading_finish
+        "actionLevel": null,                     // war | high_action | moderate | measured | low_action | dud
+        "violence": null,                        // brutal | bloody | punishing | clean | tame
+        "pace": null,                            // relentless | fast | steady | tactical | grinding
+        "phase": null,                           // striking_battle | grappling_battle | scramble_heavy | clinch_war | ground_control | wrestling_clinic | mixed
+        "dominantSkill": null,                   // knockout_power | volume_striking | technical_boxing | kicking | jiu_jitsu | wrestling | scrambles | clinch | cardio | heart | fight_iq
+        "drama": null,                           // comeback | upset | dominance | gritty_survival | redemption | changing_of_the_guard | coronation | anticlimax
+        "upsetLevel": null,                      // none | mild | major | stunning
+        "texture": null,                         // technical_masterclass | chaotic_brawl | methodical_grind | high_iq_chess | sloppy | awkward
+        "significance": null,                    // title_change | title_defense | division_shakeup | star_is_born | statement_win | gatekeeping | stay_busy | career_crossroads
+        "stakesLevel": null,                     // historic | major | notable | routine
+        "appeals": [],                           // WHY a fan would love it — multi-select, pick ALL that genuinely apply (see vocab in FIGHT CHARACTER). This is the breadth dimension.
+        "letdowns": [],                          // honest negatives — multi-select, pick any that apply, [] for a clean fight (see vocab)
+        "vibe": null,                            // instant_classic | great_scrap | solid | decent | forgettable | frustrating | controversial
+        "highlightWorthy": null                  // true if it produced a genuine highlight-reel moment, false if not, null if unclear
+      },
       "confidence": 0.6                          // 0.0–1.0, YOUR confidence the recap is accurate and grounded for this specific fight
     }
   ]
@@ -66,7 +87,15 @@ Hard rules:
   - List each award ONCE. Do not repeat the same accolade with different wording (e.g. never both "Fight of the Night" and "2025 FOTN Winner"). "fotyConsideration" is ONLY for Fight/Performance of the YEAR framing — never restate a Night bonus there.
   - "confidence" reflects YOUR estimate. Editorial with a real round-by-round or finish description ⇒ 0.7+. Editorial that only confirms the result in passing ⇒ 0.4–0.5. No real coverage ⇒ omit the fight.
   - If editorial is silent on every fight, return {"fights": []}.
-  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
+  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.
+
+FIGHT CHARACTER (the "character" object):
+  This is a STRUCTURED, controlled-vocabulary description of what the fight was actually LIKE. It is aggregated across thousands of fights and across what each user rated highly, so consistency and using the EXACT allowed tokens matters more than nuance. Classifying what the recap describes (e.g. "a back-and-forth war that ended in a late KO") is analysis, the same standing as recording the method — not fabrication. But do NOT invent specifics the coverage doesn't support; set a field to null (or [] for arrays) whenever you're guessing.
+  - Single-value fields: pick AT MOST ONE allowed token, or null. Never invent tokens, never return a value outside the list.
+  - "appeals" — multi-select, the why-a-fan-loved-it layer. Pick ALL that genuinely apply. Allowed: knockout, submission, violence, heart, technique, drama, comeback, upset, dominance, controversy, grudge_payoff, stylistic_clash, underdog_story, veteran_clinic, prospect_breakout, title_stakes, grappling_artistry, striking_clinic, cardio_test, finish_hunting, durability, trash_talk_delivered, redemption.
+  - "letdowns" — multi-select, honest negatives. [] for a clean fight. Allowed: point_fighting, stalling, clinch_heavy, low_output, early_stoppage, controversial_decision, injury_ending, anticlimactic, showboating, gassed_out, lay_and_pray.
+  - Calibration: a "war" is genuinely high-volume, damaging, and competitive — don't inflate an ordinary decision to "war". "blowout" = near-shutout; "razor_thin" = legitimately could go either way; "robbery" only when the recap frames the scorecards as clearly wrong. "instant_classic" / "foty"-level vibes are rare — reserve them.
+  - finish vs decision: if the result is a decision, "finish"/"finishMoment" describe the decision (finish=decision, finishTiming=distance) and you should focus on competitiveness/phase/texture instead.`;
 
 export interface PostFightCardItem {
   fightId: string;
@@ -92,6 +121,47 @@ export interface PostFightEnrichmentInput {
   sources: Array<{ url: string; text: string; label?: string }>;
 }
 
+/**
+ * Controlled vocabularies for the structured "fight character" taxonomy. Exported
+ * so the Fan DNA aggregation can iterate the exact same token sets (one source of
+ * truth — extractor and analytics never drift). Each single-value dimension maps
+ * to one allowed token (or null); `appeals` / `letdowns` are multi-select subsets.
+ *
+ * This is deliberately broad: it is meant to be the structured record of *what a
+ * fight was actually like and why fans loved it*, dense enough to support taste
+ * correlations across a user's whole rating history.
+ */
+export const FIGHT_CHARACTER_VOCAB = {
+  finish: ['ko', 'tko', 'submission', 'decision', 'draw', 'no_contest', 'dq'],
+  finishMoment: ['one_punch_ko', 'flurry_finish', 'ground_and_pound', 'slick_submission', 'grinding_submission', 'strikes_to_submission', 'cut_stoppage', 'corner_stoppage', 'injury_tko', 'doctor_stoppage', 'buzzer_beater', 'went_distance'],
+  finishTiming: ['first_exchange', 'early', 'mid_fight', 'late', 'final_seconds', 'distance'],
+  competitiveness: ['blowout', 'one_sided', 'competitive', 'back_and_forth', 'razor_thin', 'controversial', 'robbery'],
+  momentum: ['wire_to_wire', 'one_comeback', 'multiple_swings', 'see_saw', 'late_surge', 'fading_finish'],
+  actionLevel: ['war', 'high_action', 'moderate', 'measured', 'low_action', 'dud'],
+  violence: ['brutal', 'bloody', 'punishing', 'clean', 'tame'],
+  pace: ['relentless', 'fast', 'steady', 'tactical', 'grinding'],
+  phase: ['striking_battle', 'grappling_battle', 'scramble_heavy', 'clinch_war', 'ground_control', 'wrestling_clinic', 'mixed'],
+  dominantSkill: ['knockout_power', 'volume_striking', 'technical_boxing', 'kicking', 'jiu_jitsu', 'wrestling', 'scrambles', 'clinch', 'cardio', 'heart', 'fight_iq'],
+  drama: ['comeback', 'upset', 'dominance', 'gritty_survival', 'redemption', 'changing_of_the_guard', 'coronation', 'anticlimax'],
+  upsetLevel: ['none', 'mild', 'major', 'stunning'],
+  texture: ['technical_masterclass', 'chaotic_brawl', 'methodical_grind', 'high_iq_chess', 'sloppy', 'awkward'],
+  significance: ['title_change', 'title_defense', 'division_shakeup', 'star_is_born', 'statement_win', 'gatekeeping', 'stay_busy', 'career_crossroads'],
+  stakesLevel: ['historic', 'major', 'notable', 'routine'],
+  appeals: ['knockout', 'submission', 'violence', 'heart', 'technique', 'drama', 'comeback', 'upset', 'dominance', 'controversy', 'grudge_payoff', 'stylistic_clash', 'underdog_story', 'veteran_clinic', 'prospect_breakout', 'title_stakes', 'grappling_artistry', 'striking_clinic', 'cardio_test', 'finish_hunting', 'durability', 'trash_talk_delivered', 'redemption'],
+  letdowns: ['point_fighting', 'stalling', 'clinch_heavy', 'low_output', 'early_stoppage', 'controversial_decision', 'injury_ending', 'anticlimactic', 'showboating', 'gassed_out', 'lay_and_pray'],
+  vibe: ['instant_classic', 'great_scrap', 'solid', 'decent', 'forgettable', 'frustrating', 'controversial'],
+} as const;
+
+/** Single-value dimensions of the character taxonomy (each holds one vocab token or null). */
+type CharacterScalarKey =
+  | 'finish' | 'finishMoment' | 'finishTiming' | 'competitiveness' | 'momentum'
+  | 'actionLevel' | 'violence' | 'pace' | 'phase' | 'dominantSkill' | 'drama'
+  | 'upsetLevel' | 'texture' | 'significance' | 'stakesLevel' | 'vibe';
+
+export type FightCharacter =
+  & { [K in CharacterScalarKey]: string | null }
+  & { appeals: string[]; letdowns: string[]; highlightWorthy: boolean | null };
+
 export interface PostFightTags {
   methodNarrative: string | null;
   momentDescription: string | null;
@@ -99,6 +169,8 @@ export interface PostFightTags {
   callouts: string[];
   aftermath: string[];
   fotyConsideration: string | null;
+  /** Structured, enumerated description of what the fight actually was. Null when the model produced nothing usable. */
+  character: FightCharacter | null;
 }
 
 export interface PostFightEnrichmentRecord {
@@ -273,12 +345,65 @@ function parseFights(
         callouts: strArr(f.callouts),
         aftermath: strArr(f.aftermath),
         fotyConsideration,
+        character: parseCharacter(f.character),
       },
       confidence: typeof f.confidence === 'number' ? Math.max(0, Math.min(1, f.confidence)) : 0.5,
     });
   }
 
   return { records, ghosts };
+}
+
+/**
+ * Validate the raw "character" object against FIGHT_CHARACTER_VOCAB. Single-value
+ * fields keep their token only if it's in the allowed set (else null); the two
+ * multi-selects keep only allowed tokens (deduped). Garbage in → null/[] out, never
+ * a thrown error. Returns null when the model omitted the object entirely or every
+ * field came back empty (so downstream can treat "no character read" uniformly).
+ */
+function parseCharacter(raw: any): FightCharacter | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const V = FIGHT_CHARACTER_VOCAB;
+  const scalarKeys: CharacterScalarKey[] = [
+    'finish', 'finishMoment', 'finishTiming', 'competitiveness', 'momentum',
+    'actionLevel', 'violence', 'pace', 'phase', 'dominantSkill', 'drama',
+    'upsetLevel', 'texture', 'significance', 'stakesLevel', 'vibe',
+  ];
+  const oneOf = (val: any, allowed: readonly string[]): string | null =>
+    typeof val === 'string' && (allowed as readonly string[]).includes(val.trim()) ? val.trim() : null;
+  const subsetOf = (val: any, allowed: readonly string[]): string[] => {
+    if (!Array.isArray(val)) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const item of val) {
+      if (typeof item !== 'string') continue;
+      const t = item.trim();
+      if ((allowed as readonly string[]).includes(t) && !seen.has(t)) {
+        seen.add(t);
+        out.push(t);
+      }
+    }
+    return out;
+  };
+
+  const character: FightCharacter = {
+    finish: null, finishMoment: null, finishTiming: null, competitiveness: null,
+    momentum: null, actionLevel: null, violence: null, pace: null, phase: null,
+    dominantSkill: null, drama: null, upsetLevel: null, texture: null,
+    significance: null, stakesLevel: null, vibe: null,
+    appeals: subsetOf(raw.appeals, V.appeals),
+    letdowns: subsetOf(raw.letdowns, V.letdowns),
+    highlightWorthy: typeof raw.highlightWorthy === 'boolean' ? raw.highlightWorthy : null,
+  };
+  for (const k of scalarKeys) {
+    character[k] = oneOf(raw[k], V[k]);
+  }
+
+  // Collapse to null when nothing usable came back, so consumers can branch once.
+  const anyScalar = scalarKeys.some((k) => character[k] != null);
+  const anyArray = character.appeals.length > 0 || character.letdowns.length > 0;
+  if (!anyScalar && !anyArray && character.highlightWorthy == null) return null;
+  return character;
 }
 
 function extractFirstJsonObject(raw: string): string | null {

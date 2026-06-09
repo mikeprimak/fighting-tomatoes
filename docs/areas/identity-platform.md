@@ -268,6 +268,20 @@ discipline below is load-bearing.
 
 ## Changelog
 
+- **2026-06-09 (3)** — Objective #1 build started. Diagnosed why Fan DNA reads thin
+  (confirmed in code): (a) structured tags describe the *predicted* fight (pre-fight
+  pace/style), not what *actually happened*; post-fight data is free-text narrative,
+  un-aggregatable; (b) coverage ~2k of ~28k rated fights — taste math runs on ~8% of
+  a user's history; (c) personality engine pins one static label ("Hot Take Artist").
+  **Fix:** add a large, enumerated "fight character" taxonomy to the **post-fight**
+  pass (what the fight actually was + why a fan would love it), aggregatable across a
+  user's ratings. Decisions: post-fight tags; **taxonomy deliberately LARGE** (breadth
+  + diversity — "the worldwide expert on what a fight was like and how it correlates");
+  start building + refine from outputs; **backfill all rated fights where source data
+  exists** (pilot on avocadomike's set first to validate). **Copy rule (load-bearing):
+  headlines are human and non-statistical** ("You love wars" / "You're a true lover of
+  wars"); numbers go in a small subline, never the headline. Group facts framed
+  humanly ("Brawls are one of the most loved things in a fight"), not "75% of users."
 - **2026-06-09 (2)** — Locked Phase 1 decisions: **build order = enrichment/Fan DNA
   first** (the taste insight is the payoff and gates the rest); **home above-the-fold
   model** = dashboard with a fixed urgency rail (hyped-this-weekend, your-fighter-
