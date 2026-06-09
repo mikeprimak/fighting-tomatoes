@@ -126,7 +126,15 @@ workstream doc; this lists them as one coherent system.
    qualitative, comparative insights**: *"you love strikers,"* *"you're drawn to
    women's MMA,"* *"you live for back-and-forth wars,"* *"you reward the weird ones,"*
    *"vs. other fans you rate grindy decisions 1.4 higher."* This is gated on far
-   richer AI enrichment of historic fights (more fields, more tags, more coverage).
+   richer AI enrichment (more fields, more tags, more coverage). **Two taste axes,
+   both enriched, aggregated into one profile:**
+   - **Fight character** — what kinds of *fights* you rate highly (the new
+     post-fight `character` taxonomy: finish, competitiveness, action, phase, drama,
+     texture, appeals…).
+   - **Fighter character** — what kinds of *fighters* you follow/rate/hype (the
+     fighter profile's `personaType` + new structured `styleArchetype` /
+     `fighterAppeals`: "you're drawn to finishers, wrestlers, heels, underdogs").
+
    **Phase 1, objective #3.** See `rewarding-users.md` (Fan DNA engine) +
    `ai-enrichment.md`.
 
@@ -268,6 +276,15 @@ discipline below is load-bearing.
 
 ## Changelog
 
+- **2026-06-09 (4)** — Added the **second taste axis**: fighter character. Per Mike,
+  the identity system should learn what *types of fighter* a user likes, not just
+  what types of fight. The fighter profile already had a controlled `personaType`
+  (fan-favorite / heel / quiet-killer / …) but its *style* was free-text prose, so
+  added structured `styleArchetype` (knockout_artist, wrestler, submission_specialist,
+  pressure_fighter…) + `fighterAppeals` (highlight_finishes, knockout_power, trash_talk,
+  underdog_story…) to `extractFighterProfile.ts`, mirroring the fight-character build.
+  Flows through `aiProfile` JSONB — no migration. Fan DNA now aggregates over BOTH
+  enriched entities (Fight + Fighter) into one taste profile.
 - **2026-06-09 (3)** — Objective #1 build started. Diagnosed why Fan DNA reads thin
   (confirmed in code): (a) structured tags describe the *predicted* fight (pre-fight
   pace/style), not what *actually happened*; post-fight data is free-text narrative,

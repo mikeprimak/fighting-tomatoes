@@ -36,6 +36,8 @@ Output STRICT JSON (no prose, no markdown, no fences):
     "tldr": "one punchy sentence that catches a newbie up on who this fighter is",
     "careerArc": "2-4 sentences: where they came from -> how they rose -> where they are now. Grounded in the sources.",
     "style": "how they fight, in plain English a casual fan understands (e.g. 'pressure boxer with heavy hands and a granite chin', 'slick grappler who hunts the back')",
+    "styleArchetype": [],                        // STRUCTURED, multi-select. The same read as "style" but as controlled tokens so we can match a fighter to fan taste. Pick ALL that genuinely fit (usually 1-3). See "FIGHTER ARCHETYPE" below. [] if the sources give no real style read.
+    "fighterAppeals": [],                        // STRUCTURED, multi-select. WHY a fan would be drawn to watch them — controlled tokens. See "FIGHTER ARCHETYPE" below. [] if no documented draw.
     "highlights": ["title wins, signature finishes, records, accolades — short noun phrases"],
     "signatureFights": [
       { "opponent": "Name", "result": "what happened (e.g. 'KO win, R2' / 'split-decision loss')", "whyItMattered": "one line on the stakes or legacy of this fight" }
@@ -57,7 +59,13 @@ Hard rules:
   - "whyFansHate" stays STRICTLY inside combat sports. It may be spicy and honest about in-cage/in-promotion conduct (heel acts, trash talk, ducking, controversial decisions, weight misses, dirty tactics, callouts). It MUST NOT reference out-of-sport matters: no criminal charges, civil suits, arrests, abuse/assault allegations, drug/DUI incidents, politics, religion, family/relationship scandal, or any personal-life controversy — even if well-documented in the sources. If the only "hate" material is out-of-sport, set whyFansHate to null. This is a consumer app profile, not a news dossier. Never make a personal attack or an unsupported allegation.
   - "confidence" (both the top-level one and the profile one — keep them equal) reflects how well-grounded and complete the profile is. Rich sources + a real documented career/persona => 0.7+. Thin sources, a fighter you can only partially describe => 0.4-0.5. Almost nothing to go on => below 0.4 (the app will skip them).
   - PUNCTUATION (house style, strict): never use em dashes or en dashes ("—", "–") anywhere in your output. Use a hyphen "-", a comma, a colon, or a period instead. Em dashes read as AI-generated and violate our style guide.
-  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.`;
+  - Output the JSON object only. No commentary, no markdown fences, no rationale before or after the JSON.
+
+FIGHTER ARCHETYPE ("styleArchetype" + "fighterAppeals"):
+  These are STRUCTURED, controlled-vocabulary versions of the prose "style" and "appeal" fields. They are matched against what each user follows and rates highly to learn what TYPES of fighter a fan is drawn to, so use the EXACT allowed tokens and stay consistent. They are a read of the fighter's established style/draw (the same standing as "style"/"appeal"), not invented facts. Leave them [] when the sources give you no real read.
+  - "styleArchetype" — multi-select, pick ALL that fit (usually 1-3). Allowed: knockout_artist, one_punch_power, volume_striker, pressure_fighter, counter_striker, technical_boxer, kickboxer, karate_stylist, muay_thai, wrestler, ground_and_pound, submission_specialist, slick_grappler, scrambler, well_rounded, brawler, technician, finisher, point_fighter, durable_chin, cardio_machine, southpaw, defensive_wizard, come_forward_killer.
+  - "fighterAppeals" — multi-select, the why-a-fan-loves-watching-them layer. Allowed: highlight_finishes, nonstop_action, knockout_power, submission_threat, technical_mastery, toughness, comeback_ability, dominance, charisma, trash_talk, showmanship, underdog_story, veteran_savvy, young_phenom, rivalry_magnet, title_contender, exciting_style, unpredictable, heart, clutch.
+  - Calibrate against the persona: a "quiet-killer" persona rarely carries "trash_talk"/"showmanship" appeals; a "heel" often does. Don't assign "knockout_artist" to a decision-grinder. When the style read is genuinely generic ("well-rounded mixed martial artist") it's fine to emit just well_rounded or [].`;
 
 export interface FighterIdentity {
   fighterId: string;
@@ -103,6 +111,10 @@ export interface FighterProfileData {
   tldr: string | null;
   careerArc: string | null;
   style: string | null;
+  /** Structured, multi-select style tokens (controlled vocab) — the fighter-taste axis for Fan DNA. */
+  styleArchetype: string[];
+  /** Structured, multi-select draw tokens (controlled vocab) — why a fan is drawn to watch them. */
+  fighterAppeals: string[];
   highlights: string[];
   signatureFights: SignatureFight[];
   appeal: string | null;
@@ -137,6 +149,18 @@ const VALID_PERSONAS = new Set([
   'quiet-killer',
   'gatekeeper',
 ]);
+
+/**
+ * Controlled vocabularies for the structured fighter-taste axis. Exported so the
+ * Fan DNA aggregation iterates the exact same token sets (one source of truth).
+ * `personaType` (VALID_PERSONAS above) is the third structured dimension; together
+ * they let us learn what TYPES of fighter a user is drawn to (style + draw + persona),
+ * the fighter-side mirror of the fight-character taxonomy.
+ */
+export const FIGHTER_ARCHETYPE_VOCAB = {
+  styleArchetype: ['knockout_artist', 'one_punch_power', 'volume_striker', 'pressure_fighter', 'counter_striker', 'technical_boxer', 'kickboxer', 'karate_stylist', 'muay_thai', 'wrestler', 'ground_and_pound', 'submission_specialist', 'slick_grappler', 'scrambler', 'well_rounded', 'brawler', 'technician', 'finisher', 'point_fighter', 'durable_chin', 'cardio_machine', 'southpaw', 'defensive_wizard', 'come_forward_killer'],
+  fighterAppeals: ['highlight_finishes', 'nonstop_action', 'knockout_power', 'submission_threat', 'technical_mastery', 'toughness', 'comeback_ability', 'dominance', 'charisma', 'trash_talk', 'showmanship', 'underdog_story', 'veteran_savvy', 'young_phenom', 'rivalry_magnet', 'title_contender', 'exciting_style', 'unpredictable', 'heart', 'clutch'],
+} as const;
 
 let cachedClient: Anthropic | null = null;
 function client() {
@@ -264,6 +288,22 @@ function parseProfile(raw: string): FighterProfileRecord | null {
     Array.isArray(v)
       ? v.map((s) => clean(s)).filter((s): s is string => !!s)
       : [];
+  // Keep only tokens from the allowed controlled vocab (deduped). Garbage/invented
+  // tokens are dropped so the taste axis stays aggregatable.
+  const subsetOf = (v: any, allowed: readonly string[]): string[] => {
+    if (!Array.isArray(v)) return [];
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const item of v) {
+      if (typeof item !== 'string') continue;
+      const t = item.trim();
+      if ((allowed as readonly string[]).includes(t) && !seen.has(t)) {
+        seen.add(t);
+        out.push(t);
+      }
+    }
+    return out;
+  };
   const sigFights = (v: any): SignatureFight[] =>
     Array.isArray(v)
       ? v
@@ -290,6 +330,8 @@ function parseProfile(raw: string): FighterProfileRecord | null {
     tldr: clean(p.tldr),
     careerArc: clean(p.careerArc),
     style: clean(p.style),
+    styleArchetype: subsetOf(p.styleArchetype, FIGHTER_ARCHETYPE_VOCAB.styleArchetype),
+    fighterAppeals: subsetOf(p.fighterAppeals, FIGHTER_ARCHETYPE_VOCAB.fighterAppeals),
     highlights: strArr(p.highlights),
     signatureFights: sigFights(p.signatureFights),
     appeal: clean(p.appeal),
