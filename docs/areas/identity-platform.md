@@ -302,8 +302,50 @@ dense: avocadomike has 1,234), weighting follows + high ratings most. A fan who
 never follows anyone but rates every Gaethje war a 9 still reads as drawn to
 pressure-fighting brawlers.
 
+## Irreversibility review — decisions locked 2026-06-09
+
+The expensive mistakes in an identity system are all one kind: recorded meaning or
+history you can't un-write. Sorted now:
+
+**Irreversible — decided:**
+- **Visibility: private by default.** Fan DNA is private; sharing is opt-in and
+  scoped to specific artifacts the user chooses to push out — primarily the year-end
+  "Your Year" recap and similar Wrapped-style cards, not a blanket public profile.
+  Preserves the screenshot-growth play without forcing exposure. Hard to flip
+  post-launch.
+- **Signature: rotating insight stream ONLY (for now) — no single "you are X" label.**
+  The greeting subtitle and any share card pull a *current rotating insight*, never a
+  frozen type. **Consequence: the existing `personalityType.ts` single-label engine
+  ("Hot Take Artist") is shelved for the new system.** Reassess over time — not a
+  permanent ban on ever having a signature, just not now.
+- **Vocab: pilot → freeze → backfill.** Tag a few hundred fights, validate the
+  vocabulary + the insights, freeze each token's *meaning*, THEN run the full ~25k
+  backfill. Adding tokens later stays cheap; redefining one after the big backfill
+  means re-enriching everything.
+- **Spoiler-safety binds every new identity surface** (home dashboard, closure cards,
+  rooted-for outcomes all touch results → honor `spoilerFreeMode`). Existing hard rule.
+
+**Reconsidered as NOT irreversible (so deferred, not decided):**
+- **Taste history / snapshotting — SKIP.** Reclassified as reversible: the only
+  un-backfillable datum is the raw `FightRating.createdAt`, which already exists on
+  every rating. "Taste at any past moment" = aggregate of fights rated before that
+  moment → recomputable anytime from data we already keep. Plus taste *drift* is
+  likely oversold (war fans stay war fans; same caution the sale doc applies to hype
+  trajectory). No snapshot mechanism now; rebuild from raw timestamps if "Wrapped"
+  ever earns it. (Founder call 2026-06-09, overriding the initial recommendation.)
+
+**Deliberately left reversible (don't over-lock — refine from outputs freely):**
+thresholds (what counts as "highly rated"), weighting formulas, the insight catalog,
+all copy wording, home-screen ranking weights. All recomputable from raw ratings/tags.
+
 ## Changelog
 
+- **2026-06-09 (6)** — Irreversibility review. Locked: visibility = private + opt-in
+  share; signature = rotating-only (no frozen label; deprecates `personalityType.ts`);
+  vocab = pilot→freeze→backfill; spoiler-safety binds all identity surfaces. Taste-
+  history snapshotting reconsidered and **dropped** (recomputable from existing rating
+  timestamps; drift likely low-signal). Everything else (thresholds, weights, copy,
+  ranking) deliberately left reversible.
 - **2026-06-09 (5)** — Copy-variety toolkit + locked variety/sourcing principles.
   Built `services/fanDNA/copy/communityRef.ts` (deterministic varied community-word
   picker — drops "the room" from ~100% to ~9%; assert-test passes, typechecks clean).
