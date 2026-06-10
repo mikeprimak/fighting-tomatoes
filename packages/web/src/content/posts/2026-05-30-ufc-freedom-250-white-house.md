@@ -66,7 +66,9 @@ The US gets Paramount+ plus free CBS prelims, but the rest of the world runs thr
 
 ## Can I get tickets to UFC Freedom 250?
 
-The fights themselves are on the secured South Lawn, so seats inside that arena are not sold to the general public the way an arena show is. What the UFC did open up is a free **Fan Fest on the Ellipse**, the park next to the White House, on **Saturday, June 13**. Fans could request up to two free tickets to the Fan Fest through a random-drawing lottery, with selected entrants notified by email. If you missed the drawing, the broadcast is the way in, and with CBS carrying the prelims for free, the night is unusually easy to watch from home.
+The fights themselves are on the secured South Lawn, so seats inside that arena are not sold to the general public the way an arena show is. What the UFC did open up is a free **Fan Fest on the Ellipse**, the park next to the White House, on **Saturday, June 13**. Fans could request up to two free tickets to the Fan Fest through a random-drawing lottery, with selected entrants notified by email. That registration window has now closed. If you missed it, the broadcast is the way in, and with CBS carrying the prelims for free, the night is unusually easy to watch from home.
+
+One more thing worth knowing: a lawsuit filed by an anti-corruption watchdog group on June 6 sought to block the event from taking place on White House grounds. As of fight week, the card is proceeding as scheduled with no changes announced.
 
 ## What is the full UFC Freedom 250 fight card?
 
@@ -98,7 +100,7 @@ For **Justin Gaethje**, this is the title that has eluded him across a Hall-of-F
 
 ## What are the betting odds for Topuria vs Gaethje? Why is Topuria such a big favorite?
 
-**Topuria is a massive favorite at around -750, with Gaethje the underdog near +460.** Those numbers imply Topuria has roughly an 85 percent chance to win. The reason is straightforward: Topuria is undefeated, he hits like a truck, and he has knocked out elite, durable fighters that most people thought were chinny-proof. Gaethje's all-action, stand-and-trade style has produced some of the best fights in history, but it also means he is willing to be in the pocket with the hardest puncher he has ever faced. Oddsmakers are betting that Topuria's precision finds the target first. Lines move during fight week, so check current odds before placing anything.
+**Topuria is a heavy favorite at around -535 to -550, with Gaethje the underdog near +400.** Those numbers imply Topuria has roughly an 85 percent chance to win. The reason is straightforward: Topuria is undefeated, he hits like a truck, and he has knocked out elite, durable fighters that most people thought were chinny-proof. Gaethje's all-action, stand-and-trade style has produced some of the best fights in history, but it also means he is willing to be in the pocket with the hardest puncher he has ever faced. Oddsmakers are betting that Topuria's precision finds the target first. Lines move during fight week, so check current odds before placing anything.
 
 ## Who wins Topuria vs Gaethje? Our prediction
 
@@ -108,7 +110,7 @@ But this is Justin Gaethje, and the one thing he always brings is the threat of 
 
 ## What is the UFC Freedom 250 co-main event?
 
-The co-main event is **Alex Pereira vs Ciryl Gane for the interim UFC Heavyweight Championship**, and on paper it might be the most competitive fight on the entire card. The opening odds have it as a near **pick'em (both men hovering around -113)**, which almost never happens in a title fight and tells you how genuinely 50-50 the matchup is.
+The co-main event is **Alex Pereira vs Ciryl Gane for the interim UFC Heavyweight Championship**, and on paper it might be the most competitive fight on the entire card. The fight opened as near-even money, and it remains one of the tightest bets on the card at fight week: Gane has edged to a narrow -115 favorite with Pereira at -105, still essentially a coin flip, which almost never happens in a title fight and tells you how genuinely 50-50 the matchup is.
 
 ## Why is Pereira vs Gane for an interim heavyweight title?
 
@@ -120,7 +122,7 @@ This is the history angle, and it is a big one. **No fighter has ever won UFC ti
 
 ## What are the odds for Pereira vs Gane? Who wins?
 
-This is the rare title fight with no real favorite, listed as a coin-flip with both men around **-113**. The styles tell the story. Gane is one of the most graceful movers and technical strikers in heavyweight history, with the footwork and length to make Pereira chase him. Pereira carries fight-ending power in either hand and only needs to land clean once. If Gane uses distance and volume, he can pile up rounds. If Pereira corners him and connects, it ends instantly. The books call it a coin flip, but our pick is Pereira. He has an almost magical way of finding the target, the kind of fighter who can look a step behind on the feet right up until the instant he lands the one shot that ends the night. Gane is the slicker, more technical striker and he can absolutely bank a decision if he keeps it long, but we are not betting against Poatan's power eventually getting home. Pereira by knockout, and it is the toss-up of the night.
+This is the rare title fight with no real favorite: at fight week, Gane sits as the narrow -115 choice with Pereira at -105. The styles tell the story. Gane is one of the most graceful movers and technical strikers in heavyweight history, with the footwork and length to make Pereira chase him. Pereira carries fight-ending power in either hand and only needs to land clean once. If Gane uses distance and volume, he can pile up rounds. If Pereira corners him and connects, it ends instantly. The books call it a coin flip, but our pick is Pereira. He has an almost magical way of finding the target, the kind of fighter who can look a step behind on the feet right up until the instant he lands the one shot that ends the night. Gane is the slicker, more technical striker and he can absolutely bank a decision if he keeps it long, but we are not betting against Poatan's power eventually getting home. Pereira by knockout, and it is the toss-up of the night.
 
 ## Is Sean O'Malley fighting at UFC Freedom 250?
 
@@ -134,7 +136,7 @@ A win here keeps that door open. O'Malley is **a roughly -430 favorite over Zaha
 
 Josh Hokit is the breakout name on this card. He is an **undefeated heavyweight at 9-0** with a remarkable backstory: a former college football and wrestling standout who spent time on NFL practice squads before turning to MMA full time. He stamped his ticket to the White House card with a genuinely all-time-memorable heavyweight brawl, beating Curtis Blaydes at UFC 327 in April in a fight that announced him as a real prospect rather than a novelty. He is one of the most exciting young heavyweights in the sport right now.
 
-He is also the most polarizing personality on the card. Hokit has leaned all the way into a loud, theatrical, almost WWE-style act, hijacking press conferences with over-the-top trash talk aimed at everyone from Topuria to Pereira to his own opponent, and the fan base is genuinely split on it. Some love that he is the only one on the card visibly trying to sell the fights, others think the gimmick is fake, and the divide is real enough that Sean Strickland has publicly torn into it while Joe Rogan has defended him as a smart guy playing a character on purpose. Hokit's own argument is that modern MMA has gone soft on personality and he is just bringing the wild-man era back. Love it or hate it, it is at least something, and on a stage this big, being impossible to ignore counts for a lot.
+He is also the most polarizing personality on the card. Hokit has leaned all the way into a loud, theatrical, almost WWE-style act, hijacking press conferences with over-the-top trash talk aimed at everyone from Topuria to Pereira to his own opponent, and the fan base is genuinely split on it. Some love that he is the only one on the card visibly trying to sell the fights, others think the gimmick is fake, and the divide is real enough that Sean Strickland has publicly torn into it while Joe Rogan has defended him as a smart guy playing a character on purpose. Strickland will not be at the event himself: he was reportedly barred from attending over past public comments about political figures. Hokit's own argument is that modern MMA has gone soft on personality and he is just bringing the wild-man era back. Love it or hate it, it is at least something, and on a stage this big, being impossible to ignore counts for a lot.
 
 That act boiled over at the card's kickoff press conference. Showing up in a robe, sunglasses, gloves, and an American flag bandana, Hokit grabbed the microphone and ripped into Lewis, Pereira, and Topuria in rhyming, wrestling-promo style. Topuria, sitting beside Pereira, eventually had enough: he told Hokit to shut up, Hokit fired back by calling him a "midget," and Topuria responded by throwing the contents of a bottle and then a microphone at him, with the mic appearing to catch Hokit in the head. Security escorted Hokit off the stage while he was still hurling insults, and Dana White stepped in to close out the presser.
 
@@ -156,10 +158,10 @@ The rest of the card is loaded with action and names:
 
 ## Who are the favorites and underdogs at UFC Freedom 250?
 
-Here is the quick odds snapshot across the card (opening lines, subject to movement):
+Here is the quick odds snapshot across the card as of fight week (lines subject to movement):
 
-- Ilia Topuria (-750) vs Justin Gaethje (+460)
-- Alex Pereira (-113) vs Ciryl Gane (-113), a pick'em
+- Ilia Topuria (-535) vs Justin Gaethje (+400)
+- Alex Pereira (-105) vs Ciryl Gane (-115), near pick'em
 - Sean O'Malley (-430) vs Aiemann Zahabi (+300)
 - Mauricio Ruffy (-670) vs Michael Chandler (+430)
 - Bo Nickal (-330) vs Kyle Daukaus (+240)
@@ -180,8 +182,8 @@ If you only catch one fight, make it the **co-main, Pereira vs Gane**, because i
 - **Co-main:** Alex Pereira vs Ciryl Gane, Interim Heavyweight title
 - **Where to watch:** Paramount+ (US main card), CBS (US prelims, free); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 8 p.m. ET / 5 p.m. PT
-- **Biggest favorite:** Ilia Topuria (around -750)
-- **Closest fight:** Pereira vs Gane (pick'em)
+- **Biggest favorite:** Ilia Topuria (around -535 to -550)
+- **Closest fight:** Pereira vs Gane (Gane a slim -115 favorite, near even money)
 
 ## Related reading
 
