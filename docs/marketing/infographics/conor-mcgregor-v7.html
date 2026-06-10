@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Anton&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0d0d0d;
+    --panel: #181818;
+    --panel2: #202020;
+    --gold: #F5C518;
+    --white: #ffffff;
+    --gray: #9aa0a6;
+    --dim: #6b7075;
+    --border: #2c2c2c;
+  }
+  html, body { background: var(--bg); }
+  .frame {
+    width: 1080px;
+    background:
+      radial-gradient(1100px 520px at 50% -8%, rgba(245,197,24,0.13), transparent 62%),
+      radial-gradient(900px 700px at 110% 40%, rgba(233,52,48,0.06), transparent 60%),
+      var(--bg);
+    color: var(--white);
+    font-family: 'Inter', sans-serif;
+    padding: 0 0 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .frame::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+    background: repeating-linear-gradient(-45deg, rgba(255,255,255,0.014) 0 2px, transparent 2px 26px);
+  }
+  .wrap { position: relative; padding: 0 56px; z-index: 2; }
+
+  /* ---------- HEADER ---------- */
+  .header { text-align: center; padding: 48px 56px 6px; position: relative; z-index: 2; }
+  .logo { display: block; height: 132px; width: auto; margin: 0 auto 22px; filter: drop-shadow(0 8px 26px rgba(245,197,24,0.22)); }
+  .herorow { display: flex; align-items: flex-end; gap: 18px; text-align: left; }
+  .htext { flex: 1; min-width: 0; padding-bottom: 20px; }
+  .hportrait { width: 360px; flex-shrink: 0; position: relative; }
+  .hportrait img { width: 100%; height: auto; display: block; filter: drop-shadow(0 14px 30px rgba(0,0,0,0.65)); }
+  .hportrait::after { content:""; position:absolute; left:0; right:0; bottom:0; height:60px;
+    background: linear-gradient(180deg, transparent, var(--bg)); pointer-events:none; }
+  .kicker {
+    display: inline-block; color: var(--gold); font-size: 15px; font-weight: 800;
+    letter-spacing: 4px; text-transform: uppercase; margin: 4px 0 14px;
+    padding: 7px 18px; border: 1px solid rgba(245,197,24,0.35); border-radius: 999px;
+    background: rgba(245,197,24,0.06);
+  }
+  h1 { font-family: 'Anton', sans-serif; font-size: 84px; line-height: 0.88; letter-spacing: 0.5px;
+       text-transform: uppercase; font-weight: 400; }
+  h1 .g { color: var(--gold); -webkit-text-stroke: 0; text-shadow: 0 0 36px rgba(245,197,24,0.45); }
+  .sub { color: var(--gray); font-size: 21px; font-weight: 500; margin-top: 18px; }
+  .sub b { color: var(--white); font-weight: 800; }
+  .sub .star { width: 19px; height: 19px; vertical-align: -3px; }
+
+  /* ---------- generic section ---------- */
+  .seclabel { display: flex; align-items: center; gap: 12px; margin: 32px 0 14px; }
+  .seclabel .tick { width: 6px; height: 22px; background: var(--gold); border-radius: 3px; box-shadow: 0 0 16px rgba(245,197,24,0.5); }
+  .seclabel .t { font-size: 15px; font-weight: 800; letter-spacing: 3px; text-transform: uppercase; color: var(--gray); }
+
+  .card { background: linear-gradient(180deg, var(--panel), #141414); border: 1px solid var(--border);
+          border-radius: 22px; padding: 26px 28px; position: relative; overflow: hidden; }
+  .card.feat { border-color: rgba(245,197,24,0.4);
+    background: linear-gradient(180deg, rgba(245,197,24,0.10), rgba(245,197,24,0.02)), linear-gradient(180deg, var(--panel), #141414); }
+  .card .ch { font-size: 27px; font-weight: 900; line-height: 1.12; letter-spacing: -0.4px; margin-bottom: 4px; }
+  .card .ch .hl { color: var(--gold); }
+  .card .cs { font-size: 16px; color: var(--gray); font-weight: 500; }
+
+  .row { display: grid; gap: 18px; }
+  .row.two { grid-template-columns: 1fr 1fr; }
+
+  /* ---------- stat number with star ---------- */
+  .statrow { display: flex; gap: 14px; }
+  .stat { flex: 1; background: var(--panel2); border-radius: 16px; padding: 20px 12px 16px; text-align: center; border: 1px solid var(--border); }
+  .stat.win { background: linear-gradient(165deg, rgba(245,197,24,0.16), rgba(245,197,24,0.03)); border-color: rgba(245,197,24,0.4); }
+  .stat.loss { background: linear-gradient(165deg, rgba(233,52,48,0.14), rgba(233,52,48,0.03)); border-color: rgba(233,52,48,0.4); }
+  .stat .num { font-family: 'Anton', sans-serif; font-size: 54px; line-height: 0.9; display: inline-flex; align-items: center; gap: 8px; }
+  .stat .num .st { width: 28px; height: 28px; }
+  .stat .nm { font-size: 15px; font-weight: 700; color: var(--gray); margin-top: 9px; text-transform: uppercase; letter-spacing: 1px; }
+  .stat .nm small { display: block; font-size: 13px; color: var(--dim); letter-spacing: 0.5px; text-transform: none; margin-top: 2px; }
+  .stat .badge { display:inline-block; font-size:11px; font-weight:900; letter-spacing:1px; padding:2px 8px; border-radius:5px; margin-bottom:8px; }
+  .badge.L { color:#e25; background:rgba(233,52,48,0.18); }
+  .badge.W { color:#0c8a4a; background:rgba(16,185,129,0.16); }
+
+  .note { font-size: 15px; color: var(--gray); margin-top: 16px; line-height: 1.4; }
+  .note b { color: var(--white); }
+
+  /* ---------- ranked board (hall of fame style) ---------- */
+  .hof { display: flex; flex-direction: column; gap: 0; }
+  .hof .r { display: flex; align-items: center; gap: 16px; padding: 12px 4px; border-bottom: 1px solid var(--border); }
+  .hof .r:last-child { border-bottom: 0; }
+  .hof .r.one { padding: 17px 16px; margin: -2px -8px 4px; border-radius: 14px;
+    background: linear-gradient(100deg, rgba(245,197,24,0.16), rgba(255,0,0,0.05)); border: 1px solid rgba(245,197,24,0.4); }
+  .hof .rank { font-family: 'Anton', sans-serif; font-size: 30px; color: var(--dim); width: 44px; text-align: center; flex-shrink: 0; }
+  .hof .r.one .rank { color: var(--gold); font-size: 42px; }
+  .hof .info { flex: 1; min-width: 0; }
+  .hof .info .f { font-size: 20px; font-weight: 900; }
+  .hof .r.one .info .f { font-size: 25px; }
+  .hof .info .e { font-size: 13px; color: var(--dim); font-weight: 600; margin-top: 1px; }
+  .hof .info .e .l { color:#e25; font-weight:900; }
+  .hof .info .e .w { color:#0c8a4a; font-weight:900; }
+  .hof .score { display: flex; align-items: center; gap: 9px; font-family: 'Anton', sans-serif; font-size: 34px; flex-shrink: 0; }
+  .hof .r.one .score { font-size: 48px; }
+  .hof .score .st { width: 27px; height: 27px; }
+  .hof .r.one .score .st { width: 38px; height: 38px; }
+
+  /* ---------- rivalry matchups ---------- */
+  .duel2 { display: flex; flex-direction: column; gap: 13px; margin: 6px 0 4px; }
+  .matchup { display: flex; align-items: center; background: var(--panel2); border: 1px solid var(--border); border-radius: 14px; padding: 14px 18px; gap: 14px; }
+  .matchup .who { flex: 1; min-width: 0; }
+  .matchup .who .f { font-size: 20px; font-weight: 900; }
+  .matchup .who .e { font-size: 13px; color: var(--dim); font-weight: 600; margin-top: 2px; }
+  .matchup .tag { font-size: 12px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
+  .matchup .tag.w { color: #0c8a4a; background: rgba(16,185,129,0.16); }
+  .matchup .tag.l { color: #e25; background: rgba(233,52,48,0.16); }
+  .metric { display: flex; align-items: center; gap: 8px; font-family: 'Anton', sans-serif; font-size: 32px; }
+  .metric .st { width: 28px; height: 28px; }
+
+  /* ---------- big quote ---------- */
+  .quote { font-family: 'Anton', sans-serif; font-size: 40px; line-height: 1.04; letter-spacing: 0.3px; color: var(--white); text-transform: uppercase; }
+  .quote .g { color: var(--gold); }
+  .qattr { font-size: 14px; color: var(--dim); font-weight: 700; letter-spacing: 1px; margin-top: 12px; text-transform: uppercase; }
+
+  /* ---------- come-up arc ---------- */
+  .arc { display:flex; align-items:stretch; gap:0; margin-top:6px; }
+  .arc .step { flex:1; text-align:center; padding:6px 8px; position:relative; }
+  .arc .step + .step::before { content:"→"; position:absolute; left:-9px; top:18px; color:var(--dim); font-size:20px; }
+  .arc .step .v { font-family:'Anton',sans-serif; font-size:30px; line-height:0.95; color:var(--white); }
+  .arc .step.last .v { color:var(--gold); text-shadow:0 0 26px rgba(245,197,24,0.45); }
+  .arc .step .l { font-size:13px; color:var(--gray); font-weight:600; margin-top:8px; line-height:1.25; }
+
+  /* ---------- money grid ---------- */
+  .money { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+  .mcell { background: var(--panel2); border:1px solid var(--border); border-radius:16px; padding:18px 18px; }
+  .mcell.gold { background: linear-gradient(165deg, rgba(245,197,24,0.16), rgba(245,197,24,0.03)); border-color: rgba(245,197,24,0.4); }
+  .mcell .mv { font-family:'Anton',sans-serif; font-size:42px; line-height:0.9; color:var(--gold); text-shadow:0 0 26px rgba(245,197,24,0.35); }
+  .mcell .ml { font-size:14.5px; font-weight:700; color:var(--white); margin-top:8px; line-height:1.25; }
+  .mcell .ml small { display:block; color:var(--dim); font-weight:600; font-size:12px; margin-top:3px; }
+
+  /* ---------- fan quotes ---------- */
+  .voices { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+  .voice { background: var(--panel2); border:1px solid var(--border); border-radius:14px; padding:16px 18px; position:relative; }
+  .voice::before { content:"\201C"; position:absolute; top:2px; left:12px; font-family:'Anton',sans-serif; font-size:46px; color:rgba(245,197,24,0.25); line-height:1; }
+  .voice .body { padding-left:26px; }
+  .voice .body .vt { font-size:16px; font-weight:600; line-height:1.35; color:var(--white); }
+  .voice .body .va { font-size:12.5px; color:var(--dim); font-weight:700; margin-top:7px; letter-spacing:0.5px; text-transform:uppercase; }
+
+  /* ---------- footer ---------- */
+  .footer { display: flex; align-items: center; justify-content: space-between; margin-top: 34px;
+            padding-top: 24px; border-top: 1px solid var(--border); }
+  .footer .left { display: flex; align-items: center; gap: 14px; }
+  .footer .hand { width: 46px; height: 46px; }
+  .slogan { font-family: 'Anton', sans-serif; font-size: 30px; letter-spacing: 0.5px; }
+  .slogan .g { color: var(--gold); }
+  .url { font-size: 19px; font-weight: 800; color: var(--gold); letter-spacing: 0.5px; }
+  .src { font-size: 12px; color: #4a4a4a; margin-top: 16px; padding: 0 56px; line-height:1.5; }
+</style>
+</head>
+<body>
+<div class="frame">
+  <!-- HEADER -->
+  <div class="header">
+    <img class="logo" src="logo.png" alt="Good Fights">
+    <div class="herorow">
+      <div class="htext">
+        <div class="kicker">22–6 · 14 fights scored · 1,028 fan ratings</div>
+        <h1>Conor<br>McGregor<br><span class="g">by the ratings</span></h1>
+        <div class="sub">Our fans rated every fight he's had <b>1–10</b>. Here's what they actually said about The Notorious.</div>
+      </div>
+      <div class="hportrait"><img src="img/conor-final.png" alt="Conor McGregor"></div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- RANKED BOARD -->
+    <div class="seclabel"><span class="tick"></span><span class="t">Every Conor fight, ranked by our fans</span></div>
+    <div class="card feat">
+      <div class="hof">
+        <div class="r one">
+          <div class="rank">1</div>
+          <div class="info"><div class="f">Nate Diaz II</div><div class="e">UFC 202 · <span class="w">WIN</span> (decision) · 219 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="9.23" src=""><span class="heat" data-score="9.23">9.23</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">2</div>
+          <div class="info"><div class="f">Nate Diaz I</div><div class="e">UFC 196 · <span class="l">LOSS</span> (sub) · 143 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.99" src=""><span class="heat" data-score="8.99">8.99</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">3</div>
+          <div class="info"><div class="f">Dustin Poirier II</div><div class="e">UFC 257 · <span class="l">LOSS</span> (TKO) · 44 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.80" src=""><span class="heat" data-score="8.80">8.80</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">4</div>
+          <div class="info"><div class="f">Khabib Nurmagomedov</div><div class="e">UFC 229 · <span class="l">LOSS</span> (sub) · 65 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.68" src=""><span class="heat" data-score="8.68">8.68</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">5</div>
+          <div class="info"><div class="f">Eddie Alvarez</div><div class="e">UFC 205 · <span class="w">WIN</span> (TKO) · 89 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.53" src=""><span class="heat" data-score="8.53">8.53</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">6</div>
+          <div class="info"><div class="f">Chad Mendes</div><div class="e">UFC 189 · <span class="w">WIN</span> (TKO) · 105 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.33" src=""><span class="heat" data-score="8.33">8.33</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">7</div>
+          <div class="info"><div class="f">Dustin Poirier III</div><div class="e">UFC 264 · <span class="l">LOSS</span> (leg break) · 38 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="8.18" src=""><span class="heat" data-score="8.18">8.18</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">8</div>
+          <div class="info"><div class="f">José Aldo</div><div class="e">UFC 194 · <span class="w">WIN</span> (13-sec KO) · 106 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.99" src=""><span class="heat" data-score="7.99">7.99</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">9</div>
+          <div class="info"><div class="f">Max Holloway</div><div class="e">2013 · <span class="w">WIN</span> (decision) · 24 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.92" src=""><span class="heat" data-score="7.92">7.92</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">10</div>
+          <div class="info"><div class="f">Dustin Poirier I</div><div class="e">UFC 178 · <span class="w">WIN</span> (TKO) · 50 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.86" src=""><span class="heat" data-score="7.86">7.86</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">11</div>
+          <div class="info"><div class="f">Diego Brandao</div><div class="e">UFC FN Dublin · <span class="w">WIN</span> (TKO) · 41 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.63" src=""><span class="heat" data-score="7.63">7.63</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">12</div>
+          <div class="info"><div class="f">Dennis Siver</div><div class="e">UFC FN Boston · <span class="w">WIN</span> (TKO) · 40 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.55" src=""><span class="heat" data-score="7.55">7.55</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">13</div>
+          <div class="info"><div class="f">Donald Cerrone</div><div class="e">UFC 246 · <span class="w">WIN</span> (40-sec TKO) · 35 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.54" src=""><span class="heat" data-score="7.54">7.54</span></div>
+        </div>
+        <div class="r">
+          <div class="rank">14</div>
+          <div class="info"><div class="f">Floyd Mayweather <span style="font-size:13px;color:var(--dim);font-weight:700">(boxing)</span></div><div class="e">The Money Fight · 24 ratings</div></div>
+          <div class="score"><img class="st starimg" data-score="7.08" src=""><span class="heat" data-score="7.08">7.08</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INSIGHT: best fights were losses -->
+    <div class="seclabel"><span class="tick"></span><span class="t">What the ratings reveal</span></div>
+    <div class="card feat">
+      <div class="ch">His best fights were the ones he <span class="hl">lost</span></div>
+      <div class="cs" style="margin-bottom:18px">Three of his four highest-rated fights are defeats</div>
+      <div class="statrow">
+        <div class="stat loss"><div class="badge L">LOSS</div><div class="num"><img class="st starimg" data-score="8.99" src=""><span class="heat" data-score="8.99">8.99</span></div><div class="nm">Diaz I<small>rear-naked choke</small></div></div>
+        <div class="stat loss"><div class="badge L">LOSS</div><div class="num"><img class="st starimg" data-score="8.80" src=""><span class="heat" data-score="8.80">8.80</span></div><div class="nm">Poirier II<small>TKO, round 2</small></div></div>
+        <div class="stat loss"><div class="badge L">LOSS</div><div class="num"><img class="st starimg" data-score="8.68" src=""><span class="heat" data-score="8.68">8.68</span></div><div class="nm">Khabib<small>neck crank</small></div></div>
+      </div>
+      <div class="note">Fans don't rate the result — they rate the <b>war</b>. Conor's losses gave them more of it than most of his wins.</div>
+    </div>
+
+    <!-- two-up: KO myth + hype myth -->
+    <div class="row two">
+      <div class="card">
+        <div class="ch">The 13-second KO <span class="hl">isn't his best</span></div>
+        <div class="cs" style="margin-bottom:18px">His most iconic moment vs. his top-rated fight</div>
+        <div class="statrow">
+          <div class="stat"><div class="num"><img class="st starimg" data-score="7.99" src=""><span class="heat" data-score="7.99">7.99</span></div><div class="nm">Aldo KO<small>13 seconds</small></div></div>
+          <div class="stat win"><div class="num"><img class="st starimg" data-score="9.23" src=""><span class="heat" data-score="9.23">9.23</span></div><div class="nm">Diaz II<small>a 25-min decision</small></div></div>
+        </div>
+        <div class="note">The fastest title finish in UFC history rates <b>below</b> a five-round decision. A war beats a highlight.</div>
+      </div>
+      <div class="card">
+        <div class="ch">Most hype, <span class="hl">least payoff</span></div>
+        <div class="cs" style="margin-bottom:18px">The biggest spectacle of his career</div>
+        <div class="statrow">
+          <div class="stat loss"><div class="num"><img class="st starimg" data-score="7.08" src=""><span class="heat" data-score="7.08">7.08</span></div><div class="nm">Mayweather<small>his lowest-rated fight</small></div></div>
+        </div>
+        <div class="note">The most-hyped event in combat-sports history is the <b>lowest-rated fight</b> of his career.</div>
+      </div>
+    </div>
+
+    <!-- RIVALRY -->
+    <div class="seclabel"><span class="tick"></span><span class="t">The rivalry that defined him</span></div>
+    <div class="card feat">
+      <div style="display:flex; gap:22px; align-items:stretch">
+        <div style="flex:1; min-width:0">
+          <div class="ch">Conor vs <span class="hl">Nate Diaz</span> — his two most-rated fights, ever</div>
+          <div class="cs" style="margin-bottom:14px">1–1, and <b style="color:#fff">362 combined ratings</b> — no one else comes close</div>
+          <div class="duel2">
+            <div class="matchup">
+              <span class="tag l">Conor L</span>
+              <div class="who"><div class="f">Diaz I &nbsp;·&nbsp; UFC 196</div><div class="e">Diaz by submission · 143 ratings</div></div>
+              <div class="metric"><img class="st starimg" data-score="8.99" src=""><span class="heat" data-score="8.99">8.99</span></div>
+            </div>
+            <div class="matchup">
+              <span class="tag w">Conor W</span>
+              <div class="who"><div class="f">Diaz II &nbsp;·&nbsp; UFC 202</div><div class="e">Conor by majority decision · 219 ratings</div></div>
+              <div class="metric"><img class="st starimg" data-score="9.23" src=""><span class="heat" data-score="9.23">9.23</span></div>
+            </div>
+          </div>
+          <div class="quote" style="margin-top:18px; font-size:30px">"It's criminal that we<br>never got a <span class="g">trilogy</span>."</div>
+          <div class="qattr">— actual Good Fights review on Diaz II</div>
+        </div>
+        <div style="width:210px; flex-shrink:0; display:flex; flex-direction:column; justify-content:flex-end; position:relative">
+          <img src="img/nate-final.png" alt="Nate Diaz" style="width:100%; height:auto; display:block; filter:drop-shadow(0 10px 24px rgba(0,0,0,0.6))">
+          <div style="text-align:center; font-family:'Anton',sans-serif; font-size:17px; letter-spacing:1px; color:var(--gray); margin-top:8px; text-transform:uppercase">Nate Diaz</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STYLE -->
+    <div class="seclabel"><span class="tick"></span><span class="t">The style</span></div>
+    <div class="card">
+      <div class="row two" style="align-items:center">
+        <div>
+          <div class="quote">"Precision beats power.<br>Timing beats <span class="g">speed</span>."</div>
+          <div class="qattr">— McGregor's creed · the southpaw karate stance &amp; that straight left</div>
+        </div>
+        <div class="statrow">
+          <div class="stat win"><div class="num" style="color:var(--gold)">8/9</div><div class="nm">UFC wins by KO/TKO<small>only Diaz II went to the cards</small></div></div>
+          <div class="stat"><div class="num" style="color:var(--white)">13s</div><div class="nm">Fastest title finish<small>in UFC history (Aldo)</small></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COME-UP -->
+    <div class="seclabel"><span class="tick"></span><span class="t">The come-up</span></div>
+    <div class="card feat">
+      <div class="ch">From a <span class="hl">€188 welfare check</span> to the richest athlete on earth</div>
+      <div class="cs" style="margin-bottom:18px">Crumlin, Dublin → the biggest draw combat sports has ever seen</div>
+      <div class="arc">
+        <div class="step"><div class="v">Crumlin</div><div class="l">Working-class Dublin; boxing at 12</div></div>
+        <div class="step"><div class="v">Plumber's<br>apprentice</div><div class="l">Quit the trade to train full-time</div></div>
+        <div class="step"><div class="v">€188<br>a week</div><div class="l">Welfare check while training 6 hrs/day</div></div>
+        <div class="step last"><div class="v">#1 paid<br>athlete</div><div class="l">Forbes' highest-paid, 2021</div></div>
+      </div>
+      <div class="note">He named his yacht <b>"The 188"</b> — after the exact welfare check he lived on before UFC 189.</div>
+    </div>
+
+    <!-- MONEY -->
+    <div class="seclabel"><span class="tick"></span><span class="t">The business</span></div>
+    <div class="card">
+      <div class="money">
+        <div class="mcell gold"><div class="mv">$180M</div><div class="ml">Forbes' #1 highest-paid athlete<small>in the world, 2021</small></div></div>
+        <div class="mcell gold"><div class="mv">$600M</div><div class="ml">Proper No. Twelve whiskey sale, 2021<small>brand deal, split with co-founders</small></div></div>
+        <div class="mcell"><div class="mv">~$100M</div><div class="ml">His payday vs. Floyd Mayweather<small>one boxing match, 2017</small></div></div>
+        <div class="mcell gold"><div class="mv">2.4M</div><div class="ml">UFC 229 PPV buys<small>best-selling PPV in UFC history</small></div></div>
+        <div class="mcell"><div class="mv">Gate king</div><div class="ml">Headlined UFC's record live gates<small>UFC 205 at MSG · UFC 229 in Vegas</small></div></div>
+        <div class="mcell"><div class="mv">2 belts</div><div class="ml">First to hold two UFC titles at once<small>featherweight + lightweight</small></div></div>
+      </div>
+      <div class="note" style="margin-top:16px">No fighter has sold like him: he <b>headlines the UFC's all-time pay-per-view and gate record books</b> — the single biggest draw the sport has produced.</div>
+    </div>
+
+    <!-- FAN VOICES -->
+    <div class="seclabel"><span class="tick"></span><span class="t">In our fans' words</span></div>
+    <div class="card feat">
+      <div class="voices">
+        <div class="voice">
+          <div class="body"><div class="vt">"A better-than-expected performance from McGregor, overshadowed by Floyd's Counter-Strike cosplay."</div><div class="va">on Mayweather vs McGregor · rated 7</div></div>
+        </div>
+        <div class="voice">
+          <div class="body"><div class="vt">"One for the history books. Watch it, won't take up much of your time."</div><div class="va">on the 13-second Aldo KO · rated 8</div></div>
+        </div>
+        <div class="voice">
+          <div class="body"><div class="vt">"One of the best, most heated atmospheres ever in the biggest, most anticipated fight of all time."</div><div class="va">on McGregor vs Khabib</div></div>
+        </div>
+        <div class="voice">
+          <div class="body"><div class="vt">"Conor shows he can train for a specific opponent — endurance and pace for a five-round war."</div><div class="va">on Diaz II · rated 10</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="left">
+        <img class="hand" src="hand.png" alt="">
+        <div class="slogan">Never miss a <span class="g">Good Fight.</span></div>
+      </div>
+      <div style="text-align:right">
+        <div class="url">goodfights.app</div>
+        <div style="font-size:14px;font-weight:700;color:var(--dim);letter-spacing:1px;margin-top:4px">JUNE 2026</div>
+      </div>
+    </div>
+  </div>
+  <div class="src">Ratings &amp; comments: Good Fights users, his 14 fights with 10+ ratings (1,028 total) · scores out of 10. Career &amp; business figures: Forbes, ESPN, public reporting · Proper No. Twelve deal up to $600M, split among co-founders.</div>
+</div>
+
+<script>
+  // EXACT replica of mobile utils/heatmap.ts interpolation
+  const stops = [
+    {s:1.0, r:128,g:128,b:128},{s:5.0,r:200,g:185,b:130},{s:7.0,r:255,g:207,b:59},
+    {s:7.5,r:253,g:183,b:12},{s:8.0,r:243,g:134,b:53},{s:8.5,r:237,g:94,b:50},
+    {s:9.0,r:233,g:52,b:48},{s:10.0,r:255,g:0,b:0},
+  ];
+  function heat(score){
+    if(score<1) return [128,128,128];
+    if(score>=10) return [255,0,0];
+    let lo=stops[0], hi=stops[stops.length-1];
+    for(let i=0;i<stops.length-1;i++){ if(score>=stops[i].s && score<=stops[i+1].s){ lo=stops[i]; hi=stops[i+1]; break; } }
+    const t=(score-lo.s)/(hi.s-lo.s);
+    return [Math.round(lo.r+(hi.r-lo.r)*t),Math.round(lo.g+(hi.g-lo.g)*t),Math.round(lo.b+(hi.b-lo.b)*t)];
+  }
+  const rgb = a => `rgb(${a[0]},${a[1]},${a[2]})`;
+
+  document.querySelectorAll('.heat').forEach(el => {
+    const c = heat(parseFloat(el.dataset.score));
+    el.style.color = rgb(c);
+    el.style.textShadow = `0 0 26px rgba(${c[0]},${c[1]},${c[2]},0.5)`;
+  });
+  document.querySelectorAll('.heatbg').forEach(el => {
+    const c = heat(parseFloat(el.dataset.score));
+    el.style.background = `linear-gradient(180deg, ${rgb(c)}, rgb(${Math.round(c[0]*0.8)},${Math.round(c[1]*0.8)},${Math.round(c[2]*0.8)}))`;
+    el.style.setProperty('--c', rgb(c));
+  });
+  function starURI(c){
+    const f = encodeURIComponent(rgb(c));
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path fill='${f}' d='M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z'/></svg>`;
+    return 'data:image/svg+xml;utf8,' + svg.replace(/#/g,'%23');
+  }
+  document.querySelectorAll('.starimg, .sicon').forEach(el => {
+    el.src = starURI(heat(parseFloat(el.dataset.score)));
+  });
+</script>
+</body>
+</html>
