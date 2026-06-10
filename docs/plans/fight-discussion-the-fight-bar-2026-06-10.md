@@ -6,6 +6,9 @@
 **Type:** Strategy + creative idea catalog (the *what could this be*, not the *how to build it*)
 **Branch context:** `claude/fight-discussion-comments-n9ddq1`
 
+> **⚠️ READ THIS FIRST — major framing update (2026-06-10, late session):**
+> The single most important decision from this session is the **pivot away from winner predictions to an ALLEGIANCE model** ("whose side are you on / who are you rooting for"). This **supersedes** the prediction- and "receipts/being-right"-flavored ideas in Parts 1–3 below — wherever you see "prediction," "called it," or accuracy-based validation, re-read it through the allegiance lens in **Part 5** at the bottom, which is now the core unit of the product. Parts 4 (Social Validation) and 6 (Live-Chat Design) were also added this session.
+
 ---
 
 ## TL;DR
@@ -159,4 +162,84 @@ Gut call from the brainstorm: foundation (#1) first, then the live scoring (#2) 
 
 ---
 
-*Captured during a creative session on 2026-06-10. Grand strategy + broad ideas only — no build commitment. See also `docs/areas/rewarding-users.md` (aesthetic doctrine) and `docs/areas/sale-value.md` (why a richer discussion dataset matters to the acquisition thesis).*
+## Part 4 — Social validation (without importing Reddit's poison)
+
+Reddit's stickiness is partly the upvote dopamine — but that's the *shallow* flavor: it rewards being **fast, funny, or agreeable**, not being **right** or **loyal**. We can serve the deeper flavors Reddit structurally can't. (Note: with the Part 5 allegiance pivot, the strongest validation shifts from "being right" to "shared joy + loyalty" — see there.)
+
+**The full spectrum of validation** (Reddit only does 2 & 3):
+1. Being **seen** · 2. Being **agreed with** (upvotes ✅ Reddit's whole game) · 3. Being **replied to** ✅ · 4. Being **right** / on the winning side ⭐ *fights only* · 5. Being **distinctive** (the brave believer) · 6. Being **remembered** (durable record of good calls) · 7. Being **chosen** (followed).
+
+**Mechanics:**
+- **Validation that ripens (receipts).** An upvote is a sugar high; vindication *matures*. Post-fight moment: "**You called it**" / (allegiance version) "**Your guy delivered.**" We already store the pre-fight take + result on the same object. Resurface a take that aged well and auto-pin it.
+- **Richer than a number.** Show *who* and *how* — faces + Fan-DNA tags ("12 grappling nerds agreed with you"), not a faceless `+47`. Being validated by people you respect > an integer (the Letterboxd "likes show faces" effect).
+- **Per-object distinction, not a global score.** Not "4,200 karma" — instead "**Your verdict is the #1 take on Gaethje–Poirier.**" Specific, durable, pinned to the permanent fight page. Dopamine of Reddit *without* the karma race the doctrine forbids.
+- **Replies are the deepest everyday hit.** "Your take started a conversation" (spawned an 8-reply thread) = "I moved the room." Notify replies *bigger* than likes.
+- **Curated > mob.** "Take of the Night" spotlight on the most *prescient/insightful* (not highest-upvoted) — sidesteps the karma race, feels rarer. Validation from above: a **verified media** member (`isMedia`) or a **fighter** reacting = legendary, screenshot-shared forever.
+- **Validate the contrarian Reddit buries.** "You're the brave 6%" — frame a well-argued minority take as a badge, not a burial. A reason for thoughtful people to leave Reddit.
+- **Live dopamine loop.** "Your take is heating up — 40 reactions in 10 min." (Live, accelerating version of the existing 1/5/10/25/50/100 milestone like-notifications.)
+
+**Guardrail / tightrope:** validation-seeking is what breeds ragebait, pile-ons, conformity. Hold the line: no global leaderboard/karma total, no downvote burials, reward *right & insightful & loyal* over *loud & early*, keep it identity + memory + closure.
+
+> Synthesis: **Reddit rewards the take that's fast. We reward the take that was right — and remember it forever.**
+
+---
+
+## Part 5 — ⭐ THE PIVOT: allegiance over predictions ("whose side are you on?")
+
+**Decision (2026-06-10):** drop winner predictions entirely. Core unit becomes **picking a side / who you're rooting for** (Team Jones vs Team DC). This re-colors every feature above. (Anticipation/hype rating can stay — that's emotion, not a prediction.)
+
+**Why it's the stronger spine:**
+- **Prediction is a *head* act; allegiance is a *heart* act.** Predicting = cognitive, about being *right* (fantasy-football brain). Rooting = tribal, about *belonging* (the guy in the bar in a jersey). Trading "smart" for "feels," and feels retains.
+- **Resolves to joy or heartbreak, not correct/incorrect.** "You were wrong" is a shrug; "your guy got *robbed*" is a wound carried to the next event. **Heartbreak is a retention mechanic predictions can't touch.**
+- **Underserved vs commoditized.** Everyone does winner picks (apps, betting, Reddit). Almost nobody owns *allegiance* as the core unit — defining an empty category, not entering a crowded one.
+- **Cleaner brand.** Predictions drag toward odds/gambling adjacency; rooting is pure fandom — no regulatory smell.
+- **Lower friction, fixes cold-start.** A prediction needs knowledge; picking a side is **one emotional tap** anyone (even a casual) can do instantly.
+
+**The structural consequence — the room becomes two locker rooms.** A prediction room is neutral analysts; an allegiance room is **us-vs-them**, and conflict is the engine of all sports talk. This may be the single best decision for "becoming the place people talk about fights."
+
+**Re-coloring every pillar:**
+- **Reactions go factional.** Jones lands → Team Jones erupts, Team DC groans. The momentum meter becomes a **tug-of-war between two fanbases.** A digital home/away crowd.
+- **Live scoring gets gloriously biased.** "Team Jones had R2 10-9 Jones; Team DC had it 10-9 DC." Allegiance bias becomes visible and funny instead of hidden.
+- **Controversy votes split down team lines.** "Robbery?" → 91% of Team Gaethje yes, 4% of Team Justin. The truest representation of real fan behavior.
+- **Pre-fight = trash talk with a frame.** Two sides talking smack *from a position*, not neutral analysis. Banter needs sides.
+- **The arc resolves to two locker rooms** post-fight: winners' room (elation, "WE DID IT") + losers' room (commiseration, "we'll be back"). Both sticky; wounded fans want to talk.
+
+**Validation, rebuilt around loyalty (replaces accuracy from Part 4):**
+- **Shared joy, not smug correctness:** "You and 4,000 others rode for Jones — and he *delivered.*"
+- **Loyalty as identity:** "You've ridden with Gaethje **7 fights straight.**" Allegiance streak = badge with a soul.
+- **The believer's payoff** replaces the contrarian's: "Only **8%** were Team underdog — and he pulled it off. *You believed.*"
+- **Heartbreak honored:** "Your heart was broken tonight" = an ownable closure moment. Letterboxd has no stakes like this.
+
+**Identity goldmine — and it FUSES with follow-fighter:**
+- New, juicier Fan DNA traits: **Frontrunner · Ride-or-die · Underdog-lover · Hater (always anti-champ) · Bandwagoner vs Day-one.** People will argue about which they are.
+- **Picking a side per fight and following a fighter are the same emotional system** (tonight's team vs lifelong team). This unifies the engagement product with the acquisition workstream. Allegiance history becomes load-bearing identity data (sibling to the "never derive `followedAt`" rule).
+- **Rivalries as a persistent social structure:** "You and @mike have been on opposite sides **5 times.**" Recurring tension = recurring reason to return and talk smack. Reddit has no memory of your feuds; we would.
+
+**The one problem to solve — "I don't care about either guy":** predictions worked on cold fights (a puzzle); allegiance needs caring.
+- **Give reasons to pick** via AI previews: "Root for him: underdog on a 3-fight skid trying to save his career." Makes AI enrichment do *emotional* work, not just inform. Casual gets a side in 5 seconds.
+- **Pick for a reason → feed Fan DNA** ("Team Gaethje because I love a brawler").
+- Allow **"just here to watch"** but make picking the fun default; let the room convert a neutral live ("the room turned you Team Jones in R2").
+
+**Honest trade-off:** we **lose** the "I called it" accountability loop, but **gain** stakes, tribe, rivalry, heartbreak, and a cleaner brand — stronger, stickier, and on-doctrine (emotion + identity + closure over being right). Not close. Receipts don't vanish, they change flavor: *loyalty* receipts + the joy/heartbreak resolution.
+
+> Synthesis: **Reddit lets you analyze the fight. We let people *care* — pick a side, ride or die, win together or break together, and remember who you feuded with.**
+
+---
+
+## Part 6 — Live-chat design: taming the firehose (& killing spam)
+
+Most live comment feeds (YouTube/Twitch/IG Live) are unreadable, spam-ridden firehoses. That's a **design choice** — show every message chronologically, equal airtime, no identity gate — not a law. Fix the architecture and both diseases (velocity + spam) die at once.
+
+- **Reactions are NOT messages (the big one).** On Twitch every "LMAOOO" is a full message — that's 90% of the velocity. Make reactions a separate, non-textual **crowd-noise layer** (drives the momentum meter / floats emoji / roars) so the **signal layer** (text takes) can breathe. Drains volume *and* removes the emoji-spam vector by design.
+- **Show the best, not the latest.** Chronological = tyranny of the newest; a great take vanishes in 2s. Live-rank by reactions; **hold rising takes on screen** long enough to read; auto-pin the take of the moment; offer a "highlights only" default lane.
+- **Self-curating feed.** Post → visible to a small slice → only rises to the main feed if it earns reactions. Spam never earns reactions, never gets airtime. **Dedupe/cluster** identical sentiment ("ROBBERY ×200" → the meter, not 200 messages).
+- **Spam defense baked in:** identity gate to post text live (account history / has rated / follows a fighter on the card); no arbitrary links/images live (curated sticker pack only — kills bot/scam vector); low-trust messages start ambient, surface only if they earn reactions. Reputation buys airtime *per-fight*, not as global karma.
+- **Pace with the fight** (via live trackers): action = ambient roar + curated text; **finish = let it flood for 5s** (pop the room) then settle; between rounds = slows + shifts to scoring. Velocity becomes an *intentional emotional beat*, not the constant state.
+- **Not ephemeral:** anchor live takes to their round → post-fight it's a **browsable, round-organized record** ("jump to the R2 head-kick reactions"). The live chat *becomes* the permanent fight page. Opposite of Twitch chat evaporating.
+- **Go smaller when you can:** big room = ambient roar; **Crew room** (Crews already exist) = readable, warm, conversational. Offer both.
+
+> Synthesis: **Don't show everything. Separate the roar from the signal, let the room curate which takes rise in real time, and gate the channel by identity. The firehose stops being a firehose — and spam never gets airtime.**
+
+---
+
+*Captured during a creative brainstorm session on 2026-06-10 (phone session — no laptop/local repo connected; pushed to branch `claude/fight-discussion-comments-n9ddq1` on GitHub for laptop retrieval). Grand strategy + broad ideas only — no build commitment. The allegiance pivot (Part 5) is the load-bearing decision. See also `docs/areas/rewarding-users.md` (aesthetic doctrine), `docs/areas/follow-fighter.md` (now fused with allegiance), and `docs/areas/sale-value.md` (why a richer discussion dataset matters to the acquisition thesis).*
