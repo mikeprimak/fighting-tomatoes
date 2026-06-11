@@ -1,0 +1,235 @@
+/**
+ * Candidate generation: TasteSignature → scored InsightCandidates.
+ *
+ * Five generators. Per (dimension, token) only the single best candidate
+ * survives dedupe — otherwise "wars" would headline three times in one list.
+ * Community-compare naturally outranks self-contrast on the same token via
+ * COMMUNITY_KIND_BOOST when both qualify (the agreed hierarchy: you-vs-fans
+ * is the stronger story when the baseline is trustworthy; self-referential
+ * is the deep bench that keeps the mirror full).
+ */
+import {
+  rarity,
+  scoreAbsolute,
+  scoreCommunityCompare,
+  scoreFighterToken,
+  scoreSelfContrast,
+} from './surprise';
+import {
+  ABSOLUTE_BOOST,
+  FIGHTER_MIN_DISTINCT,
+  FIGHTER_MIN_WEIGHT,
+  HIGH_RATING,
+  MIN_N,
+  SCORE_FLOOR,
+  type InsightCandidate,
+  type TasteSignature,
+  type TokenStat,
+} from './types';
+
+/** Absolute generators need slightly more proof than trend generators. */
+const NEVER_ABOVE_MIN_N = 10;
+const NEVER_ABOVE_CAP = 7; // "never above a 7" — caps higher than this are weak tea
+/**
+ * A token present on most of the user's history isn't a ceiling story, it IS
+ * their baseline — "you never rate above 7" belongs to rating-bias, not here.
+ */
+const NEVER_ABOVE_MAX_PRESENT_SHARE = 0.4;
+/** The token must genuinely sit below the user's norm, not just lack peaks. */
+const NEVER_ABOVE_MIN_AVG_GAP = 0.5;
+const ALL_HIGH_MIN_N = 8;
+const ALL_TENS_MIN = 4;
+/** all-tens-share is trivial when the token appears on most fights anyway. */
+const ALL_TENS_MAX_PRESENT_SHARE = 0.5;
+/**
+ * Evidence for all-tens-share saturates on a tens scale, not the 25-fight
+ * trend scale: five perfect scores is a LOT of perfect scores.
+ */
+const TENS_EVIDENCE_SAT = 6;
+
+export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
+  const out: InsightCandidate[] = [];
+  const { baseline } = sig;
+
+  for (const t of sig.tokens) {
+    selfContrast(t, baseline.avg, out);
+    communityCompare(t, out);
+    neverAbove(t, baseline, out);
+    allHigh(t, out);
+    allTensShare(t, baseline.tensCount, out);
+  }
+
+  for (const f of sig.fighterTokens) {
+    if (f.fighterCount < FIGHTER_MIN_DISTINCT || f.weight < FIGHTER_MIN_WEIGHT)
+      continue;
+    const score = scoreFighterToken({
+      dimension: f.dimension,
+      token: f.token,
+      weight: f.weight,
+    });
+    if (score < SCORE_FLOOR) continue;
+    out.push({
+      kind:
+        f.dimension === 'fighterStyle'
+          ? 'fighter-style'
+          : f.dimension === 'fighterAppeal'
+            ? 'fighter-appeal'
+            : 'fighter-persona',
+      dimension: f.dimension,
+      token: f.token,
+      direction: 'high',
+      score,
+      stats: {
+        n: f.fighterCount,
+        weight: f.weight,
+        fighterCount: f.fighterCount,
+        topFighters: f.topFighters,
+      },
+    });
+  }
+
+  return dedupeByToken(out).sort((a, b) => b.score - a.score);
+}
+
+function selfContrast(
+  t: TokenStat,
+  baselineAvg: number,
+  out: InsightCandidate[],
+): void {
+  const delta = t.avgRating - baselineAvg;
+  const scored = scoreSelfContrast({
+    dimension: t.dimension,
+    token: t.token,
+    n: t.count,
+    delta,
+  });
+  if (!scored || scored.score < SCORE_FLOOR) return;
+  out.push({
+    kind: scored.direction === 'high' ? 'loves' : 'cold',
+    dimension: t.dimension,
+    token: t.token,
+    direction: scored.direction,
+    score: scored.score,
+    stats: {
+      n: t.count,
+      avg: t.avgRating,
+      baseline: baselineAvg,
+      delta,
+    },
+  });
+}
+
+function communityCompare(t: TokenStat, out: InsightCandidate[]): void {
+  if (t.avgDeltaVsCommunity == null) return;
+  const scored = scoreCommunityCompare({
+    dimension: t.dimension,
+    token: t.token,
+    cmpN: t.cmpN,
+    deltaVsCommunity: t.avgDeltaVsCommunity,
+  });
+  if (!scored || scored.score < SCORE_FLOOR) return;
+  out.push({
+    kind: scored.direction === 'high' ? 'community-high' : 'community-low',
+    dimension: t.dimension,
+    token: t.token,
+    direction: scored.direction,
+    score: scored.score,
+    stats: {
+      n: t.cmpN,
+      avg: t.avgRating,
+      deltaVsCommunity: t.avgDeltaVsCommunity,
+    },
+  });
+}
+
+/**
+ * "You've rated 20 decisions and never given one more than a 7."
+ * Guards: the token must be a slice of the history (not the bulk of it), and
+ * must genuinely sit below the user's norm — a user whose global ceiling is 7
+ * has a generosity pattern, not a token pattern.
+ */
+function neverAbove(
+  t: TokenStat,
+  baseline: TasteSignature['baseline'],
+  out: InsightCandidate[],
+): void {
+  if (t.count < NEVER_ABOVE_MIN_N) return;
+  if (t.maxRating > NEVER_ABOVE_CAP) return;
+  if (t.presentShare > NEVER_ABOVE_MAX_PRESENT_SHARE) return;
+  if (t.avgRating > baseline.avg - NEVER_ABOVE_MIN_AVG_GAP) return;
+  const score = scoreAbsolute({
+    dimension: t.dimension,
+    token: t.token,
+    n: t.count,
+    direction: 'low',
+  });
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: 'never-above',
+    dimension: t.dimension,
+    token: t.token,
+    direction: 'low',
+    score,
+    stats: { n: t.count, cap: t.maxRating },
+  });
+}
+
+/** "All 12 of your clinch wars got an 8 or higher." */
+function allHigh(t: TokenStat, out: InsightCandidate[]): void {
+  if (t.count < ALL_HIGH_MIN_N) return;
+  if (t.minRating < HIGH_RATING) return;
+  const score = scoreAbsolute({
+    dimension: t.dimension,
+    token: t.token,
+    n: t.count,
+    direction: 'high',
+  });
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: 'all-high',
+    dimension: t.dimension,
+    token: t.token,
+    direction: 'high',
+    score,
+    stats: { n: t.count, avg: t.avgRating },
+  });
+}
+
+/** "Every 10 you've ever given had a comeback in it." */
+function allTensShare(
+  t: TokenStat,
+  totalTens: number,
+  out: InsightCandidate[],
+): void {
+  if (totalTens < ALL_TENS_MIN) return;
+  if (t.tensCount !== totalTens) return;
+  if (t.presentShare > ALL_TENS_MAX_PRESENT_SHARE) return;
+  const score =
+    0.55 *
+    Math.min(1, totalTens / TENS_EVIDENCE_SAT) *
+    rarity(t.dimension, t.token, 'high') *
+    ABSOLUTE_BOOST;
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: 'all-tens-share',
+    dimension: t.dimension,
+    token: t.token,
+    direction: 'high',
+    score,
+    stats: { n: t.count, tens: totalTens },
+  });
+}
+
+/** Keep only the strongest candidate per (dimension, token). */
+function dedupeByToken(candidates: InsightCandidate[]): InsightCandidate[] {
+  const best = new Map<string, InsightCandidate>();
+  for (const c of candidates) {
+    const key = `${c.dimension}|${c.token}`;
+    const cur = best.get(key);
+    if (!cur || c.score > cur.score) best.set(key, c);
+  }
+  return [...best.values()];
+}
+
+// Re-exported for the orchestrator + tests.
+export { MIN_N };
