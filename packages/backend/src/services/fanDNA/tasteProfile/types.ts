@@ -82,8 +82,14 @@ export interface FighterTokenStat {
   token: string;
   /** Summed source-weighted signal (follows + high ratings weighted most). */
   weight: number;
-  /** Distinct fighters contributing. */
+  /** Distinct fighters contributing affection weight. */
   fighterCount: number;
+  /**
+   * Distinct fighters the user merely TOUCHED (rated anything) carrying this
+   * token, regardless of affection. The denominator that kills the volume
+   * artifact: a user who rates everything touches every persona.
+   */
+  touchCount: number;
   /** Top contributing fighter names, for copy specificity. */
   topFighters: string[];
 }
@@ -136,6 +142,7 @@ export interface InsightCandidate {
     cap?: number;
     tens?: number;
     weight?: number;
+    lift?: number;
     fighterCount?: number;
     topFighters?: string[];
   };
@@ -194,7 +201,10 @@ export const ABSOLUTE_BOOST = 1.3;
 /** Fighter-axis floors. */
 export const FIGHTER_MIN_DISTINCT = 3;
 export const FIGHTER_MIN_WEIGHT = 6;
-export const FIGHTER_WEIGHT_SAT = 15;
+/** Lift normalizer: lift 2.0 (double your expected share) = full gap score. */
+export const FIGHTER_LIFT_NORM = 1.0;
+/** Fighter-axis evidence saturates at this many contributing fighters. */
+export const FIGHTER_EVIDENCE_SAT = 10;
 /** Fighter source weights — follows + high ratings weighted most (locked). */
 export const W_FOLLOWED = 3;
 export const W_HIGH_RATED = 1.5;

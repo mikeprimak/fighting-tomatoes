@@ -59,13 +59,28 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
     allTensShare(t, baseline.tensCount, out);
   }
 
+  // Per-dimension totals for the lift baseline (volume-artifact guard).
+  const dimTotals = new Map<string, { weight: number; touch: number }>();
+  for (const f of sig.fighterTokens) {
+    const t = dimTotals.get(f.dimension) ?? { weight: 0, touch: 0 };
+    t.weight += f.weight;
+    t.touch += f.touchCount;
+    dimTotals.set(f.dimension, t);
+  }
+
   for (const f of sig.fighterTokens) {
     if (f.fighterCount < FIGHTER_MIN_DISTINCT || f.weight < FIGHTER_MIN_WEIGHT)
       continue;
+    const totals = dimTotals.get(f.dimension);
+    if (!totals || totals.weight <= 0 || totals.touch <= 0) continue;
+    const weightShare = f.weight / totals.weight;
+    const touchShare = f.touchCount / totals.touch;
+    const lift = touchShare > 0 ? weightShare / touchShare : 0;
     const score = scoreFighterToken({
       dimension: f.dimension,
       token: f.token,
-      weight: f.weight,
+      lift,
+      fighterCount: f.fighterCount,
     });
     if (score < SCORE_FLOOR) continue;
     out.push({
@@ -82,6 +97,7 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
       stats: {
         n: f.fighterCount,
         weight: f.weight,
+        lift,
         fighterCount: f.fighterCount,
         topFighters: f.topFighters,
       },

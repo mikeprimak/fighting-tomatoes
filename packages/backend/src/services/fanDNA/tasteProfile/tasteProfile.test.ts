@@ -73,21 +73,40 @@ function buildFights(): RatedFightInput[] {
 }
 
 function buildFighters(): FighterInput[] {
-  const pressure = (name: string, followed = false): FighterInput => ({
-    fighterId: name.toLowerCase(),
-    name,
-    styleArchetype: ['pressure_fighter'],
-    fighterAppeals: ['nonstop_action'],
-    personaType: null,
-    followed,
-    highRatedCount: 3,
-  });
-  return [
-    pressure('Gaethje', true),
-    pressure('Chandler'),
-    pressure('Holloway'),
-    pressure('Lawler'),
-    // Only 2 distinct wrestlers — below FIGHTER_MIN_DISTINCT, must be silent.
+  const out: FighterInput[] = [];
+  // 10 pressure fighters the user genuinely loves (high-rated, one followed).
+  // Every fighter also carries the same persona to prove the volume artifact
+  // is dead: uniform affection across a persona must stay silent.
+  const names = [
+    'Gaethje', 'Chandler', 'Holloway', 'Lawler', 'Blachowicz',
+    'Pereira', 'Burns', 'Moicano', 'Barboza', 'Fiziev',
+  ];
+  for (let i = 0; i < names.length; i++) {
+    out.push({
+      fighterId: `p${i}`,
+      name: names[i],
+      styleArchetype: ['pressure_fighter'],
+      fighterAppeals: ['nonstop_action'],
+      personaType: 'respected-veteran',
+      followed: i === 0,
+      highRatedCount: 3,
+    });
+  }
+  // 15 counter strikers the user merely TOUCHED (rated, never high) — they
+  // anchor the lift denominator. Volume must not read as taste.
+  for (let i = 0; i < 15; i++) {
+    out.push({
+      fighterId: `c${i}`,
+      name: `Counter${i}`,
+      styleArchetype: ['counter_striker'],
+      fighterAppeals: [],
+      personaType: 'respected-veteran',
+      highRatedCount: 0,
+      ratedCount: 5,
+    });
+  }
+  // Only 2 distinct loved wrestlers — below FIGHTER_MIN_DISTINCT, silent.
+  out.push(
     {
       fighterId: 'w1',
       name: 'WrestlerOne',
@@ -103,7 +122,8 @@ function buildFighters(): FighterInput[] {
       fighterAppeals: [],
       highRatedCount: 4,
     },
-  ];
+  );
+  return out;
 }
 
 // ── integration ────────────────────────────────────────────────────────────
@@ -157,6 +177,15 @@ function run() {
   assert(!byToken('steady'), 'baseline-hugging filler token stays silent');
   assert(!byToken('awkward'), 'n=3 token stays silent (MIN_N floor)');
   assert(!byToken('wrestler'), '2-fighter token stays silent (distinct floor)');
+
+  // 7b. Volume artifact dead: every fighter shares a persona, affection is
+  // spread exactly like viewing (lift ~1) → silent despite huge counts.
+  assert(
+    !byToken('respected-veteran'),
+    'uniform persona across the pool stays silent (lift baseline)',
+  );
+  // Touched-but-never-loved token stays silent (zero affection weight).
+  assert(!byToken('counter_striker'), 'touched-only token stays silent');
 
   // 8. Fighter axis fires with locked sourcing; followed fighter leads copy.
   const pf = result.insights.find(

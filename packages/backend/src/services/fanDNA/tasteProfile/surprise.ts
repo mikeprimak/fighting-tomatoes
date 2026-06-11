@@ -17,7 +17,8 @@ import {
   CMP_GAP_NORM,
   COMMUNITY_KIND_BOOST,
   EVIDENCE_SAT,
-  FIGHTER_WEIGHT_SAT,
+  FIGHTER_EVIDENCE_SAT,
+  FIGHTER_LIFT_NORM,
   GAP_NORM,
   MIN_N,
   type InsightDirection,
@@ -101,16 +102,24 @@ export function scoreAbsolute(args: {
   );
 }
 
-/** Fighter-axis composite: weight saturation × rarity on a fixed base. */
+/**
+ * Fighter-axis composite. `lift` = (affection-weighted share of the token) /
+ * (touched share of the token) within its dimension. Lift ≈ 1 means the user's
+ * love is spread exactly as their viewing is — pure volume, no taste, silent.
+ * Only concentration above expectation scores.
+ */
 export function scoreFighterToken(args: {
   dimension: string;
   token: string;
-  weight: number;
+  lift: number;
+  fighterCount: number;
 }): number {
+  if (args.lift <= 1) return 0;
   const BASE = 0.6;
   return (
     BASE *
-    Math.min(1, args.weight / FIGHTER_WEIGHT_SAT) *
+    Math.min(1, (args.lift - 1) / FIGHTER_LIFT_NORM) *
+    Math.min(1, args.fighterCount / FIGHTER_EVIDENCE_SAT) *
     rarity(args.dimension, args.token, 'high')
   );
 }
