@@ -64,6 +64,74 @@ const TOKEN_CLUSTERS: Record<string, string> = {
   'vibe|frustrating': 'tension-watcher',
 };
 
+/**
+ * Motivation inference (Mike, pilot review 2026-06-11): the same behavior has
+ * different WHYS — he defends slow fights for the tension ("anything can
+ * happen"), others for the chess match. The engine never asserts a motive the
+ * data can't support: a voice is chosen only when enough of the user's OTHER
+ * loved tokens corroborate it (and clearly beat rival voices); otherwise the
+ * cluster speaks in motive-neutral, behavior-only copy.
+ */
+const CLUSTER_VOICES: Record<string, Record<string, readonly string[]>> = {
+  'tension-watcher': {
+    // Loves finishes and violence elsewhere → sits through slow fights
+    // waiting for the bomb to land.
+    tension: [
+      'actionLevel|war',
+      'dominantSkill|knockout_power',
+      'appeals|knockout',
+      'appeals|finish_hunting',
+      'finishTiming|first_exchange',
+      'finishTiming|final_seconds',
+    ],
+    // Loves technique and ring IQ elsewhere → enjoys the calculations, the
+    // mental work, the testing of each other.
+    chess: [
+      'texture|high_iq_chess',
+      'texture|technical_masterclass',
+      'dominantSkill|fight_iq',
+      'appeals|technique',
+      'appeals|grappling_artistry',
+    ],
+  },
+};
+/** A corroborating token must be genuinely loved, not merely present. */
+const VOICE_MIN_DELTA = 0.5;
+/** Distinct corroborating tokens required before a motive may be claimed. */
+const VOICE_MIN_SUPPORTS = 2;
+
+function inferClusterVoices(sig: TasteSignature): Map<string, string> {
+  const loved = new Set<string>();
+  for (const t of sig.tokens) {
+    if (
+      t.count >= MIN_N &&
+      t.avgRating - sig.baseline.avg >= VOICE_MIN_DELTA
+    ) {
+      loved.add(`${t.dimension}|${t.token}`);
+    }
+  }
+  const out = new Map<string, string>();
+  for (const [cluster, voices] of Object.entries(CLUSTER_VOICES)) {
+    let bestVoice: string | null = null;
+    let bestN = 0;
+    let tied = false;
+    for (const [voice, supports] of Object.entries(voices)) {
+      const n = supports.filter((s) => loved.has(s)).length;
+      if (n > bestN) {
+        bestVoice = voice;
+        bestN = n;
+        tied = false;
+      } else if (n === bestN && n > 0) {
+        tied = true;
+      }
+    }
+    if (bestVoice && bestN >= VOICE_MIN_SUPPORTS && !tied) {
+      out.set(cluster, bestVoice);
+    }
+  }
+  return out;
+}
+
 export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
   const out: InsightCandidate[] = [];
   const { baseline } = sig;
@@ -126,7 +194,9 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
     });
   }
 
-  return dedupeByCluster(dedupeByToken(out)).sort((a, b) => b.score - a.score);
+  return dedupeByCluster(dedupeByToken(out), inferClusterVoices(sig)).sort(
+    (a, b) => b.score - a.score,
+  );
 }
 
 function selfContrast(
@@ -282,7 +352,10 @@ function dedupeByToken(candidates: InsightCandidate[]): InsightCandidate[] {
  * direction). Survivors get `cluster` stamped so copy can speak in the
  * cluster's voice instead of the individual token's.
  */
-function dedupeByCluster(candidates: InsightCandidate[]): InsightCandidate[] {
+function dedupeByCluster(
+  candidates: InsightCandidate[],
+  voices: Map<string, string>,
+): InsightCandidate[] {
   const out: InsightCandidate[] = [];
   const best = new Map<string, InsightCandidate>();
   for (const c of candidates) {
@@ -293,7 +366,9 @@ function dedupeByCluster(candidates: InsightCandidate[]): InsightCandidate[] {
     }
     const key = `${cluster}|${c.direction}`;
     const cur = best.get(key);
-    if (!cur || c.score > cur.score) best.set(key, { ...c, cluster });
+    if (!cur || c.score > cur.score) {
+      best.set(key, { ...c, cluster, voice: voices.get(cluster) });
+    }
   }
   return [...out, ...best.values()];
 }
