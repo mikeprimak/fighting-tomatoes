@@ -85,21 +85,35 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
 
 /**
  * Cluster-level headline voice. When an insight survives cluster dedupe it
- * speaks for the whole pattern, not its single winning token. The
- * tension-watcher lines come from Mike's own articulation at the pilot review
- * (2026-06-11): "I feel the tension, like anything can happen, the entire
- * fight, even if nothing is. most people give up on action if its going slow,
- * but I'm always waiting for the knockout or decisive takedown."
- * Only `high` direction gets a voice for now; other directions fall back to
- * the kind pools.
+ * speaks for the whole pattern, not its single winning token.
+ *
+ * Pools are keyed `cluster` (motive-NEUTRAL — claims only the behavior the
+ * data proves) and `cluster|voice` (used only when the user's other tokens
+ * corroborate that motivation; see CLUSTER_VOICES in insights.ts). The same
+ * behavior has different whys: the 'tension' lines come from Mike's own
+ * articulation at the pilot review (2026-06-11) — "I feel the tension, like
+ * anything can happen, the entire fight, even if nothing is" — while the
+ * 'chess' lines fit the fan who enjoys the calculations and the mental work.
+ * Only `high` direction gets cluster voice; others fall back to kind pools.
  */
 const CLUSTER_HEADLINES: Record<string, readonly string[]> = {
   'tension-watcher': [
-    'You feel the tension even when nothing lands',
     'You never give up on a slow fight',
-    'Where {communityS} sees boring, you see a fight about to happen',
+    'Where {communityS} sees boring, you see more',
     'You stay locked in long after {communityS} checks out',
+    'Slow fights have a way of keeping you',
+  ],
+  'tension-watcher|tension': [
+    'You feel the tension even when nothing lands',
     'Anything can happen, and you watch like it will',
+    'Where {communityS} sees boring, you see a fight about to happen',
+    'You never stop waiting for the finish',
+  ],
+  'tension-watcher|chess': [
+    'You appreciate the chess match {communityS} calls boring',
+    'You watch the calculations, not just the action',
+    'Two fighters thinking is still a fight to you',
+    'You see the mental battle where {communityS} sees a stall',
   ],
 };
 
@@ -170,9 +184,12 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
     names: (c.stats.topFighters ?? []).join(' and '),
   };
 
-  const headlinePool =
-    (c.cluster && c.direction === 'high' && CLUSTER_HEADLINES[c.cluster]) ||
-    HEADLINES[c.kind];
+  const clusterPool =
+    c.cluster && c.direction === 'high'
+      ? (c.voice && CLUSTER_HEADLINES[`${c.cluster}|${c.voice}`]) ||
+        CLUSTER_HEADLINES[c.cluster]
+      : undefined;
+  const headlinePool = clusterPool || HEADLINES[c.kind];
   const headline = fill(pickVariety(headlinePool, `${seed}|h`), vars);
   const subline = fill(pickVariety(SUBLINES[c.kind], `${seed}|s`), vars);
   return { headline: cap(headline), subline };

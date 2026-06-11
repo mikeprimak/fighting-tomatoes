@@ -144,6 +144,14 @@ export interface InsightCandidate {
    * survives per direction, and copy may use a cluster-level voice.
    */
   cluster?: string;
+  /**
+   * The cluster's inferred MOTIVATION, when the user's other tokens
+   * corroborate one (see CLUSTER_VOICES in insights.ts). The same behavior
+   * has different whys — one user defends slow fights for the tension,
+   * another for the chess match. Unset = no clear corroboration; copy must
+   * then claim only the behavior, never a motive.
+   */
+  voice?: string;
   /** Final composite score (gap × evidence × rarity × bonuses). */
   score: number;
   /** Raw numbers for the subline + debugging/pilot review. */

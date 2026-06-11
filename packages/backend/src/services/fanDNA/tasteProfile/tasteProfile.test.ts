@@ -46,10 +46,10 @@ function fight(
 
 function buildFights(): RatedFightInput[] {
   const fights: RatedFightInput[] = [];
-  // 100 filler fights at the baseline, community agreeing with the user —
+  // 110 filler fights at the baseline, community agreeing with the user —
   // they anchor the GLOBAL community-delta baseline near zero. Their token
   // ("steady") must stay silent.
-  for (let i = 0; i < 100; i++)
+  for (let i = 0; i < 110; i++)
     fights.push(fight(7, { pace: 'steady' }, { avg: 7.0, n: 10 }));
   // War lover, AND the community agrees much less: user runs 1.8 above the
   // crowd on wars vs ~0.3 globally — the adjusted gap is the signal.
@@ -73,8 +73,14 @@ function buildFights(): RatedFightInput[] {
   // low_output (one story, two tokens) — cluster dedupe must keep exactly one.
   for (let i = 0; i < 12; i++)
     fights.push(fight(9, { actionLevel: 'low_action', letdowns: ['low_output'] }));
+  // Motivation corroborators: this user loves the CHESS side (fight IQ +
+  // technical chess matches), so the cluster must speak in the 'chess' voice —
+  // the opposite of the pilot user's 'tension' voice. Proves the why is
+  // inferred from data, not hardcoded.
+  for (let i = 0; i < 12; i++)
+    fights.push(fight(8.5, { texture: 'high_iq_chess', dominantSkill: 'fight_iq' }));
   // Vocab-agnostic: a dimension that does not exist in any taxonomy today.
-  for (let i = 0; i < 14; i++) fights.push(fight(9, { crowdEnergy: 'electric' }));
+  for (let i = 0; i < 14; i++) fights.push(fight(9.5, { crowdEnergy: 'electric' }));
   // Noise: strong rating but n=3 — below MIN_N, must be silent.
   for (let i = 0; i < 3; i++) fights.push(fight(9, { texture: 'awkward' }));
   return fights;
@@ -207,6 +213,17 @@ function run() {
   assert(
     !!byToken('low_action') !== !!byToken('low_output'),
     'only one member of a token cluster survives dedupe',
+  );
+  // 7d. Motivation voice is inferred from corroborating tokens: this user
+  // loves fight IQ + chess matches, so the cluster speaks 'chess', and the
+  // headline carries that motive (never the pilot user's 'tension' framing).
+  assert(
+    clusterHits[0]?.voice === 'chess',
+    `cluster voice inferred from corroborators (got ${clusterHits[0]?.voice})`,
+  );
+  assert(
+    /chess|calculat|thinking|mental/i.test(clusterHits[0]?.headline ?? ''),
+    `cluster headline speaks the inferred motive (got "${clusterHits[0]?.headline}")`,
   );
 
   // 8. Fighter axis fires with locked sourcing; followed fighter leads copy.
