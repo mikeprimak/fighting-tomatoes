@@ -69,6 +69,10 @@ function buildFights(): RatedFightInput[] {
   for (let i = 0; i < 5; i++) fights.push(fight(10, { drama: 'comeback' }));
   // Cold direction on a notable token: dominance leaves this user flat.
   for (let i = 0; i < 12; i++) fights.push(fight(5.5, { drama: 'dominance' }));
+  // Correlated-token cluster: the SAME 12 fights carry both low_action and
+  // low_output (one story, two tokens) — cluster dedupe must keep exactly one.
+  for (let i = 0; i < 12; i++)
+    fights.push(fight(9, { actionLevel: 'low_action', letdowns: ['low_output'] }));
   // Vocab-agnostic: a dimension that does not exist in any taxonomy today.
   for (let i = 0; i < 14; i++) fights.push(fight(9, { crowdEnergy: 'electric' }));
   // Noise: strong rating but n=3 — below MIN_N, must be silent.
@@ -191,6 +195,20 @@ function run() {
   // Touched-but-never-loved token stays silent (zero affection weight).
   assert(!byToken('counter_striker'), 'touched-only token stays silent');
 
+  // 7c. Correlated-token cluster collapses to ONE insight wearing the
+  // cluster voice; the losing twin token is silent.
+  const clusterHits = result.insights.filter(
+    (i) => i.cluster === 'tension-watcher',
+  );
+  assert(
+    clusterHits.length === 1,
+    `cluster emits exactly one insight (got ${clusterHits.length})`,
+  );
+  assert(
+    !!byToken('low_action') !== !!byToken('low_output'),
+    'only one member of a token cluster survives dedupe',
+  );
+
   // 8. Fighter axis fires with locked sourcing; followed fighter leads copy.
   const pf = result.insights.find(
     (i) => i.key === 'fighter-style|fighterStyle|pressure_fighter|high',
@@ -215,6 +233,13 @@ function run() {
     assert(
       !/\d/.test(i.headline),
       `headline is human, number lives in subline (${i.key}: "${i.headline}")`,
+    );
+    // Plural community refs must never meet a singular verb ("most fans shrugs").
+    assert(
+      !/\b(fans|raters|us)\s+(checks|sees|shrugs|rates|tunes)\b/.test(
+        `${i.headline} ${i.subline}`,
+      ),
+      `community ref verb agreement (${i.key}: "${i.headline}")`,
     );
   }
 

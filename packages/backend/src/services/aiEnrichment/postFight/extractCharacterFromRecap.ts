@@ -43,6 +43,7 @@ Rules:
   - Your classification MUST be consistent with the recorded result. If the recap conflicts with the result, trust the result.
   - Classify what the recap describes — that is analysis, not fabrication. But do NOT invent specifics the recap doesn't support; use null (or []) whenever you would be guessing.
   - Calibration: a "war" is genuinely high-volume, damaging, and competitive — don't inflate an ordinary decision. "blowout" = near-shutout. "razor_thin" = legitimately could go either way. "robbery" only when the recap frames the scorecards as clearly wrong. "instant_classic" is rare — reserve it.
+  - "significance" errs toward null. "title_change"/"title_defense" are allowed ONLY when the fight is marked TITLE FIGHT above — a famous or high-stakes non-title fight is NOT a title fight. Most fights carry no special significance; do not promote one to division_shakeup/star_is_born/statement_win without explicit recap support. The same restraint applies to "stakesLevel": "historic" and "major" are rare.
   - If the result is a decision: finish=decision, finishTiming=distance, and focus on competitiveness/phase/texture.
   - Output the JSON object only.`;
 
