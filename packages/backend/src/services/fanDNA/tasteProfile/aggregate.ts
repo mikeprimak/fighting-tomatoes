@@ -38,16 +38,27 @@ export function buildSignature(
 
 function computeBaseline(fights: RatedFightInput[]): TasteSignature['baseline'] {
   const n = fights.length;
-  if (n === 0) return { count: 0, avg: 0, sd: 0, tensCount: 0 };
+  if (n === 0)
+    return { count: 0, avg: 0, sd: 0, tensCount: 0, cmpCount: 0, avgDeltaVsCommunity: 0 };
   const sum = fights.reduce((a, f) => a + f.rating, 0);
   const avg = sum / n;
   const variance =
     n > 1 ? fights.reduce((a, f) => a + (f.rating - avg) ** 2, 0) / (n - 1) : 0;
+  let cmpCount = 0;
+  let cmpDeltaSum = 0;
+  for (const f of fights) {
+    if (f.communityAvg != null && (f.communityN ?? 0) >= CMP_PER_FIGHT_FLOOR) {
+      cmpCount++;
+      cmpDeltaSum += f.rating - f.communityAvg;
+    }
+  }
   return {
     count: n,
     avg,
     sd: Math.sqrt(variance),
     tensCount: fights.filter((f) => f.rating >= TOP_RATING).length,
+    cmpCount,
+    avgDeltaVsCommunity: cmpCount > 0 ? cmpDeltaSum / cmpCount : 0,
   };
 }
 

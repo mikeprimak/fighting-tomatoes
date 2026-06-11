@@ -46,11 +46,15 @@ function fight(
 
 function buildFights(): RatedFightInput[] {
   const fights: RatedFightInput[] = [];
-  // 100 filler fights at the baseline. Their token ("steady") must stay silent.
-  for (let i = 0; i < 100; i++) fights.push(fight(7, { pace: 'steady' }));
-  // War lover, AND the community agrees less: user runs 1.5 above the crowd.
+  // 100 filler fights at the baseline, community agreeing with the user —
+  // they anchor the GLOBAL community-delta baseline near zero. Their token
+  // ("steady") must stay silent.
+  for (let i = 0; i < 100; i++)
+    fights.push(fight(7, { pace: 'steady' }, { avg: 7.0, n: 10 }));
+  // War lover, AND the community agrees much less: user runs 1.8 above the
+  // crowd on wars vs ~0.3 globally — the adjusted gap is the signal.
   for (let i = 0; i < 20; i++)
-    fights.push(fight(9, { actionLevel: 'war' }, { avg: 7.5, n: 10 }));
+    fights.push(fight(9, { actionLevel: 'war' }, { avg: 7.2, n: 10 }));
   // Rare taste: clinch wars, all rated 9.
   for (let i = 0; i < 12; i++) fights.push(fight(9, { phase: 'clinch_war' }));
   // Common taste: knockouts at a modest gap (avg 8, mixed 7/8/9) — must be

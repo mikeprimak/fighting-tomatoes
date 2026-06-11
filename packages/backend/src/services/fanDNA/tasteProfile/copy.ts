@@ -150,9 +150,13 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
   return { headline: cap(headline), subline };
 }
 
-/** Subline delta is always shown as a magnitude; direction is in the words. */
+/**
+ * Subline delta is always shown as a magnitude; direction is in the words.
+ * Community lines use the ADJUSTED delta (beyond the user's global gap) so
+ * the number matches the direction the headline claims.
+ */
 function fmtAbsDelta(c: InsightCandidate): string {
-  const d = c.stats.deltaVsCommunity ?? c.stats.delta;
+  const d = c.stats.adjustedDelta ?? c.stats.deltaVsCommunity ?? c.stats.delta;
   return d != null ? Math.abs(d).toFixed(1) : '';
 }
 
