@@ -136,6 +136,7 @@ function aggregateFighterTokens(fighters: FighterInput[]): FighterTokenStat[] {
     dimension: FighterTokenStat['dimension'];
     token: string;
     weight: number;
+    touchCount: number;
     contributors: Array<{ name: string; weight: number }>;
   }
   const acc = new Map<string, FAcc>();
@@ -145,7 +146,7 @@ function aggregateFighterTokens(fighters: FighterInput[]): FighterTokenStat[] {
       (fighter.followed ? W_FOLLOWED : 0) +
       (fighter.highRatedCount ?? 0) * W_HIGH_RATED +
       Math.min(fighter.hypedCount ?? 0, HYPED_CONTRIB_CAP) * W_HYPED;
-    if (weight <= 0) continue;
+    // Zero-affection fighters still count as TOUCHED (the lift denominator).
 
     const entries: Array<[FighterTokenStat['dimension'], string]> = [
       ...fighter.styleArchetype.map(
@@ -166,11 +167,14 @@ function aggregateFighterTokens(fighters: FighterInput[]): FighterTokenStat[] {
       seen.add(key);
       let a = acc.get(key);
       if (!a) {
-        a = { dimension, token, weight: 0, contributors: [] };
+        a = { dimension, token, weight: 0, touchCount: 0, contributors: [] };
         acc.set(key, a);
       }
-      a.weight += weight;
-      a.contributors.push({ name: fighter.name, weight });
+      a.touchCount++;
+      if (weight > 0) {
+        a.weight += weight;
+        a.contributors.push({ name: fighter.name, weight });
+      }
     }
   }
 
@@ -179,6 +183,7 @@ function aggregateFighterTokens(fighters: FighterInput[]): FighterTokenStat[] {
     token: a.token,
     weight: a.weight,
     fighterCount: a.contributors.length,
+    touchCount: a.touchCount,
     topFighters: a.contributors
       .sort((x, y) => y.weight - x.weight)
       .slice(0, 2)

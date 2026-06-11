@@ -361,7 +361,7 @@ function parseFights(
  * a thrown error. Returns null when the model omitted the object entirely or every
  * field came back empty (so downstream can treat "no character read" uniformly).
  */
-function parseCharacter(raw: any): FightCharacter | null {
+export function parseCharacter(raw: any): FightCharacter | null {
   if (!raw || typeof raw !== 'object') return null;
   const V = FIGHT_CHARACTER_VOCAB;
   const scalarKeys: CharacterScalarKey[] = [
