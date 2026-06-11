@@ -340,6 +340,18 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
 
 ## Changelog
 
+- **2026-06-11** — **Taste-aggregation + insight engine BUILT** (commit
+  `72e64ac3`, `services/fanDNA/tasteProfile/`, branch-only). Locked the
+  surprise-scoring model with Mike: **gap × evidence × rarity × absolutes**,
+  hard score floor (silence > filler), hand-set direction-aware commonness
+  priors at current scale (the "everyone likes knockouts" filter), community-
+  compare preferred over self-referential when its baseline is trustworthy.
+  Clarified: self-referential insights = cross-category contrast within the
+  user's own data ("all your 10s share a comeback"), NOT change-over-time.
+  Engine is pure (no I/O) + vocab-agnostic (new dimensions need zero rework);
+  synthetic-data test suite green; typecheck clean. Next: dev-DB decision →
+  prisma loader → avocadomike pilot → vocab freeze → backfill (see
+  `docs/daily/2026-06-11.md`).
 - **2026-06-09 (6)** — Irreversibility review. Locked: visibility = private + opt-in
   share; signature = rotating-only (no frozen label; deprecates `personalityType.ts`);
   vocab = pilot→freeze→backfill; spoiler-safety binds all identity surfaces. Taste-
