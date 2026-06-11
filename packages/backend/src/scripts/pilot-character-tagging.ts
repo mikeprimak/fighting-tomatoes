@@ -19,7 +19,27 @@
 import { prisma } from '../lib/prisma';
 import { extractCharacterFromRecap } from '../services/aiEnrichment/postFight/extractCharacterFromRecap';
 
-const CONCURRENCY = 4;
+// Org rate limit is 50k input tokens/min on Haiku (~1.6k/call → ~30 calls/min).
+// Two workers with a per-call delay keeps us under it; 429s back off and retry.
+const CONCURRENCY = 2;
+const PER_CALL_DELAY_MS = 4000;
+const MAX_RETRIES = 5;
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function withRateLimitRetry<T>(fn: () => Promise<T>): Promise<T> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await fn();
+    } catch (e: any) {
+      const is429 = e?.status === 429 || /rate_limit/i.test(String(e?.message ?? ''));
+      if (!is429 || attempt >= MAX_RETRIES) throw e;
+      const backoff = 30_000 * (attempt + 1);
+      console.log(`  429 rate limit, backing off ${backoff / 1000}s ...`);
+      await sleep(backoff);
+    }
+  }
+}
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -102,7 +122,8 @@ async function main() {
           .filter((s): s is string => typeof s === 'string' && s.length > 0)
           .join(' | ');
 
-        const { character, usage } = await extractCharacterFromRecap({
+        const { character, usage } = await withRateLimitRetry(() =>
+          extractCharacterFromRecap({
           fighter1: f.fighter1.lastName,
           fighter2: f.fighter2.lastName,
           weightClass: f.weightClass,
@@ -114,9 +135,11 @@ async function main() {
           time: f.time,
           recap: f.aiPostFightSummary as string,
           extraContext: extra || null,
-        });
+          }),
+        );
         inputTokens += usage.inputTokens;
         outputTokens += usage.outputTokens;
+        await sleep(PER_CALL_DELAY_MS);
 
         if (!character) {
           nullCharacter++;

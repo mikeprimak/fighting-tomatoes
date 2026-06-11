@@ -19,6 +19,7 @@ import {
   ABSOLUTE_BOOST,
   FIGHTER_MIN_DISTINCT,
   FIGHTER_MIN_WEIGHT,
+  GLOBAL_CMP_FLOOR,
   HIGH_RATING,
   MIN_N,
   SCORE_FLOOR,
@@ -51,9 +52,14 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
   const out: InsightCandidate[] = [];
   const { baseline } = sig;
 
+  // A globally generous/harsh rater is "above the room" on everything; only
+  // token gaps BEYOND their global gap carry information.
+  const globalCmpDelta =
+    baseline.cmpCount >= GLOBAL_CMP_FLOOR ? baseline.avgDeltaVsCommunity : 0;
+
   for (const t of sig.tokens) {
     selfContrast(t, baseline.avg, out);
-    communityCompare(t, out);
+    communityCompare(t, globalCmpDelta, out);
     neverAbove(t, baseline, out);
     allHigh(t, out);
     allTensShare(t, baseline.tensCount, out);
@@ -135,13 +141,20 @@ function selfContrast(
   });
 }
 
-function communityCompare(t: TokenStat, out: InsightCandidate[]): void {
+function communityCompare(
+  t: TokenStat,
+  globalCmpDelta: number,
+  out: InsightCandidate[],
+): void {
   if (t.avgDeltaVsCommunity == null) return;
+  // Score on the gap BEYOND the user's global community gap; the copy still
+  // shows the raw (true) per-token delta.
+  const adjusted = t.avgDeltaVsCommunity - globalCmpDelta;
   const scored = scoreCommunityCompare({
     dimension: t.dimension,
     token: t.token,
     cmpN: t.cmpN,
-    deltaVsCommunity: t.avgDeltaVsCommunity,
+    deltaVsCommunity: adjusted,
   });
   if (!scored || scored.score < SCORE_FLOOR) return;
   out.push({
@@ -154,6 +167,7 @@ function communityCompare(t: TokenStat, out: InsightCandidate[]): void {
       n: t.cmpN,
       avg: t.avgRating,
       deltaVsCommunity: t.avgDeltaVsCommunity,
+      adjustedDelta: adjusted,
     },
   });
 }

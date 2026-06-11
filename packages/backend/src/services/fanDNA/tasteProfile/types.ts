@@ -104,6 +104,14 @@ export interface TasteSignature {
     sd: number;
     /** Count of top-score (10) ratings. */
     tensCount: number;
+    /** Fights with a trustworthy community average. */
+    cmpCount: number;
+    /**
+     * The user's GLOBAL mean (rating − community avg) over those fights.
+     * Community-compare insights subtract this so a globally generous (or
+     * harsh) rater doesn't read as "above the room" on every single token.
+     */
+    avgDeltaVsCommunity: number;
   };
   tokens: TokenStat[];
   fighterTokens: FighterTokenStat[];
@@ -139,6 +147,8 @@ export interface InsightCandidate {
     baseline?: number;
     delta?: number;
     deltaVsCommunity?: number;
+    /** deltaVsCommunity minus the user's global community gap (scoring basis). */
+    adjustedDelta?: number;
     cap?: number;
     tens?: number;
     weight?: number;
@@ -188,6 +198,8 @@ export const GAP_NORM = 2.0;
 export const CMP_GAP_NORM = 1.5;
 /** Per-fight community sample floor before its avg counts as trustworthy. */
 export const CMP_PER_FIGHT_FLOOR = 5;
+/** Fights needed before the global community-delta baseline is applied. */
+export const GLOBAL_CMP_FLOOR = 30;
 /** A rating at/above this is "high" (drives all-high + fighter sourcing). */
 export const HIGH_RATING = 8;
 /** Top score for the all-tens-share absolute. */
