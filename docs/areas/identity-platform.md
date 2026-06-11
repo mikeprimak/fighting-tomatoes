@@ -237,8 +237,17 @@ discipline below is load-bearing.
 - **Coordinated release at the end:** merge branch → main (reviewed), let backend +
   web auto-deploy, run `migrate deploy`, then OTA mobile. One release, not a drip.
 
-> Dev-database mechanism (persistent cloud instance vs. local-from-dump) is the one
-> open infra decision — see daily log 2026-06-09.
+> ~~Dev-database mechanism (persistent cloud instance vs. local-from-dump) is the one
+> open infra decision — see daily log 2026-06-09.~~ **Resolved 2026-06-11 (Mike's
+> call): no dev DB for the pilot — use prod with guardrails.** Rationale: the
+> character taxonomy needs NO migration (flows through existing `aiPostFightTags`
+> JSONB), pilot writes are additive JSON merges of the same class the post-fight
+> cron already runs against prod daily, and nothing on main renders the `character`
+> key so pilot data is invisible to users. Guardrails: zero `prisma migrate`
+> commands; merge-only writes that never touch existing summaries/narratives;
+> pilot rows get overwritten by the post-freeze backfill anyway. The dev-DB
+> question reopens only if a real migration appears in Phase 1 (then: author on a
+> local throwaway Postgres, `migrate deploy` to prod, per the standing rule).
 
 ---
 
