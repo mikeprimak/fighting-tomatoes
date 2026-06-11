@@ -138,6 +138,12 @@ export interface InsightCandidate {
   dimension: string;
   token: string;
   direction: InsightDirection;
+  /**
+   * Set when this token belongs to a correlated-token cluster (see
+   * TOKEN_CLUSTERS in insights.ts). Only the strongest member of a cluster
+   * survives per direction, and copy may use a cluster-level voice.
+   */
+  cluster?: string;
   /** Final composite score (gap × evidence × rarity × bonuses). */
   score: number;
   /** Raw numbers for the subline + debugging/pilot review. */

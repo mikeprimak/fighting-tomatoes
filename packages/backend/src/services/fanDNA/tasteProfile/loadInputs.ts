@@ -18,9 +18,17 @@
 import type { PrismaClient } from '@prisma/client';
 import {
   HIGH_RATING,
+  TOP_RATING,
   type FighterInput,
   type RatedFightInput,
 } from './types';
+
+/**
+ * Legacy fightingtomatoes import bugs stored a handful of ratings as 11
+ * (confirmed errors, Mike 2026-06-11). The prod rows are being corrected, but
+ * the loader clamps defensively so one bad row can never skew a profile.
+ */
+const clampRating = (r: number) => Math.min(r, TOP_RATING);
 
 /** Same canonical method bucketing as the method-affinity trait. */
 export function bucketMethod(method: string | null): string | null {
@@ -90,6 +98,7 @@ export async function loadTasteInputs(
   let withCharacter = 0;
   const fights: RatedFightInput[] = ratings.map((r) => {
     const f = r.fight;
+    const rating = clampRating(r.rating);
     const dims: RatedFightInput['dims'] = {};
 
     const method = bucketMethod(f.method);
@@ -114,11 +123,11 @@ export async function loadTasteInputs(
     // Community average excluding the user (precomputed aggregate minus self).
     const n = f.totalRatings;
     const communityAvg =
-      n > 1 ? (f.averageRating * n - r.rating) / (n - 1) : null;
+      n > 1 ? (f.averageRating * n - rating) / (n - 1) : null;
 
     return {
       fightId: f.id,
-      rating: r.rating,
+      rating,
       dims,
       communityAvg,
       communityN: Math.max(0, n - 1),

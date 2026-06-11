@@ -75,6 +75,25 @@ export function communityRefSubject(seed: string): string {
   return COMMUNITY_REFS_SUBJECT[hashIndex(seed, COMMUNITY_REFS_SUBJECT.length)];
 }
 
+/**
+ * Refs that take a third-person SINGULAR verb ("the crowd shrugs"). Templates
+ * that conjugate a verb against the reference must use this pool — plural refs
+ * like "most fans" read as "most fans shrugs" otherwise.
+ */
+export const COMMUNITY_REFS_SINGULAR: readonly string[] = [
+  'the community',
+  'the group',
+  'the average fan',
+  'the crowd',
+  'the consensus',
+  'the room',
+];
+
+/** Singular-verb-safe variant of communityRef(). */
+export function communityRefSingular(seed: string): string {
+  return COMMUNITY_REFS_SINGULAR[hashIndex(seed, COMMUNITY_REFS_SINGULAR.length)];
+}
+
 /** Generic deterministic pick from any copy pool. */
 export function pickVariety<T>(pool: readonly T[], seed: string): T {
   return pool[hashIndex(seed, pool.length)];

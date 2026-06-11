@@ -10,7 +10,11 @@
  *   - communityRef() for every "everyone else" mention — never "the room" tic.
  *   - House style: no em dashes or en dashes anywhere in user-facing strings.
  */
-import { communityRef, pickVariety } from '../copy/communityRef';
+import {
+  communityRef,
+  communityRefSingular,
+  pickVariety,
+} from '../copy/communityRef';
 import { cap, tokenPhrase } from './tokenLabels';
 import type { InsightCandidate, InsightKind } from './types';
 
@@ -33,7 +37,7 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
   'community-high': [
     'You see more in {X} than {community}',
     "You're higher on {X} than {community}",
-    'Where {community} shrugs at {X}, you lean in',
+    'Where {communityS} shrugs at {X}, you lean in',
     '{Xcap} hit you harder than they hit {community}',
     'You out-rate {community} on {X}',
   ],
@@ -76,6 +80,26 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
     "You've got a soft spot for {X}",
     '{Xcap} win you over',
     'You keep ending up in the corner of {X}',
+  ],
+};
+
+/**
+ * Cluster-level headline voice. When an insight survives cluster dedupe it
+ * speaks for the whole pattern, not its single winning token. The
+ * tension-watcher lines come from Mike's own articulation at the pilot review
+ * (2026-06-11): "I feel the tension, like anything can happen, the entire
+ * fight, even if nothing is. most people give up on action if its going slow,
+ * but I'm always waiting for the knockout or decisive takedown."
+ * Only `high` direction gets a voice for now; other directions fall back to
+ * the kind pools.
+ */
+const CLUSTER_HEADLINES: Record<string, readonly string[]> = {
+  'tension-watcher': [
+    'You feel the tension even when nothing lands',
+    'You never give up on a slow fight',
+    'Where {communityS} sees boring, you see a fight about to happen',
+    'You stay locked in long after {communityS} checks out',
+    'Anything can happen, and you watch like it will',
   ],
 };
 
@@ -135,6 +159,7 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
     X: phrase,
     Xcap: cap(phrase),
     community: communityRef(`${seed}|community`),
+    communityS: communityRefSingular(`${seed}|community`),
     n: String(c.stats.n),
     avg: fmt(c.stats.avg),
     base: fmt(c.stats.baseline),
@@ -145,7 +170,10 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
     names: (c.stats.topFighters ?? []).join(' and '),
   };
 
-  const headline = fill(pickVariety(HEADLINES[c.kind], `${seed}|h`), vars);
+  const headlinePool =
+    (c.cluster && c.direction === 'high' && CLUSTER_HEADLINES[c.cluster]) ||
+    HEADLINES[c.kind];
+  const headline = fill(pickVariety(headlinePool, `${seed}|h`), vars);
   const subline = fill(pickVariety(SUBLINES[c.kind], `${seed}|s`), vars);
   return { headline: cap(headline), subline };
 }

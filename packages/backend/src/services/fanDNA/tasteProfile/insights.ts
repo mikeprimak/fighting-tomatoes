@@ -48,6 +48,22 @@ const ALL_TENS_MAX_PRESENT_SHARE = 0.5;
  */
 const TENS_EVIDENCE_SAT = 6;
 
+/**
+ * Correlated tokens that tell ONE story. The pilot review (Mike, 2026-06-11)
+ * had six of the top spots saying "you defend fights the crowd gave up on"
+ * six slightly different ways. Within a cluster, only the strongest candidate
+ * per direction survives; the rest are the same insight wearing different
+ * tokens. Extend this map as new correlations show up in real profiles.
+ */
+const TOKEN_CLUSTERS: Record<string, string> = {
+  'letdowns|low_output': 'tension-watcher',
+  'actionLevel|low_action': 'tension-watcher',
+  'letdowns|point_fighting': 'tension-watcher',
+  'letdowns|anticlimactic': 'tension-watcher',
+  'drama|anticlimax': 'tension-watcher',
+  'vibe|frustrating': 'tension-watcher',
+};
+
 export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
   const out: InsightCandidate[] = [];
   const { baseline } = sig;
@@ -110,7 +126,7 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
     });
   }
 
-  return dedupeByToken(out).sort((a, b) => b.score - a.score);
+  return dedupeByCluster(dedupeByToken(out)).sort((a, b) => b.score - a.score);
 }
 
 function selfContrast(
@@ -259,6 +275,27 @@ function dedupeByToken(candidates: InsightCandidate[]): InsightCandidate[] {
     if (!cur || c.score > cur.score) best.set(key, c);
   }
   return [...best.values()];
+}
+
+/**
+ * Keep only the strongest member of each correlated-token cluster (per
+ * direction). Survivors get `cluster` stamped so copy can speak in the
+ * cluster's voice instead of the individual token's.
+ */
+function dedupeByCluster(candidates: InsightCandidate[]): InsightCandidate[] {
+  const out: InsightCandidate[] = [];
+  const best = new Map<string, InsightCandidate>();
+  for (const c of candidates) {
+    const cluster = TOKEN_CLUSTERS[`${c.dimension}|${c.token}`];
+    if (!cluster) {
+      out.push(c);
+      continue;
+    }
+    const key = `${cluster}|${c.direction}`;
+    const cur = best.get(key);
+    if (!cur || c.score > cur.score) best.set(key, { ...c, cluster });
+  }
+  return [...out, ...best.values()];
 }
 
 // Re-exported for the orchestrator + tests.

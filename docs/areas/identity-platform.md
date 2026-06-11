@@ -349,6 +349,19 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
 
 ## Changelog
 
+- **2026-06-11 (2)** — **Pilot review PASSED; VOCAB FROZEN.** Mike's verdicts
+  on his real 15-insight profile (778 fights tagged): (1) the top cluster —
+  rating crowd-hated low-output fights 0.9-1.5 above the room beyond his own
+  generosity — is **real taste** ("I feel the tension, like anything can
+  happen, the entire fight, even if nothing is"); his articulation is now the
+  cluster's copy voice. (2) Ratings of 11 = fightingtomatoes import bugs;
+  129 clamped to 10 in prod + defensive loader clamp. (3) He'd share
+  any/all 15 insights; no vocab objections → `FIGHT_CHARACTER_VOCAB` frozen.
+  Shipped off the review: **TOKEN_CLUSTERS** correlation dedupe (the six
+  redundant "defends boring fights" tokens collapse to one 'tension-watcher'
+  insight), significance/stakesLevel prompt calibration (title tokens hard-
+  gated on the title flag), community-ref verb-agreement fix. Next: stored-
+  recap backfill (~1,450 fights, ~$4) then prioritized recap-generation.
 - **2026-06-11** — **Taste-aggregation + insight engine BUILT** (commit
   `72e64ac3`, `services/fanDNA/tasteProfile/`, branch-only). Locked the
   surprise-scoring model with Mike: **gap × evidence × rarity × absolutes**,
