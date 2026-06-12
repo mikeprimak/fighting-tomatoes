@@ -38,6 +38,24 @@ const BIAS_BOOST = 1.2;
  */
 const BIAS_EVIDENCE_SAT = 12;
 
+/**
+ * Self-relative pair thresholds (see prefersPairs below). The per-token floor
+ * sits below MIN_N because the claim is COMPARATIVE: "X over Y" rests on two
+ * samples (≥10 fights combined), not one token's solo average.
+ */
+const PAIR_MIN_N = 5;
+const PAIR_MIN_GAP = 1.2;
+const PAIR_GAP_NORM = 2.5;
+const PAIR_EVIDENCE_SAT = 12;
+/** These ARE the primary insight family (Mike, 2026-06-12) — rank them so. */
+const PREFERS_BOOST = 1.25;
+/**
+ * Dimensions whose tokens are quality-ordered, where "X over Y" restates the
+ * rating scale instead of revealing taste ("instant classics over forgettable
+ * fights" is true of every human).
+ */
+const PAIR_EXCLUDED_DIMS = new Set(['vibe', 'letdowns']);
+
 /** Absolute generators need slightly more proof than trend generators. */
 const NEVER_ABOVE_MIN_N = 10;
 const NEVER_ABOVE_CAP = 7; // "never above a 7" — caps higher than this are weak tea
@@ -158,6 +176,7 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
     baseline.cmpCount >= GLOBAL_CMP_FLOOR ? baseline.avgDeltaVsCommunity : 0;
 
   ratingBias(baseline, out);
+  prefersPairs(sig.tokens, out);
 
   for (const t of sig.tokens) {
     selfContrast(t, baseline.avg, out);
@@ -212,9 +231,36 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
     });
   }
 
-  return dedupeByCluster(dedupeByToken(out), inferClusterVoices(sig)).sort(
-    (a, b) => b.score - a.score,
+  return capCommunityKinds(
+    dedupeByCluster(dedupeByToken(out), inferClusterVoices(sig)).sort(
+      (a, b) => b.score - a.score,
+    ),
   );
+}
+
+/**
+ * "There should only be one that says I rate lower than the group on any one
+ * thing" (Mike, 2026-06-12). You-vs-the-crowd is ONE idea per direction no
+ * matter how many tokens express it: keep only the strongest card among the
+ * group-comparison kinds in each direction (global bias and per-token compare
+ * candidates compete for the same single slot).
+ */
+const BELOW_GROUP_KINDS = new Set(['community-low', 'rating-bias-low']);
+const ABOVE_GROUP_KINDS = new Set(['community-high', 'rating-bias-high']);
+
+function capCommunityKinds(sorted: InsightCandidate[]): InsightCandidate[] {
+  let belowSeen = false;
+  let aboveSeen = false;
+  return sorted.filter((c) => {
+    if (BELOW_GROUP_KINDS.has(c.kind)) {
+      if (belowSeen) return false;
+      belowSeen = true;
+    } else if (ABOVE_GROUP_KINDS.has(c.kind)) {
+      if (aboveSeen) return false;
+      aboveSeen = true;
+    }
+    return true;
+  });
 }
 
 /**
@@ -246,6 +292,62 @@ function ratingBias(
     score,
     stats: { n: baseline.cmpCount, deltaVsCommunity: delta },
   });
+}
+
+/**
+ * Self-relative pairwise preference — the PRIMARY insight family (Mike,
+ * 2026-06-12): "you like striking battles more than grappling battles",
+ * "knockouts over decisions". Within each dimension, the widest top-vs-bottom
+ * average gap among tokens with enough sample becomes one candidate. No
+ * community data anywhere — this is the user against their own taste, which
+ * also makes it the family that works best on small onboarding histories
+ * (clustered-high baselines mute self-contrast deltas, but a pair gap is
+ * measured between tokens, not against the muted baseline).
+ */
+function prefersPairs(
+  tokens: TokenStat[],
+  out: InsightCandidate[],
+): void {
+  const byDim = new Map<string, TokenStat[]>();
+  for (const t of tokens) {
+    if (t.count < PAIR_MIN_N) continue;
+    if (PAIR_EXCLUDED_DIMS.has(t.dimension)) continue;
+    const arr = byDim.get(t.dimension) ?? [];
+    arr.push(t);
+    byDim.set(t.dimension, arr);
+  }
+  for (const [dimension, stats] of byDim) {
+    if (stats.length < 2) continue;
+    let top = stats[0];
+    let bottom = stats[0];
+    for (const s of stats) {
+      if (s.avgRating > top.avgRating) top = s;
+      if (s.avgRating < bottom.avgRating) bottom = s;
+    }
+    const gap = top.avgRating - bottom.avgRating;
+    if (gap < PAIR_MIN_GAP) continue;
+    const score =
+      Math.min(1, gap / PAIR_GAP_NORM) *
+      Math.min(1, Math.min(top.count, bottom.count) / PAIR_EVIDENCE_SAT) *
+      rarity(dimension, top.token, 'high') *
+      PREFERS_BOOST;
+    if (score < SCORE_FLOOR) continue;
+    out.push({
+      kind: 'prefers',
+      dimension,
+      token: top.token,
+      direction: 'high',
+      score,
+      stats: {
+        n: top.count + bottom.count,
+        avg: top.avgRating,
+        delta: gap,
+        vsToken: bottom.token,
+        avgB: bottom.avgRating,
+        nB: bottom.count,
+      },
+    });
+  }
 }
 
 function selfContrast(

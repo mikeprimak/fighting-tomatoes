@@ -11,6 +11,7 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
@@ -30,6 +31,11 @@ export default function OnboardingWelcomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
+        <Image
+          source={require('../../assets/login-logo.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.title}>
           Good Fights learns what kind of fight fan you are
         </Text>
@@ -73,6 +79,19 @@ export default function OnboardingWelcomeScreen() {
               </Text>
             </View>
           </View>
+
+          <View style={styles.beat}>
+            <View style={styles.beatIcon}>
+              <FontAwesome name="book" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.beatTextWrap}>
+              <Text style={styles.beatTitle}>Your fight diary</Text>
+              <Text style={styles.beatBody}>
+                A running record of your fandom — every fight you've watched
+                and what you thought of it, kept for good.
+              </Text>
+            </View>
+          </View>
         </View>
 
         <TouchableOpacity style={styles.ctaButton} onPress={handleStart}>
@@ -93,19 +112,25 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 24,
     justifyContent: 'center',
   },
+  logo: {
+    width: 140,
+    height: 120,
+    alignSelf: 'center',
+    marginBottom: 24,
+  },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 40,
+    marginBottom: 28,
   },
   beats: {
-    marginBottom: 40,
+    marginBottom: 28,
   },
   beat: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   beatIcon: {
     width: 44,

@@ -1,14 +1,15 @@
 /**
  * Onboarding step 2 — rate a fast stack of classics.
  *
- * One fight at a time, quick 1-10 chip row (deliberately NOT the animated
- * wheel from RateFightModal — a fast tap row suits stack-rating better) plus
- * a "Haven't seen it" skip. Ratings fire-and-forget via the existing rate
- * endpoint (no email-verification gate — onboarding runs before the user
- * verifies); failures are silent and the payoff screen's empty state covers
- * the zero-data case.
+ * One fight at a time, using the SAME rating visual as RateFightModal (Mike,
+ * 2026-06-12): ten tappable stars + the large star with the rolling number
+ * wheel. A tap scrolls the big number, lands, then auto-advances to the next
+ * fight. "Haven't seen it" skips. Ratings fire-and-forget via the existing
+ * rate endpoint (no email-verification gate — onboarding runs before the
+ * user verifies); failures are silent and the payoff screen's empty state
+ * covers the zero-data case.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -16,7 +17,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Animated,
+  Easing,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
@@ -62,6 +66,13 @@ export default function RateClassicsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const [ratedCount, setRatedCount] = useState(0);
+  const [rating, setRating] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Same wheel mechanics as RateFightModal: 1200 = blank, (10 - n) * 120 = n.
+  const wheelAnimation = useRef(new Animated.Value(1200)).current;
+  const starColorAnimation = useRef(new Animated.Value(0)).current;
+  const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     apiService
@@ -69,21 +80,49 @@ export default function RateClassicsScreen() {
       .then((res) => setFights(res.fights))
       .catch(() => setFights([]))
       .finally(() => setIsLoading(false));
+    return () => {
+      if (advanceTimer.current) clearTimeout(advanceTimer.current);
+    };
   }, []);
 
   const fight = fights[index];
   const done = !isLoading && (!fight || index >= fights.length);
 
-  const handleRate = (rating: number) => {
-    if (!fight) return;
-    // Fire-and-forget; queue failures silently.
-    apiService.rateFight(fight.fightId, rating).catch(() => {});
-    setRatedCount((c) => c + 1);
+  const advance = () => {
+    wheelAnimation.setValue(1200);
+    starColorAnimation.setValue(0);
+    setRating(0);
+    setIsAnimating(false);
     setIndex((i) => i + 1);
   };
 
+  const handleRate = (level: number) => {
+    if (!fight || isAnimating) return;
+    setIsAnimating(true);
+    setRating(level);
+    // Fire-and-forget; failures silent.
+    apiService.rateFight(fight.fightId, level).catch(() => {});
+    setRatedCount((c) => c + 1);
+
+    Animated.timing(starColorAnimation, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+    // Scroll the big number, let it land, dwell a beat, then next fight.
+    Animated.timing(wheelAnimation, {
+      toValue: (10 - level) * 120,
+      duration: 800,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start(() => {
+      advanceTimer.current = setTimeout(advance, 350);
+    });
+  };
+
   const handleSkipFight = () => {
-    setIndex((i) => i + 1);
+    if (isAnimating) return;
+    advance();
   };
 
   const handleContinue = () => {
@@ -139,29 +178,71 @@ export default function RateClassicsScreen() {
               {[fight.eventName, fight.year].filter(Boolean).join(' · ')}
             </Text>
 
-            <View style={styles.chipsBlock}>
-              <View style={styles.chipsRow}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <TouchableOpacity
-                    key={n}
-                    style={styles.chip}
-                    onPress={() => handleRate(n)}
+            {/* Same visual as RateFightModal: big star + rolling number wheel */}
+            <View style={styles.displayStarContainer}>
+              <View style={styles.animatedStarContainer}>
+                <View style={{ position: 'relative', marginTop: 24 }}>
+                  <FontAwesome name="star" size={80} color="#666666" />
+                  <Animated.View
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      opacity: starColorAnimation,
+                    }}
                   >
-                    <Text style={styles.chipText}>{n}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              <View style={styles.chipsRow}>
-                {[6, 7, 8, 9, 10].map((n) => (
-                  <TouchableOpacity
-                    key={n}
-                    style={styles.chip}
-                    onPress={() => handleRate(n)}
+                    <FontAwesome name="star" size={80} color={colors.primary} />
+                  </Animated.View>
+                </View>
+                <View style={styles.wheelContainer}>
+                  <Animated.View
+                    style={[
+                      styles.wheelNumbers,
+                      {
+                        transform: [{
+                          translateY: wheelAnimation.interpolate({
+                            inputRange: [0, 1200],
+                            outputRange: [475, -725],
+                          }),
+                        }],
+                      },
+                    ]}
                   >
-                    <Text style={styles.chipText}>{n}</Text>
-                  </TouchableOpacity>
-                ))}
+                    {[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].map((number) => (
+                      <Text key={number} style={[styles.wheelNumber, { color: colors.text }]}>
+                        {number}
+                      </Text>
+                    ))}
+                  </Animated.View>
+                  <LinearGradient
+                    colors={[colors.card, `${colors.card}DD`, `${colors.card}99`, `${colors.card}44`, 'transparent']}
+                    style={[styles.fadeOverlay, { top: 0, height: 38 }]}
+                    pointerEvents="none"
+                  />
+                  <LinearGradient
+                    colors={['transparent', `${colors.card}44`, `${colors.card}99`, `${colors.card}DD`, colors.card, colors.card]}
+                    style={[styles.fadeOverlay, { bottom: -12, height: 25 }]}
+                    pointerEvents="none"
+                  />
+                </View>
               </View>
+            </View>
+
+            <View style={styles.starContainer}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
+                <TouchableOpacity
+                  key={level}
+                  onPress={() => handleRate(level)}
+                  style={styles.starButton}
+                  disabled={isAnimating}
+                >
+                  <FontAwesome
+                    name="star"
+                    size={28}
+                    color={level <= rating ? colors.primary : '#666666'}
+                  />
+                </TouchableOpacity>
+              ))}
             </View>
 
             <TouchableOpacity style={styles.skipFightButton} onPress={handleSkipFight}>
@@ -267,29 +348,58 @@ const createStyles = (colors: any) => StyleSheet.create({
     textAlign: 'center',
     marginBottom: 24,
   },
-  chipsBlock: {
-    marginBottom: 16,
+  // Star wheel — geometry copied from RateFightModal so the visuals match.
+  displayStarContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: -16,
   },
-  chipsRow: {
-    flexDirection: 'row',
+  animatedStarContainer: {
+    position: 'relative',
+    alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    paddingTop: 20,
+    paddingBottom: 4,
   },
-  chip: {
-    width: 52,
-    height: 44,
-    borderRadius: 8,
-    backgroundColor: colors.backgroundSecondary,
-    borderWidth: 1,
-    borderColor: colors.border,
+  wheelContainer: {
+    position: 'absolute',
+    top: 20,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
+    overflow: 'hidden',
   },
-  chipText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+  wheelNumbers: {
+    alignItems: 'center',
+    paddingTop: 150,
+  },
+  wheelNumber: {
+    fontSize: 52,
+    fontWeight: 'bold',
+    height: 120,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    lineHeight: 120,
+    textShadowColor: 'black',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 12,
+    minWidth: 120,
+  },
+  fadeOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 1,
+  },
+  starContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  starButton: {
+    padding: 3,
   },
   skipFightButton: {
     alignItems: 'center',
