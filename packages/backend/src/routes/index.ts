@@ -20,6 +20,7 @@ import broadcastsRoutes from './broadcasts';
 import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
+import onboardingRoutes from './onboarding';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -1563,6 +1564,28 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       });
 
+      // Interim follow-source attribution: UserFighterFollow has no `source`
+      // column and this branch is migration-frozen, so the origin (e.g.
+      // 'onboarding') lands in AnalyticsEvent. At release: add the real
+      // column, backfill from these events. The follow row's createdAt stays
+      // the sacred timestamp; this row is supplementary.
+      const followSource = (request.body as { source?: unknown } | null)?.source;
+      try {
+        await fastify.prisma.analyticsEvent.create({
+          data: {
+            eventName: 'fighter_followed',
+            eventType: 'USER_ACTION',
+            userId: user.id,
+            properties: {
+              fighterId: id,
+              source: typeof followSource === 'string' ? followSource.slice(0, 64) : null,
+            },
+          },
+        });
+      } catch (analyticsError: any) {
+        request.log.warn(analyticsError, 'Follow-source analytics write failed');
+      }
+
       // Create notification rule for this fighter (auto-enabled)
       const { manageFighterNotificationRule } = await import('../services/notificationRuleHelpers');
       await manageFighterNotificationRule(user.id, id, true);
@@ -2122,6 +2145,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register Fan DNA routes under /api/fan-dna prefix
   await fastify.register(fanDNARoutes, { prefix: '/api/fan-dna' });
+
+  // Register onboarding routes under /api/onboarding prefix
+  await fastify.register(onboardingRoutes, { prefix: '/api/onboarding' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

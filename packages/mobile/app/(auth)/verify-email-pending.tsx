@@ -13,6 +13,7 @@ import { useColorScheme } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { API_BASE_URL } from '../../services/api';
+import { isOnboardingPending } from '../../services/onboarding';
 
 export default function VerifyEmailPendingScreen() {
   const { user } = useAuth();
@@ -63,8 +64,13 @@ export default function VerifyEmailPendingScreen() {
     }
   };
 
-  const handleSkipForNow = () => {
-    router.replace('/(tabs)');
+  const handleSkipForNow = async () => {
+    // Fresh registrations get the identity onboarding flow first.
+    if (await isOnboardingPending()) {
+      router.replace('/(onboarding)/welcome');
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   const handleBackToLogin = () => {

@@ -89,6 +89,50 @@ export interface FanDNACommittedLine {
   isMeta?: boolean;
 }
 
+/** One spoiler-safe fight in the onboarding rate stack (no result fields). */
+export interface OnboardingStackFight {
+  fightId: string;
+  fighter1: { name: string; profileImage: string | null };
+  fighter2: { name: string; profileImage: string | null };
+  eventName: string | null;
+  year: number | null;
+  org: string | null;
+  weightClass: string | null;
+}
+
+/** One fighter card in the onboarding follow picker. */
+export interface OnboardingFighterSuggestion {
+  fighterId: string;
+  name: string;
+  nickname: string | null;
+  profileImage: string | null;
+  weightClass: string | null;
+  rank: string | null;
+  isChampion: boolean;
+  wins: number;
+  losses: number;
+  draws: number;
+  followerCount: number;
+}
+
+export interface TasteProfileInsight {
+  key: string;
+  kind: string;
+  dimension: string;
+  token: string;
+  /** Human, non-statistical headline ("You love wars"). */
+  headline: string;
+  /** The number lives here, small. */
+  subline: string;
+  score: number;
+}
+
+export interface TasteProfileResponse {
+  insights: TasteProfileInsight[];
+  baseline: { count: number; avg: number; tensCount: number };
+  coverage: { withCharacter: number; total: number };
+}
+
 interface Fight {
   id: string;
   orderOnCard: number;
@@ -658,9 +702,16 @@ class ApiService {
     return this.makeRequest(endpoint);
   }
 
-  async followFighter(fighterId: string): Promise<{ message: string; isFollowing: boolean }> {
+  async followFighter(
+    fighterId: string,
+    source?: string,
+  ): Promise<{ message: string; isFollowing: boolean }> {
+    // `source` (e.g. 'onboarding') is recorded server-side as a
+    // fighter_followed analytics event — interim follow-source attribution
+    // until the real column ships with the release migration.
     return this.makeRequest(`/fighters/${fighterId}/follow`, {
       method: 'POST',
+      ...(source ? { body: JSON.stringify({ source }) } : {}),
     });
   }
 
@@ -672,6 +723,28 @@ class ApiService {
 
   async getFollowedFighters(): Promise<{ fighters: any[] }> {
     return this.makeRequest('/fighters/followed');
+  }
+
+  // ── Onboarding (identity pivot Phase 1 — see app/(onboarding)/) ──────────
+
+  async getOnboardingRateStack(limit: number = 30): Promise<{
+    fights: OnboardingStackFight[];
+    source: 'curated' | 'auto';
+  }> {
+    return this.makeRequest(`/onboarding/rate-stack?limit=${limit}`);
+  }
+
+  async getOnboardingFollowSuggestions(): Promise<{
+    fighters: OnboardingFighterSuggestion[];
+    source: 'curated' | 'auto';
+  }> {
+    return this.makeRequest('/onboarding/follow-suggestions');
+  }
+
+  async getTasteProfile(max?: number): Promise<TasteProfileResponse> {
+    return this.makeRequest(
+      `/fan-dna/taste-profile${max ? `?max=${max}` : ''}`,
+    );
   }
 
   async getTopFollowedFighters(

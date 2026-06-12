@@ -349,6 +349,22 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
 
 ## Changelog
 
+- **2026-06-12 (2)** — **Onboarding BUILT (Phase 1 objective #3, branch-only).**
+  The explain → rate-classics → instant-insight → follow-picker flow shipped on
+  `claude/user-focused-pivot-l8l6mg`. Backend: `GET /api/fan-dna/taste-profile`
+  (the insight endpoint — also serves the future home above-the-fold rail;
+  ISO-week rotation salt, 10-min input cache, silence-over-filler floors
+  untouched), `GET /api/onboarding/rate-stack` (spoiler-safe classics;
+  SystemConfig `onboarding_rate_stack` override + character-tagged
+  diversity-picked fallback), `GET /api/onboarding/follow-suggestions`
+  (SystemConfig `onboarding_fighters` override + most-followed fallback), and
+  interim follow-source attribution via AnalyticsEvent (no migration on this
+  branch; real column + backfill at release). Mobile: `app/(onboarding)/`
+  4-screen group wired from registration + both verify-email exits. Endpoint
+  output verified identical to the pilot runner for avocadomike; 23-rating test
+  account produces 8 insights (new-user floor risk acceptable; empty state
+  covers the rest). Not yet device-tested. Deferred to release: existing-user
+  one-time picker announcement; Google-signup onboarding entry.
 - **2026-06-11 (2)** — **Pilot review PASSED; VOCAB FROZEN.** Mike's verdicts
   on his real 15-insight profile (778 fights tagged): (1) the top cluster —
   rating crowd-hated low-output fights 0.9-1.5 above the room beyond his own
