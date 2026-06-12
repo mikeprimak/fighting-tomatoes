@@ -67,6 +67,24 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
     '{Xcap} first, {Y} second',
     'Your heart picks {X}, not {Y}',
   ],
+  'rates-high': [
+    '{Xcap} score big with you',
+    'You show up for {X}',
+    '{Xcap} rarely disappoint you',
+    'Good nights usually involve {X}',
+  ],
+  'fighter-love': [
+    'You seem to love {name} fights',
+    'A {name} fight never misses for you',
+    '{name} keeps earning your high scores',
+    'When {name} fights, you watch happy',
+  ],
+  'fighter-rec': [
+    'You might like {name}',
+    '{name} looks like your kind of fighter',
+    'One for your radar: {name}',
+    'A name worth following: {name}',
+  ],
   'never-above': [
     'Your top shelf has no room for {X}',
     "There's a ceiling on {X} for you",
@@ -170,6 +188,18 @@ const SUBLINES: Record<InsightKind, readonly string[]> = {
     '{avg} vs {avgB}, across {n} fights.',
     'A {delta} point gap in your own scores.',
   ],
+  'rates-high': [
+    'You rate them {avg} on average, across {n} fights.',
+    '{n} rated, averaging {avg}.',
+  ],
+  'fighter-love': [
+    '{highN} of the {n} you rated landed an 8 or higher.',
+    'You scored {highN} of {n} at 8-plus.',
+  ],
+  'fighter-rec': [
+    'Fits your taste for {recList}.',
+    'Checks your boxes: {recList}.',
+  ],
   'never-above': [
     '{n} rated, never above a {cap}.',
     'Highest score so far: {cap}, across {n} tries.',
@@ -213,6 +243,11 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
     Y: vsPhrase,
     Ycap: cap(vsPhrase),
     avgB: fmt(c.stats.avgB),
+    name: c.stats.topFighters?.[0] ?? '',
+    highN: c.stats.highN != null ? String(c.stats.highN) : '',
+    recList: (c.stats.recTokens ?? [])
+      .map((t) => tokenPhrase(t.dimension, t.token))
+      .join(' and '),
     community: communityRef(`${seed}|community`),
     communityS: communityRefSingular(`${seed}|community`),
     n: String(c.stats.n),

@@ -39,6 +39,8 @@ export interface FighterInput {
   fighterId: string;
   /** Display name for copy, e.g. "Gaethje". */
   name: string;
+  /** Full display name for fighter-card copy, e.g. "Justin Gaethje". */
+  fullName?: string;
   /** Controlled tokens from aiProfile.styleArchetype. */
   styleArchetype: string[];
   /** Controlled tokens from aiProfile.fighterAppeals. */
@@ -53,6 +55,21 @@ export interface FighterInput {
   hypedCount?: number;
   /** Total user ratings on this fighter's fights. */
   ratedCount?: number;
+}
+
+/**
+ * A fighter the user has NOT touched, eligible to be recommended when their
+ * archetype tokens line up with the user's loved fighter tokens. The loader
+ * restricts the pool to notable fighters (champions / ranked) so a rec is
+ * never a deep-cut nobody.
+ */
+export interface RecCandidate {
+  fighterId: string;
+  /** Full display name for copy, e.g. "Alex Pereira". */
+  fullName: string;
+  styleArchetype: string[];
+  fighterAppeals: string[];
+  personaType?: string | null;
 }
 
 /** Aggregated stats for one (dimension, token) across the user's ratings. */
@@ -126,6 +143,9 @@ export type InsightKind =
   | 'rating-bias-high' // global: grades kinder than the community overall
   | 'rating-bias-low'  // global: grades harder than the community overall
   | 'prefers'          // self-relative pair: rates token X well above token Y in the same dimension
+  | 'rates-high'       // simple observation: rates token high, no comparison at all
+  | 'fighter-love'     // simple observation: this one fighter's fights keep scoring high
+  | 'fighter-rec'      // recommendation: an untouched fighter who matches loved fighter tokens
   | 'never-above'      // absolute: n ratings on token, never above a cap
   | 'all-high'         // absolute: every rating on token was >= 8
   | 'all-tens-share'   // absolute: every 10 the user gave carries this token
@@ -176,6 +196,10 @@ export interface InsightCandidate {
     vsToken?: string;
     avgB?: number;
     nB?: number;
+    /** 'fighter-love' only: ratings at/above HIGH_RATING on this fighter. */
+    highN?: number;
+    /** 'fighter-rec' only: the matched taste tokens behind the rec. */
+    recTokens?: Array<{ dimension: string; token: string }>;
   };
 }
 
@@ -193,6 +217,8 @@ export interface TasteProfileInput {
   userId: string;
   fights: RatedFightInput[];
   fighters?: FighterInput[];
+  /** Untouched notable fighters eligible for 'fighter-rec' cards. */
+  recCandidates?: RecCandidate[];
   /**
    * Optional extra seed (e.g. ISO week) so copy phrasing rotates over time
    * while staying deterministic within a period. Engine never reads a clock.
@@ -235,6 +261,13 @@ export const HIGH_RATING = 8;
 export const TOP_RATING = 10;
 /** Candidates below this composite score are never emitted. Silence > filler. */
 export const SCORE_FLOOR = 0.25;
+/**
+ * Selection-time diversity quota: at most this many insights per kind group
+ * in the final list (Mike, 2026-06-12: "too much of one pattern and it reads
+ * as computer dead"). No backfill past the quota — fewer but varied beats a
+ * wall of one format.
+ */
+export const MAX_PER_KIND = 2;
 /**
  * Hierarchy REVERSED 2026-06-12 (Mike, onboarding iteration round 2): insights
  * relative to the user's OWN taste are the primary product; you-vs-the-crowd

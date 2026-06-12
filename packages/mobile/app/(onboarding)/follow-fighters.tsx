@@ -96,13 +96,19 @@ export default function FollowFightersScreen() {
   const handleFollow = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    // Awaited so the follows are committed before the payoff screen loads
-    // the taste profile they feed into. Failures are still silent.
-    await Promise.allSettled(
+    // Wait for the follows (they feed the payoff screen's taste profile) but
+    // never longer than 2.5s — a single hung request was pinning users on
+    // this screen forever (Mike, 2026-06-12). Stragglers keep running in the
+    // background and still land server-side; failures stay silent.
+    const follows = Promise.allSettled(
       [...selected].map((fighterId) =>
         apiService.followFighter(fighterId, 'onboarding'),
       ),
     );
+    await Promise.race([
+      follows,
+      new Promise((resolve) => setTimeout(resolve, 2500)),
+    ]);
     router.push('/(onboarding)/your-profile');
   };
 

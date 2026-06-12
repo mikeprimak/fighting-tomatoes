@@ -48,10 +48,11 @@ function fight(
 
 function buildFights(): RatedFightInput[] {
   const fights: RatedFightInput[] = [];
-  // 110 filler fights at the baseline, community agreeing with the user —
+  // 120 filler fights at the baseline, community agreeing with the user —
   // they anchor the GLOBAL community-delta baseline near zero. Their token
-  // ("steady") must stay silent.
-  for (let i = 0; i < 110; i++)
+  // ("steady") must stay silent (count kept above the never-above
+  // presentShare guard so later fixtures can't tip it into "ceiling story").
+  for (let i = 0; i < 120; i++)
     fights.push(fight(7, { pace: 'steady' }, { avg: 7.0, n: 10 }));
   // War lover, AND the community agrees much less: user runs 1.8 above the
   // crowd on wars vs ~0.3 globally — the adjusted gap is the signal.
@@ -87,6 +88,11 @@ function buildFights(): RatedFightInput[] {
     fights.push(fight(8.5, { texture: 'high_iq_chess', dominantSkill: 'fight_iq' }));
   // Vocab-agnostic: a dimension that does not exist in any taxonomy today.
   for (let i = 0; i < 14; i++) fights.push(fight(9.5, { crowdEnergy: 'electric' }));
+  // 'rates-high' simple observation: a solid absolute average (8.6) on a
+  // token with a modest self-contrast gap. Varied (one sub-8 in five) so the
+  // all-high absolute can't take the token's dedupe slot.
+  for (let i = 0; i < 20; i++)
+    fights.push(fight(i % 5 === 0 ? 7 : 9, { momentum: 'late_surge' }));
   // Noise: strong rating but n=3 — below MIN_N, must be silent.
   for (let i = 0; i < 3; i++) fights.push(fight(9, { texture: 'awkward' }));
   return fights;
@@ -153,6 +159,24 @@ function run() {
     userId: 'user-1',
     fights: buildFights(),
     fighters: buildFighters(),
+    // 'fighter-rec': rec1 matches the loved pressure_fighter + nonstop_action
+    // tokens; rec2 matches nothing the user loves and must stay silent.
+    recCandidates: [
+      {
+        fighterId: 'rec1',
+        fullName: 'Test Rec',
+        styleArchetype: ['pressure_fighter'],
+        fighterAppeals: ['nonstop_action'],
+        personaType: null,
+      },
+      {
+        fighterId: 'rec2',
+        fullName: 'Wrong Rec',
+        styleArchetype: ['point_fighter'],
+        fighterAppeals: [],
+        personaType: null,
+      },
+    ],
   };
   const result = computeTasteProfile(input);
   const keys = result.insights.map((i) => i.key);
@@ -187,6 +211,39 @@ function run() {
     keys.includes('prefers|phase|clinch_war|high'),
     `prefers pair fires (keys: ${keys.filter((k) => k.startsWith('prefers')).join(', ') || 'none'})`,
   );
+
+  // 1c. Diversity pass (2026-06-12): the simple kinds fire.
+  assert(
+    keys.includes('rates-high|momentum|late_surge|high'),
+    'rates-high simple observation fires',
+  );
+  const rec = result.insights.find((i) => i.kind === 'fighter-rec');
+  assert(
+    rec?.token === 'rec1' && (rec?.headline ?? '').includes('Test Rec'),
+    `fighter-rec fires for the matching candidate (got ${rec?.key}: "${rec?.headline}")`,
+  );
+  assert(
+    !result.insights.some((i) => i.token === 'rec2'),
+    'fighter-rec stays silent for a non-matching candidate',
+  );
+  assert(
+    /pressure fighters|nonstop-action/.test(rec?.subline ?? ''),
+    `fighter-rec subline names the matched taste (got "${rec?.subline}")`,
+  );
+
+  // 1d. Kind-diversity quota: no kind group exceeds MAX_PER_KIND in the list.
+  const groupCounts = new Map<string, number>();
+  for (const i of result.insights) {
+    const g = ['fighter-style', 'fighter-appeal', 'fighter-persona'].includes(i.kind)
+      ? 'fighter-axis'
+      : ['community-high', 'community-low', 'rating-bias-high', 'rating-bias-low'].includes(i.kind)
+        ? 'community'
+        : i.kind;
+    groupCounts.set(g, (groupCounts.get(g) ?? 0) + 1);
+  }
+  for (const [g, n] of groupCounts) {
+    assert(n <= 2, `kind group "${g}" within diversity quota (got ${n})`);
+  }
 
   // 2. Everyone-likes-knockouts filter: 30 fights at +0.5 stays silent.
   assert(!byToken('knockout'), 'common knockout taste is rarity-suppressed');

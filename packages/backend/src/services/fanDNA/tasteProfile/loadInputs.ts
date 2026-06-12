@@ -21,6 +21,7 @@ import {
   TOP_RATING,
   type FighterInput,
   type RatedFightInput,
+  type RecCandidate,
 } from './types';
 
 /**
@@ -45,6 +46,8 @@ const HIGH_HYPE = 8;
 export interface LoadedTasteInputs {
   fights: RatedFightInput[];
   fighters: FighterInput[];
+  /** Untouched notable fighters eligible for 'fighter-rec' cards. */
+  recCandidates: RecCandidate[];
   /** How many rated fights carry the character taxonomy (pilot coverage). */
   characterCoverage: { withCharacter: number; total: number };
 }
@@ -53,7 +56,7 @@ export async function loadTasteInputs(
   prisma: PrismaClient,
   userId: string,
 ): Promise<LoadedTasteInputs> {
-  const [ratings, predictions, follows] = await Promise.all([
+  const [ratings, predictions, follows, recPool] = await Promise.all([
     prisma.fightRating.findMany({
       where: { userId, fight: { fightStatus: 'COMPLETED' } },
       select: {
@@ -69,8 +72,8 @@ export async function loadTasteInputs(
             totalRatings: true,
             aiPostFightTags: true,
             event: { select: { promotion: true } },
-            fighter1: { select: { id: true, lastName: true, gender: true, aiProfile: true } },
-            fighter2: { select: { id: true, lastName: true, gender: true, aiProfile: true } },
+            fighter1: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
+            fighter2: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
           },
         },
       },
@@ -80,8 +83,8 @@ export async function loadTasteInputs(
       select: {
         fight: {
           select: {
-            fighter1: { select: { id: true, lastName: true, gender: true, aiProfile: true } },
-            fighter2: { select: { id: true, lastName: true, gender: true, aiProfile: true } },
+            fighter1: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
+            fighter2: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
           },
         },
       },
@@ -89,8 +92,14 @@ export async function loadTasteInputs(
     prisma.userFighterFollow.findMany({
       where: { userId },
       select: {
-        fighter: { select: { id: true, lastName: true, gender: true, aiProfile: true } },
+        fighter: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
       },
+    }),
+    // 'fighter-rec' candidate pool: notable fighters only (champion/ranked),
+    // a few hundred rows; aiProfile token filtering happens in JS below.
+    prisma.fighter.findMany({
+      where: { OR: [{ isChampion: true }, { rank: { not: null } }] },
+      select: { id: true, firstName: true, lastName: true, aiProfile: true },
     }),
   ]);
 
@@ -137,6 +146,7 @@ export async function loadTasteInputs(
   // ── fighters ─────────────────────────────────────────────────────────────
   interface FighterRow {
     id: string;
+    firstName: string;
     lastName: string;
     aiProfile: unknown;
   }
@@ -173,13 +183,15 @@ export async function loadTasteInputs(
     if (a) a.followed = true;
   }
 
+  const strArr = (v: unknown): string[] =>
+    Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : [];
+
   const fighters: FighterInput[] = [...acc.values()].map((a) => {
     const profile = (a.row.aiProfile ?? {}) as Record<string, unknown>;
-    const strArr = (v: unknown): string[] =>
-      Array.isArray(v) ? v.filter((s): s is string => typeof s === 'string') : [];
     return {
       fighterId: a.row.id,
       name: a.row.lastName,
+      fullName: `${a.row.firstName} ${a.row.lastName}`.trim(),
       styleArchetype: strArr(profile.styleArchetype),
       fighterAppeals: strArr(profile.fighterAppeals),
       personaType:
@@ -193,9 +205,29 @@ export async function loadTasteInputs(
     };
   });
 
+  // Rec candidates: notable fighters the user has NOT touched, carrying at
+  // least one archetype token to match on.
+  const recCandidates: RecCandidate[] = recPool
+    .filter((f) => !acc.has(f.id))
+    .map((f) => {
+      const profile = (f.aiProfile ?? {}) as Record<string, unknown>;
+      return {
+        fighterId: f.id,
+        fullName: `${f.firstName} ${f.lastName}`.trim(),
+        styleArchetype: strArr(profile.styleArchetype),
+        fighterAppeals: strArr(profile.fighterAppeals),
+        personaType:
+          typeof profile.personaType === 'string' && profile.personaType !== 'null'
+            ? profile.personaType
+            : null,
+      };
+    })
+    .filter((c) => c.styleArchetype.length + c.fighterAppeals.length > 0);
+
   return {
     fights,
     fighters,
+    recCandidates,
     characterCoverage: { withCharacter, total: fights.length },
   };
 }

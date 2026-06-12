@@ -17,13 +17,16 @@ import {
 } from './surprise';
 import {
   ABSOLUTE_BOOST,
+  EVIDENCE_SAT,
   FIGHTER_MIN_DISTINCT,
   FIGHTER_MIN_WEIGHT,
   GLOBAL_CMP_FLOOR,
   HIGH_RATING,
   MIN_N,
   SCORE_FLOOR,
+  type FighterInput,
   type InsightCandidate,
+  type RecCandidate,
   type TasteSignature,
   type TokenStat,
 } from './types';
@@ -55,6 +58,19 @@ const PREFERS_BOOST = 1.25;
  * fights" is true of every human).
  */
 const PAIR_EXCLUDED_DIMS = new Set(['vibe', 'letdowns']);
+
+/** 'rates-high' simple observation thresholds. */
+const RATES_HIGH_MIN_AVG = 8;
+const RATES_HIGH_MAX_PRESENT_SHARE = 0.6;
+/** 'fighter-love' thresholds: most of a real sample landed high. */
+const FIGHTER_LOVE_MIN_RATED = 5;
+const FIGHTER_LOVE_MIN_HIGH = 4;
+const FIGHTER_LOVE_MIN_SHARE = 0.7;
+const FIGHTER_LOVE_EVIDENCE_SAT = 10;
+/** 'fighter-rec' thresholds: token overlap with the user's loved tokens. */
+const REC_MIN_MATCHES = 2;
+const REC_MAX = 2;
+const REC_WEIGHT_NORM = 40;
 
 /** Absolute generators need slightly more proof than trend generators. */
 const NEVER_ABOVE_MIN_N = 10;
@@ -166,7 +182,10 @@ function inferClusterVoices(sig: TasteSignature): Map<string, string> {
   return out;
 }
 
-export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
+export function generateCandidates(
+  sig: TasteSignature,
+  extras?: { fighters?: FighterInput[]; recCandidates?: RecCandidate[] },
+): InsightCandidate[] {
   const out: InsightCandidate[] = [];
   const { baseline } = sig;
 
@@ -177,10 +196,13 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
 
   ratingBias(baseline, out);
   prefersPairs(sig.tokens, out);
+  fighterLove(extras?.fighters ?? [], out);
+  fighterRecs(sig.fighterTokens, extras?.recCandidates ?? [], out);
 
   for (const t of sig.tokens) {
     selfContrast(t, baseline.avg, out);
     communityCompare(t, globalCmpDelta, out);
+    ratesHigh(t, baseline.avg, out);
     neverAbove(t, baseline, out);
     allHigh(t, out);
     allTensShare(t, baseline.tensCount, out);
@@ -346,6 +368,129 @@ function prefersPairs(
         avgB: bottom.avgRating,
         nB: bottom.count,
       },
+    });
+  }
+}
+
+/**
+ * Simple non-comparative observation — "You rate back-and-forth fights 8.9
+ * on average." Part of the 2026-06-12 diversity pass: a list that is ALL
+ * comparisons (vs self, vs crowd, X over Y) reads computer-generated; plain
+ * statements of fact break the pattern. Requires the token to be genuinely
+ * high in absolute terms AND at/above the user's own norm, so the card is
+ * never technically-true-but-misleading for a generous grader.
+ */
+function ratesHigh(
+  t: TokenStat,
+  baselineAvg: number,
+  out: InsightCandidate[],
+): void {
+  if (t.count < MIN_N) return;
+  if (t.avgRating < RATES_HIGH_MIN_AVG || t.avgRating < baselineAvg) return;
+  if (t.presentShare > RATES_HIGH_MAX_PRESENT_SHARE) return;
+  // Base sits between loves (gap-driven) and all-high (0.55 × 1.3): a plain
+  // "you rate these high" is a modest but solid claim.
+  const score =
+    0.6 *
+    Math.min(1, t.count / EVIDENCE_SAT) *
+    rarity(t.dimension, t.token, 'high');
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: 'rates-high',
+    dimension: t.dimension,
+    token: t.token,
+    direction: 'high',
+    score,
+    stats: { n: t.count, avg: t.avgRating },
+  });
+}
+
+/**
+ * "You seem to love Conor McGregor fights" — a single fighter whose fights
+ * keep landing high scores. Reads as a human noticing, not a stat engine.
+ */
+function fighterLove(fighters: FighterInput[], out: InsightCandidate[]): void {
+  for (const f of fighters) {
+    const rated = f.ratedCount ?? 0;
+    const high = f.highRatedCount ?? 0;
+    if (rated < FIGHTER_LOVE_MIN_RATED) continue;
+    if (high < FIGHTER_LOVE_MIN_HIGH) continue;
+    const share = high / rated;
+    if (share < FIGHTER_LOVE_MIN_SHARE) continue;
+    const score =
+      0.6 * Math.min(1, rated / FIGHTER_LOVE_EVIDENCE_SAT) * share;
+    if (score < SCORE_FLOOR) continue;
+    out.push({
+      kind: 'fighter-love',
+      dimension: 'fighter',
+      token: f.fighterId,
+      direction: 'high',
+      score,
+      stats: { n: rated, highN: high, topFighters: [f.fullName ?? f.name] },
+    });
+  }
+}
+
+/**
+ * Fighter recommendation — an untouched notable fighter whose archetype
+ * tokens overlap the user's loved fighter tokens: "You might like Alex
+ * Pereira. Fits your taste for knockout artists and heavy hitters." The
+ * forward-looking card that makes the list feel like the app is FOR the
+ * user, not just about them.
+ */
+function fighterRecs(
+  fighterTokens: TasteSignature['fighterTokens'],
+  candidates: RecCandidate[],
+  out: InsightCandidate[],
+): void {
+  if (candidates.length === 0) return;
+  const loved = new Map<string, number>();
+  for (const ft of fighterTokens) {
+    if (ft.weight >= FIGHTER_MIN_WEIGHT && ft.fighterCount >= FIGHTER_MIN_DISTINCT) {
+      loved.set(`${ft.dimension}|${ft.token}`, ft.weight);
+    }
+  }
+  if (loved.size === 0) return;
+
+  const scored = candidates
+    .map((c) => {
+      const matched: Array<{ dimension: string; token: string; weight: number }> = [];
+      for (const t of c.styleArchetype) {
+        const w = loved.get(`fighterStyle|${t}`);
+        if (w != null) matched.push({ dimension: 'fighterStyle', token: t, weight: w });
+      }
+      for (const t of c.fighterAppeals) {
+        const w = loved.get(`fighterAppeal|${t}`);
+        if (w != null) matched.push({ dimension: 'fighterAppeal', token: t, weight: w });
+      }
+      if (c.personaType) {
+        const w = loved.get(`fighterPersona|${c.personaType}`);
+        if (w != null)
+          matched.push({ dimension: 'fighterPersona', token: c.personaType, weight: w });
+      }
+      return { c, matched, total: matched.reduce((a, m) => a + m.weight, 0) };
+    })
+    .filter((r) => r.matched.length >= REC_MIN_MATCHES)
+    // fighterId tiebreak keeps identical inputs byte-deterministic.
+    .sort((a, b) => b.total - a.total || a.c.fighterId.localeCompare(b.c.fighterId))
+    .slice(0, REC_MAX);
+
+  for (const r of scored) {
+    const top = [...r.matched].sort((a, b) => b.weight - a.weight);
+    // Prefer two DIFFERENT dimensions in the copy ("knockout artists and
+    // heavy hitters" beats two near-synonymous style tokens).
+    const first = top[0];
+    const second = top.find((m) => m.dimension !== first.dimension) ?? top[1];
+    const recTokens = [first, second]
+      .filter(Boolean)
+      .map((m) => ({ dimension: m.dimension, token: m.token }));
+    out.push({
+      kind: 'fighter-rec',
+      dimension: 'fighterRec',
+      token: r.c.fighterId,
+      direction: 'high',
+      score: 0.35 + 0.15 * Math.min(1, r.total / REC_WEIGHT_NORM),
+      stats: { n: r.matched.length, topFighters: [r.c.fullName], recTokens },
     });
   }
 }

@@ -359,6 +359,7 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
         userId: user.id,
         fights: cached.inputs.fights,
         fighters: cached.inputs.fighters,
+        recCandidates: cached.inputs.recCandidates,
         rotationSalt: query.salt || isoWeekSalt(),
         maxInsights: query.max ?? DEFAULT_TASTE_MAX,
       });
