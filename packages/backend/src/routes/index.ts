@@ -1520,7 +1520,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: [authenticateUser, requireEmailVerification],
+    // No email-verification gate: the onboarding follow picker runs before
+    // the user verifies (2026-06-12 decision — don't lose onboarding follows).
+    preHandler: [authenticateUser],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;
@@ -1639,7 +1641,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
       },
     },
-    preHandler: [authenticateUser, requireEmailVerification],
+    // No verification gate: unverified users can follow, so they can unfollow.
+    preHandler: [authenticateUser],
   }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const user = (request as any).user;

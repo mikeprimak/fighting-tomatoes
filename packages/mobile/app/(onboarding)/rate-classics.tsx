@@ -4,8 +4,9 @@
  * One fight at a time, quick 1-10 chip row (deliberately NOT the animated
  * wheel from RateFightModal — a fast tap row suits stack-rating better) plus
  * a "Haven't seen it" skip. Ratings fire-and-forget via the existing rate
- * endpoint; failures are silent (e.g. unverified email) — the payoff screen's
- * empty state covers the zero-data case.
+ * endpoint (no email-verification gate — onboarding runs before the user
+ * verifies); failures are silent and the payoff screen's empty state covers
+ * the zero-data case.
  */
 import React, { useEffect, useState } from 'react';
 import {

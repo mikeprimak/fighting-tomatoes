@@ -100,7 +100,7 @@ export default function FollowFightersScreen() {
   const handleFollow = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    // Fire-and-forget per follow; failures (e.g. unverified email) are silent.
+    // Fire-and-forget per follow; failures are silent.
     for (const fighterId of selected) {
       apiService.followFighter(fighterId, 'onboarding').catch(() => {});
     }

@@ -505,8 +505,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Register push token for fight notifications
       notificationService.registerPushToken();
 
-      // Navigate to main app
-      router.replace('/(tabs)');
+      // Brand-new accounts (any provider) get the identity onboarding flow;
+      // Google is pre-verified so there's no verify-email stop first.
+      if (data.isNewUser) {
+        await markOnboardingPending();
+        router.replace('/(onboarding)/welcome');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Google login error:', error);
       throw error;
@@ -545,8 +551,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Register push token for fight notifications
       notificationService.registerPushToken();
 
-      // Navigate to main app
-      router.replace('/(tabs)');
+      // Brand-new accounts (any provider) get the identity onboarding flow;
+      // Apple is pre-verified so there's no verify-email stop first.
+      if (data.isNewUser) {
+        await markOnboardingPending();
+        router.replace('/(onboarding)/welcome');
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (error) {
       console.error('Apple login error:', error);
       throw error;

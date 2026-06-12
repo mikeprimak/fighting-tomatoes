@@ -727,7 +727,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
         timeWindow: '1 minute',
       },
     },
-    preHandler: [authenticateUser, requireEmailVerification],
+    // No email-verification gate: onboarding rates fights before the user
+    // verifies (2026-06-12 decision — losing onboarding ratings costs more
+    // than unverified-account rating spam; the rate limit above still holds).
+    preHandler: [authenticateUser],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -845,8 +848,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/reveal-outcome - Mark that user has revealed the fight outcome
+  // No verification gate: rating auto-reveals, so reveal must work wherever rating does.
   fastify.post('/fights/:id/reveal-outcome', {
-    preHandler: [authenticateUser, requireEmailVerification],
+    preHandler: [authenticateUser],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -895,8 +899,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // DELETE /api/fights/:id/rating - Remove user's rating from fight
+  // No verification gate: unverified users can rate, so they can un-rate.
   fastify.delete('/fights/:id/rating', {
-    preHandler: [authenticateUser, requireEmailVerification],
+    preHandler: [authenticateUser],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
