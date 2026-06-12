@@ -92,6 +92,19 @@ export default function OnboardingWelcomeScreen() {
               </Text>
             </View>
           </View>
+
+          <View style={styles.beat}>
+            <View style={styles.beatIcon}>
+              <FontAwesome name="compass" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.beatTextWrap}>
+              <Text style={styles.beatTitle}>Fight recommendations</Text>
+              <Text style={styles.beatBody}>
+                We'll point you to upcoming fights you might love, based on
+                the taste you build.
+              </Text>
+            </View>
+          </View>
         </View>
 
         <TouchableOpacity style={styles.ctaButton} onPress={handleStart}>
@@ -113,24 +126,24 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 140,
-    height: 120,
+    width: 120,
+    height: 96,
     alignSelf: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   beats: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   beat: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   beatIcon: {
     width: 44,

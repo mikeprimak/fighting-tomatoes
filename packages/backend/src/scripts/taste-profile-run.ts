@@ -47,6 +47,7 @@ async function main() {
     userId: user.id,
     fights: inputs.fights,
     fighters: inputs.fighters,
+    recCandidates: inputs.recCandidates,
     rotationSalt: arg('salt'),
     maxInsights: arg('max') ? Number(arg('max')) : 25,
   });
