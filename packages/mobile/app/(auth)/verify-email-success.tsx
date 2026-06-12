@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { API_BASE_URL } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
+import { isOnboardingPending } from '../../services/onboarding';
 
 export default function VerifyEmailSuccessScreen() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
@@ -42,9 +43,14 @@ export default function VerifyEmailSuccessScreen() {
         setStatus('success');
         // Refresh user data to update isEmailVerified
         await refreshUserData();
-        // Auto-navigate to main app after 3 seconds
-        setTimeout(() => {
-          router.replace('/(tabs)');
+        // Auto-navigate after 3 seconds — fresh registrations get the
+        // identity onboarding flow first.
+        setTimeout(async () => {
+          if (await isOnboardingPending()) {
+            router.replace('/(onboarding)/welcome');
+          } else {
+            router.replace('/(tabs)');
+          }
         }, 3000);
       } else {
         setStatus('error');

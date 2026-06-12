@@ -13,6 +13,7 @@ import {
 } from '../utils/biometricAuth';
 import { AnalyticsService } from '../services/analytics';
 import { notificationService } from '../services/notificationService';
+import { markOnboardingPending } from '../services/onboarding';
 import type { Notification, NotificationResponse } from 'expo-notifications';
 import * as Sentry from '@sentry/react-native';
 import { posthog } from '../services/posthog';
@@ -633,6 +634,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Register push token for fight notifications
       notificationService.registerPushToken();
+
+      // New accounts get the identity onboarding flow; the verify-email
+      // screens check this flag and route to /(onboarding)/welcome.
+      await markOnboardingPending();
 
       // Navigate to email verification pending screen for email signups
       // (Google signups are already verified and go straight to main app)

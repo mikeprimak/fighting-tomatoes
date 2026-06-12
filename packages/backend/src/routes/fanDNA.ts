@@ -14,6 +14,11 @@ import { authenticateUser } from '../middleware/auth';
 import { batchCompute, eventEvaluate } from '../services/fanDNA/engine';
 import { computeUserType } from '../services/fanDNA/personalityType';
 import { getAllTraits } from '../services/fanDNA/registry';
+import { computeTasteProfile } from '../services/fanDNA/tasteProfile';
+import {
+  loadTasteInputs,
+  type LoadedTasteInputs,
+} from '../services/fanDNA/tasteProfile/loadInputs';
 import type {
   FanDNAAction,
   FanDNASurface,
@@ -22,6 +27,25 @@ import type {
 // How long a TraitValue stays fresh before /profile recomputes. Cron will
 // eventually own recompute; until then this gives us a sensible auto-refresh.
 const PROFILE_STALE_MS = 24 * 60 * 60 * 1000;
+
+// loadTasteInputs reads the user's full rating history each call — fine
+// per-view, not per-remount. Inputs (not responses) are cached so ?max/?salt
+// can vary without a reload; the pure engine recomputes cheaply.
+const TASTE_CACHE_TTL_MS = 10 * 60 * 1000;
+const TASTE_CACHE_MAX = 500;
+const tasteInputsCache = new Map<string, { at: number; inputs: LoadedTasteInputs }>();
+
+const DEFAULT_TASTE_MAX = 8;
+
+/** ISO-week salt (e.g. "2026-W24") — copy rotates weekly, stable within one. */
+function isoWeekSalt(now = new Date()): string {
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = Date.UTC(d.getUTCFullYear(), 0, 1);
+  const week = Math.ceil(((d.getTime() - yearStart) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
 
 const ACTIONS: FanDNAAction[] = [
   'hype',
@@ -291,6 +315,69 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
       return reply.code(500).send({
         error: 'Failed to load Fan DNA profile',
         code: 'FAN_DNA_PROFILE_FAILED',
+      });
+    }
+  });
+
+  fastify.get('/taste-profile', {
+    schema: {
+      description:
+        'Ranked taste-profile insights for the current user (the new taste engine, services/fanDNA/tasteProfile). Serves the onboarding payoff screen and the home above-the-fold rail. Read-only: loads rating history, runs the pure engine. Empty insights = profile still forming (silence > filler).',
+      tags: ['fan-dna'],
+      querystring: {
+        type: 'object',
+        properties: {
+          max: { type: 'integer', minimum: 1, maximum: 25 },
+          salt: { type: 'string', maxLength: 32 },
+        },
+      },
+    },
+    preHandler: authenticateUser,
+  }, async (request, reply) => {
+    const user = (request as any).user;
+    const query = request.query as { max?: number; salt?: string };
+
+    try {
+      const now = Date.now();
+      let cached = tasteInputsCache.get(user.id);
+      if (!cached || now - cached.at > TASTE_CACHE_TTL_MS) {
+        const inputs = await loadTasteInputs(fastify.prisma, user.id);
+        if (!tasteInputsCache.has(user.id) && tasteInputsCache.size >= TASTE_CACHE_MAX) {
+          // Map iterates in insertion order — drop the oldest entry.
+          const oldestKey = tasteInputsCache.keys().next().value;
+          if (oldestKey !== undefined) tasteInputsCache.delete(oldestKey);
+        }
+        cached = { at: now, inputs };
+        tasteInputsCache.set(user.id, cached);
+      }
+
+      const result = computeTasteProfile({
+        userId: user.id,
+        fights: cached.inputs.fights,
+        fighters: cached.inputs.fighters,
+        rotationSalt: query.salt || isoWeekSalt(),
+        maxInsights: query.max ?? DEFAULT_TASTE_MAX,
+      });
+
+      const b = result.signature.baseline;
+      return reply.code(200).send({
+        insights: result.insights.map((i) => ({
+          key: i.key,
+          kind: i.kind,
+          dimension: i.dimension,
+          token: i.token,
+          headline: i.headline,
+          subline: i.subline,
+          score: i.score,
+        })),
+        baseline: { count: b.count, avg: b.avg, tensCount: b.tensCount },
+        coverage: cached.inputs.characterCoverage,
+      });
+    } catch (err: unknown) {
+      request.log.error(err, '[fanDNA] /taste-profile handler failed');
+      return reply.code(500).send({
+        error: 'Failed to compute taste profile',
+        code: 'TASTE_PROFILE_FAILED',
       });
     }
   });
