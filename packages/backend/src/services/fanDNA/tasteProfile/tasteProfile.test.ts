@@ -4,7 +4,9 @@
  * Run: `npx tsx src/services/fanDNA/tasteProfile/tasteProfile.test.ts`
  *
  * Proves the agreed scoring model on a synthetic user:
- *   - community-compare beats self-contrast on the same token (war lover)
+ *   - self-relative insights are primary (hierarchy reversed 2026-06-12);
+ *     you-vs-the-crowd kinds are capped at ONE card per direction
+ *   - 'prefers' pairs fire where both solo tokens are silent (X over Y)
  *   - the "everyone likes knockouts" rarity filter suppresses common tastes
  *   - rare tastes (clinch wars) surface despite smaller samples
  *   - absolutes fire: never-above (decisions), all-tens-share (comebacks)
@@ -57,6 +59,10 @@ function buildFights(): RatedFightInput[] {
     fights.push(fight(9, { actionLevel: 'war' }, { avg: 7.2, n: 10 }));
   // Rare taste: clinch wars, all rated 9.
   for (let i = 0; i < 12; i++) fights.push(fight(9, { phase: 'clinch_war' }));
+  // 'prefers' pair partner: grappling battles rated low. Solo it is silent
+  // (cold score under the floor), but it gives the phase dimension a wide
+  // top-vs-bottom gap → "clinch wars over grappling battles".
+  for (let i = 0; i < 8; i++) fights.push(fight(6, { phase: 'grappling_battle' }));
   // Common taste: knockouts at a modest gap (avg 8, mixed 7/8/9) — must be
   // rarity-suppressed. Varied so the all-high absolute can't ride around the
   // rarity filter on artificially uniform data.
@@ -153,10 +159,33 @@ function run() {
   const byToken = (token: string) =>
     result.insights.find((i) => i.token === token);
 
-  // 1. Community-compare wins the war token and ranks #1 overall.
+  // 1. You-vs-the-crowd is ONE idea per direction: at most one card from the
+  // below-group kinds and one from the above-group kinds, total. The war
+  // token's community edge (huge by construction) is that one above card.
+  const aboveGroup = result.insights.filter((i) =>
+    ['community-high', 'rating-bias-high'].includes(i.kind),
+  );
+  const belowGroup = result.insights.filter((i) =>
+    ['community-low', 'rating-bias-low'].includes(i.kind),
+  );
   assert(
-    keys[0] === 'community-high|actionLevel|war|high',
-    `war community-high ranks #1 (got ${keys[0]})`,
+    aboveGroup.length <= 1,
+    `at most one above-the-crowd card (got ${aboveGroup.length})`,
+  );
+  assert(
+    belowGroup.length <= 1,
+    `at most one below-the-crowd card (got ${belowGroup.length})`,
+  );
+  assert(
+    aboveGroup[0]?.token === 'war',
+    `war takes the single community slot (got ${aboveGroup[0]?.key})`,
+  );
+
+  // 1b. 'prefers' pair fires where both solo tokens would be silent or weak:
+  // clinch wars (9.0) over grappling battles (6.0) within the phase dimension.
+  assert(
+    keys.includes('prefers|phase|clinch_war|high'),
+    `prefers pair fires (keys: ${keys.filter((k) => k.startsWith('prefers')).join(', ') || 'none'})`,
   );
 
   // 2. Everyone-likes-knockouts filter: 30 fights at +0.5 stays silent.

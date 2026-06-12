@@ -125,6 +125,7 @@ export type InsightKind =
   | 'community-low'
   | 'rating-bias-high' // global: grades kinder than the community overall
   | 'rating-bias-low'  // global: grades harder than the community overall
+  | 'prefers'          // self-relative pair: rates token X well above token Y in the same dimension
   | 'never-above'      // absolute: n ratings on token, never above a cap
   | 'all-high'         // absolute: every rating on token was >= 8
   | 'all-tens-share'   // absolute: every 10 the user gave carries this token
@@ -171,6 +172,10 @@ export interface InsightCandidate {
     lift?: number;
     fighterCount?: number;
     topFighters?: string[];
+    /** 'prefers' only: the losing token of the pair, its average, its n. */
+    vsToken?: string;
+    avgB?: number;
+    nB?: number;
   };
 }
 
@@ -230,8 +235,14 @@ export const HIGH_RATING = 8;
 export const TOP_RATING = 10;
 /** Candidates below this composite score are never emitted. Silence > filler. */
 export const SCORE_FLOOR = 0.25;
-/** Community-compare beats self-contrast on the same token when both qualify. */
-export const COMMUNITY_KIND_BOOST = 1.15;
+/**
+ * Hierarchy REVERSED 2026-06-12 (Mike, onboarding iteration round 2): insights
+ * relative to the user's OWN taste are the primary product; you-vs-the-crowd
+ * is seasoning, capped at one card per direction (see capCommunityKinds).
+ * Was 1.15 (community outranked self) — now self-contrast wins on the same
+ * token when both qualify.
+ */
+export const COMMUNITY_KIND_BOOST = 0.9;
 /** Absolutes ("never", "every", "all of your 10s") are inherently striking. */
 export const ABSOLUTE_BOOST = 1.3;
 /** Fighter-axis floors. */

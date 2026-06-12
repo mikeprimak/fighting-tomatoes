@@ -60,6 +60,13 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
     'You make fights earn every point',
     'Your scores run cool',
   ],
+  prefers: [
+    'You take {X} over {Y}',
+    '{Xcap} over {Y}, every time',
+    'Given the choice: {X}',
+    '{Xcap} first, {Y} second',
+    'Your heart picks {X}, not {Y}',
+  ],
   'never-above': [
     'Your top shelf has no room for {X}',
     "There's a ceiling on {X} for you",
@@ -158,6 +165,11 @@ const SUBLINES: Record<InsightKind, readonly string[]> = {
     'Across {n} fights, your scores sit {delta} below {community} on average.',
     '{delta} lower than {community} on the same {n} fights.',
   ],
+  prefers: [
+    'You average {avg} on {X} and {avgB} on {Y}.',
+    '{avg} vs {avgB}, across {n} fights.',
+    'A {delta} point gap in your own scores.',
+  ],
   'never-above': [
     '{n} rated, never above a {cap}.',
     'Highest score so far: {cap}, across {n} tries.',
@@ -192,9 +204,15 @@ export interface RenderedCopy {
  */
 export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
   const phrase = tokenPhrase(c.dimension, c.token);
+  const vsPhrase = c.stats.vsToken
+    ? tokenPhrase(c.dimension, c.stats.vsToken)
+    : '';
   const vars: Record<string, string> = {
     X: phrase,
     Xcap: cap(phrase),
+    Y: vsPhrase,
+    Ycap: cap(vsPhrase),
+    avgB: fmt(c.stats.avgB),
     community: communityRef(`${seed}|community`),
     communityS: communityRefSingular(`${seed}|community`),
     n: String(c.stats.n),
