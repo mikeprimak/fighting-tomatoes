@@ -329,17 +329,21 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
         properties: {
           max: { type: 'integer', minimum: 1, maximum: 25 },
           salt: { type: 'string', maxLength: 32 },
+          fresh: { type: 'boolean' },
         },
       },
     },
     preHandler: authenticateUser,
   }, async (request, reply) => {
     const user = (request as any).user;
-    const query = request.query as { max?: number; salt?: string };
+    const query = request.query as { max?: number; salt?: string; fresh?: boolean };
 
     try {
       const now = Date.now();
-      let cached = tasteInputsCache.get(user.id);
+      // fresh=true bypasses the input cache: the onboarding payoff screen
+      // loads seconds after the user's ratings and follows land, so a cached
+      // input set from earlier in the session would miss all of them.
+      let cached = query.fresh ? undefined : tasteInputsCache.get(user.id);
       if (!cached || now - cached.at > TASTE_CACHE_TTL_MS) {
         const inputs = await loadTasteInputs(fastify.prisma, user.id);
         if (!tasteInputsCache.has(user.id) && tasteInputsCache.size >= TASTE_CACHE_MAX) {

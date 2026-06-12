@@ -2,8 +2,8 @@
  * Onboarding step 1 — the thesis in one screen.
  *
  * "Good Fights learns what kind of fight fan you are." Three beats, one CTA
- * into the rate-classics stack. Skip marks onboarding complete and lands in
- * the main app.
+ * into the rate-classics stack. No skip — onboarding is mandatory (Mike,
+ * 2026-06-12); the flow itself is short enough to not need an exit.
  */
 import React from 'react';
 import {
@@ -17,7 +17,6 @@ import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
-import { markOnboardingComplete } from '../../services/onboarding';
 
 export default function OnboardingWelcomeScreen() {
   const colorScheme = useColorScheme();
@@ -26,11 +25,6 @@ export default function OnboardingWelcomeScreen() {
 
   const handleStart = () => {
     router.push('/(onboarding)/rate-classics');
-  };
-
-  const handleSkip = async () => {
-    await markOnboardingComplete();
-    router.replace('/(tabs)');
   };
 
   return (
@@ -83,10 +77,6 @@ export default function OnboardingWelcomeScreen() {
 
         <TouchableOpacity style={styles.ctaButton} onPress={handleStart}>
           <Text style={styles.ctaButtonText}>Build my fan profile</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.skipButton} onPress={handleSkip}>
-          <Text style={styles.skipButtonText}>Skip for now</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -151,13 +141,5 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.textOnAccent,
     fontWeight: '600',
-  },
-  skipButton: {
-    padding: 12,
-    alignItems: 'center',
-  },
-  skipButtonText: {
-    fontSize: 14,
-    color: colors.textSecondary,
   },
 });

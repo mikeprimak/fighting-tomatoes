@@ -1,10 +1,13 @@
 /**
- * Onboarding step 3 — THE payoff.
+ * Onboarding step 4 (final) — THE payoff.
  *
- * Calls the taste-profile endpoint and renders insights as cards: big human
+ * Calls the taste-profile endpoint (fresh=true: the ratings and follows it
+ * reflects landed seconds ago) and renders insights as cards: big human
  * headline, small stat subline (locked copy rule). Empty state is graceful —
  * count + average, never filler insights (silence > filler is a locked
- * engine principle; do not relax it here either).
+ * engine principle; do not relax it here either). Runs AFTER the follow
+ * picker (reordered 2026-06-12) so fighter-axis insights can draw on follows.
+ * Finishing marks onboarding complete and lands in the main app.
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -21,6 +24,7 @@ import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService, TasteProfileResponse } from '../../services/api';
+import { markOnboardingComplete } from '../../services/onboarding';
 
 export default function YourProfileScreen() {
   const colorScheme = useColorScheme();
@@ -32,14 +36,15 @@ export default function YourProfileScreen() {
 
   useEffect(() => {
     apiService
-      .getTasteProfile()
+      .getTasteProfile(undefined, true)
       .then(setProfile)
       .catch(() => setProfile(null))
       .finally(() => setIsLoading(false));
   }, []);
 
-  const handleContinue = () => {
-    router.push('/(onboarding)/follow-fighters');
+  const handleContinue = async () => {
+    await markOnboardingComplete();
+    router.replace('/(tabs)');
   };
 
   const insights = profile?.insights ?? [];
@@ -57,7 +62,7 @@ export default function YourProfileScreen() {
           <>
             <Text style={styles.title}>The app already knows you</Text>
             <Text style={styles.subtitle}>
-              Built from your ratings — and it sharpens with every one.
+              Built from your ratings and follows. It sharpens with every one.
             </Text>
             <ScrollView
               style={styles.cards}
@@ -90,7 +95,7 @@ export default function YourProfileScreen() {
         )}
 
         <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
-          <Text style={styles.continueButtonText}>Next: follow your fighters</Text>
+          <Text style={styles.continueButtonText}>Get into the fights</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -741,10 +741,18 @@ class ApiService {
     return this.makeRequest('/onboarding/follow-suggestions');
   }
 
-  async getTasteProfile(max?: number): Promise<TasteProfileResponse> {
-    return this.makeRequest(
-      `/fan-dna/taste-profile${max ? `?max=${max}` : ''}`,
-    );
+  async getTasteProfile(
+    max?: number,
+    fresh?: boolean,
+  ): Promise<TasteProfileResponse> {
+    // fresh=true bypasses the backend's 10-min input cache — used by the
+    // onboarding payoff screen, which loads seconds after the ratings and
+    // follows it should reflect.
+    const params = new URLSearchParams();
+    if (max) params.append('max', String(max));
+    if (fresh) params.append('fresh', 'true');
+    const qs = params.toString();
+    return this.makeRequest(`/fan-dna/taste-profile${qs ? `?${qs}` : ''}`);
   }
 
   async getTopFollowedFighters(

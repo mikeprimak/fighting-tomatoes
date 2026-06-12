@@ -50,15 +50,26 @@ export default function FanDNAScreen() {
     queryFn: () => apiService.getHypeAccuracy(100),
   });
 
+  // Early read: while the trait engine hasn't met its floors yet (new
+  // accounts straight out of onboarding), the taste-profile insights built
+  // from their onboarding ratings/follows fill the screen instead of
+  // "computing your DNA" emptiness.
+  const tasteQuery = useQuery({
+    queryKey: ['tasteProfile'],
+    queryFn: () => apiService.getTasteProfile(),
+  });
+
   useFocusEffect(
     useCallback(() => {
       profileQuery.refetch();
       hypeAccuracyQuery.refetch();
-    }, [profileQuery.refetch, hypeAccuracyQuery.refetch]),
+      tasteQuery.refetch();
+    }, [profileQuery.refetch, hypeAccuracyQuery.refetch, tasteQuery.refetch]),
   );
 
   const cards = profileQuery.data?.cards ?? [];
   const personalityType = profileQuery.data?.personalityType ?? null;
+  const tasteInsights = tasteQuery.data?.insights ?? [];
   const hotTakes =
     (hypeAccuracyQuery.data?.fights ?? []).filter((f) => f.isHotTake);
 
@@ -131,6 +142,22 @@ export default function FanDNAScreen() {
               >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
+            </View>
+          ) : cards.length === 0 && tasteInsights.length > 0 ? (
+            <View>
+              <Text style={styles.earlyReadLabel}>EARLY READ</Text>
+              <Text style={styles.earlyReadSubtitle}>
+                What your first ratings and follows already say. Your full Fan
+                DNA builds from here.
+              </Text>
+              <View style={{ gap: 12 }}>
+                {tasteInsights.map((insight) => (
+                  <View key={insight.key} style={styles.card}>
+                    <Text style={styles.cardHeadline}>{insight.headline}</Text>
+                    <Text style={styles.cardBody}>{insight.subline}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
           ) : cards.length === 0 ? (
             <View style={styles.centerBlock}>
@@ -311,6 +338,20 @@ const createStyles = (colors: any) =>
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
+    },
+    earlyReadLabel: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: '#A78BFA',
+      letterSpacing: 0.6,
+      marginTop: 8,
+    },
+    earlyReadSubtitle: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      marginTop: 4,
+      marginBottom: 12,
+      lineHeight: 18,
     },
     emptyBody: {
       fontSize: 13,

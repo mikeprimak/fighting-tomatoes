@@ -123,6 +123,8 @@ export type InsightKind =
   | 'cold'             // self-contrast, negative
   | 'community-high'   // rates token above the community on the same fights
   | 'community-low'
+  | 'rating-bias-high' // global: grades kinder than the community overall
+  | 'rating-bias-low'  // global: grades harder than the community overall
   | 'never-above'      // absolute: n ratings on token, never above a cap
   | 'all-high'         // absolute: every rating on token was >= 8
   | 'all-tens-share'   // absolute: every 10 the user gave carries this token
@@ -212,8 +214,16 @@ export const GAP_NORM = 2.0;
 export const CMP_GAP_NORM = 1.5;
 /** Per-fight community sample floor before its avg counts as trustworthy. */
 export const CMP_PER_FIGHT_FLOOR = 5;
-/** Fights needed before the global community-delta baseline is applied. */
-export const GLOBAL_CMP_FLOOR = 30;
+/**
+ * Fights needed before the global community-delta baseline is applied.
+ * Lowered 30 → 8 (Mike's onboarding walk, 2026-06-12): a fresh user rating a
+ * curated all-classics stack is uniformly "below the crowd" on every token,
+ * and without the adjustment that one global fact leaked through as ten
+ * near-identical "harder on X than the crowd" cards. The global gap is an
+ * average across ALL compared fights, so it stabilizes much faster than any
+ * single token's.
+ */
+export const GLOBAL_CMP_FLOOR = 8;
 /** A rating at/above this is "high" (drives all-high + fighter sourcing). */
 export const HIGH_RATING = 8;
 /** Top score for the all-tens-share absolute. */
