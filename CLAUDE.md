@@ -13,10 +13,11 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ (Phase 1 branch work) `docs/HANDOFF-onboarding-iteration-2026-06-12.md`** —
-onboarding flow is BUILT on `claude/user-focused-pivot-l8l6mg`; next task is the
-approved verification soft-cap (50 ratings/hype for unverified), then Mike's
-device-walk iteration loop (`docs/playbooks/onboarding-iteration.md`).
+**→ (Phase 1 branch work) `docs/HANDOFF-onboarding-iteration-2026-06-12-evening.md`** —
+onboarding iteration on `claude/user-focused-pivot-l8l6mg`: 3 device-walk
+rounds shipped (mandatory flow, star-wheel stack, taste-engine diversity
+rework, fighter recs). 50-cap also shipped. Next: device-verify round 3 +
+decide upcoming-fight recommendations (`docs/playbooks/onboarding-iteration.md`).
 
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
