@@ -75,6 +75,15 @@ async function main() {
   ]);
   console.log(`${email}: ${ratings.length} ratings, ${follows.length} follows to remove`);
 
+  // Hype predictions count against the unverified soft cap, so clear them
+  // too. Direct delete is safe here: Fight stores no hype aggregates
+  // (averageHype is computed live per request), so there is nothing to unwind
+  // — and there is no DELETE /prediction endpoint to reuse.
+  const hype = await prisma.fightPrediction.deleteMany({
+    where: { userId: user.id },
+  });
+  console.log(`  ${hype.count} hype predictions deleted`);
+
   let ok = 0;
   let failed = 0;
   for (const r of ratings) {

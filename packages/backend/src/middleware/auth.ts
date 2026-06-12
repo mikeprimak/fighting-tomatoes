@@ -134,6 +134,71 @@ export async function requireEmailVerification(request: FastifyRequest, reply: F
   }
 }
 
+/**
+ * Soft verification cap (2026-06-12 decision): unverified accounts may make
+ * up to UNVERIFIED_ACTION_CAP ratings / hype predictions before verification
+ * is forced — capture the behavior first, put the obstacle up after the user
+ * is invested. The cap (default 50) deliberately exceeds the ~30-fight
+ * onboarding rate stack so a new user never hits it mid-onboarding.
+ *
+ * Semantics:
+ *  - verified user → pass, zero queries
+ *  - unverified, already has a row on THIS fight → pass (updates and
+ *    removals of existing actions are never blocked by the cap)
+ *  - unverified, creating a new row at/over the cap → 403 with the distinct
+ *    code VERIFICATION_CAP_REACHED so mobile can show a friendly
+ *    "verify to keep going" prompt instead of the generic gate message.
+ *
+ * UNVERIFIED_ACTION_CAP env override exists for testing (e.g. cap=3 locally
+ * instead of writing 50 prod ratings). Must run AFTER authenticateUser.
+ */
+export function requireVerifiedOrUnderCap(kind: 'rating' | 'hype') {
+  return async function (request: FastifyRequest, reply: FastifyReply) {
+    const user = (request as any).user;
+
+    if (!user) {
+      return reply.code(401).send({
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED',
+      });
+    }
+
+    if (user.isEmailVerified) return;
+
+    // Same dev escape hatch as requireEmailVerification.
+    if (process.env.NODE_ENV === 'development' && process.env.SKIP_EMAIL_VERIFICATION === 'true') {
+      return;
+    }
+
+    const cap = Number(process.env.UNVERIFIED_ACTION_CAP ?? 50);
+    const prisma = request.server.prisma;
+    const fightId = (request.params as { id?: string } | undefined)?.id;
+
+    if (fightId) {
+      const where = { userId_fightId: { userId: user.id, fightId } };
+      const existing =
+        kind === 'rating'
+          ? await prisma.fightRating.findUnique({ where, select: { id: true } })
+          : await prisma.fightPrediction.findUnique({ where, select: { id: true } });
+      if (existing) return;
+    }
+
+    const count =
+      kind === 'rating'
+        ? await prisma.fightRating.count({ where: { userId: user.id } })
+        : await prisma.fightPrediction.count({ where: { userId: user.id } });
+
+    if (count >= cap) {
+      const noun = kind === 'rating' ? 'ratings' : 'hype predictions';
+      return reply.code(403).send({
+        error: `You've made ${cap} ${noun} — verify your email to keep going.`,
+        code: 'VERIFICATION_CAP_REACHED',
+        details: { kind, cap, count },
+      });
+    }
+  };
+}
+
 // Optional authentication middleware (for endpoints that work with or without auth)
 export async function optionalAuth(request: FastifyRequest, reply: FastifyReply) {
   try {

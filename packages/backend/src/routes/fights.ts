@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { WeightClass, Sport, Gender, ActivityType, PredictionMethod } from '@prisma/client';
-import { authenticateUser, requireEmailVerification, optionalAuth } from '../middleware/auth';
+import { authenticateUser, requireEmailVerification, requireVerifiedOrUnderCap, optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { maybeNotifyReviewLike, maybeNotifyPreFightCommentLike, notifyCommentReply } from '../services/commentLikeNotifications';
 import { calculateQualityThreadScore } from '../utils/commentSorting';
@@ -727,10 +727,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
         timeWindow: '1 minute',
       },
     },
-    // No email-verification gate: onboarding rates fights before the user
-    // verifies (2026-06-12 decision — losing onboarding ratings costs more
-    // than unverified-account rating spam; the rate limit above still holds).
-    preHandler: [authenticateUser],
+    // Soft verification gate (2026-06-12 decision): onboarding rates fights
+    // before the user verifies, so unverified accounts may rate up to the
+    // cap (50) before verification is forced. Rate limit above still holds.
+    preHandler: [authenticateUser, requireVerifiedOrUnderCap('rating')],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -2616,8 +2616,19 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // PUT /api/fights/:id/user-data - Update all user data atomically
+  // Split gate (2026-06-12): rating-only submissions follow the soft
+  // verification cap (this is the rate modal's commit path); reviews and
+  // tags are public content, so they keep the hard verification gate.
   fastify.put('/fights/:id/user-data', {
-    preHandler: [authenticateUser, requireEmailVerification],
+    preHandler: [authenticateUser, async (request: any, reply: any) => {
+      const user = request.user;
+      if (user?.isEmailVerified) return;
+      const body = (request.body ?? {}) as { review?: unknown; tags?: unknown };
+      if (body.review !== undefined || body.tags !== undefined) {
+        return requireEmailVerification(request, reply);
+      }
+      return requireVerifiedOrUnderCap('rating')(request, reply);
+    }],
   }, async (request, reply) => {
     try {
       const { id: fightId } = request.params as { id: string };
@@ -2941,11 +2952,13 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // POST /api/fights/:id/prediction - Create or update a fight prediction
+  // Soft verification gate: unverified accounts may hype up to the cap (50),
+  // then verification is forced (2026-06-12 decision).
   fastify.post<{
     Params: { id: string };
     Body: unknown;
   }>('/fights/:id/prediction', {
-    preHandler: [authenticateUser, requireEmailVerification],
+    preHandler: [authenticateUser, requireVerifiedOrUnderCap('hype')],
   }, async (request: any, reply: any) => {
     try {
       const fightId = request.params.id;
