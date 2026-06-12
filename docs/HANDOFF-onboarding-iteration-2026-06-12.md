@@ -48,7 +48,16 @@ All work is branch work. Read `docs/playbooks/onboarding-iteration.md` and the
 - Existing tester account: `testdev+onb0612@goodfights.app` / `Testpass1!`
   (unverified — intentionally), currently reset to 0 ratings / 0 follows.
 
-## NEXT TASK (approved, not started): verification soft-cap at 50
+## ~~NEXT TASK~~ — DONE same evening (commit after `d7de8aaf`): verification soft-cap at 50
+
+> **Built and verified as specced below** (cap=3 env-override live test, full
+> matrix green: cap fires on 4th new rating/hype with VERIFICATION_CAP_REACHED,
+> updates-at-cap pass, user-data split gate works, verified users uncapped).
+> Hype is now ungated up to the cap. Mobile prompts wired in RateFightModal,
+> PredictionModal, UpcomingFightModal. Reset script also clears hype
+> predictions. Remaining for a future window: nothing on this task — the
+> spec below is kept for reference only. **Next session = Mike's device-walk
+> iteration loop.**
 
 Mike's decision (2026-06-12): unverified accounts may make up to **50
 ratings and 50 hype predictions**, then verification is forced. Rationale:

@@ -184,7 +184,12 @@ export function PredictionModal({
     },
     onError: (error: any) => {
       Alert.alert('DEBUG', `🔴 MUTATION: onError called - ${error.message || error.error}`);
-      showError(error.error || error.message || 'Failed to submit prediction', 'Error');
+      if (error?.code === 'VERIFICATION_CAP_REACHED') {
+        // Soft verification cap: friendly nudge, not a generic failure.
+        showError(error.error, 'Verify your email');
+      } else {
+        showError(error.error || error.message || 'Failed to submit prediction', 'Error');
+      }
     },
   });
 

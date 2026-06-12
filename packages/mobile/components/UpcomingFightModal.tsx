@@ -14,6 +14,7 @@ import {
   ScrollView,
   Platform,
   Keyboard,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -304,8 +305,13 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
       await queryClient.cancelQueries({ queryKey: ['upcomingEvents'] });
       updateEventsCache({ userHypePrediction: args.hypeLevel });
     },
-    onError: () => {
+    onError: (error: any) => {
       queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      // The flame tap is otherwise silent on failure — but the soft
+      // verification cap must explain itself or the hype just vanishes.
+      if (error?.code === 'VERIFICATION_CAP_REACHED') {
+        Alert.alert('Verify your email', error.error);
+      }
     },
     onSuccess: (data, vars) => {
       // Update cache with server-calculated aggregate hype and count

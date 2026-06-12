@@ -522,7 +522,12 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
         queryClient.setQueryData(['fightAggregateStats', fight?.id], context.previousStats);
       }
       console.error('Update error:', error);
-      showError(error?.error || 'Failed to save data', 'Error');
+      if (error?.code === 'VERIFICATION_CAP_REACHED') {
+        // Soft verification cap: friendly nudge, not a generic failure.
+        showError(error.error, 'Verify your email');
+      } else {
+        showError(error?.error || 'Failed to save data', 'Error');
+      }
     },
   });
 
