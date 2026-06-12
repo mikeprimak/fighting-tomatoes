@@ -22,6 +22,7 @@ import { CustomAlert } from '../../components/CustomAlert';
 import { CommentCard, PreFightCommentCard, SearchBar } from '../../components';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { api, apiService } from '../../services/api';
+import { markOnboardingPending } from '../../services/onboarding';
 import { notificationService } from '../../services/notificationService';
 import { useQueryClient } from '@tanstack/react-query';
 import * as Haptics from 'expo-haptics';
@@ -838,6 +839,24 @@ export default function ProfileScreen() {
             <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Sign Out</Text>
           </View>
         </TouchableOpacity>
+
+        {/* Dev-only: re-enter the onboarding flow without re-registering.
+            Server data (ratings/follows) persists across replays — use
+            scripts/reset-onboarding-tester.ts for a clean slate. */}
+        {__DEV__ && (
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}
+            onPress={async () => {
+              await markOnboardingPending();
+              router.push('/(onboarding)/welcome');
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <FontAwesome name="refresh" size={18} color={colors.primary} />
+              <Text style={[styles.settingsRowLabel, { color: colors.primary }]}>Replay Onboarding (dev)</Text>
+            </View>
+          </TouchableOpacity>
+        )}
       </ScrollView>
       <CustomAlert {...alertState} onDismiss={hideAlert} />
     </SafeAreaView>
