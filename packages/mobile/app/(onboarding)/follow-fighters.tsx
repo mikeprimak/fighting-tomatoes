@@ -1,10 +1,12 @@
 /**
- * Onboarding step 4 — the follow picker (follow-fighter.md Decisions §6/§7).
+ * Onboarding step 3 — the follow picker (follow-fighter.md Decisions §6/§7).
  *
  * Suggestion grid (admin-curable server-side), tap to select, search for
  * anyone outside the suggestions. Follows submit with source 'onboarding'
- * for follow-source attribution. Finishing (or skipping) marks onboarding
- * complete and lands in the main app.
+ * for follow-source attribution. Runs BEFORE the payoff screen (reordered
+ * 2026-06-12) so follows feed the taste profile; follows are awaited (not
+ * fire-and-forget) for the same reason. No skip — onboarding is mandatory;
+ * with nothing selected the button reads Continue and just moves on.
  */
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -23,7 +25,6 @@ import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService, OnboardingFighterSuggestion } from '../../services/api';
-import { markOnboardingComplete } from '../../services/onboarding';
 
 function formatRecord(f: OnboardingFighterSuggestion): string | null {
   if (f.wins === 0 && f.losses === 0 && f.draws === 0) return null;
@@ -92,19 +93,17 @@ export default function FollowFightersScreen() {
     });
   };
 
-  const finish = async () => {
-    await markOnboardingComplete();
-    router.replace('/(tabs)');
-  };
-
   const handleFollow = async () => {
     if (isSubmitting) return;
     setIsSubmitting(true);
-    // Fire-and-forget per follow; failures are silent.
-    for (const fighterId of selected) {
-      apiService.followFighter(fighterId, 'onboarding').catch(() => {});
-    }
-    await finish();
+    // Awaited so the follows are committed before the payoff screen loads
+    // the taste profile they feed into. Failures are still silent.
+    await Promise.allSettled(
+      [...selected].map((fighterId) =>
+        apiService.followFighter(fighterId, 'onboarding'),
+      ),
+    );
+    router.push('/(onboarding)/your-profile');
   };
 
   // Search results replace the grid while a query is active; selected fighters
@@ -150,7 +149,8 @@ export default function FollowFightersScreen() {
       <View style={styles.content}>
         <Text style={styles.title}>Follow your fighters</Text>
         <Text style={styles.subtitle}>
-          We'll tell you when they're booked and when they fight.
+          We'll tell you when they're booked and when they fight. They shape
+          your fan profile, too.
         </Text>
 
         <View style={styles.searchWrap}>
@@ -185,9 +185,9 @@ export default function FollowFightersScreen() {
 
         <View style={styles.footer}>
           <TouchableOpacity
-            style={[styles.followButton, selected.size === 0 && styles.followButtonDisabled]}
+            style={styles.followButton}
             onPress={handleFollow}
-            disabled={selected.size === 0 || isSubmitting}
+            disabled={isSubmitting}
           >
             {isSubmitting ? (
               <ActivityIndicator color={colors.textOnAccent} />
@@ -195,12 +195,9 @@ export default function FollowFightersScreen() {
               <Text style={styles.followButtonText}>
                 {selected.size > 0
                   ? `Follow ${selected.size} fighter${selected.size === 1 ? '' : 's'}`
-                  : 'Follow fighters'}
+                  : 'Continue'}
               </Text>
             )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.skipButton} onPress={finish} disabled={isSubmitting}>
-            <Text style={styles.skipButtonText}>Skip</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -318,20 +315,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
-  followButtonDisabled: {
-    opacity: 0.5,
-  },
   followButtonText: {
     fontSize: 16,
     color: colors.textOnAccent,
     fontWeight: '600',
-  },
-  skipButton: {
-    padding: 12,
-    alignItems: 'center',
-  },
-  skipButtonText: {
-    fontSize: 14,
-    color: colors.textSecondary,
   },
 });

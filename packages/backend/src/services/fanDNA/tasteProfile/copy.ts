@@ -38,14 +38,27 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
     'You see more in {X} than {community}',
     "You're higher on {X} than {community}",
     'Where {communityS} shrugs at {X}, you lean in',
-    '{Xcap} hit you harder than they hit {community}',
+    'You rate {X} extra high',
+    '{Xcap} get extra credit from you',
     'You out-rate {community} on {X}',
   ],
   'community-low': [
     "You're harder on {X} than {community}",
-    '{Xcap} get less love from you than from {community}',
-    'You hold {X} to a higher bar than {community}',
-    '{Xcap} have to earn it with you, more than with {community}',
+    '{Xcap} get less love from you',
+    'You hold {X} to a higher bar',
+    '{Xcap} have to earn it with you',
+  ],
+  'rating-bias-high': [
+    'You grade kinder than {community}',
+    'A generous grader',
+    'You find the good in a fight',
+    'Your scores run warm',
+  ],
+  'rating-bias-low': [
+    'You grade harder than {community}',
+    'A tough grader',
+    'You make fights earn every point',
+    'Your scores run cool',
   ],
   'never-above': [
     'Your top shelf has no room for {X}',
@@ -129,11 +142,21 @@ const SUBLINES: Record<InsightKind, readonly string[]> = {
   ],
   'community-high': [
     'On the same fights, you rate them {delta} higher, across {n}.',
-    '{delta} above {community} on average, {n} fights compared.',
+    'You average {avg} across {n} of them.',
+    'A +{delta} lean, {n} fights in.',
   ],
   'community-low': [
     'On the same fights, you rate them {delta} lower, across {n}.',
-    '{delta} below {community} on average, {n} fights compared.',
+    'You average {avg} across {n} of them.',
+    'A {delta} discount, {n} fights in.',
+  ],
+  'rating-bias-high': [
+    'Across {n} fights, your scores sit {delta} above {community} on average.',
+    '{delta} higher than {community} on the same {n} fights.',
+  ],
+  'rating-bias-low': [
+    'Across {n} fights, your scores sit {delta} below {community} on average.',
+    '{delta} lower than {community} on the same {n} fights.',
   ],
   'never-above': [
     '{n} rated, never above a {cap}.',

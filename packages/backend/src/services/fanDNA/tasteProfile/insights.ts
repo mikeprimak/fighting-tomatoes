@@ -28,6 +28,16 @@ import {
   type TokenStat,
 } from './types';
 
+/** Global grading-bias thresholds (see ratingBias below). */
+const BIAS_MIN_DELTA = 0.5;
+const BIAS_GAP_NORM = 1.5;
+const BIAS_BOOST = 1.2;
+/**
+ * The global gap averages across every compared fight, so its evidence
+ * saturates far faster than any single token's (EVIDENCE_SAT = 25).
+ */
+const BIAS_EVIDENCE_SAT = 12;
+
 /** Absolute generators need slightly more proof than trend generators. */
 const NEVER_ABOVE_MIN_N = 10;
 const NEVER_ABOVE_CAP = 7; // "never above a 7" — caps higher than this are weak tea
@@ -39,6 +49,12 @@ const NEVER_ABOVE_MAX_PRESENT_SHARE = 0.4;
 /** The token must genuinely sit below the user's norm, not just lack peaks. */
 const NEVER_ABOVE_MIN_AVG_GAP = 0.5;
 const ALL_HIGH_MIN_N = 8;
+/**
+ * Like all-tens-share: "all N you rated landed 8+" is trivial when the token
+ * rides most of the user's history — on a curated all-classics onboarding
+ * stack, a near-universal token going "all high" is the stack, not the user.
+ */
+const ALL_HIGH_MAX_PRESENT_SHARE = 0.5;
 const ALL_TENS_MIN = 4;
 /** all-tens-share is trivial when the token appears on most fights anyway. */
 const ALL_TENS_MAX_PRESENT_SHARE = 0.5;
@@ -141,6 +157,8 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
   const globalCmpDelta =
     baseline.cmpCount >= GLOBAL_CMP_FLOOR ? baseline.avgDeltaVsCommunity : 0;
 
+  ratingBias(baseline, out);
+
   for (const t of sig.tokens) {
     selfContrast(t, baseline.avg, out);
     communityCompare(t, globalCmpDelta, out);
@@ -197,6 +215,37 @@ export function generateCandidates(sig: TasteSignature): InsightCandidate[] {
   return dedupeByCluster(dedupeByToken(out), inferClusterVoices(sig)).sort(
     (a, b) => b.score - a.score,
   );
+}
+
+/**
+ * Global grading bias — ONE card for the one idea. When the user's overall
+ * average sits clearly above/below the community on the same fights, that is
+ * a single fact about THEM, not about any token. Without this card it leaks
+ * through every token as "harder on X than the crowd" ten slightly different
+ * ways (Mike's onboarding walk, 2026-06-12). The per-token community
+ * generator subtracts the global gap (same GLOBAL_CMP_FLOOR), so this card
+ * and any surviving per-token cards never tell the same story.
+ */
+function ratingBias(
+  baseline: TasteSignature['baseline'],
+  out: InsightCandidate[],
+): void {
+  if (baseline.cmpCount < GLOBAL_CMP_FLOOR) return;
+  const delta = baseline.avgDeltaVsCommunity;
+  if (Math.abs(delta) < BIAS_MIN_DELTA) return;
+  const score =
+    Math.min(1, Math.abs(delta) / BIAS_GAP_NORM) *
+    Math.min(1, baseline.cmpCount / BIAS_EVIDENCE_SAT) *
+    BIAS_BOOST;
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: delta >= 0 ? 'rating-bias-high' : 'rating-bias-low',
+    dimension: 'global',
+    token: 'rating-bias',
+    direction: delta >= 0 ? 'high' : 'low',
+    score,
+    stats: { n: baseline.cmpCount, deltaVsCommunity: delta },
+  });
 }
 
 function selfContrast(
@@ -294,6 +343,7 @@ function neverAbove(
 function allHigh(t: TokenStat, out: InsightCandidate[]): void {
   if (t.count < ALL_HIGH_MIN_N) return;
   if (t.minRating < HIGH_RATING) return;
+  if (t.presentShare > ALL_HIGH_MAX_PRESENT_SHARE) return;
   const score = scoreAbsolute({
     dimension: t.dimension,
     token: t.token,

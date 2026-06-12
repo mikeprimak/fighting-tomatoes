@@ -24,7 +24,9 @@ import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService, OnboardingStackFight } from '../../services/api';
 
-const ENCOURAGE_TARGET = 10;
+// 10, not 30 — Mike's own walk (2026-06-12) lost interest at fight 11. The
+// profile keeps sharpening in-app; onboarding only needs a real start.
+const STACK_SIZE = 10;
 
 function Headshot({ uri, colors }: { uri: string | null; colors: any }) {
   const styles = headshotStyles(colors);
@@ -63,7 +65,7 @@ export default function RateClassicsScreen() {
 
   useEffect(() => {
     apiService
-      .getOnboardingRateStack(30)
+      .getOnboardingRateStack(STACK_SIZE)
       .then((res) => setFights(res.fights))
       .catch(() => setFights([]))
       .finally(() => setIsLoading(false));
@@ -85,7 +87,8 @@ export default function RateClassicsScreen() {
   };
 
   const handleContinue = () => {
-    router.push('/(onboarding)/your-profile');
+    // Follows come BEFORE the payoff screen so they feed the taste profile.
+    router.push('/(onboarding)/follow-fighters');
   };
 
   return (
@@ -111,7 +114,7 @@ export default function RateClassicsScreen() {
             </Text>
             <Text style={styles.doneBody}>
               {ratedCount > 0
-                ? 'Let’s see what your ratings say about you.'
+                ? 'Next: pick the fighters you never want to miss.'
                 : 'You can rate fights anytime — your profile builds as you go.'}
             </Text>
           </View>
@@ -168,7 +171,7 @@ export default function RateClassicsScreen() {
         )}
 
         <View style={styles.footer}>
-          {!done && ratedCount < ENCOURAGE_TARGET ? (
+          {!done ? (
             <Text style={styles.encourageText}>
               The more you rate, the sharper your profile.
             </Text>

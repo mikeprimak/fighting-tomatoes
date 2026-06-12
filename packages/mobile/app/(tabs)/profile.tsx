@@ -231,6 +231,9 @@ export default function ProfileScreen() {
     secondaryStat?: string;
   };
   const [fanDNAType, setFanDNAType] = useState<FanDNAPersonalityType | null>(null);
+  // Early read while the trait engine hasn't met its floors (new accounts
+  // straight out of onboarding): top taste-profile insight headline.
+  const [fanDNAEarlyRead, setFanDNAEarlyRead] = useState<string | null>(null);
 
   // Time filter state - default to 'allTime' to show all predictions
   const [timeFilter, setTimeFilter] = useState<string>('allTime');
@@ -318,6 +321,16 @@ export default function ProfileScreen() {
         const data = await apiService.getFanDNAProfile();
         setFanDNACards(data.cards ?? []);
         setFanDNAType(data.personalityType ?? null);
+        if (!data.personalityType) {
+          // No computed type yet — fall back to the top taste-profile
+          // insight so the row shows something real from day one.
+          try {
+            const taste = await apiService.getTasteProfile(1);
+            setFanDNAEarlyRead(taste.insights?.[0]?.headline ?? null);
+          } catch {
+            setFanDNAEarlyRead(null);
+          }
+        }
       } catch (error) {
         console.log('Fan DNA fetch failed (silent):', error);
         setFanDNACards([]);
@@ -727,19 +740,25 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Your Fan DNA — condensed to title + personality type line. */}
-        {(fanDNALoading || fanDNAType) && (
+        {/* Your Fan DNA — condensed to title + personality type line. Before
+            the trait engine meets its floors, the top taste-profile insight
+            (built from onboarding ratings/follows) stands in. */}
+        {(fanDNALoading || fanDNAType || fanDNAEarlyRead) && (
           <ActivitySection
             bgColor={SECTION_BG_ODD}
-            onPress={fanDNAType ? () => router.push('/activity/fan-dna' as any) : undefined}
+            onPress={fanDNAType || fanDNAEarlyRead ? () => router.push('/activity/fan-dna' as any) : undefined}
             title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>Your Fan DNA</Text>}
-            headerRight={fanDNAType ? (
+            headerRight={fanDNAType || fanDNAEarlyRead ? (
               <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
             ) : undefined}
           >
             {fanDNAType ? (
               <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
                 Your Type: <Text style={{ color: colors.text, fontWeight: '600' }}>{fanDNAType.label}</Text>
+              </Text>
+            ) : fanDNAEarlyRead ? (
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                Early read: <Text style={{ color: colors.text, fontWeight: '600' }}>{fanDNAEarlyRead}</Text>
               </Text>
             ) : (
               <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>Computing your DNA…</Text>
