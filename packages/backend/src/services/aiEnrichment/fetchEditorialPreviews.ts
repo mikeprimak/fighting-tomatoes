@@ -52,8 +52,10 @@ export interface EditorialSnapshot {
 export interface FetchEditorialPreviewsOptions {
   /** Max articles to actually fetch (default 2). Cap is 4 to keep cost predictable. */
   topN?: number;
-  /** Brave freshness window. Default 'pm' (past month). */
-  freshness?: BraveFreshness;
+  /** Brave freshness window. Default 'pm' (past month). 'all' disables the
+   *  filter entirely — required for historic events, where every recap is
+   *  years old and any freshness window returns nothing. */
+  freshness?: BraveFreshness | 'all';
   /**
    * 'preview' (default) biases toward pre-fight breakdown articles and excludes
    * results/recap pages. 'recap' is the post-fight inverse — it biases toward
@@ -93,7 +95,9 @@ export async function fetchEditorialPreviews(
 
   let results;
   try {
-    results = await braveSearch(query, 10, { freshness });
+    results = await braveSearch(query, 10, {
+      freshness: freshness === 'all' ? undefined : freshness,
+    });
   } catch (err: any) {
     console.warn('[aiEnrichment.editorial] Brave search failed:', err?.message);
     return [];
