@@ -364,7 +364,17 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
   output verified identical to the pilot runner for avocadomike; 23-rating test
   account produces 8 insights (new-user floor risk acceptable; empty state
   covers the rest). Not yet device-tested. Deferred to release: existing-user
-  one-time picker announcement; Google-signup onboarding entry.
+  one-time picker announcement (Mike confirmed: every existing user gets the
+  walkthrough at launch).
+  **Same-day follow-ups (Mike review):** email-verification gate removed from
+  rate/reveal/delete-rating/follow/unfollow so onboarding works
+  pre-verification; Google AND Apple signups enter onboarding via a new
+  `isNewUser` auth-response flag; **verification soft-cap shipped** —
+  unverified accounts get 50 ratings + 50 hype (hype thereby ungated), then a
+  distinct `VERIFICATION_CAP_REACHED` prompt forces verification (reviews/
+  tags/comments keep the hard gate). Iteration harness for the device-walk
+  polish loop: `docs/playbooks/onboarding-iteration.md`. Handoff:
+  `docs/HANDOFF-onboarding-iteration-2026-06-12.md`.
 - **2026-06-11 (2)** — **Pilot review PASSED; VOCAB FROZEN.** Mike's verdicts
   on his real 15-insight profile (778 fights tagged): (1) the top cluster —
   rating crowd-hated low-output fights 0.9-1.5 above the room beyond his own
