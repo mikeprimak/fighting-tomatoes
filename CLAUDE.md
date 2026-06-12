@@ -13,6 +13,11 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**→ (Phase 1 branch work) `docs/HANDOFF-onboarding-iteration-2026-06-12.md`** —
+onboarding flow is BUILT on `claude/user-focused-pivot-l8l6mg`; next task is the
+approved verification soft-cap (50 ratings/hype for unverified), then Mike's
+device-walk iteration loop (`docs/playbooks/onboarding-iteration.md`).
+
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
 **TODO next session — web analytics follow-ups (2026-06-06):** GA4 (`G-WV5RKCMJSB`) + PostHog now live on goodfights.app (see `docs/daily/2026-06-06.md`). Still to do: (1) link GA4 → Search Console, (2) import GA4 conversions into Google Ads, (3) define conversion events (rating submitted, app-download click) in PostHog and/or GA. Web `identify()` on login not yet wired (pageviews only).
