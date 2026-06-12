@@ -1729,6 +1729,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 refreshToken: { type: 'string' },
               },
             },
+            isNewUser: { type: 'boolean' },
           },
         },
         400: {
@@ -1797,6 +1798,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { email: normalizedEmail }
       });
 
+      // Drives the mobile onboarding flow — only freshly created accounts
+      // get walked through it.
+      let isNewUser = false;
+
       if (user) {
         // User exists - check if they signed up with a different provider
         if (user.authProvider !== 'GOOGLE' && user.authProvider !== 'EMAIL') {
@@ -1843,6 +1848,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           }
         });
         request.log.info(`[Google Auth] Created new user via Google: ${normalizedEmail}`);
+        isNewUser = true;
       }
 
       // Check if account is active
@@ -1897,7 +1903,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         tokens: {
           accessToken,
           refreshToken,
-        }
+        },
+        isNewUser,
       });
 
     } catch (error: any) {
@@ -1952,6 +1959,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 refreshToken: { type: 'string' },
               },
             },
+            isNewUser: { type: 'boolean' },
           },
         },
         400: {
@@ -2041,6 +2049,10 @@ export async function authRoutes(fastify: FastifyInstance) {
         where: { appleId }
       });
 
+      // Drives the mobile onboarding flow — only freshly created accounts
+      // get walked through it.
+      let isNewUser = false;
+
       if (!user && normalizedEmail) {
         user = await fastify.prisma.user.findUnique({
           where: { email: normalizedEmail }
@@ -2102,6 +2114,7 @@ export async function authRoutes(fastify: FastifyInstance) {
           }
         });
         request.log.info(`[Apple Auth] Created new user via Apple: ${normalizedEmail}`);
+        isNewUser = true;
       } else {
         return reply.code(400).send({
           error: 'Unable to create account without email',
@@ -2161,7 +2174,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         tokens: {
           accessToken,
           refreshToken,
-        }
+        },
+        isNewUser,
       });
 
     } catch (error: any) {
