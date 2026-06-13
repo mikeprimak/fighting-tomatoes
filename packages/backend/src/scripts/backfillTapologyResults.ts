@@ -24,6 +24,7 @@ import { PrismaClient } from '@prisma/client';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
 import { TAPOLOGY_PROMOTION_HUBS, shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../config/promotionRegistry';
+import { fetchTapologyHtml } from '../services/tapologyBrowser';
 
 const prisma = new PrismaClient();
 
@@ -38,17 +39,12 @@ async function discoverTapologyUrl(event: any, promotion: string): Promise<strin
   }
 
   try {
-    const response = await fetch(hubConfig.url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml',
-      },
+    // Tapology hub pages are behind Cloudflare's JS challenge — a plain fetch
+    // gets the interstitial, not the listing. Render via the shared stealth
+    // browser (real Chrome) which clears it. See services/tapologyBrowser.js.
+    const html = await fetchTapologyHtml(hubConfig.url, {
+      waitForSelector: 'a[href*="/fightcenter/events/"]',
     });
-    if (!response.ok) {
-      console.error(`  [backfill] Hub fetch failed HTTP ${response.status}`);
-      return null;
-    }
-    const html = await response.text();
     const cheerio = await import('cheerio');
     const $ = cheerio.load(html);
 
