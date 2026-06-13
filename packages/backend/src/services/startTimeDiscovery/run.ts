@@ -22,7 +22,7 @@ import type { PrismaClient } from '@prisma/client';
 import { braveSearch } from '../broadcastDiscovery/searchBrave';
 import { extractStartTimes } from './extract';
 import { applyStartTimes, type EventForApply, type ApplyResult } from './persist';
-import { shelvedExclusionWhere } from '../../config/promotionRegistry';
+import { shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../../config/promotionRegistry';
 
 const RESOLVE_WINDOW_DAYS = Number(process.env.STARTTIME_WINDOW_DAYS || 21);
 const RETRY_AFTER_HOURS = Number(process.env.STARTTIME_RETRY_HOURS || 36);
@@ -119,6 +119,7 @@ export async function runStartTimeDiscovery(
   const retryCutoff = new Date(now.getTime() - RETRY_AFTER_HOURS * 60 * 60 * 1000);
   const sameDayFloor = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
+  await refreshShelvedPromotionsCache(prisma);
   const events = await prisma.event.findMany({
     where: {
       eventStatus: 'UPCOMING',

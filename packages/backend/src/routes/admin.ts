@@ -13,6 +13,11 @@ import {
   getProductionScrapers,
   ALL_SCRAPER_TYPES,
 } from '../config/liveTrackerConfig';
+import {
+  refreshShelvedPromotionsCache,
+  getShelvedPromotionCodes,
+  getPromotionShelfStates,
+} from '../config/promotionRegistry';
 import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
 import { syncFighterFollowMatchesForFight } from '../services/notificationRuleEngine';
 import { getActiveEventExpectations, getEventFightExpectations } from '../services/notificationExpectations';
@@ -2416,6 +2421,53 @@ export async function adminRoutes(fastify: FastifyInstance) {
       return reply.send({ scrapers: fresh, all: ALL_SCRAPER_TYPES });
     } catch (error: any) {
       console.error('[Admin] Failed to update production scrapers:', error);
+      return reply.code(500).send({ error: 'Failed to update config' });
+    }
+  });
+
+  // GET /admin/config/shelved-promotions — current shelve state for every org.
+  fastify.get('/admin/config/shelved-promotions', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (_request, reply) => {
+    try {
+      await refreshShelvedPromotionsCache(prisma);
+      return reply.send({
+        shelved: getShelvedPromotionCodes(),
+        all: getPromotionShelfStates(), // [{ code, label, shelved }]
+      });
+    } catch (error: any) {
+      console.error('[Admin] Failed to get shelved promotions:', error);
+      return reply.code(500).send({ error: 'Failed to get config' });
+    }
+  });
+
+  // PUT /admin/config/shelved-promotions — set the shelved list (org codes).
+  // Shelving turns an org OFF product-wide at runtime (UI, enrichment, discovery,
+  // live tracking, backfill). NOTE: the daily-scraper GitHub crons are YAML and
+  // are NOT controlled here — un-shelving restores everything except that cron.
+  fastify.put('/admin/config/shelved-promotions', {
+    preHandler: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    try {
+      const { shelved } = request.body as { shelved: string[] };
+      if (!Array.isArray(shelved) || !shelved.every(s => typeof s === 'string')) {
+        return reply.code(400).send({ error: 'shelved must be an array of promotion codes' });
+      }
+      const validCodes = new Set(getPromotionShelfStates().map(p => p.code));
+      const invalid = shelved.filter(c => !validCodes.has(c as any));
+      if (invalid.length > 0) {
+        return reply.code(400).send({ error: `Unknown promotion codes: ${invalid.join(', ')}` });
+      }
+      await prisma.systemConfig.upsert({
+        where: { key: 'shelved_promotions' },
+        create: { key: 'shelved_promotions', value: shelved },
+        update: { value: shelved },
+      });
+      const fresh = await refreshShelvedPromotionsCache(prisma);
+      console.log(`[Admin] Updated shelved promotions: ${JSON.stringify(fresh)}`);
+      return reply.send({ shelved: fresh, all: getPromotionShelfStates() });
+    } catch (error: any) {
+      console.error('[Admin] Failed to update shelved promotions:', error);
       return reply.code(500).send({ error: 'Failed to update config' });
     }
   });

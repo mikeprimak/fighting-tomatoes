@@ -1,9 +1,12 @@
 // Promotions hidden from all API responses (events, search, community).
 // Events/fights from these promotions exist in the DB but are never returned to clients.
 //
-// DERIVED from the promotion registry's master switch — any org with
-// `status: 'shelved'` is hidden here automatically. Don't hand-edit this list;
-// flip the org's `status` in promotionRegistry.ts instead (single source of truth).
-import { SHELVED_PROMOTION_STRINGS } from './promotionRegistry';
+// Runtime-adjustable: derives from the registry's shelved cache, which the admin
+// panel controls via SystemConfig ('shelved_promotions'). Call getHiddenPromotions()
+// at request time (it reads the in-memory cache — cheap). Don't hand-maintain a list.
+import { getShelvedPromotionStrings } from './promotionRegistry';
 
-export const HIDDEN_PROMOTIONS: string[] = [...SHELVED_PROMOTION_STRINGS];
+/** Canonical + alias strings of every currently-shelved promotion. */
+export function getHiddenPromotions(): string[] {
+  return getShelvedPromotionStrings();
+}

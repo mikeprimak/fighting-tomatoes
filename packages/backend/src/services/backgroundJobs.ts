@@ -6,6 +6,7 @@ import * as cron from 'node-cron';
 import { MMANewsScraper } from './mmaNewsScraper';
 import { startEventLifecycle, stopEventLifecycle, runEventLifecycleCheck } from './eventLifecycle';
 import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
+import { refreshShelvedPromotionsCache } from '../config/promotionRegistry';
 import { runDailyUFCScraper, DailyScraperResults } from './dailyUFCScraper';
 import {
   runDailyBKFCScraper,
@@ -45,6 +46,14 @@ export function startBackgroundJobs(): void {
     .catch(err => console.error('[Background Jobs] Initial scraper cache refresh failed:', err));
   setInterval(() => {
     refreshProductionScrapersCache(prisma).catch(() => {});
+  }, 60_000);
+
+  // Same pattern for the shelved-promotions master switch (admin-adjustable).
+  refreshShelvedPromotionsCache(prisma)
+    .then(list => console.log(`[Background Jobs] Shelved promotions: ${JSON.stringify(list)}`))
+    .catch(err => console.error('[Background Jobs] Initial shelved cache refresh failed:', err));
+  setInterval(() => {
+    refreshShelvedPromotionsCache(prisma).catch(() => {});
   }, 60_000);
 
   // ENABLED: Event lifecycle checker (replaces old event scheduler + failsafe + time-based updater)
