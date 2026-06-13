@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
-import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
+import { getHiddenPromotions } from '../config/hiddenPromotions';
 
 export default async function communityRoutes(fastify: FastifyInstance) {
   // Get all comments with sorting options
@@ -494,7 +494,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               gte: startDate,
               lte: now,
             },
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
             ...(promotionList && promotionList.length > 0 ? { promotion: { in: promotionList } } : {}),
@@ -619,7 +619,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         where: {
           event: {
             date: { gte: startDate, lte: now },
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
           },
@@ -708,7 +708,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         where: {
           event: {
             date: { lte: threeYearsAgo },
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
           },
@@ -793,7 +793,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const twoMonthsAhead = new Date(now);
       twoMonthsAhead.setDate(now.getDate() + 62);
-      const hidden = HIDDEN_PROMOTIONS.map(p => ({
+      const hidden = getHiddenPromotions().map(p => ({
         promotion: { contains: p, mode: 'insensitive' as const },
       }));
 
@@ -905,7 +905,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             averageRating: { gt: 0 },
             totalRatings: { gte: 3 },
             event: {
-              NOT: HIDDEN_PROMOTIONS.map(p => ({
+              NOT: getHiddenPromotions().map(p => ({
                 promotion: { contains: p, mode: 'insensitive' as const },
               })),
             },
@@ -948,7 +948,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           fightStatus: { in: ['UPCOMING', 'LIVE'] },
           event: {
             date: { gte: startOfToday },
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
           },
@@ -969,7 +969,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           OR: [{ fighter1Id: chosen.id }, { fighter2Id: chosen.id }],
           fightStatus: 'COMPLETED',
           event: {
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
           },

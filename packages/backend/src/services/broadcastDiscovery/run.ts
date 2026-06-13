@@ -15,7 +15,7 @@ import { fetchHowToWatch } from './fetchHowToWatch';
 import { extractFindings } from './extract';
 import { classifyFindings } from './diff';
 import { persistFindings } from './persist';
-import { isPromotionShelved } from '../../config/promotionRegistry';
+import { isPromotionShelved, refreshShelvedPromotionsCache } from '../../config/promotionRegistry';
 
 const REGIONS = ['US', 'CA', 'GB', 'AU', 'NZ', 'EU'] as const;
 type Region = typeof REGIONS[number];
@@ -77,6 +77,7 @@ export async function runDiscovery(
   const targetRegions = opts.regions ?? REGIONS;
 
   // Active promotions = those with upcoming events.
+  await refreshShelvedPromotionsCache(prisma);
   const promoRows = await prisma.event.groupBy({
     by: ['promotion'],
     where: { date: { gte: new Date() } },

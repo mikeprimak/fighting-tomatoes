@@ -24,7 +24,7 @@ import {
   type PreviewBrowserHandle,
 } from './fetchUFCEventPreview';
 import { enrichOneEvent, type EnrichOneEventResult } from './enrichOneEvent';
-import { shelvedExclusionWhere } from '../../config/promotionRegistry';
+import { shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../../config/promotionRegistry';
 
 const FRESH_THRESHOLD_HOURS = 36;
 const MS_PER_DAY = 86_400_000;
@@ -71,6 +71,7 @@ export async function runFightEnrichment(
 
   // Pull all UPCOMING events with at least a name. ufcUrl can be null — we'll
   // still try editorial sources for them.
+  await refreshShelvedPromotionsCache(prisma);
   const where = opts.onlyEventId
     ? { id: opts.onlyEventId }
     : { eventStatus: 'UPCOMING' as const, ...shelvedExclusionWhere() };
