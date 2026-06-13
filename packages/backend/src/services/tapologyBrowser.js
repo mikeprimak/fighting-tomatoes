@@ -28,6 +28,7 @@
  * Used by every scrape*Tapology.js, tapologyLiveScraper.ts, and
  * backfillTapologyResults.ts. Single source of truth for the launch recipe.
  */
+const https = require('https');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
@@ -38,6 +39,118 @@ const CHALLENGE_RE = /just a moment|attention required|verifying you are human|p
 
 const DEFAULT_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+// ───────────────────────────── Scrapfly path ─────────────────────────────
+// The real-Chrome+stealth recipe above defeats Cloudflare's challenge ONLY from
+// a residential IP. From a DATACENTER IP (GitHub Actions runners, the Hetzner
+// VPS) Cloudflare escalates to an interactive Turnstile widget that no headless
+// browser can solve — which is why every Tapology daily scrape / live track /
+// backfill broke at once around 2026-06-11. Scrapfly's "Web Unlocker" (asp=true)
+// solves Turnstile SERVER-SIDE on its own residential pool and hands back the
+// rendered HTML, so it works from any IP.
+//
+// Activation is purely env-driven: set SCRAPFLY_KEY (CI secret + VPS + Render)
+// and every page.goto() to a tapology.com URL is transparently routed through
+// Scrapfly (see wrapBrowserForScrapfly). Leave it unset (local/residential dev)
+// and the original real-Chrome path runs unchanged. No consumer code changes.
+// See docs/areas/scrapers.md.
+const SCRAPFLY_API = 'https://api.scrapfly.io/scrape';
+const TAPOLOGY_BASE = 'https://www.tapology.com/';
+const SCRAPFLY_TIMEOUT_MS = Number(process.env.SCRAPFLY_TIMEOUT_MS || 120000);
+
+function isScrapflyEnabled() {
+  return !!process.env.SCRAPFLY_KEY;
+}
+
+/**
+ * Fetch a URL's fully-rendered HTML through Scrapfly. `asp=true` is the
+ * anti-scraping-protection bypass that solves Cloudflare/Turnstile; `render_js`
+ * runs the page's JS (Tapology is mostly server-rendered, but it's cheap on the
+ * request-metered free plan and adds robustness). Resolves to the HTML string,
+ * rejects on any non-success so callers hit their existing retry/fail-closed
+ * paths instead of silently parsing an error page.
+ */
+function scrapflyFetchHtml(url, { renderJs = true, country = 'us', timeoutMs = SCRAPFLY_TIMEOUT_MS } = {}) {
+  const key = process.env.SCRAPFLY_KEY;
+  if (!key) return Promise.reject(new Error('SCRAPFLY_KEY not set'));
+  const params = new URLSearchParams({
+    key,
+    url,
+    asp: 'true',
+    render_js: renderJs ? 'true' : 'false',
+    country,
+  });
+  const apiUrl = `${SCRAPFLY_API}?${params.toString()}`;
+
+  return new Promise((resolve, reject) => {
+    const req = https.get(apiUrl, (res) => {
+      const chunks = [];
+      res.on('data', (c) => chunks.push(c));
+      res.on('end', () => {
+        const body = Buffer.concat(chunks).toString('utf8');
+        let json;
+        try {
+          json = JSON.parse(body);
+        } catch (_) {
+          return reject(new Error(`Scrapfly: non-JSON response (HTTP ${res.statusCode}): ${body.slice(0, 200)}`));
+        }
+        const result = json.result || {};
+        if (res.statusCode !== 200 || result.success === false) {
+          const msg = json.message || result.error || `HTTP ${res.statusCode}`;
+          return reject(new Error(`Scrapfly request failed for ${url}: ${msg}`));
+        }
+        const html = result.content || '';
+        if (html.length < 500) {
+          return reject(new Error(`Scrapfly returned empty/short content for ${url} (len ${html.length}, upstream ${result.status_code})`));
+        }
+        resolve(html);
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(timeoutMs, () => req.destroy(new Error(`Scrapfly request timed out after ${timeoutMs}ms for ${url}`)));
+  });
+}
+
+const BASE_TAG = `<base href="${TAPOLOGY_BASE}">`;
+/**
+ * Scrapfly returns the rendered DOM, which we load via page.setContent — but
+ * then the page URL is about:blank, so the scrapers' `link.href` reads would
+ * resolve relative event links (/fightcenter/events/…) against about:blank and
+ * break. Inject a <base> so href resolution (and any relative asset) points at
+ * tapology.com, exactly as on the live page.
+ */
+function withTapologyBase(html) {
+  if (/<base\s/i.test(html)) return html; // respect an existing base tag
+  const headOpen = html.match(/<head[^>]*>/i);
+  if (headOpen) return html.replace(headOpen[0], `${headOpen[0]}${BASE_TAG}`);
+  return `${BASE_TAG}${html}`;
+}
+
+/**
+ * Wrap a launched browser so every page.goto() to a tapology.com URL is served
+ * by Scrapfly + setContent instead of a real navigation. Non-Tapology URLs
+ * (e.g. mostvaluablepromotions.com in the MVP scraper) pass straight through.
+ * Transparent to all callers — they still call page.goto + waitForCloudflareClear,
+ * and the clear check passes instantly because setContent shows the real title.
+ */
+function wrapBrowserForScrapfly(browser) {
+  const origNewPage = browser.newPage.bind(browser);
+  browser.newPage = async (...a) => {
+    const page = await origNewPage(...a);
+    const origGoto = page.goto.bind(page);
+    page.goto = async (url, gotoOpts = {}) => {
+      if (typeof url === 'string' && /tapology\.com/i.test(url)) {
+        const html = withTapologyBase(await scrapflyFetchHtml(url, { renderJs: true }));
+        await page.setContent(html, { waitUntil: 'domcontentloaded', timeout: gotoOpts.timeout || 60000 });
+        return { status: () => 200, ok: () => true, _viaScrapfly: true };
+      }
+      return origGoto(url, gotoOpts);
+    };
+    return page;
+  };
+  return browser;
+}
+// ──────────────────────────── end Scrapfly path ──────────────────────────
 
 /**
  * Launch a Cloudflare-resistant browser. Prefers a real system Chrome:
@@ -59,23 +172,31 @@ async function launchTapologyBrowser(opts = {}) {
 
   const base = { headless: true, ...opts, args };
 
+  let browser;
   // 1. Explicit override (set this on CI if Chrome lives somewhere unusual).
   if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-    return puppeteer.launch({ ...base, executablePath: process.env.PUPPETEER_EXECUTABLE_PATH });
+    browser = await puppeteer.launch({ ...base, executablePath: process.env.PUPPETEER_EXECUTABLE_PATH });
+  } else {
+    // 2. The locally-installed Google Chrome (NOT bundled Chromium — Cloudflare
+    //    blocks Chromium). Present on GitHub's ubuntu-latest runners + dev boxes.
+    try {
+      browser = await puppeteer.launch({ ...base, channel: 'chrome' });
+    } catch (channelErr) {
+      // 3. Fall back to well-known Linux Chrome paths before giving up.
+      const fs = require('fs');
+      let exe = null;
+      for (const p of ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/opt/google/chrome/chrome']) {
+        if (fs.existsSync(p)) { exe = p; break; }
+      }
+      if (!exe) throw channelErr;
+      browser = await puppeteer.launch({ ...base, executablePath: exe });
+    }
   }
 
-  // 2. The locally-installed Google Chrome (NOT bundled Chromium — Cloudflare
-  //    blocks Chromium). Present on GitHub's ubuntu-latest runners + dev boxes.
-  try {
-    return await puppeteer.launch({ ...base, channel: 'chrome' });
-  } catch (channelErr) {
-    // 3. Fall back to well-known Linux Chrome paths before giving up.
-    const fs = require('fs');
-    for (const p of ['/usr/bin/google-chrome-stable', '/usr/bin/google-chrome', '/opt/google/chrome/chrome']) {
-      if (fs.existsSync(p)) return puppeteer.launch({ ...base, executablePath: p });
-    }
-    throw channelErr;
-  }
+  // When SCRAPFLY_KEY is set, route tapology.com navigations through Scrapfly.
+  // The launched browser is then only a local DOM host for setContent — it
+  // never touches Cloudflare, so even bundled Chromium would do here.
+  return isScrapflyEnabled() ? wrapBrowserForScrapfly(browser) : browser;
 }
 
 /** A page pre-set with a realistic viewport + desktop Chrome UA. */
@@ -154,6 +275,8 @@ module.exports = {
   waitForCloudflareClear,
   gotoTapology,
   fetchTapologyHtml,
+  isScrapflyEnabled,
+  scrapflyFetchHtml,
   CHALLENGE_RE,
   DEFAULT_UA,
 };
