@@ -23,7 +23,7 @@
 import { PrismaClient } from '@prisma/client';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
-import { TAPOLOGY_PROMOTION_HUBS } from '../config/promotionRegistry';
+import { TAPOLOGY_PROMOTION_HUBS, shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../config/promotionRegistry';
 
 const prisma = new PrismaClient();
 
@@ -118,6 +118,8 @@ async function findBackfillCandidates(windowDays: number) {
         { scraperType: 'tapology' },
         { promotion: { in: knownPromotions } },
       ],
+      // Skip shelved orgs (master switch = promotionRegistry status).
+      ...shelvedExclusionWhere(),
       fights: {
         some: {
           winner: null,
@@ -211,6 +213,7 @@ async function main() {
   console.log(`[backfill] Started: ${new Date().toISOString()}`);
   console.log(`========================================`);
 
+  await refreshShelvedPromotionsCache(prisma);
   const candidates = await findBackfillCandidates(windowDays);
   console.log(`\n[backfill] Found ${candidates.length} candidate event(s)`);
 

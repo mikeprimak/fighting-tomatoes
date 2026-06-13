@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma';
 import { FastifyInstance } from 'fastify';
 import { optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
-import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
+import { getHiddenPromotions } from '../config/hiddenPromotions';
 
 
 /**
@@ -230,7 +230,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       const allEvents = await prisma.event.findMany({
         where: {
           ...buildEventSearchConditions(),
-          NOT: HIDDEN_PROMOTIONS.map(p => ({
+          NOT: getHiddenPromotions().map(p => ({
             promotion: { contains: p, mode: 'insensitive' as const },
           })),
         },
@@ -443,7 +443,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         where: {
           ...buildFightSearchConditions(),
           event: {
-            NOT: HIDDEN_PROMOTIONS.map(p => ({
+            NOT: getHiddenPromotions().map(p => ({
               promotion: { contains: p, mode: 'insensitive' as const },
             })),
           },
@@ -577,7 +577,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       const promotions = await prisma.event.findMany({
         where: {
           ...buildPromotionSearchConditions(),
-          NOT: HIDDEN_PROMOTIONS.map(p => ({
+          NOT: getHiddenPromotions().map(p => ({
             promotion: { contains: p, mode: 'insensitive' as const },
           })),
         },
