@@ -138,7 +138,7 @@ He is also the most polarizing personality on the card. Hokit has leaned all the
 
 That act boiled over at the card's kickoff press conference. Showing up in a robe, sunglasses, gloves, and an American flag bandana, Hokit grabbed the microphone and ripped into Lewis, Pereira, and Topuria in rhyming, wrestling-promo style. Topuria, sitting beside Pereira, eventually had enough: he told Hokit to shut up, Hokit fired back by calling him a "midget," and Topuria responded by throwing the contents of a bottle and then a microphone at him, with the mic appearing to catch Hokit in the head. Security escorted Hokit off the stage while he was still hurling insults, and Dana White stepped in to close out the presser.
 
-The fallout spilled into fight week. When the lineup for the final Washington, D.C. press conference circulated, Hokit's name was missing from it, and plenty of people assumed the UFC had quietly benched its loudest act as punishment. The promotion shut that down fast, clarifying that the omission was simply an error and confirming that both Hokit and Lewis will be on stage in D.C. after all. For a fighter whose entire pitch is being impossible to ignore, briefly vanishing from the lineup and then being added right back might be the most on-brand thing that could have happened.
+The fallout spilled into fight week. When the lineup for the final Washington, D.C. press conference circulated, Hokit's name was missing from it, and plenty of people assumed the UFC had quietly benched its loudest act as punishment. The promotion shut that down fast, clarifying that the omission was simply an error and confirming that both Hokit and Lewis would be on stage in D.C. after all. They were: Hokit showed up at the final press conference and picked right back up where he left off (more on that below). For a fighter whose entire pitch is being impossible to ignore, briefly vanishing from the lineup and then being added right back might be the most on-brand thing that could have happened.
 
 ## Josh Hokit vs Derrick Lewis: who wins?
 
@@ -171,6 +171,26 @@ The main event is the biggest mismatch on paper, the co-main is a true coin flip
 ## What is the must-watch fight on UFC Freedom 250?
 
 If you only catch one fight, make it the **co-main, Pereira vs Gane**, because it is the closest matchup, it carries a piece of history with Pereira's three-division bid, and styles-wise it is a beautiful contrast of movement versus power. That said, the **Topuria vs Gaethje** main event has the higher ceiling for violence, and **Hokit vs Lewis** is the kind of heavyweight wildcard where anything can happen in a single exchange. On a card this deep, there is no wrong answer.
+
+## What happened at the UFC Freedom 250 weigh-ins?
+
+Fight week is done and the card is locked. At Saturday's official weigh-ins in Washington, D.C., **all 14 fighters made weight** with no drama. Both title fights are a go:
+
+- **Ilia Topuria 155, Justin Gaethje 155** - both dead on the lightweight title limit for the main event.
+- **Alex Pereira 251, Ciryl Gane 248** - Pereira is actually the heavier man in his heavyweight debut, coming in three pounds north of the much taller Gane.
+- **Sean O'Malley 135.5, Aiemann Zahabi 135** - both on point at bantamweight.
+- **Mauricio Ruffy 155, Michael Chandler 156** - on weight for their lightweight clash.
+- **Bo Nickal 186, Kyle Daukaus 186** - both on the middleweight number.
+- **Josh Hokit vs Derrick Lewis 265** - on weight at heavyweight.
+- **Diego Lopes 146, Steve Garcia 146** - both on point at featherweight.
+
+Nobody missed, nobody got pulled, and the full seven-fight card survived fight week intact.
+
+## What happened at the UFC Freedom 250 final press conference?
+
+The final press conference was held Friday night at the **Lincoln Memorial**, and it lived up to the bad blood. The headline moment came at the main-event faceoff: **Ilia Topuria shoved Justin Gaethje** seconds after they squared up, and security and Dana White had to pull the two lightweights apart. Topuria explained afterward that he warned Gaethje not to step closer and chose to push rather than punch, saying that if he had hit him, Gaethje "is not going to be able to show up for the fight." Gaethje, unbothered, gestured at the monument behind them and called Topuria "an emotional little animal."
+
+Josh Hokit, true to form, stayed fully in character. After the fight-week scare where his name briefly vanished from the lineup before the UFC confirmed it was an error, he was right back on stage hurling insults at the champion, cracking that Topuria is "so short he can't see himself in the bathroom mirror" and needling him over his personal life. It was a continuation of the feud that boiled over at the kickoff presser a month earlier, and it kept Hokit exactly where he wants to be: impossible to ignore heading into the biggest night of his career.
 
 ## Quick answers about UFC Freedom 250
 
