@@ -31,6 +31,9 @@ import {
  */
 const clampRating = (r: number) => Math.min(r, TOP_RATING);
 
+/** Fights before this year count as 'old_school' for the era-lean insight. */
+export const ERA_SPLIT_YEAR = 2015;
+
 /** Same canonical method bucketing as the method-affinity trait. */
 export function bucketMethod(method: string | null): string | null {
   if (!method) return null;
@@ -71,7 +74,7 @@ export async function loadTasteInputs(
             averageRating: true,
             totalRatings: true,
             aiPostFightTags: true,
-            event: { select: { promotion: true } },
+            event: { select: { promotion: true, date: true } },
             fighter1: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
             fighter2: { select: { id: true, firstName: true, lastName: true, gender: true, aiProfile: true } },
           },
@@ -114,6 +117,15 @@ export async function loadTasteInputs(
     if (method) dims.method = method;
     if (f.weightClass) dims.weightClass = f.weightClass;
     if (f.event?.promotion) dims.org = f.event.promotion;
+    // Era split feeds the era-lean insight ("you're an old-school fan").
+    // 2015 is the line Mike picked (2026-06-12); Event.date is a UTC-noon
+    // placeholder but the YEAR is always trustworthy.
+    if (f.event?.date) {
+      dims.era =
+        new Date(f.event.date).getUTCFullYear() < ERA_SPLIT_YEAR
+          ? 'old_school'
+          : 'modern_era';
+    }
     // A fight is a women's fight when its fighters are women; mixed never occurs.
     if (f.fighter1?.gender) dims.gender = f.fighter1.gender;
     if (f.isTitle) dims.titleFight = 'title';

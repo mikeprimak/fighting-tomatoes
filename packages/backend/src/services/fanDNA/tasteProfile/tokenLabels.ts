@@ -190,6 +190,8 @@ const LABELS: Record<string, string> = {
   'vibe.controversial': 'controversial fights',
 
   // ── plain-DB dimensions ──
+  'era.old_school': 'old-school fights',
+  'era.modern_era': 'modern-era fights',
   'method.Knockout': 'knockouts',
   'method.Submission': 'submissions',
   'method.Decision': 'decisions',

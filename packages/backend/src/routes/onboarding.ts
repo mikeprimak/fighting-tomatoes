@@ -25,6 +25,15 @@ const CANDIDATE_POOL = 200;
 const SUGGESTION_LIMIT = 40;
 // Fallback picker over-fetches so the champion/rank boost has room to reorder.
 const SUGGESTION_POOL = 120;
+// Second leg of the suggestion mix (Mike, 2026-06-12): fighters whose fights
+// carry the most historical fan ratings — the legends people actually know.
+const RATED_POOL = 80;
+// "Historically loved" fighters must still be relevant: active flag OR a
+// fight inside this window.
+const RECENT_FIGHT_WINDOW_MS = 3 * 365 * 24 * 60 * 60 * 1000;
+// How hard deep rating history weighs against raw follower counts in the
+// blended score: the most-rated fighter in the pool earns this many points.
+const RATING_VOLUME_POINTS = 150;
 
 const fightSelect = {
   id: true,
@@ -267,19 +276,69 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
         return reply.code(200).send({ fighters, source: 'curated' });
       }
 
-      // Auto-fallback until Mike curates: most-followed active fighters with
-      // a headshot; champions and ranked fighters float up.
-      const pool = await fastify.prisma.fighter.findMany({
-        where: { isActive: true, profileImage: { not: null } },
-        orderBy: { followers: { _count: 'desc' } },
-        take: SUGGESTION_POOL,
-        select: fighterSelect,
-      });
-      const fighters = pool
+      // Auto-fallback until Mike curates: a MIX (Mike, 2026-06-12 round 4) of
+      // (a) most-followed active fighters and (b) fighters whose fights carry
+      // the most historical fan ratings — but only when they're still active
+      // or fought within the last 3 years. Headshot required for everyone.
+      const recencyCutoff = new Date(Date.now() - RECENT_FIGHT_WINDOW_MS);
+      const [followedPool, ratedPool] = await Promise.all([
+        fastify.prisma.fighter.findMany({
+          where: { isActive: true, profileImage: { not: null } },
+          orderBy: { followers: { _count: 'desc' } },
+          take: SUGGESTION_POOL,
+          select: fighterSelect,
+        }),
+        fastify.prisma.$queryRaw<
+          Array<{ id: string; rating_count: number; last_fight: Date | null }>
+        >`
+          SELECT f.id,
+                 COUNT(fr.id)::int AS rating_count,
+                 MAX(e.date)       AS last_fight
+          FROM fighters f
+          JOIN fights ft ON ft."fighter1Id" = f.id OR ft."fighter2Id" = f.id
+          JOIN fight_ratings fr ON fr."fightId" = ft.id
+          JOIN events e ON e.id = ft."eventId"
+          WHERE f."profileImage" IS NOT NULL
+          GROUP BY f.id
+          ORDER BY rating_count DESC
+          LIMIT ${RATED_POOL}
+        `,
+      ]);
+
+      const ratedInfo = new Map(ratedPool.map((r) => [r.id, r]));
+      const followedIds = new Set(followedPool.map((f) => f.id));
+      const missingIds = ratedPool
+        .map((r) => r.id)
+        .filter((id) => !followedIds.has(id));
+      // Rated-pool fighters outside the followed pool may be inactive
+      // (retired legends) — load them with the flag so the recency gate can
+      // decide.
+      const extraRows = missingIds.length
+        ? await fastify.prisma.fighter.findMany({
+            where: { id: { in: missingIds } },
+            select: { ...fighterSelect, isActive: true },
+          })
+        : [];
+      const stillRelevant = (f: { isActive?: boolean; id: string }) => {
+        if (f.isActive !== false) return true;
+        const last = ratedInfo.get(f.id)?.last_fight;
+        return last != null && new Date(last) >= recencyCutoff;
+      };
+
+      const maxRatingCount = Math.max(
+        1,
+        ...ratedPool.map((r) => r.rating_count),
+      );
+      const fighters = [...followedPool, ...extraRows]
+        .filter(stillRelevant)
         .map((f) => ({
           f,
           score:
-            f._count.followers + (f.isChampion ? 100 : 0) + (f.rank ? 30 : 0),
+            f._count.followers +
+            (f.isChampion ? 100 : 0) +
+            (f.rank ? 30 : 0) +
+            ((ratedInfo.get(f.id)?.rating_count ?? 0) / maxRatingCount) *
+              RATING_VOLUME_POINTS,
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, SUGGESTION_LIMIT)
