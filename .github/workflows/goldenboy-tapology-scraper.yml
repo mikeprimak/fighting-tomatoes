@@ -1,8 +1,10 @@
 name: Golden Boy Tapology Scraper
 
 on:
-  schedule:
-    - cron: "30 15 * * *"
+  # Cron disabled 2026-06-13: Golden Boy (Tapology) shelved (promotionRegistry status: 'shelved').
+  # Re-enable: set status back to 'active' AND un-comment the cron below.
+  # schedule:
+  #   - cron: "30 15 * * *"
   workflow_dispatch:
 
 jobs:

@@ -1,8 +1,10 @@
 name: Matchroom Scraper
 
 on:
-  schedule:
-    - cron: "0 20 * * *"
+  # Cron disabled 2026-06-13: Matchroom shelved (promotionRegistry status: shelved).
+  # Re-enable: set status back to active AND un-comment the cron below.
+  # schedule:
+  #   - cron: "0 20 * * *"
   workflow_dispatch:
 
 jobs:

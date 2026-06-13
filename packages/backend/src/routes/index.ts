@@ -108,7 +108,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   fastify.get('/api/promotions', async (_request, reply) => {
     return reply.send({
       promotions: PROMOTION_REGISTRY
-        .filter(e => e.userVisible)
+        .filter(e => e.userVisible && e.status !== 'shelved')
         .map(e => ({
           code: e.code,
           canonicalPromotion: e.canonicalPromotion,

@@ -15,6 +15,7 @@ import { fetchHowToWatch } from './fetchHowToWatch';
 import { extractFindings } from './extract';
 import { classifyFindings } from './diff';
 import { persistFindings } from './persist';
+import { isPromotionShelved } from '../../config/promotionRegistry';
 
 const REGIONS = ['US', 'CA', 'GB', 'AU', 'NZ', 'EU'] as const;
 type Region = typeof REGIONS[number];
@@ -82,6 +83,8 @@ export async function runDiscovery(
     _count: { _all: true },
   });
   let promotions = promoRows.map(r => r.promotion);
+  // Skip shelved orgs (master switch = promotionRegistry status).
+  promotions = promotions.filter(p => !isPromotionShelved(p));
   if (opts.promotions && opts.promotions.length > 0) {
     const filter = new Set(opts.promotions);
     promotions = promotions.filter(p => filter.has(p));

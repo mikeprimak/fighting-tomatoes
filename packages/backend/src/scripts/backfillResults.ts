@@ -38,6 +38,7 @@ import { backfillOktagonResults } from '../services/backfillOktagonResults';
 import { backfillMatchroomResults } from '../services/backfillMatchroomResults';
 import { backfillPFLResults } from '../services/backfillPFLResults';
 import { backfillRAFResults } from '../services/backfillRAFResults';
+import { shelvedExclusionWhere } from '../config/promotionRegistry';
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,8 @@ async function findCandidates(windowDays: number, orgFilter: string[] | null) {
       eventStatus: 'COMPLETED',
       date: { gte: windowStart },
       ...(orgFilter ? { scraperType: { in: orgFilter } } : { scraperType: { not: null } }),
+      // Skip shelved orgs (master switch = promotionRegistry status).
+      ...shelvedExclusionWhere(),
       fights: {
         some: {
           winner: null,
