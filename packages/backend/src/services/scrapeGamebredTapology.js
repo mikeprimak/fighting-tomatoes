@@ -10,7 +10,7 @@
  * - Automated: SCRAPER_MODE=automated node src/services/scrapeGamebredTapology.js
  */
 
-const puppeteer = require('puppeteer');
+const { launchTapologyBrowser, waitForCloudflareClear } = require('./tapologyBrowser');
 const fs = require('fs');
 const path = require('path');
 const { FIGHT_CARD_CONTAINER_SELECTOR, FIGHT_ROW_SELECTOR } = require('./tapologyFightExtraction');
@@ -68,7 +68,8 @@ async function scrapeEventsList(browser) {
 
   try {
     await page.goto(TAPOLOGY_PROMOTION_URL, { waitUntil: 'networkidle2', timeout: 120000 });
-    await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 15000 });
+    await waitForCloudflareClear(page);
+    await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 30000 });
 
     const events = await page.evaluate(() => {
       const extractedEvents = [];
@@ -141,7 +142,8 @@ async function scrapeEventPage(browser, eventUrl) {
 
   try {
     await page.goto(eventUrl, { waitUntil: 'networkidle2', timeout: 60000 });
-    await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 15000 });
+    await waitForCloudflareClear(page);
+    await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 30000 });
 
     try {
       const consentBtn = await page.$('button[aria-label="Consent"], .fc-cta-consent, button.accept-cookies, [data-testid="consent-accept"]');
@@ -332,10 +334,7 @@ async function main() {
   console.log('\n🚀 Starting Gamebred Tapology Scraper\n');
   console.log('='.repeat(60));
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  const browser = await launchTapologyBrowser();
 
   try {
     const discoveredEvents = await scrapeEventsList(browser);

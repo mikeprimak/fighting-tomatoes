@@ -11,6 +11,7 @@
 
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
+import { launchTapologyBrowser, waitForCloudflareClear, DEFAULT_UA } from './tapologyBrowser';
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -115,25 +116,23 @@ export class TapologyLiveScraper {
    * Fetch the event page via Puppeteer (headless Chrome), retrying on Tapology's
    * rate-limit / bot-protection responses.
    *
-   * Tapology fronts its pages with bot protection that 403s a plain Node `fetch`
-   * (JA3/TLS fingerprinting) — the live tracker got a hard 403 on every poll,
-   * even from the VPS, while the daily Tapology org scrapers (which use Puppeteer)
-   * sailed through. A real browser presents a valid TLS fingerprint and passes.
-   * We still retry/back off on the occasional 403/429 cooldown so transient
-   * throttling self-heals instead of dropping the scrape.
+   * Tapology fronts its pages with a Cloudflare "Just a moment..." JS challenge
+   * (escalated from JA3/TLS-only ~2026-06-11). Bundled Chromium gets a hard 403
+   * + the interstitial; a REAL Chrome (channel:'chrome') with the stealth plugin
+   * auto-solves it. `launchTapologyBrowser` centralises that recipe. After the
+   * nav we poll until the interstitial clears; if it never clears (Cloudflare
+   * escalated for this IP) we back off and retry, then surface the failure.
+   * See services/tapologyBrowser.js + docs/areas/scrapers.md.
    */
   private async fetchHtmlWithRetry(maxAttempts = 4): Promise<string> {
     let lastErr: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
       try {
-        browser = await puppeteer.launch({
-          headless: true,
-          args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
+        browser = await launchTapologyBrowser();
         const page = await browser.newPage();
         await page.setViewport({ width: 1920, height: 1080 });
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+        await page.setUserAgent(DEFAULT_UA);
 
         const response = await page.goto(this.eventUrl, {
           waitUntil: 'networkidle2',
@@ -141,11 +140,14 @@ export class TapologyLiveScraper {
         });
         const status = response?.status() ?? 0;
 
-        // Bot-protection / rate-limit cooldown — back off and retry.
-        if ((status === 403 || status === 429) && attempt < maxAttempts) {
-          lastErr = new Error(`HTTP ${status}`);
+        // Wait out Cloudflare's interstitial. The challenge page itself often
+        // returns 403 before the JS redirect, so gate on the title clearing,
+        // not the raw status. If it never clears, back off and retry.
+        const cleared = await waitForCloudflareClear(page);
+        if (!cleared && attempt < maxAttempts) {
+          lastErr = new Error(`Cloudflare challenge not cleared (HTTP ${status})`);
           const waitMs = attempt * 30_000; // 30s, 60s, 90s
-          console.log(`[Tapology] HTTP ${status} — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
+          console.log(`[Tapology] challenge not cleared — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
           await browser.close();
           browser = null;
           await new Promise((r) => setTimeout(r, waitMs));
