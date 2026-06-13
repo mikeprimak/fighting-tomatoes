@@ -161,7 +161,7 @@ export default async function BlogPostPage({
 
       <h1 className="mb-2 text-3xl font-bold">{post.title}</h1>
       <div className="mb-5 text-sm text-text-secondary">
-        {formatDate(post.date)} · {post.author}
+        Published: {formatDate(post.date)} · {post.author}
       </div>
 
       {post.imageFit === 'contain' ? (
