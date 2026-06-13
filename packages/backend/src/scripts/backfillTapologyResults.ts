@@ -28,7 +28,12 @@ import { fetchTapologyHtml } from '../services/tapologyBrowser';
 
 const prisma = new PrismaClient();
 
-const DEFAULT_WINDOW_DAYS = 7;
+// 3-day window (was 7). Tapology results settle within ~2 days; a 7-day window
+// re-rendered every still-null completed event through Scrapfly DAILY for a week
+// (~30-45 credits/event/day). A stuck/never-resulted fight now ages out after ~3
+// re-scrapes instead of ~7. The VPS cron runs this with no BACKFILL_WINDOW_DAYS
+// env set, so this default governs there. See docs/daily/2026-06-13.md.
+const DEFAULT_WINDOW_DAYS = 3;
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
 async function discoverTapologyUrl(event: any, promotion: string): Promise<string | null> {

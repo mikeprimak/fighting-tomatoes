@@ -74,7 +74,12 @@ async function scrapeEventsList(browser) {
     const events = await page.evaluate(() => {
       const extractedEvents = [];
       const seenUrls = new Set();
-      const eventLinks = document.querySelectorAll('a[href*="/fightcenter/events/"]');
+      // UPCOMING-ONLY (2026-06-13): scope to #mainUpcoming (upcoming events only).
+      // Page-wide grabs the FULL archive + sidebar bleed; rendering each dead event
+      // via Scrapfly (~30-45 credits) blew the monthly cap. Fall back to #content
+      // only if the container is gone — never page-wide. See docs/daily/2026-06-13.md.
+      const upcomingScope = document.querySelector('#mainUpcoming') || document.querySelector('#content') || document;
+      const eventLinks = upcomingScope.querySelectorAll('a[href*="/fightcenter/events/"]');
 
       eventLinks.forEach(link => {
         const eventUrl = link.href;

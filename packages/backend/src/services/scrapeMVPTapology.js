@@ -110,15 +110,14 @@ async function scrapeEventsList(browser) {
       const extractedEvents = [];
       const seenUrls = new Set();
 
-      // Find event links ONLY inside #content (the promotion's event list).
-      // The sidebar calendar shows events from ALL promotions, but #content
-      // and #mainUpcoming only contain events for this specific promotion.
-      const contentEl = document.querySelector('#content');
-      const upcomingEl = document.querySelector('#mainUpcoming');
-      const eventLinks = [
-        ...(contentEl ? contentEl.querySelectorAll('a[href*="/fightcenter/events/"]') : []),
-        ...(upcomingEl ? upcomingEl.querySelectorAll('a[href*="/fightcenter/events/"]') : []),
-      ];
+      // UPCOMING-ONLY (2026-06-13): scope discovery to Tapology's #mainUpcoming
+      // container, which holds ONLY upcoming events (verified across all 8 hubs).
+      // #content is the FULL ~50-event archive — re-rendering every dead historical
+      // event through Scrapfly (~30-45 credits each) blew the monthly cap on
+      // 2026-06-13. Fall back to #content ONLY if the container is gone (Tapology
+      // template change); never page-wide (sidebar bleed). See docs/daily/2026-06-13.md.
+      const upcomingScope = document.querySelector('#mainUpcoming') || document.querySelector('#content') || document;
+      const eventLinks = [...upcomingScope.querySelectorAll('a[href*="/fightcenter/events/"]')];
 
       eventLinks.forEach(link => {
         const eventUrl = link.href;
