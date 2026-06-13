@@ -9,7 +9,7 @@
  * - Automated: SCRAPER_MODE=automated node src/services/scrapeDirtyBoxingTapology.js
  */
 
-const puppeteer = require('puppeteer');
+const { launchTapologyBrowser, waitForCloudflareClear } = require('./tapologyBrowser');
 const fs = require('fs');
 const path = require('path');
 const { FIGHT_CARD_CONTAINER_SELECTOR, FIGHT_ROW_SELECTOR } = require('./tapologyFightExtraction');
@@ -101,7 +101,8 @@ async function scrapeEventsList(browser) {
     });
 
     // Wait for any event link to appear on the page
-    await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 15000 });
+    await waitForCloudflareClear(page);
+    await page.waitForSelector('a[href*="/fightcenter/events/"]', { timeout: 30000 });
 
     const events = await page.evaluate(() => {
       const extractedEvents = [];
@@ -198,7 +199,8 @@ async function scrapeEventPage(browser, eventUrl) {
     });
 
     // Wait for fighter links to appear (resilient to Tapology layout changes)
-    await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 15000 });
+    await waitForCloudflareClear(page);
+    await page.waitForSelector('a[href*="/fightcenter/fighters/"]', { timeout: 30000 });
 
     // Dismiss cookie consent banner if present
     try {
@@ -415,10 +417,7 @@ async function main() {
   console.log('\n🚀 Starting Dirty Boxing Tapology Scraper\n');
   console.log('='.repeat(60));
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
-  });
+  const browser = await launchTapologyBrowser();
 
   try {
     // Discover events from the Dirty Boxing promotion page
