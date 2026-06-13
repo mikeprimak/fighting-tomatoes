@@ -26,11 +26,17 @@ import { useColorScheme } from 'react-native';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
+import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { apiService, OnboardingStackFight } from '../../services/api';
 
-// 10, not 30 — Mike's own walk (2026-06-12) lost interest at fight 11. The
-// profile keeps sharpening in-app; onboarding only needs a real start.
-const STACK_SIZE = 10;
+// 10 RATINGS, not 10 fights (Mike, 2026-06-12 round 4): a skip pulls the next
+// fight from a deeper stack instead of burning one of the 10 slots, so "of 10"
+// tracks actual ratings. Fetch enough cards that a skip-happy user still gets
+// real chances; 10 was Mike's interest ceiling on his own walk.
+const RATE_TARGET = 10;
+const STACK_FETCH = 30;
+// After this many skips the user clearly hasn't seen these — offer the exit.
+const SKIPS_BEFORE_ESCAPE = 5;
 
 function Headshot({ uri, colors }: { uri: string | null; colors: any }) {
   const styles = headshotStyles(colors);
@@ -66,6 +72,7 @@ export default function RateClassicsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [index, setIndex] = useState(0);
   const [ratedCount, setRatedCount] = useState(0);
+  const [skipCount, setSkipCount] = useState(0);
   const [rating, setRating] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -76,7 +83,7 @@ export default function RateClassicsScreen() {
 
   useEffect(() => {
     apiService
-      .getOnboardingRateStack(STACK_SIZE)
+      .getOnboardingRateStack(STACK_FETCH)
       .then((res) => setFights(res.fights))
       .catch(() => setFights([]))
       .finally(() => setIsLoading(false));
@@ -86,7 +93,12 @@ export default function RateClassicsScreen() {
   }, []);
 
   const fight = fights[index];
-  const done = !isLoading && (!fight || index >= fights.length);
+  // isAnimating guard: the 10th rating must finish its wheel ride + dwell
+  // before the done state swaps the card out.
+  const done =
+    !isLoading &&
+    !isAnimating &&
+    (ratedCount >= RATE_TARGET || !fight || index >= fights.length);
 
   const advance = () => {
     wheelAnimation.setValue(1200);
@@ -122,6 +134,7 @@ export default function RateClassicsScreen() {
 
   const handleSkipFight = () => {
     if (isAnimating) return;
+    setSkipCount((c) => c + 1);
     advance();
   };
 
@@ -135,9 +148,11 @@ export default function RateClassicsScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Rate the classics</Text>
+          {/* Progress counts RATINGS, not cards — a skip never moves it. */}
           <Text style={styles.headerProgress}>
-            {ratedCount} rated
-            {fights.length > 0 ? ` · ${Math.min(index + 1, fights.length)} of ${fights.length}` : ''}
+            {done
+              ? `${ratedCount} rated`
+              : `${Math.min(ratedCount + 1, RATE_TARGET)} of ${RATE_TARGET}`}
           </Text>
         </View>
 
@@ -191,7 +206,12 @@ export default function RateClassicsScreen() {
                       opacity: starColorAnimation,
                     }}
                   >
-                    <FontAwesome name="star" size={80} color={colors.primary} />
+                    {/* Heatmap convention: the big star takes the score's color. */}
+                    <FontAwesome
+                      name="star"
+                      size={80}
+                      color={rating > 0 ? getHypeHeatmapColor(rating) : colors.primary}
+                    />
                   </Animated.View>
                 </View>
                 <View style={styles.wheelContainer}>
@@ -236,10 +256,11 @@ export default function RateClassicsScreen() {
                   style={styles.starButton}
                   disabled={isAnimating}
                 >
+                  {/* Filled stars climb the heatmap (grey → gold → red). */}
                   <FontAwesome
                     name="star"
                     size={28}
-                    color={level <= rating ? colors.primary : '#666666'}
+                    color={level <= rating ? getHypeHeatmapColor(level) : '#666666'}
                   />
                 </TouchableOpacity>
               ))}
@@ -260,6 +281,12 @@ export default function RateClassicsScreen() {
           <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
             <Text style={styles.continueButtonText}>Continue</Text>
           </TouchableOpacity>
+          {/* A run of skips means they haven't seen these — surface the exit. */}
+          {!done && skipCount >= SKIPS_BEFORE_ESCAPE ? (
+            <TouchableOpacity style={styles.skipAllButton} onPress={handleContinue}>
+              <Text style={styles.skipAllText}>Skip this</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </View>
     </SafeAreaView>
@@ -429,5 +456,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 16,
     color: colors.textOnAccent,
     fontWeight: '600',
+  },
+  skipAllButton: {
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 4,
+  },
+  skipAllText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textDecorationLine: 'underline',
   },
 });

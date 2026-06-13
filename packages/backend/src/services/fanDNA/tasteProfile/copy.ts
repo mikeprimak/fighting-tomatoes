@@ -1,9 +1,13 @@
 /**
  * Copy rendering for taste insights.
  *
- * Locked copy rules (identity-platform.md 2026-06-09):
- *   - Human, non-statistical HEADLINE ("You love wars"). The number lives in
- *     the small SUBLINE ("9.1 average across 23 fights, vs your usual 7.2").
+ * Locked copy rules (identity-platform.md 2026-06-09; sublines reworked
+ * 2026-06-12 round 4):
+ *   - Human, non-statistical HEADLINE ("You love wars").
+ *   - The SUBLINE is human and colloquial too — NO numbers anywhere (Mike,
+ *     2026-06-12: "the numbers are too confusing for a new user"). It
+ *     elaborates the headline in plain fan language; the raw stats stay on
+ *     the candidate's `stats` for debugging and pilot review.
  *   - Deep pools per insight family + combinatorial specificity, picked
  *     deterministically (pickVariety) so a given insight is stable within a
  *     rotation period but spread across the pool between users/insights.
@@ -67,10 +71,16 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
     '{Xcap} first, {Y} second',
     'Your heart picks {X}, not {Y}',
   ],
+  'era-lean': [
+    "You're {eraFan}",
+    'Your taste runs {eraAdj}',
+    '{eraWinsCap} hit different for you',
+  ],
   'rates-high': [
     '{Xcap} score big with you',
     'You show up for {X}',
     '{Xcap} rarely disappoint you',
+    '{Xcap} bring out your high scores',
     'Good nights usually involve {X}',
   ],
   'fighter-love': [
@@ -155,70 +165,80 @@ const CLUSTER_HEADLINES: Record<string, readonly string[]> = {
   ],
 };
 
+// No numbers, no stats — plain fan language only (Mike, 2026-06-12 round 4).
 const SUBLINES: Record<InsightKind, readonly string[]> = {
   loves: [
-    'You average {avg} on them and {base} on everything else, across {n} fights.',
-    '{n} rated, averaging {avg} against your usual {base}.',
-    'A +{delta} bump over your average, across {n} fights.',
+    'These keep landing at the top of your scorecard.',
+    'Fights like this bring out your highest scores.',
+    'Your ratings climb whenever a fight delivers this.',
   ],
   cold: [
-    'You average {avg} on them against your usual {base}, across {n} fights.',
-    '{delta} below your average, across {n} fights.',
+    'They rarely crack your top scores.',
+    'Something about them never quite lands for you.',
+    'Your scores dip whenever a fight turns into this.',
   ],
   'community-high': [
-    'On the same fights, you rate them {delta} higher, across {n}.',
-    'You average {avg} across {n} of them.',
-    'A +{delta} lean, {n} fights in.',
+    'You keep finding more in these than {community}.',
+    'Fights {communityS} shrugs at, you score up.',
+    'You see something here that {communityS} misses.',
   ],
   'community-low': [
-    'On the same fights, you rate them {delta} lower, across {n}.',
-    'You average {avg} across {n} of them.',
-    'A {delta} discount, {n} fights in.',
+    'These have to work harder to win you over.',
+    'You hold them to a higher bar than {community}.',
+    'What impresses {community} does not always impress you.',
   ],
   'rating-bias-high': [
-    'Across {n} fights, your scores sit {delta} above {community} on average.',
-    '{delta} higher than {community} on the same {n} fights.',
+    'You hand out high scores more freely than {community}.',
+    'You look for reasons to like a fight, and usually find one.',
   ],
   'rating-bias-low': [
-    'Across {n} fights, your scores sit {delta} below {community} on average.',
-    '{delta} lower than {community} on the same {n} fights.',
+    'A high score from you has to be earned.',
+    'You give out top marks less freely than {community}.',
   ],
   prefers: [
-    'You average {avg} on {X} and {avgB} on {Y}.',
-    '{avg} vs {avgB}, across {n} fights.',
-    'A {delta} point gap in your own scores.',
+    'When it comes down to it, your scores pick {X}.',
+    '{Ycap} are fine. {Xcap} are why you watch.',
+    'Both have their nights, but {X} win yours.',
+  ],
+  'era-lean': [
+    '{eraWinsCap} keep outscoring {eraLoses} in your book.',
+    'Your highest scores keep coming from {eraWins}.',
   ],
   'rates-high': [
-    'You rate them {avg} on average, across {n} fights.',
-    '{n} rated, averaging {avg}.',
+    'You love the nights that turn into {X}.',
+    'Fights like this rarely let you down.',
+    'When you get {X}, you go home happy.',
   ],
   'fighter-love': [
-    '{highN} of the {n} you rated landed an 8 or higher.',
-    'You scored {highN} of {n} at 8-plus.',
+    'Their fights keep earning your highest scores.',
+    'Almost every one you watched delivered for you.',
   ],
   'fighter-rec': [
     'Fits your taste for {recList}.',
     'Checks your boxes: {recList}.',
   ],
   'never-above': [
-    '{n} rated, never above a {cap}.',
-    'Highest score so far: {cap}, across {n} tries.',
+    'None of them have truly blown you away yet.',
+    'You are still waiting for a great one.',
   ],
   'all-high': [
-    'All {n} you have rated landed an 8 or higher.',
-    '{n} for {n} at 8-plus.',
+    'Every single one you rated delivered for you.',
+    "You haven't met one you didn't like.",
   ],
-  'all-tens-share': ['All {tens} of your 10s carry that tag.'],
+  'all-tens-share': [
+    "Every fight you've called perfect has this in it.",
+    'Your all-time favorites all share this.',
+  ],
   'fighter-style': [
-    'Built from {k} fighters you rate high, hype, or follow, led by {names}.',
-    '{k} of your fighters fit the mold, {names} above all.',
+    'The fighters you rate, hype, and follow keep proving it, {names} most of all.',
+    'Fighters like {names} keep pulling you in.',
   ],
   'fighter-appeal': [
-    'Built from {k} fighters you rate high, hype, or follow, led by {names}.',
-    '{k} of your fighters bring it, {names} above all.',
+    'The fighters you gravitate to all bring this, {names} most of all.',
+    'Fighters like {names} keep pulling you in.',
   ],
   'fighter-persona': [
-    'Built from {k} fighters you rate high, hype, or follow, led by {names}.',
+    'The fighters you keep coming back to fit the mold, led by {names}.',
   ],
 };
 
@@ -237,7 +257,16 @@ export function renderInsight(c: InsightCandidate, seed: string): RenderedCopy {
   const vsPhrase = c.stats.vsToken
     ? tokenPhrase(c.dimension, c.stats.vsToken)
     : '';
+  // Era-lean speaks in era words, not token labels ("old school fights").
+  const oldSchoolWins = c.token === 'old_school';
+  const eraWins = oldSchoolWins ? 'the pre-2015 classics' : "today's fights";
+  const eraLoses = oldSchoolWins ? "today's fights" : 'the old classics';
   const vars: Record<string, string> = {
+    eraFan: oldSchoolWins ? 'an old-school fan' : 'a modern-era fan',
+    eraAdj: oldSchoolWins ? 'old-school' : 'modern',
+    eraWins,
+    eraWinsCap: cap(eraWins),
+    eraLoses,
     X: phrase,
     Xcap: cap(phrase),
     Y: vsPhrase,

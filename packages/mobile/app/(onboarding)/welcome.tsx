@@ -82,19 +82,6 @@ export default function OnboardingWelcomeScreen() {
 
           <View style={styles.beat}>
             <View style={styles.beatIcon}>
-              <FontAwesome name="book" size={22} color={colors.primary} />
-            </View>
-            <View style={styles.beatTextWrap}>
-              <Text style={styles.beatTitle}>Your fight diary</Text>
-              <Text style={styles.beatBody}>
-                A running record of your fandom — every fight you've watched
-                and what you thought of it, kept for good.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.beat}>
-            <View style={styles.beatIcon}>
               <FontAwesome name="compass" size={22} color={colors.primary} />
             </View>
             <View style={styles.beatTextWrap}>
@@ -102,6 +89,19 @@ export default function OnboardingWelcomeScreen() {
               <Text style={styles.beatBody}>
                 We'll point you to upcoming fights you might love, based on
                 the taste you build.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.beat}>
+            <View style={styles.beatIcon}>
+              <FontAwesome name="book" size={22} color={colors.primary} />
+            </View>
+            <View style={styles.beatTextWrap}>
+              <Text style={styles.beatTitle}>Your fight diary</Text>
+              <Text style={styles.beatBody}>
+                A running record of your fandom — every fight you've watched
+                and what you thought of it, kept for good.
               </Text>
             </View>
           </View>

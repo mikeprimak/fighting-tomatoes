@@ -19,6 +19,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useColorScheme } from 'react-native';
 import { Colors } from '../constants/Colors';
+import { getHypeHeatmapColor } from '../utils/heatmap';
 import { apiService, type ApiError } from '../services/api';
 import { useAuth } from '../store/AuthContext';
 import { AnalyticsService } from '../services/analytics';
@@ -673,7 +674,7 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                 <View style={{ position: 'relative', marginTop: 24 }}>
                   {/* Grey star (base layer) */}
                   <FontAwesome name="star" size={80} color="#666666" />
-                  {/* Primary color star (overlay) */}
+                  {/* Heatmap-colored star (overlay) — takes the score's color */}
                   <Animated.View
                     style={{
                       position: 'absolute',
@@ -682,7 +683,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                       opacity: starColorAnimation
                     }}
                   >
-                    <FontAwesome name="star" size={80} color={colors.primary} />
+                    <FontAwesome
+                      name="star"
+                      size={80}
+                      color={rating > 0 ? getHypeHeatmapColor(rating) : colors.primary}
+                    />
                   </Animated.View>
                 </View>
                 <View style={styles.wheelContainer}>
@@ -728,10 +733,11 @@ export default function RateFightModal({ visible, fight, onClose, queryKey = ['f
                   onPress={() => handleSetRating(level)}
                   style={styles.starButton}
                 >
+                  {/* Filled stars climb the heatmap (grey → gold → red). */}
                   <FontAwesome
                     name="star"
                     size={32}
-                    color={level <= rating ? colors.primary : '#666666'}
+                    color={level <= rating ? getHypeHeatmapColor(level) : '#666666'}
                   />
                 </TouchableOpacity>
               ))}

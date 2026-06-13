@@ -143,6 +143,7 @@ export type InsightKind =
   | 'rating-bias-high' // global: grades kinder than the community overall
   | 'rating-bias-low'  // global: grades harder than the community overall
   | 'prefers'          // self-relative pair: rates token X well above token Y in the same dimension
+  | 'era-lean'         // self-relative era pair: old-school vs modern-era fights
   | 'rates-high'       // simple observation: rates token high, no comparison at all
   | 'fighter-love'     // simple observation: this one fighter's fights keep scoring high
   | 'fighter-rec'      // recommendation: an untouched fighter who matches loved fighter tokens
@@ -209,7 +210,10 @@ export interface RankedInsight extends InsightCandidate {
   key: string;
   /** Human, non-statistical headline ("You love wars"). */
   headline: string;
-  /** The number lives here, small ("9.1 average across 23, vs your usual 7.2"). */
+  /**
+   * Human, colloquial elaboration with NO numbers (Mike, 2026-06-12 round 4:
+   * numeric sublines read confusing). The stats stay in `stats` for debugging.
+   */
   subline: string;
 }
 

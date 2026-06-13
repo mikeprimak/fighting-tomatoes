@@ -57,7 +57,21 @@ const PREFERS_BOOST = 1.25;
  * rating scale instead of revealing taste ("instant classics over forgettable
  * fights" is true of every human).
  */
-const PAIR_EXCLUDED_DIMS = new Set(['vibe', 'letdowns']);
+const PAIR_EXCLUDED_DIMS = new Set(['vibe', 'letdowns', 'era']);
+
+/**
+ * Era-lean thresholds (Mike, 2026-06-12 round 4: "You're an old-school fan"
+ * approved). The era dimension is exactly two tokens partitioning the whole
+ * history, so it gets its own generator + copy instead of riding prefers
+ * ("old school fights over modern era fights" reads clunky) and is skipped by
+ * every per-token generator (each era token covers ~half the history, so
+ * loves/rates-high on it would just restate this card).
+ */
+const ERA_MIN_N = 5;
+const ERA_MIN_GAP = 0.8;
+const ERA_GAP_NORM = 2.0;
+const ERA_EVIDENCE_SAT = 10;
+const ERA_BOOST = 1.1;
 
 /** 'rates-high' simple observation thresholds. */
 const RATES_HIGH_MIN_AVG = 8;
@@ -196,10 +210,12 @@ export function generateCandidates(
 
   ratingBias(baseline, out);
   prefersPairs(sig.tokens, out);
+  eraLean(sig.tokens, out);
   fighterLove(extras?.fighters ?? [], out);
   fighterRecs(sig.fighterTokens, extras?.recCandidates ?? [], out);
 
   for (const t of sig.tokens) {
+    if (t.dimension === 'era') continue; // owned by eraLean
     selfContrast(t, baseline.avg, out);
     communityCompare(t, globalCmpDelta, out);
     ratesHigh(t, baseline.avg, out);
@@ -370,6 +386,41 @@ function prefersPairs(
       },
     });
   }
+}
+
+/**
+ * Era lean — "You're an old-school fan." One card max: whichever era the user
+ * scores clearly higher wins, the other becomes the {Y} of the claim. Copy is
+ * era-specific (see HEADLINES['era-lean']), driven by the winning token.
+ */
+function eraLean(tokens: TokenStat[], out: InsightCandidate[]): void {
+  const old = tokens.find((t) => t.dimension === 'era' && t.token === 'old_school');
+  const modern = tokens.find((t) => t.dimension === 'era' && t.token === 'modern_era');
+  if (!old || !modern) return;
+  if (old.count < ERA_MIN_N || modern.count < ERA_MIN_N) return;
+  const gap = old.avgRating - modern.avgRating;
+  if (Math.abs(gap) < ERA_MIN_GAP) return;
+  const [top, bottom] = gap > 0 ? [old, modern] : [modern, old];
+  const score =
+    Math.min(1, Math.abs(gap) / ERA_GAP_NORM) *
+    Math.min(1, Math.min(top.count, bottom.count) / ERA_EVIDENCE_SAT) *
+    ERA_BOOST;
+  if (score < SCORE_FLOOR) return;
+  out.push({
+    kind: 'era-lean',
+    dimension: 'era',
+    token: top.token,
+    direction: 'high',
+    score,
+    stats: {
+      n: top.count + bottom.count,
+      avg: top.avgRating,
+      delta: Math.abs(gap),
+      vsToken: bottom.token,
+      avgB: bottom.avgRating,
+      nB: bottom.count,
+    },
+  });
 }
 
 /**
