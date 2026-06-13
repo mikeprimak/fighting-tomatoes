@@ -65,7 +65,7 @@ export default async function BlogPostPage({
     description: post.excerpt,
     image: [imageUrl],
     datePublished: post.date,
-    dateModified: post.date,
+    dateModified: post.updated || post.date,
     author: { '@type': 'Organization', name: post.author || 'Good Fights', url: SITE_URL },
     publisher: {
       '@type': 'Organization',
@@ -161,7 +161,8 @@ export default async function BlogPostPage({
 
       <h1 className="mb-2 text-3xl font-bold">{post.title}</h1>
       <div className="mb-5 text-sm text-text-secondary">
-        {formatDate(post.date)} · {post.author}
+        Published: {formatDate(post.date)}
+        {post.updated && post.updated !== post.date ? ` · Updated: ${formatDate(post.updated)}` : ''} · {post.author}
       </div>
 
       {post.imageFit === 'contain' ? (
