@@ -22,6 +22,7 @@ import type { PrismaClient } from '@prisma/client';
 import { braveSearch } from '../broadcastDiscovery/searchBrave';
 import { extractStartTimes } from './extract';
 import { applyStartTimes, type EventForApply, type ApplyResult } from './persist';
+import { shelvedExclusionWhere } from '../../config/promotionRegistry';
 
 const RESOLVE_WINDOW_DAYS = Number(process.env.STARTTIME_WINDOW_DAYS || 21);
 const RETRY_AFTER_HOURS = Number(process.env.STARTTIME_RETRY_HOURS || 36);
@@ -127,6 +128,8 @@ export async function runStartTimeDiscovery(
       earlyPrelimStartTime: null,
       prelimStartTime: null,
       OR: [{ startTimeDiscoveredAt: null }, { startTimeDiscoveredAt: { lt: retryCutoff } }],
+      // Skip shelved orgs (master switch = promotionRegistry status).
+      ...shelvedExclusionWhere(),
     },
     orderBy: { date: 'asc' },
     take: opts.maxEvents ?? MAX_EVENTS,

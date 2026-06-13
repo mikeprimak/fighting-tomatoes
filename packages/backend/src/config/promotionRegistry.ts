@@ -70,6 +70,18 @@ export interface PromotionRegistryEntry {
   /** Whether the promotion appears in user-facing event filters. false = HIDDEN_ORGS. */
   userVisible: boolean;
 
+  /**
+   * MASTER ON/OFF SWITCH for the whole promotion. `'shelved'` turns the org OFF
+   * product-wide from ONE place:
+   *   - hidden from every API response (events/search/community) + filter pills
+   *   - excluded from daily scrapers, live trackers, and retro backfill
+   *   - excluded from broadcast discovery, AI enrichment, start-time discovery
+   * Absent / `'active'` = normal. To re-enable: set back to `'active'` AND
+   * un-comment the org's workflow cron(s) in .github/workflows. See
+   * docs/areas/promotions.md.
+   */
+  status?: 'active' | 'shelved';
+
   /** Whether the bell toggle should be offered for this promotion. */
   notificationEligible: boolean;
 
@@ -215,6 +227,7 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'Zuffa Boxing',
     shortLabel: 'ZUFFA BOXING',
     fullLabel: 'Zuffa Boxing',
+    status: 'shelved', // boxing shelved 2026-06-13 (low demand + Tapology CF block)
     scraperType: 'tapology',
     // Zuffa Boxing runs the generic Tapology live tracker (Hetzner VPS) and
     // delivers reliable per-fight updates — treat it like a tracked promotion so
@@ -237,6 +250,7 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'TOP_RANK',
     shortLabel: 'TOP RANK',
     fullLabel: 'Top Rank',
+    status: 'shelved', // boxing shelved 2026-06-13 (low demand + Tapology CF block)
     scraperType: 'tapology',
     hasReliableLiveTracker: true,
     logoKey: 'top_rank',
@@ -256,6 +270,7 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'Golden Boy',
     shortLabel: 'GOLDEN BOY',
     fullLabel: 'Golden Boy',
+    status: 'shelved', // boxing shelved 2026-06-13 (low demand + Tapology CF block)
     scraperType: 'tapology',
     hasReliableLiveTracker: true,
     logoKey: 'golden_boy',
@@ -274,6 +289,7 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'Gold Star',
     shortLabel: 'GOLD STAR',
     fullLabel: 'Gold Star',
+    status: 'shelved', // boxing shelved 2026-06-13 (low demand + Tapology CF block)
     scraperType: 'tapology',
     hasReliableLiveTracker: true,
     logoKey: 'gold_star',
@@ -325,6 +341,7 @@ export const PROMOTION_REGISTRY: PromotionRegistryEntry[] = [
     canonicalPromotion: 'Matchroom Boxing',
     shortLabel: 'MATCHROOM',
     fullLabel: 'Matchroom Boxing',
+    status: 'shelved', // boxing shelved 2026-06-13 (low demand + Tapology CF block)
     scraperType: 'tapology',
     hasReliableLiveTracker: true,
     logoKey: 'matchroom',
@@ -393,9 +410,36 @@ export const RELIABLE_LIVE_TRACKER_PROMOTIONS_UPPER: Set<string> = new Set(
 );
 
 /** Tapology hub map keyed by canonical promotion string.
- *  Used by runTapologyLiveTracker.ts and backfillTapologyResults.ts. */
+ *  Used by runTapologyLiveTracker.ts and backfillTapologyResults.ts.
+ *  Shelved promotions are excluded, so retro backfill + live-tracker hub
+ *  resolution skip them automatically (master switch = status). */
 export const TAPOLOGY_PROMOTION_HUBS: Record<string, TapologyHub> = Object.fromEntries(
   PROMOTION_REGISTRY
-    .filter(e => e.tapologyHub)
+    .filter(e => e.tapologyHub && e.status !== 'shelved')
     .map(e => [e.canonicalPromotion, e.tapologyHub!]),
 );
+
+// ── Master on/off switch (status) — derived gates ────────────────────────────
+
+/** Canonical + alias strings for every shelved promotion.
+ *  hiddenPromotions.ts derives HIDDEN_PROMOTIONS from this. */
+export const SHELVED_PROMOTION_STRINGS: string[] = PROMOTION_REGISTRY
+  .filter(e => e.status === 'shelved')
+  .flatMap(e => [e.canonicalPromotion, ...e.aliases]);
+
+/** True when a promotion string (canonical or alias) belongs to a shelved org. */
+export function isPromotionShelved(promotion: string | null | undefined): boolean {
+  return getPromotionByName(promotion)?.status === 'shelved';
+}
+
+/** Prisma `where` fragment that excludes shelved promotions. Spread into a
+ *  query's where clause; resolves to `{}` (no-op) when nothing is shelved.
+ *  Mirrors the existing HIDDEN_PROMOTIONS `NOT … contains` pattern. */
+export function shelvedExclusionWhere(): Record<string, unknown> {
+  if (SHELVED_PROMOTION_STRINGS.length === 0) return {};
+  return {
+    NOT: SHELVED_PROMOTION_STRINGS.map(p => ({
+      promotion: { contains: p, mode: 'insensitive' as const },
+    })),
+  };
+}

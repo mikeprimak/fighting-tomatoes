@@ -14,6 +14,7 @@
 
 import { prisma } from '../lib/prisma';
 import { isProductionScraper, hasReliableLiveTracker } from '../config/liveTrackerConfig';
+import { isPromotionShelved } from '../config/promotionRegistry';
 import { startLiveTracking, getLiveTrackingStatus } from './liveEventTracker';
 import { notifyEventSectionStart, notifyFightStartViaRules } from './notificationService';
 import { checkAndAlertNewExpectations } from './notificationExpectations';
@@ -216,6 +217,7 @@ export async function runEventLifecycleCheck(): Promise<{
         id: true,
         name: true,
         date: true,
+        promotion: true,
         mainStartTime: true,
         prelimStartTime: true,
         earlyPrelimStartTime: true,
@@ -227,6 +229,11 @@ export async function runEventLifecycleCheck(): Promise<{
     });
 
     for (const event of upcomingEvents) {
+      // Shelved promotions are off product-wide: never transition to LIVE,
+      // dispatch a live tracker, or fire start notifications. Master switch =
+      // promotionRegistry status. Their events stay UPCOMING and hidden.
+      if (isPromotionShelved(event.promotion)) continue;
+
       // Skip events that only have a date (midnight) and no confirmed start time.
       // These are typically Tapology-scraped events where the scraper couldn't find
       // the actual start time. They require manual intervention via the admin panel.
