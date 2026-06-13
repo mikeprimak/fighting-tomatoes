@@ -11,5 +11,10 @@ export function fetchTapologyHtml(
   url: string,
   opts?: { waitForSelector?: string; gotoOpts?: any }
 ): Promise<string>;
+export function isScrapflyEnabled(): boolean;
+export function scrapflyFetchHtml(
+  url: string,
+  opts?: { renderJs?: boolean; country?: string; timeoutMs?: number }
+): Promise<string>;
 export const CHALLENGE_RE: RegExp;
 export const DEFAULT_UA: string;
