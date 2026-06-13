@@ -799,6 +799,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 earlyPrelimStartTime: { type: ['string', 'null'] },
                 prelimStartTime: { type: ['string', 'null'] },
                 mainStartTime: { type: ['string', 'null'] },
+                notificationsAllowed: { type: 'boolean' },
+                hasLiveTracking: { type: 'boolean' },
               },
             },
           },
@@ -846,6 +848,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           earlyPrelimStartTime: true,
           prelimStartTime: true,
           mainStartTime: true,
+          scraperType: true,
         },
       });
 
@@ -856,7 +859,17 @@ export async function registerRoutes(fastify: FastifyInstance) {
         });
       }
 
-      return reply.code(200).send({ event });
+      // Mirror the list endpoint so fight modals opened from the event detail
+      // screen get the notify bell + live-tracking-aware toast.
+      const notifyPromotions = await getNotifyPromotions(fastify.prisma);
+      const notifyPromotionsUpper = notifyPromotions.map(p => p.toUpperCase());
+      const eventWithFlags = {
+        ...event,
+        notificationsAllowed: notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
+        hasLiveTracking: hasReliableLiveTracker(event.scraperType, event.promotion),
+      };
+
+      return reply.code(200).send({ event: eventWithFlags });
     } catch (error: any) {
       request.log.error(error, 'Event fetch error:');
       return reply.code(500).send({
