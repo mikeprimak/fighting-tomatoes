@@ -38,20 +38,15 @@ For the first time ever, a UFC event is being staged on the grounds of the White
 
 ## How do I watch UFC Freedom 250?
 
-In the United States, the main card streams on **Paramount+**, and the preliminary card airs **free on the CBS broadcast network**. That CBS prelim window is a genuinely big deal: it is the first time UFC prelims have run on free over-the-air network television since the Fox Sports era ended in 2018. If you have an antenna or basic CBS access, you can watch the early fights for nothing, then move to Paramount+ for the title fights.
+In the United States, the entire card streams on **Paramount+** only. An earlier plan had the prelims airing free on CBS, but the UFC confirmed during fight week that all seven bouts run exclusively on Paramount+. There is no free over-the-air window on this card.
 
 ## Is UFC Freedom 250 a pay-per-view? How much does it cost?
 
-No. In the United States there is **no separate pay-per-view fee**. The main card is included with a Paramount+ subscription, which starts around $8.99 per month, rather than sold as a one-time hundred-dollar buy. And because the prelims air on CBS, a chunk of the night is free. This is a very different model from the old UFC pay-per-view era, and it makes Freedom 250 one of the most accessible big cards the promotion has ever run. Some countries still use the pay-per-view model, which we cover in the international section below.
+No. In the United States there is **no separate pay-per-view fee**. The entire card is included with a Paramount+ subscription, which starts around $8.99 per month, rather than sold as a one-time hundred-dollar buy. This is a very different model from the old UFC pay-per-view era, and it makes Freedom 250 one of the most accessible big cards the promotion has ever run. Some countries still use the pay-per-view model, which we cover in the international section below.
 
 ## What time does UFC Freedom 250 start?
 
-The schedule is built around U.S. prime time on a Sunday. Expected segment start times:
-
-- Prelims (free on CBS): 4 p.m. ET / 1 p.m. PT
-- Main card (Paramount+): 8 p.m. ET / 5 p.m. PT
-
-The Topuria vs Gaethje main event is the last fight of the night. As a rule of thumb the headliners walk out roughly two to three hours after the main card begins, so plan for a late-evening Eastern ring entrance. Confirm the exact times closer to fight night, as the UFC sometimes adjusts the broadcast windows.
+All seven bouts air on **Paramount+**, starting at approximately **8 p.m. ET / 5 p.m. PT**. There is no CBS prelim window: the plan for a free 4 p.m. ET broadcast was dropped during fight week. The Topuria vs Gaethje main event closes the night, so plan for the headliners to walk out around 11 p.m. ET.
 
 <a id="watch-other-countries"></a>
 
@@ -83,7 +78,7 @@ Freedom 250 is a compact but absolutely loaded card, headlined by two championsh
 - Josh Hokit vs Derrick Lewis (Heavyweight)
 - Diego Lopes vs Steve Garcia (Featherweight)
 
-Card placement and matchups can change before the event, so treat the order as provisional until fight week.
+The card is locked after weigh-ins with all seven bouts confirmed.
 
 ## Why is UFC Freedom 250 such a stacked card?
 
@@ -101,7 +96,7 @@ For **Justin Gaethje**, this is the title that has eluded him across a Hall-of-F
 
 ## What are the betting odds for Topuria vs Gaethje? Why is Topuria such a big favorite?
 
-**Topuria is a heavy favorite at around -535 to -550, with Gaethje the underdog near +400.** Those numbers imply Topuria has roughly an 85 percent chance to win. The reason is straightforward: Topuria is undefeated, he hits like a truck, and he has knocked out elite, durable fighters that most people thought were chinny-proof. Gaethje's all-action, stand-and-trade style has produced some of the best fights in history, but it also means he is willing to be in the pocket with the hardest puncher he has ever faced. Oddsmakers are betting that Topuria's precision finds the target first. Lines move during fight week, so check current odds before placing anything.
+**Topuria is a heavy favorite at around -560, with Gaethje the underdog near +370.** Those numbers imply Topuria has roughly an 85 percent chance to win. The reason is straightforward: Topuria is undefeated, he hits like a truck, and he has knocked out elite, durable fighters that most people thought were chinny-proof. Gaethje's all-action, stand-and-trade style has produced some of the best fights in history, but it also means he is willing to be in the pocket with the hardest puncher he has ever faced. Oddsmakers are betting that Topuria's precision finds the target first. Lines move during fight week, so check current odds before placing anything.
 
 ## Who wins Topuria vs Gaethje? Our prediction
 
@@ -111,7 +106,7 @@ But this is Justin Gaethje, and the one thing he always brings is the threat of 
 
 ## What is the UFC Freedom 250 co-main event?
 
-The co-main event is **Alex Pereira vs Ciryl Gane for the interim UFC Heavyweight Championship**, and on paper it might be the most competitive fight on the entire card. The fight opened as near-even money, and it remains one of the tightest bets on the card at fight week: Gane has edged to a narrow -115 favorite with Pereira at -105, still essentially a coin flip, which almost never happens in a title fight and tells you how genuinely 50-50 the matchup is.
+The co-main event is **Alex Pereira vs Ciryl Gane for the interim UFC Heavyweight Championship**, and on paper it might be the most competitive fight on the entire card. The fight opened as near-even money, and it remains one of the tightest bets on the card at fight week: Gane has edged to a narrow -118 favorite with Pereira at -108, still essentially a coin flip, which almost never happens in a title fight and tells you how genuinely 50-50 the matchup is.
 
 ## Why is Pereira vs Gane for an interim heavyweight title?
 
@@ -131,7 +126,7 @@ Yes. **Sean O'Malley returns against Aiemann Zahabi** in a bantamweight bout, an
 
 ## Can Sean O'Malley get back to a title shot?
 
-A win here keeps that door open. O'Malley is **a roughly -430 favorite over Zahabi (around +300)**, which reflects his talent and star power, but Zahabi's experience and precision make this more dangerous than the odds suggest. For O'Malley, the path back to a title shot runs through performances that remind everyone why he was champion in the first place, and a clean, highlight-style win over a tough, surging opponent is exactly the kind of statement he needs. A loss, on the other hand, would stall the comeback badly.
+A win here keeps that door open. O'Malley is **a roughly -460 favorite over Zahabi (around +320)**, which reflects his talent and star power, but Zahabi's experience and precision make this more dangerous than the odds suggest. For O'Malley, the path back to a title shot runs through performances that remind everyone why he was champion in the first place, and a clean, highlight-style win over a tough, surging opponent is exactly the kind of statement he needs. A loss, on the other hand, would stall the comeback badly.
 
 ## Who is Josh Hokit?
 
@@ -147,7 +142,7 @@ The fallout spilled into fight week. When the lineup for the final Washington, D
 
 This is a perfect setup: the surging undefeated prospect against grizzled veteran power. **Derrick Lewis** is one of the most beloved heavyweights of his era and owns a reputation as one of the most prolific knockout artists in UFC history, the kind of fighter who is one punch away from ending any night even when he is losing.
 
-The fight came together in unusual fashion. Lewis was not originally booked for the card. He was added after Donald Trump personally asked Dana White why the all-time UFC knockout king was not part of the event, and one phone call later the bout with Hokit was made. It is a fitting way for a fighter as fan-beloved as Lewis to land on a card this size. **Hokit is the favorite at around -350, with Lewis near +270**, which says the sport sees Hokit's youth, athleticism, and pressure carrying him. The danger is obvious, though: against Lewis you are never safe, and one clean shot can flip the whole story. If Hokit fights smart and uses his wrestling and motor, he should win. If he stands and trades carelessly, Lewis is exactly the man to make him pay.
+The fight came together in unusual fashion. Lewis was not originally booked for the card. He was added after Donald Trump personally asked Dana White why the all-time UFC knockout king was not part of the event, and one phone call later the bout with Hokit was made. It is a fitting way for a fighter as fan-beloved as Lewis to land on a card this size. **Hokit is the favorite at around -440, with Lewis near +310**, which says the sport sees Hokit's youth, athleticism, and pressure carrying him. The danger is obvious, though: against Lewis you are never safe, and one clean shot can flip the whole story. If Hokit fights smart and uses his wrestling and motor, he should win. If he stands and trades carelessly, Lewis is exactly the man to make him pay.
 
 ## What other fights are on UFC Freedom 250?
 
@@ -161,12 +156,12 @@ The rest of the card is loaded with action and names:
 
 Here is the quick odds snapshot across the card as of fight week (lines subject to movement):
 
-- Ilia Topuria (-535) vs Justin Gaethje (+400)
-- Alex Pereira (-105) vs Ciryl Gane (-115), near pick'em
-- Sean O'Malley (-430) vs Aiemann Zahabi (+300)
+- Ilia Topuria (-560) vs Justin Gaethje (+370)
+- Alex Pereira (-108) vs Ciryl Gane (-118), near pick'em
+- Sean O'Malley (-460) vs Aiemann Zahabi (+320)
 - Mauricio Ruffy (-670) vs Michael Chandler (+430)
 - Bo Nickal (-330) vs Kyle Daukaus (+240)
-- Josh Hokit (-350) vs Derrick Lewis (+270)
+- Josh Hokit (-440) vs Derrick Lewis (+310)
 - Diego Lopes (-192) vs Steve Garcia (+148)
 
 The main event is the biggest mismatch on paper, the co-main is a true coin flip, and the rest of the card is full of favorites who all carry real upset risk given the finishing power involved.
@@ -182,10 +177,10 @@ Fight week is done and the card is locked. At Saturday's official weigh-ins in W
 - **Ilia Topuria 155, Justin Gaethje 155** - both dead on the lightweight title limit for the main event.
 - **Alex Pereira 251, Ciryl Gane 248** - Pereira is actually the heavier man in his heavyweight debut, coming in three pounds north of the much taller Gane.
 - **Sean O'Malley 135.5, Aiemann Zahabi 135** - both on point at bantamweight.
-- **Mauricio Ruffy 155, Michael Chandler 156** - on weight for their lightweight clash.
+- **Mauricio Ruffy 155, Michael Chandler 156** - Chandler is one pound over the lightweight limit, but non-title bouts carry a one-pound allowance, so the fight is on.
 - **Bo Nickal 186, Kyle Daukaus 186** - both on the middleweight number.
-- **Josh Hokit vs Derrick Lewis 265** - on weight at heavyweight.
-- **Diego Lopes 146, Steve Garcia 146** - both on point at featherweight.
+- **Josh Hokit 231, Derrick Lewis 265** - both on weight at heavyweight.
+- **Diego Lopes 146, Steve Garcia 146** - both on point at featherweight. Lopes also weighed in a second time at 154 lbs as the designated backup fighter for the Topuria vs Gaethje lightweight main event, a rare, possibly unprecedented double weigh-in.
 
 Nobody missed, nobody got pulled, and the full seven-fight card survived fight week intact.
 
@@ -201,10 +196,10 @@ Josh Hokit, true to form, stayed fully in character. After the fight-week scare 
 - **Venue:** The White House South Lawn, Washington, D.C.
 - **Main event:** Ilia Topuria vs Justin Gaethje, Lightweight title
 - **Co-main:** Alex Pereira vs Ciryl Gane, Interim Heavyweight title
-- **Where to watch:** Paramount+ (US main card), CBS (US prelims, free); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
+- **Where to watch:** Paramount+ (entire US card, no CBS); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 8 p.m. ET / 5 p.m. PT
-- **Biggest favorite:** Ilia Topuria (around -535 to -550)
-- **Closest fight:** Pereira vs Gane (Gane a slim -115 favorite, near even money)
+- **Biggest favorite:** Ilia Topuria (around -560)
+- **Closest fight:** Pereira vs Gane (Gane a slim -118 favorite, near even money)
 
 ## Related reading
 
