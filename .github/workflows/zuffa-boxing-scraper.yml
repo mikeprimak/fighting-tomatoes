@@ -1,8 +1,10 @@
 name: Zuffa Boxing Scraper
 
 on:
-  schedule:
-    - cron: "30 14 * * *"
+  # Cron disabled 2026-06-13: Zuffa Boxing shelved (promotionRegistry status: shelved).
+  # Re-enable: set status back to active AND un-comment the cron below.
+  # schedule:
+  #   - cron: "30 14 * * *"
   workflow_dispatch:
 
 jobs:

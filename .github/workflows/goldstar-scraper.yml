@@ -1,8 +1,10 @@
 name: Gold Star Tapology Scraper
 
 on:
-  schedule:
-    - cron: "20 15 * * *"
+  # Cron disabled 2026-06-13: Gold Star shelved (promotionRegistry status: 'shelved').
+  # Re-enable: set status back to 'active' AND un-comment the cron below.
+  # schedule:
+  #   - cron: "20 15 * * *"
   workflow_dispatch:
 
 jobs:

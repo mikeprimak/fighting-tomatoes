@@ -24,6 +24,7 @@ import {
   type PreviewBrowserHandle,
 } from './fetchUFCEventPreview';
 import { enrichOneEvent, type EnrichOneEventResult } from './enrichOneEvent';
+import { shelvedExclusionWhere } from '../../config/promotionRegistry';
 
 const FRESH_THRESHOLD_HOURS = 36;
 const MS_PER_DAY = 86_400_000;
@@ -72,7 +73,7 @@ export async function runFightEnrichment(
   // still try editorial sources for them.
   const where = opts.onlyEventId
     ? { id: opts.onlyEventId }
-    : { eventStatus: 'UPCOMING' as const };
+    : { eventStatus: 'UPCOMING' as const, ...shelvedExclusionWhere() };
   const upcoming = await prisma.event.findMany({
     where,
     orderBy: { date: 'asc' },

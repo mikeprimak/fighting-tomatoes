@@ -15,6 +15,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
 import { EmailService } from '../utils/email';
+import { isPromotionShelved } from '../config/promotionRegistry';
 import { runStartTimeDiscovery } from './startTimeDiscovery/run';
 
 // Import functions from each parser
@@ -146,12 +147,29 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
   },
 };
 
+// Maps the scraper's OrganizationType to its canonical registry promotion, so
+// the shelved master switch (promotionRegistry status) can gate ingestion.
+const ORG_TO_PROMOTION: Record<OrganizationType, string> = {
+  BKFC: 'BKFC', PFL: 'PFL', ONEFC: 'ONE', MATCHROOM: 'Matchroom Boxing',
+  GOLDENBOY: 'Golden Boy', GOLDSTAR: 'Gold Star', TOPRANK: 'TOP_RANK',
+  OKTAGON: 'OKTAGON', RIZIN: 'RIZIN', ZUFFA_BOXING: 'Zuffa Boxing',
+  DIRTY_BOXING: 'Dirty Boxing', KARATE_COMBAT: 'Karate Combat', MVP: 'MVP',
+  RAF: 'RAF', GAMEBRED: 'Gamebred',
+};
+
 /**
  * Run scraper for a specific organization
  */
 export async function runOrganizationScraper(org: OrganizationType): Promise<OrganizationScraperResults> {
   const config = SCRAPER_CONFIG[org];
   const startTime = Date.now();
+
+  // Shelved orgs are off product-wide — don't scrape or import. Master switch =
+  // promotionRegistry status. (Re-enable: set status 'active' + un-comment cron.)
+  if (isPromotionShelved(ORG_TO_PROMOTION[org])) {
+    console.log(`⏭️  DAILY ${org} SCRAPER - SKIPPED (promotion shelved)`);
+    return { organization: org, success: true, eventsScraped: 0, fightersScraped: 0, duration: 0 };
+  }
 
   console.log('\n========================================');
   console.log(`🗓️  DAILY ${org} SCRAPER - Starting`);
