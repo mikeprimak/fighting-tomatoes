@@ -51,7 +51,19 @@ const prisma = new PrismaClient();
 
 const PORT = parseInt(process.env.PORT || '3009', 10);
 const API_KEY = process.env.SCRAPER_API_KEY || '';
-const SCRAPE_INTERVAL_MS = 30 * 1000; // 30 seconds
+const SCRAPE_INTERVAL_MS = 30 * 1000; // 30 seconds (own-site scrapers: ufc/bkfc/pfl/onefc/oktagon/sherdog)
+// Tapology fetches route through Scrapfly's Web Unlocker (metered — 1000 req/mo
+// on the free tier). Each poll is one Scrapfly request, so 30s polling burns
+// ~120/hr and a single long card can eat half the monthly cap. Poll Tapology 5x
+// slower: it isn't a real-time source anyway (results lag, backfill cron exists),
+// so the extra lag is invisible to users but cuts request burn 5x.
+// See docs/daily/2026-06-13.md + memory project-tapology-scrapfly-cloudflare.
+const TAPOLOGY_SCRAPE_INTERVAL_MS = 150 * 1000; // 150 seconds
+
+/** Poll cadence by scraper type. Only `tapology` is Scrapfly-metered. */
+function scrapeIntervalFor(scraperType: string): number {
+  return scraperType === 'tapology' ? TAPOLOGY_SCRAPE_INTERVAL_MS : SCRAPE_INTERVAL_MS;
+}
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
 
@@ -407,7 +419,8 @@ function startTracker(eventId: string, eventName: string, scraperType: string, u
     return false;
   }
 
-  console.log(`[SCRAPER] Starting ${scraperType} tracker for ${eventName} (every ${SCRAPE_INTERVAL_MS / 1000}s)`);
+  const intervalMs = scrapeIntervalFor(scraperType);
+  console.log(`[SCRAPER] Starting ${scraperType} tracker for ${eventName} (every ${intervalMs / 1000}s)`);
 
   const tracker: ActiveTracker = {
     eventId,
@@ -423,9 +436,9 @@ function startTracker(eventId: string, eventName: string, scraperType: string, u
     startedAt: new Date(),
   };
 
-  // Run first scrape immediately, then every 30 seconds
+  // Run first scrape immediately, then on the per-type cadence.
   scrapeOnce(tracker);
-  tracker.interval = setInterval(() => scrapeOnce(tracker), SCRAPE_INTERVAL_MS);
+  tracker.interval = setInterval(() => scrapeOnce(tracker), intervalMs);
 
   activeTrackers.set(eventId, tracker);
   return true;
@@ -846,7 +859,7 @@ server.listen(PORT, () => {
   console.log(`\n========================================`);
   console.log(`  VPS Scraper Service`);
   console.log(`  Port: ${PORT}`);
-  console.log(`  Scrape interval: ${SCRAPE_INTERVAL_MS / 1000}s`);
+  console.log(`  Scrape interval: ${SCRAPE_INTERVAL_MS / 1000}s (tapology: ${TAPOLOGY_SCRAPE_INTERVAL_MS / 1000}s, Scrapfly-metered)`);
   console.log(`  Auth: ${API_KEY ? 'enabled' : 'DISABLED (dev mode)'}`);
   console.log(`========================================\n`);
 
