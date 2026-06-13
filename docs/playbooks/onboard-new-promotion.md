@@ -33,11 +33,19 @@ Edit `packages/backend/src/config/promotionRegistry.ts`:
 
 Also extend the `PromotionCode` union at the top of the file with the new code.
 
+Omit `status` to ship the org **active** (the default). To launch it shelved
+(hidden everywhere) set `status: 'shelved'` — but you rarely need to, because
+shelving is **runtime-adjustable from admin** (Operations tab → Shelved
+Promotions) with no deploy. The `status` field is only the seed/default.
+
 This auto-feeds:
 - `RELIABLE_LIVE_TRACKER_PROMOTIONS_UPPER` (consumed by `liveTrackerConfig.ts`)
 - `TAPOLOGY_PROMOTION_HUBS` (consumed by `runTapologyLiveTracker.ts` + `backfillTapologyResults.ts`)
 - `GET /api/promotions` (mobile + web filter pills, hydrated within 24h)
 - `GET /admin/config/promotions` (admin notification grid)
+- **The shelve switch** — the new org appears in the admin Shelved Promotions
+  toggle automatically and every gate (`isPromotionShelved`, `getHiddenPromotions`,
+  `shelvedExclusionWhere`) covers it. No extra wiring.
 
 ## 2. Add the logo
 
@@ -95,9 +103,12 @@ Copy `.github/workflows/dirty-boxing-scraper.yml` to `new-org-scraper.yml`. Upda
 
 - `name:` heading
 - The job key (`scrape-dirty-boxing` → `scrape-new-org`)
+- The **`gate` job's grep token** — change `'"DIRTY_BOXING"'` to `'"NEW_ORG"'` (the registry code). This is what makes the scraper self-gate: it skips the scheduled run when the org is shelved from admin, so shelving/un-shelving needs **no YAML edit**. (Manual `workflow_dispatch` always runs, ignoring the gate.) Leave `needs: gate` + the `if:` on the scrape job as-is.
 - The `cron:` time (stagger by ~5–10 min from existing daily scrapers to avoid Render memory spikes)
 - The two `node ... ` commands at the end (scraper file + parser import call)
 - The failure-alert `org=` query param
+
+Because of the gate, **never** comment out a scraper's `cron:` to disable an org — shelve it from admin instead. The cron stays on; the gate no-ops it (a ~10s job) when shelved, with no failure alert.
 
 Tapology-family scrapers run on GitHub Actions and write directly to the Render DB. The live tracker is separate — it runs on the Hetzner VPS and auto-picks-up from the registry's `TAPOLOGY_PROMOTION_HUBS`. SSH + `vps-update.sh` to deploy live-tracker registry changes (see `docs/areas/scrapers.md`).
 
