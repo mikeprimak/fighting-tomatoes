@@ -43,6 +43,7 @@ jobs:
       - name: Run MVP Scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SCRAPFLY_KEY: ${{ secrets.SCRAPFLY_KEY }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
           R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
