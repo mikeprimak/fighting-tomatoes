@@ -734,11 +734,21 @@ class ApiService {
     return this.makeRequest(`/onboarding/rate-stack?limit=${limit}`);
   }
 
-  async getOnboardingFollowSuggestions(): Promise<{
+  async getOnboardingFollowSuggestions(
+    limit?: number,
+    offset?: number,
+  ): Promise<{
     fighters: OnboardingFighterSuggestion[];
     source: 'curated' | 'auto';
+    hasMore?: boolean;
   }> {
-    return this.makeRequest('/onboarding/follow-suggestions');
+    const params = new URLSearchParams();
+    if (limit != null) params.set('limit', String(limit));
+    if (offset != null) params.set('offset', String(offset));
+    const qs = params.toString();
+    return this.makeRequest(
+      `/onboarding/follow-suggestions${qs ? `?${qs}` : ''}`,
+    );
   }
 
   async getTasteProfile(

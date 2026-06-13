@@ -680,7 +680,7 @@ export default function ProfileScreen() {
               Hype fights on{' '}
               <Text
                 style={{ color: colors.primary, fontWeight: '600' }}
-                onPress={() => router.push('/(tabs)')}
+                onPress={() => router.push('/(tabs)/events')}
               >
                 Upcoming Events
               </Text>
