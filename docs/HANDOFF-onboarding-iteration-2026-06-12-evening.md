@@ -1,4 +1,4 @@
-# HANDOFF — Onboarding iteration session, 3 rounds done (2026-06-12 evening)
+# HANDOFF — Onboarding iteration session, 5 rounds done (2026-06-12 evening → 06-13 early)
 
 **Branch:** `claude/user-focused-pivot-l8l6mg` (Phase 1 integration branch —
 **NO main merges either direction; no OTA; no prod publish; no migrations**).
@@ -7,10 +7,28 @@ Read `docs/playbooks/onboarding-iteration.md` for the loop mechanics and
 `docs/HANDOFF-onboarding-iteration-2026-06-12.md` (whose "next task", the
 50-cap, shipped in a parallel window as `e35ea434`).
 
-## Session state: 3 iteration rounds shipped from Mike's device walks
+## Session state: 5 iteration rounds shipped from Mike's device walks
 
 Commits (all pushed): `8df8ef70` (round 1), `0b2c7b4b` (round 2),
-`0e8a0887` (round 3).
+`0e8a0887` (round 3), `ef2be309` (round 4), `2450a2ad` (round 5).
+Rounds 4-5 detail is in `docs/daily/2026-06-12.md` (see the "round 4" and
+"round 5" sections); summary below.
+
+**Round 4 (`ef2be309`):** welcome beat reorder (recs before diary); rate
+stars + RateFightModal now use the hype heatmap (`getHypeHeatmapColor`);
+skips no longer consume the 10-rating target (fetch 30, count ratings,
+"Skip this" escape after 5 skips); follow-suggestions blends most-followed
+with most-historically-rated fighters (headshot + active-or-fought-within-3y);
+ALL taste sublines de-numbered to colloquial language; new `era-lean` insight
+("You're an old-school fan", 2015 split); weight-class lean via a `rates-high`
+headline variant (org lean deliberately skipped — everyone here is a UFC fan).
+
+**Round 5 (`2450a2ad`):** profile My-Hype "Upcoming Events" link fixed
+(`/(tabs)` home → `/(tabs)/events`); `follow-fighters` grid now lazy-loads
+(backend `limit`/`offset` + `hasMore`, `onEndReached` appends, stable sort);
+rate-classics counter 0-indexed ("0 of 10", counts ratings done).
+NOTE: RateFightModal is legacy/unimported — the live rating modal is
+`CompletedFightModal` (untouched, already had heatmap).
 
 **Flow as it stands** (mandatory, no skips anywhere until the end):
 `welcome` (logo + 5 beats: rate / follow / pays-it-back / fight diary /
@@ -46,13 +64,23 @@ rounds 1-3, all from Mike's reactions:
 
 ## NOT yet verified on device (start of next session = walk these)
 
-Mike walked rounds 1-2; **round 3 changes are unwalked**: the 5-beat welcome
-layout (may be tall on small screens), the star-wheel feel in the stack
-(800ms scroll + 350ms dwell — timing may want tuning), the follow-button
-2.5s cap actually fixing the hang, and the new insight mix on a fresh
-account (tester had 0 ratings at last check; with only 10 ratings + follows
-expect: bias card + maybe 1 pair + fighter-axis/rec cards — verify it
-doesn't come up empty).
+**Rounds 4-5 changes are unwalked** (Mike reported the issues; fixes shipped
+after). Walk and confirm:
+- **Heatmap stars** on rate-classics (row climbs grey→gold→red, big wheel
+  star takes the score color) feel right.
+- **Skip behavior**: skips don't advance the "X of 10" counter; counter
+  starts at "0 of 10"; "Skip this" appears below Continue after 5 skips.
+- **Follow-fighters lazy load**: scrolling the grid pulls more fighters (24
+  per page); footer spinner shows; search still works.
+- **Profile → My Hype → "Upcoming Events"** link lands on the upcoming events
+  tab, not home. (Link is in the *no-hype* empty state — verify on an account
+  with 0 hype, or check the wording matches what Mike meant.)
+- **Insight mix on the real fresh tester**: `testdev+onb0612` now has 10
+  ratings (Mike's last walk landed there). With ~10 ratings + follows expect
+  the bias card, maybe 1 prefers pair, era-lean if the stack spans 2015,
+  fighter-axis/rec cards. Verify de-numbered sublines read human and nothing
+  comes up empty. The old "57 fights" subline was from rating on a
+  history-heavy account, NOT the tester — confirm a true-new-user n is small.
 
 ## Open items / round-4 candidates
 
