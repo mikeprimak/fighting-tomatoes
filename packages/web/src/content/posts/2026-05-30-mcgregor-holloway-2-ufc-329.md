@@ -2,6 +2,7 @@
 title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
+updated: "2026-06-13"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
@@ -21,8 +22,6 @@ event:
 ---
 
 Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
-
-*Last updated: June 6, 2026.*
 
 ## When is McGregor vs Holloway 2?
 
@@ -116,6 +115,12 @@ The rematch is built on star power, history, and timing. McGregor wanted a marqu
 ## How long has Conor McGregor been out of action?
 
 A long time. McGregor's last fight was in **July 2021**, when he suffered a gruesome broken leg at the end of the first round of his trilogy bout with Dustin Poirier. That means he will step into the Octagon at UFC 329 after roughly **five years away from competition**. Ring rust, the leg, his age, and the quality of the opponent are all reasons this is a far harder comeback than a star return usually looks on paper.
+
+## Is McGregor's comeback clean? The drug-testing question
+
+This has become one of the bigger storylines of the comeback, so it is worth addressing head-on. McGregor is back in the UFC's anti-doping testing pool and, by the public test history, he has been one of the most-tested fighters in the entire promotion to start 2026, which is exactly what you would expect for a returning star the UFC wants clean results on record for. His path back was not simple: he served an 18-month sanction for missing three attempted sample collections in 2024, and that suspension lapsed on March 20, 2026, clearing him to compete again.
+
+The scrutiny got sharper in June 2026 when The New York Times published an investigation reporting that, citing people with direct knowledge, McGregor used banned substances during the long rehab from his 2021 broken leg, a period when he was out of competition and outside the testing pool. McGregor's surgeon denied prescribing steroids or hormones, and the broader defense has been that many "banned" substances have legitimate medical uses and exist under therapeutic-use rules. Nothing in the report concerns a fight or an in-competition test, and it is an allegation about the rehab years rather than a failed test today. Still, it is fair context for fans weighing a comeback this size: the questions are real, and so is the unusually heavy testing he is now under.
 
 ## Tale of the tape: McGregor vs Holloway 2
 
