@@ -148,11 +148,10 @@ export default function RateClassicsScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Rate the classics</Text>
-          {/* Progress counts RATINGS, not cards — a skip never moves it. */}
+          {/* Counts ratings DONE (starts at 0 of 10), not the current card —
+              a skip never moves it. */}
           <Text style={styles.headerProgress}>
-            {done
-              ? `${ratedCount} rated`
-              : `${Math.min(ratedCount + 1, RATE_TARGET)} of ${RATE_TARGET}`}
+            {done ? `${ratedCount} rated` : `${ratedCount} of ${RATE_TARGET}`}
           </Text>
         </View>
 

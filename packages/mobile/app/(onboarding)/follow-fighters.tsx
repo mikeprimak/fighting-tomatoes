@@ -38,19 +38,44 @@ export default function FollowFightersScreen() {
 
   const [suggestions, setSuggestions] = useState<OnboardingFighterSuggestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const [searchResults, setSearchResults] = useState<OnboardingFighterSuggestion[] | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const PAGE_SIZE = 24;
 
   useEffect(() => {
     apiService
-      .getOnboardingFollowSuggestions()
-      .then((res) => setSuggestions(res.fighters))
+      .getOnboardingFollowSuggestions(PAGE_SIZE, 0)
+      .then((res) => {
+        setSuggestions(res.fighters);
+        setHasMore(res.hasMore ?? false);
+      })
       .catch(() => setSuggestions([]))
       .finally(() => setIsLoading(false));
   }, []);
+
+  // Lazy-load the next page when the grid nears its end. Disabled during a
+  // search (the search list is its own, un-paginated result set) and guarded
+  // against overlapping fetches + duplicate appends.
+  const loadMore = () => {
+    if (isLoadingMore || !hasMore || searchResults !== null) return;
+    setIsLoadingMore(true);
+    apiService
+      .getOnboardingFollowSuggestions(PAGE_SIZE, suggestions.length)
+      .then((res) => {
+        setSuggestions((prev) => {
+          const seen = new Set(prev.map((f) => f.fighterId));
+          return [...prev, ...res.fighters.filter((f) => !seen.has(f.fighterId))];
+        });
+        setHasMore(res.hasMore ?? false);
+      })
+      .catch(() => setHasMore(false))
+      .finally(() => setIsLoadingMore(false));
+  };
 
   const handleQueryChange = (text: string) => {
     setQuery(text);
@@ -183,8 +208,18 @@ export default function FollowFightersScreen() {
             numColumns={3}
             columnWrapperStyle={styles.gridRow}
             showsVerticalScrollIndicator={false}
+            onEndReached={loadMore}
+            onEndReachedThreshold={0.5}
             ListEmptyComponent={
               <Text style={styles.emptyText}>No fighters found.</Text>
+            }
+            ListFooterComponent={
+              isLoadingMore ? (
+                <ActivityIndicator
+                  style={styles.footerSpinner}
+                  color={colors.primary}
+                />
+              ) : null
             }
           />
         )}
@@ -311,6 +346,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     marginTop: 32,
+  },
+  footerSpinner: {
+    marginVertical: 16,
   },
   footer: {
     marginTop: 12,

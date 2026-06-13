@@ -22,9 +22,12 @@ const MAX_STACK_LIMIT = 60;
 // How many top-rated COMPLETED fights to consider before the character-tag
 // filter + diversity pick. Big enough to survive both filters at ~30 out.
 const CANDIDATE_POOL = 200;
-const SUGGESTION_LIMIT = 40;
+// Default page size for the lazy-loaded grid (client may override up to 60).
+const SUGGESTION_PAGE = 24;
+// How many ranked fighters we keep available to page through in total.
+const SUGGESTION_MAX = 120;
 // Fallback picker over-fetches so the champion/rank boost has room to reorder.
-const SUGGESTION_POOL = 120;
+const SUGGESTION_POOL = 160;
 // Second leg of the suggestion mix (Mike, 2026-06-12): fighters whose fights
 // carry the most historical fan ratings — the legends people actually know.
 const RATED_POOL = 80;
@@ -211,12 +214,22 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
   fastify.get('/follow-suggestions', {
     schema: {
       description:
-        'Fighter suggestions for the onboarding follow picker. Admin override via SystemConfig onboarding_fighters ({fighterId, priority}[]); auto-fallback = most-followed active fighters with headshots, champion/rank boosted. Flat list (Fighter has no org column); the picker search covers everyone else.',
+        'Fighter suggestions for the onboarding follow picker. Paginated (limit/offset) so the grid lazy-loads. Admin override via SystemConfig onboarding_fighters ({fighterId, priority}[]); auto-fallback = a mix of most-followed and most-historically-rated fighters with headshots (active or fought within 3 years), champion/rank boosted. Flat list (Fighter has no org column); the picker search covers everyone else.',
       tags: ['onboarding'],
+      querystring: {
+        type: 'object',
+        properties: {
+          limit: { type: 'integer', minimum: 1, maximum: 60 },
+          offset: { type: 'integer', minimum: 0 },
+        },
+      },
     },
     preHandler: authenticateUser,
   }, async (request, reply) => {
     try {
+      const q = request.query as { limit?: number; offset?: number };
+      const limit = q.limit ?? SUGGESTION_PAGE;
+      const offset = q.offset ?? 0;
       const fighterSelect = {
         id: true,
         firstName: true,
@@ -268,12 +281,17 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
           select: fighterSelect,
         });
         const byId = new Map(rows.map((r) => [r.id, r]));
-        const fighters = [...curated]
+        const ranked = [...curated]
           .sort((a, b) => (a.priority ?? 1e9) - (b.priority ?? 1e9))
           .map((c) => byId.get(c.fighterId))
           .filter((f): f is NonNullable<typeof f> => !!f)
           .map(toSuggestion);
-        return reply.code(200).send({ fighters, source: 'curated' });
+        const fighters = ranked.slice(offset, offset + limit);
+        return reply.code(200).send({
+          fighters,
+          source: 'curated',
+          hasMore: offset + limit < ranked.length,
+        });
       }
 
       // Auto-fallback until Mike curates: a MIX (Mike, 2026-06-12 round 4) of
@@ -329,7 +347,7 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
         1,
         ...ratedPool.map((r) => r.rating_count),
       );
-      const fighters = [...followedPool, ...extraRows]
+      const ranked = [...followedPool, ...extraRows]
         .filter(stillRelevant)
         .map((f) => ({
           f,
@@ -340,10 +358,16 @@ export default async function onboardingRoutes(fastify: FastifyInstance) {
             ((ratedInfo.get(f.id)?.rating_count ?? 0) / maxRatingCount) *
               RATING_VOLUME_POINTS,
         }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, SUGGESTION_LIMIT)
+        // fighterId tiebreak keeps page boundaries stable across requests.
+        .sort((a, b) => b.score - a.score || a.f.id.localeCompare(b.f.id))
+        .slice(0, SUGGESTION_MAX)
         .map(({ f }) => toSuggestion(f));
-      return reply.code(200).send({ fighters, source: 'auto' });
+      const fighters = ranked.slice(offset, offset + limit);
+      return reply.code(200).send({
+        fighters,
+        source: 'auto',
+        hasMore: offset + limit < ranked.length,
+      });
     } catch (err: unknown) {
       request.log.error(err, '[onboarding] /follow-suggestions handler failed');
       return reply.code(500).send({
