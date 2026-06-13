@@ -33,7 +33,7 @@ They should not. Losing three razor-close, championship-level fights to an all-t
 
 ## The best pure striker the UFC has ever rostered
 
-Strip away the belts and the losses and look at the raw output, because the raw output is historic. Holloway holds the UFC record for most significant strikes landed in company history, and the gap between him and the next name on that list is enormous. Nobody has ever thrown and landed like this.
+Strip away the belts and the losses and look at the raw output: it is historic. Holloway holds the UFC record for most significant strikes landed in company history, and the gap between him and the next name on that list is enormous. Nobody has ever thrown and landed like this.
 
 The signature moment came against Calvin Kattar in 2021, when Holloway spent five rounds breaking a top contender apart and, at one point, turned to the broadcast desk mid-fight to tell them he was the best in the world. He was not wrong. His volume, his chin, and his ability to fight at a relentless pace for twenty-five minutes are the tools that make him such a nightmare matchup for a power puncher like McGregor.
 
