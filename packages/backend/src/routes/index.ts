@@ -26,7 +26,7 @@ import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
-import { PROMOTION_REGISTRY, isPromotionShelved } from '../config/promotionRegistry';
+import { PROMOTION_REGISTRY, isPromotionShelved, getShelvedPromotionCodes, refreshShelvedPromotionsCache } from '../config/promotionRegistry';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -118,6 +118,17 @@ export async function registerRoutes(fastify: FastifyInstance) {
           aliases: e.aliases,
         })),
     });
+  });
+
+  // Public endpoint: currently-shelved promotion CODES. Used by the daily
+  // scraper GitHub workflows to skip their scheduled run when the org is shelved
+  // from admin (the master switch), so re-enabling an org needs no YAML change.
+  // Refreshes from SystemConfig so the response is never more than a moment stale.
+  fastify.get('/api/promotions/shelved', async (_request, reply) => {
+    try {
+      await refreshShelvedPromotionsCache(fastify.prisma);
+    } catch { /* fall back to in-memory cache */ }
+    return reply.send({ shelved: getShelvedPromotionCodes() });
   });
 
   // API status endpoint

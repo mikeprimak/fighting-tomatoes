@@ -1,14 +1,27 @@
 name: Golden Boy Tapology Scraper
 
 on:
-  # Cron disabled 2026-06-13: Golden Boy (Tapology) shelved (promotionRegistry status: 'shelved').
-  # Re-enable: set status back to 'active' AND un-comment the cron below.
-  # schedule:
-  #   - cron: "30 15 * * *"
+  schedule:
+    - cron: "30 15 * * *"
   workflow_dispatch:
 
 jobs:
+  # Master switch: skip the SCHEDULED run when this org is shelved in admin
+  # (promotionRegistry status / SystemConfig). Manual dispatch always runs.
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - id: check
+        run: |
+          if curl -s --max-time 20 https://fightcrewapp-backend.onrender.com/api/promotions/shelved | grep -q '"GOLDEN_BOY"'; then
+            echo "GOLDEN_BOY is shelved — skipping scheduled scrape."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
   scrape-golden-boy:
+    needs: gate
+    if: ${{ github.event_name != 'schedule' || needs.gate.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
