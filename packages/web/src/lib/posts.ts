@@ -23,6 +23,8 @@ export type PostMeta = {
   slug: string;
   title: string;
   date: string;
+  /** Optional last-updated date (ISO). Shown as "Updated:" and used for dateModified. */
+  updated: string;
   author: string;
   excerpt: string;
   tags: string[];
@@ -110,6 +112,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     slug,
     title: (data.title as string) || slug,
     date: (data.date as string) || '',
+    updated: (data.updated as string) || '',
     author: (data.author as string) || 'Good Fights',
     excerpt: (data.excerpt as string) || '',
     tags: Array.isArray(data.tags) ? (data.tags as string[]) : [],

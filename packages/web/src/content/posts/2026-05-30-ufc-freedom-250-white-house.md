@@ -2,6 +2,7 @@
 title: "UFC Freedom 250 at the White House: Everything You Need to Know"
 slug: "ufc-freedom-250-white-house"
 date: "2026-05-30"
+updated: "2026-06-13"
 author: "Good Fights"
 excerpt: "UFC Freedom 250 lands on the White House South Lawn on Sunday, June 14, 2026, with two title fights and one of the deepest cards of the year. Ilia Topuria defends the lightweight belt against Justin Gaethje, Alex Pereira chases history against Ciryl Gane, Sean O'Malley returns, and undefeated Josh Hokit meets Derrick Lewis. Date, free CBS prelims, how to watch on Paramount+, the full card, odds, and predictions. All in one place."
 tags: ["ufc-freedom-250", "ilia-topuria", "alex-pereira", "sean-omalley", "josh-hokit", "ufc", "preview"]
