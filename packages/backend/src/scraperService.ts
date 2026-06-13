@@ -60,9 +60,29 @@ const SCRAPE_INTERVAL_MS = 30 * 1000; // 30 seconds (own-site scrapers: ufc/bkfc
 // See docs/daily/2026-06-13.md + memory project-tapology-scrapfly-cloudflare.
 const TAPOLOGY_SCRAPE_INTERVAL_MS = 150 * 1000; // 150 seconds
 
+// Adaptive downshift for Tapology only: a healthy card produces fight-status
+// changes regularly, so it polls at the full 150s all night. The RARE dead
+// event (card posted but never moving for hours) would otherwise keep spending
+// one Scrapfly request every 150s for the whole ~8hr window. So if no scrape has
+// produced a change for TAPOLOGY_FLATLINE_MS, drop to a slow keep-alive poll;
+// the first change snaps it back to 150s (lastChangeAt resets). 45min flatline
+// is conservative — a normal card never goes that long without a fight moving.
+const TAPOLOGY_FLATLINE_MS = 45 * 60 * 1000; // 45 min of no change → slow mode
+const TAPOLOGY_SLOW_INTERVAL_MS = 15 * 60 * 1000; // slow keep-alive: every 15 min
+
 /** Poll cadence by scraper type. Only `tapology` is Scrapfly-metered. */
 function scrapeIntervalFor(scraperType: string): number {
   return scraperType === 'tapology' ? TAPOLOGY_SCRAPE_INTERVAL_MS : SCRAPE_INTERVAL_MS;
+}
+
+/**
+ * Next delay for a Tapology tracker: full speed normally, slow keep-alive once
+ * the card has been flat (no status change) for TAPOLOGY_FLATLINE_MS. Snaps back
+ * to full speed automatically because each change updates `lastChangeAt`.
+ */
+function nextTapologyDelayMs(tracker: ActiveTracker): number {
+  const flatFor = Date.now() - tracker.lastChangeAt.getTime();
+  return flatFor >= TAPOLOGY_FLATLINE_MS ? TAPOLOGY_SLOW_INTERVAL_MS : TAPOLOGY_SCRAPE_INTERVAL_MS;
 }
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 const SIX_HOURS_MS = 6 * 60 * 60 * 1000;
@@ -81,6 +101,7 @@ interface ActiveTracker {
   scrapeCount: number;
   consecutiveErrors: number;
   startedAt: Date;
+  lastChangeAt: Date; // last scrape that produced a fight-status change (Tapology adaptive poll)
 }
 
 const activeTrackers = new Map<string, ActiveTracker>();
@@ -339,6 +360,10 @@ async function scrapeTapologyOnce(tracker: ActiveTracker): Promise<void> {
   const result = await parseTapologyData(tracker.eventId, scrapedData);
   console.log(`[TAPOLOGY] Matched: ${result.fightsMatched}, updated: ${result.fightsUpdated}`);
 
+  // Adaptive poll: any fight-status change means the card is moving — reset the
+  // flatline clock so the tracker stays (or returns to) full 150s speed.
+  if (result.fightsUpdated > 0) tracker.lastChangeAt = new Date();
+
   // Auto-complete check
   const fights = await prisma.fight.findMany({
     where: { eventId: tracker.eventId },
@@ -434,13 +459,32 @@ function startTracker(eventId: string, eventName: string, scraperType: string, u
     scrapeCount: 0,
     consecutiveErrors: 0,
     startedAt: new Date(),
+    lastChangeAt: new Date(), // full grace window before any adaptive downshift
   };
-
-  // Run first scrape immediately, then on the per-type cadence.
-  scrapeOnce(tracker);
-  tracker.interval = setInterval(() => scrapeOnce(tracker), intervalMs);
-
+  // Register before the first scrape so an auto-complete during it (which calls
+  // stopTracker) isn't undone by a late insert.
   activeTrackers.set(eventId, tracker);
+
+  if (scraperType === 'tapology') {
+    // Self-rescheduling loop so the cadence can adapt: full 150s while the card
+    // is moving, slow keep-alive once it goes flat (see nextTapologyDelayMs).
+    const runTapologyAdaptive = async () => {
+      await scrapeOnce(tracker);
+      if (!activeTrackers.has(eventId)) return; // stopped (auto-complete/errors) mid-scrape
+      const delay = nextTapologyDelayMs(tracker);
+      if (delay !== TAPOLOGY_SCRAPE_INTERVAL_MS) {
+        const flatMin = Math.round((Date.now() - tracker.lastChangeAt.getTime()) / 60000);
+        console.log(`[TAPOLOGY] ${eventName}: ${flatMin}min with no change — slow keep-alive every ${delay / 60000}min`);
+      }
+      tracker.interval = setTimeout(runTapologyAdaptive, delay);
+    };
+    runTapologyAdaptive();
+  } else {
+    // Run first scrape immediately, then on the fixed per-type cadence.
+    scrapeOnce(tracker);
+    tracker.interval = setInterval(() => scrapeOnce(tracker), intervalMs);
+  }
+
   return true;
 }
 
