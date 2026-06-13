@@ -1972,6 +1972,23 @@
         </div>
       </div>
 
+      <!-- Shelved Promotions (master on/off switch per org) -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">Shelved Promotions</span>
+          <span id="shelvedPromotionsStatus" style="font-size: 0.75rem; color: var(--text-secondary);"></span>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Master on/off switch per org. <strong>Shelved = OFF product-wide</strong>: hidden from the app + web (upcoming, live, past), and skipped by AI enrichment, broadcast discovery, start-time discovery, live tracking, and retro backfill. Takes effect within ~60s; data stays in the DB. <em>Note: the daily-scraper GitHub crons are separate — un-shelving restores everything except that cron, which needs a code change to re-enable.</em>
+        </p>
+        <div id="shelvedPromotionsGrid" class="scraper-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+            <div class="empty-state-text" style="margin-top: 0.5rem;">Loading promotions...</div>
+          </div>
+        </div>
+      </div>
+
       <!-- Backfill Health -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -4803,6 +4820,7 @@
       await Promise.all([
         loadNotifyPromotions(),
         loadProductionScrapers(),
+        loadShelvedPromotions(),
         loadBackfillHealth(),
         loadEnrichmentHealth(),
         loadScraperStatus(),
@@ -5159,6 +5177,71 @@
       } catch (err) {
         statusEl.textContent = 'Error saving!';
         renderProductionScrapersGrid();
+        setTimeout(() => { statusEl.textContent = ''; }, 3000);
+      }
+    }
+
+    // ── Shelved promotions (master on/off switch per org) ──
+    let currentShelved = [];
+    let allShelfStates = [];
+
+    async function loadShelvedPromotions() {
+      const grid = document.getElementById('shelvedPromotionsGrid');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/shelved-promotions`);
+        const data = await res.json();
+        currentShelved = data.shelved || [];
+        allShelfStates = data.all || [];
+        renderShelvedPromotionsGrid();
+      } catch (err) {
+        grid.innerHTML = '<div class="empty-state"><div class="empty-state-text">Failed to load promotions</div></div>';
+      }
+    }
+
+    function renderShelvedPromotionsGrid() {
+      const grid = document.getElementById('shelvedPromotionsGrid');
+      grid.innerHTML = allShelfStates.map(p => {
+        const shelved = currentShelved.includes(p.code);
+        return `
+          <div class="notify-card">
+            <div>
+              <div class="notify-card-label">${p.label}</div>
+              <div class="notify-card-sub">${shelved ? 'SHELVED — hidden everywhere' : 'Active'}</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" ${shelved ? 'checked' : ''} onchange="toggleShelvedPromotion('${p.code}', this.checked)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function toggleShelvedPromotion(code, shelved) {
+      const statusEl = document.getElementById('shelvedPromotionsStatus');
+      statusEl.textContent = 'Saving...';
+
+      if (shelved && !currentShelved.includes(code)) {
+        currentShelved.push(code);
+      } else if (!shelved) {
+        currentShelved = currentShelved.filter(c => c !== code);
+      }
+
+      try {
+        const res = await authFetch(`${API_BASE}/admin/config/shelved-promotions`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shelved: currentShelved }),
+        });
+        if (!res.ok) throw new Error('Save failed');
+        const data = await res.json();
+        currentShelved = data.shelved;
+        renderShelvedPromotionsGrid();
+        statusEl.textContent = 'Saved';
+        setTimeout(() => { statusEl.textContent = ''; }, 2000);
+      } catch (err) {
+        statusEl.textContent = 'Error saving!';
+        renderShelvedPromotionsGrid();
         setTimeout(() => { statusEl.textContent = ''; }, 3000);
       }
     }

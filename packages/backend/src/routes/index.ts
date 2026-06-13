@@ -25,7 +25,7 @@ import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { isProductionScraper, getNotifyPromotions, hasReliableLiveTracker } from '../config/liveTrackerConfig';
-import { PROMOTION_REGISTRY } from '../config/promotionRegistry';
+import { PROMOTION_REGISTRY, isPromotionShelved } from '../config/promotionRegistry';
 
 // Organization filter groups - maps filter buttons to actual promotions
 // BOXING is an aggregate that includes multiple boxing promoters
@@ -39,7 +39,7 @@ const ORG_FILTER_GROUPS: Record<string, { contains?: string[] }> = {
   },
 };
 
-import { HIDDEN_PROMOTIONS } from '../config/hiddenPromotions';
+import { getHiddenPromotions } from '../config/hiddenPromotions';
 
 export async function registerRoutes(fastify: FastifyInstance) {
   // Health check endpoint
@@ -107,7 +107,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
   fastify.get('/api/promotions', async (_request, reply) => {
     return reply.send({
       promotions: PROMOTION_REGISTRY
-        .filter(e => e.userVisible && e.status !== 'shelved')
+        .filter(e => e.userVisible && !isPromotionShelved(e.canonicalPromotion))
         .map(e => ({
           code: e.code,
           canonicalPromotion: e.canonicalPromotion,
@@ -265,7 +265,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       const fourteenDaysFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
       const whereClause: any = {
         isVisible: true,
-        NOT: HIDDEN_PROMOTIONS.map(p => ({
+        NOT: getHiddenPromotions().map(p => ({
           promotion: { contains: p, mode: 'insensitive' },
         })),
         OR: [
@@ -816,7 +816,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         where: {
           id,
           isVisible: true,
-          NOT: HIDDEN_PROMOTIONS.map(p => ({
+          NOT: getHiddenPromotions().map(p => ({
             promotion: { contains: p, mode: 'insensitive' },
           })),
         },

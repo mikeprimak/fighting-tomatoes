@@ -38,7 +38,7 @@ import { backfillOktagonResults } from '../services/backfillOktagonResults';
 import { backfillMatchroomResults } from '../services/backfillMatchroomResults';
 import { backfillPFLResults } from '../services/backfillPFLResults';
 import { backfillRAFResults } from '../services/backfillRAFResults';
-import { shelvedExclusionWhere } from '../config/promotionRegistry';
+import { shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../config/promotionRegistry';
 
 const prisma = new PrismaClient();
 
@@ -88,6 +88,7 @@ async function main() {
   console.log(`[backfill] Started: ${new Date().toISOString()}`);
   console.log('========================================');
 
+  await refreshShelvedPromotionsCache(prisma);
   const candidates = await findCandidates(windowDays, orgFilter);
   console.log(`\n[backfill] Found ${candidates.length} candidate event(s)`);
 

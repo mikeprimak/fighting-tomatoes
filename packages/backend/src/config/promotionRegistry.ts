@@ -411,34 +411,87 @@ export const RELIABLE_LIVE_TRACKER_PROMOTIONS_UPPER: Set<string> = new Set(
 
 /** Tapology hub map keyed by canonical promotion string.
  *  Used by runTapologyLiveTracker.ts and backfillTapologyResults.ts.
- *  Shelved promotions are excluded, so retro backfill + live-tracker hub
- *  resolution skip them automatically (master switch = status). */
+ *  (Shelving is enforced at the consumers via shelvedExclusionWhere() so it
+ *  stays runtime-adjustable, not baked into this static map.) */
 export const TAPOLOGY_PROMOTION_HUBS: Record<string, TapologyHub> = Object.fromEntries(
   PROMOTION_REGISTRY
-    .filter(e => e.tapologyHub && e.status !== 'shelved')
+    .filter(e => e.tapologyHub)
     .map(e => [e.canonicalPromotion, e.tapologyHub!]),
 );
 
-// ── Master on/off switch (status) — derived gates ────────────────────────────
+// ── Master on/off switch (status) — RUNTIME-ADJUSTABLE via admin ──────────────
+//
+// The registry `status` field seeds the DEFAULT shelved set, but the live value
+// is read from SystemConfig (key: 'shelved_promotions') so the admin panel can
+// shelve/un-shelve an org without a deploy. Mirrors the production_scrapers
+// cache in liveTrackerConfig.ts: an in-memory Set read synchronously by the
+// gates below, refreshed on boot, every 60s, and right after an admin edit.
 
-/** Canonical + alias strings for every shelved promotion.
- *  hiddenPromotions.ts derives HIDDEN_PROMOTIONS from this. */
-export const SHELVED_PROMOTION_STRINGS: string[] = PROMOTION_REGISTRY
+/** Codes shelved by default (registry seed / fallback before SystemConfig loads). */
+const DEFAULT_SHELVED_CODES: PromotionCode[] = PROMOTION_REGISTRY
   .filter(e => e.status === 'shelved')
-  .flatMap(e => [e.canonicalPromotion, ...e.aliases]);
+  .map(e => e.code);
+
+const _validCodes = new Set<string>(PROMOTION_REGISTRY.map(e => e.code));
+
+/** In-memory cache of shelved promotion CODES. Seeded from the registry; the
+ *  admin override (SystemConfig 'shelved_promotions') replaces it once loaded. */
+let _shelvedCodesCache: Set<PromotionCode> = new Set(DEFAULT_SHELVED_CODES);
+
+/** Refresh the shelved cache from SystemConfig. Call on boot, every 60s, and
+ *  right after the admin endpoint writes. Falls back to the existing cache on
+ *  error so a DB hiccup never silently un-shelves everything. */
+export async function refreshShelvedPromotionsCache(prisma: any): Promise<PromotionCode[]> {
+  try {
+    const config = await prisma.systemConfig.findUnique({ where: { key: 'shelved_promotions' } });
+    if (config?.value && Array.isArray(config.value)) {
+      _shelvedCodesCache = new Set(
+        (config.value as string[]).filter((c): c is PromotionCode => _validCodes.has(c)),
+      );
+    }
+    return [..._shelvedCodesCache];
+  } catch (err) {
+    console.error('[promotionRegistry] Failed to refresh shelved-promotions cache:', err);
+    return [..._shelvedCodesCache];
+  }
+}
+
+/** Current shelved codes (admin GET). */
+export function getShelvedPromotionCodes(): PromotionCode[] {
+  return [..._shelvedCodesCache];
+}
+
+/** All promotions + their current shelved state — for the admin UI. */
+export function getPromotionShelfStates(): { code: PromotionCode; label: string; shelved: boolean }[] {
+  return PROMOTION_REGISTRY.map(e => ({
+    code: e.code,
+    label: e.shortLabel,
+    shelved: _shelvedCodesCache.has(e.code),
+  }));
+}
 
 /** True when a promotion string (canonical or alias) belongs to a shelved org. */
 export function isPromotionShelved(promotion: string | null | undefined): boolean {
-  return getPromotionByName(promotion)?.status === 'shelved';
+  const entry = getPromotionByName(promotion);
+  return entry ? _shelvedCodesCache.has(entry.code) : false;
 }
 
-/** Prisma `where` fragment that excludes shelved promotions. Spread into a
- *  query's where clause; resolves to `{}` (no-op) when nothing is shelved.
- *  Mirrors the existing HIDDEN_PROMOTIONS `NOT … contains` pattern. */
+/** Canonical + alias strings for every currently-shelved org.
+ *  hiddenPromotions.ts exposes this as getHiddenPromotions(). */
+export function getShelvedPromotionStrings(): string[] {
+  return PROMOTION_REGISTRY
+    .filter(e => _shelvedCodesCache.has(e.code))
+    .flatMap(e => [e.canonicalPromotion, ...e.aliases]);
+}
+
+/** Prisma `where` fragment that excludes currently-shelved promotions. Spread
+ *  into a query's where clause; `{}` (no-op) when nothing is shelved. Mirrors
+ *  the existing HIDDEN_PROMOTIONS `NOT … contains` pattern. */
 export function shelvedExclusionWhere(): Record<string, unknown> {
-  if (SHELVED_PROMOTION_STRINGS.length === 0) return {};
+  const strings = getShelvedPromotionStrings();
+  if (strings.length === 0) return {};
   return {
-    NOT: SHELVED_PROMOTION_STRINGS.map(p => ({
+    NOT: strings.map(p => ({
       promotion: { contains: p, mode: 'insensitive' as const },
     })),
   };
