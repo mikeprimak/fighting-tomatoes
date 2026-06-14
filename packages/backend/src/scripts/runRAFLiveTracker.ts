@@ -21,6 +21,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import { parseRAFLiveData, autoCompleteRAFEvent } from '../services/rafLiveParser';
 import type { RAFLiveEventData } from '../services/rafLiveParser';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 const execAsync = promisify(exec);
 
@@ -65,6 +66,13 @@ async function runRAFLiveTracker(): Promise<void> {
   console.log('========================================\n');
 
   try {
+    // Hydrate the production-scraper cache from SystemConfig so the parser's
+    // shouldAutoPublish('raf') reflects admin-toggled state. Without this, the
+    // default cache (which omits 'raf') is used and results land in shadow
+    // fields only — the app keeps showing every fight as UPCOMING. The other
+    // standalone trackers (Sherdog, Yahoo) already do this.
+    await refreshProductionScrapersCache(prisma);
+
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
     const event = await findActiveRAFEvent(overrideEventId);
 
