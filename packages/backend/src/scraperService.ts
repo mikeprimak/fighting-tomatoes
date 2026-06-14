@@ -44,7 +44,10 @@ import { parseOktagonLiveData, autoCompleteOktagonEvent } from './services/oktag
 import { parseTapologyData } from './services/tapologyLiveParser';
 import { parsePFLLiveData, autoCompletePFLEvent } from './services/pflLiveParser';
 import { parseSherdogLiveData } from './services/sherdogLiveParser';
+import { parseRAFLiveData, autoCompleteRAFEvent } from './services/rafLiveParser';
+import { refreshProductionScrapersCache } from './config/liveTrackerConfig';
 import type { BKFCEventData } from './services/bkfcLiveScraper';
+import type { RAFLiveEventData } from './services/rafLiveParser';
 
 const execAsync = promisify(exec);
 const prisma = new PrismaClient();
@@ -352,6 +355,52 @@ async function scrapeSherdogOnce(tracker: ActiveTracker): Promise<void> {
   }
 }
 
+/**
+ * Run one RAF (Real American Freestyle) scrape iteration.
+ * RAF's site is server-rendered Webflow, so we shell out to the cheerio
+ * scraper (scrapeRAFLiveEvent.js) — same child-process pattern as UFC — then
+ * reconcile via parseRAFLiveData. The RAF official page is result-only (no
+ * "in progress" state), so each completed bout lands on the next cycle.
+ */
+async function scrapeRAFOnce(tracker: ActiveTracker): Promise<void> {
+  const scraperPath = path.join(__dirname, 'services/scrapeRAFLiveEvent.js');
+  const outputDir = path.join(__dirname, '../live-event-data/raf');
+  await fs.mkdir(outputDir, { recursive: true });
+
+  const command = `node "${scraperPath}" "${tracker.url}" "${outputDir}"`;
+  const { stdout, stderr } = await execAsync(command, {
+    timeout: 60000,
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (stdout) console.log(`[RAF] ${stdout.substring(0, 400)}`);
+  if (stderr) console.warn(`[RAF] stderr: ${stderr.substring(0, 300)}`);
+
+  const files = await fs.readdir(outputDir);
+  const jsonFiles = files.filter(f => f.startsWith('raf-live-') && f.endsWith('.json')).sort().reverse();
+  if (jsonFiles.length === 0) throw new Error('No RAF scrape data found');
+
+  const latestFile = path.join(outputDir, jsonFiles[0]);
+  const scrapedJson = JSON.parse(await fs.readFile(latestFile, 'utf-8'));
+  const scrapedData: RAFLiveEventData = scrapedJson.events?.[0];
+  if (!scrapedData) throw new Error('No event data in RAF scrape JSON');
+
+  console.log(`[RAF] ${scrapedData.fights.length} fights, status: ${scrapedData.status}`);
+
+  const result = await parseRAFLiveData(scrapedData, tracker.eventId);
+  console.log(`[RAF] Updated: ${result.fightsUpdated}, cancelled: ${result.cancelledCount}`);
+
+  const completed = await autoCompleteRAFEvent(tracker.eventId);
+  if (completed) {
+    console.log('[RAF] Event auto-completed');
+    stopTracker(tracker.eventId);
+  }
+
+  // Cleanup old files (keep last 5)
+  for (const oldFile of jsonFiles.slice(5)) {
+    try { await fs.unlink(path.join(outputDir, oldFile)); } catch {}
+  }
+}
+
 async function scrapeTapologyOnce(tracker: ActiveTracker): Promise<void> {
   const scraper = new TapologyLiveScraper(tracker.url);
   const scrapedData = await scraper.scrape();
@@ -408,6 +457,7 @@ async function scrapeOnce(tracker: ActiveTracker): Promise<void> {
       case 'pfl': await scrapePFLOnce(tracker); break;
       case 'tapology': await scrapeTapologyOnce(tracker); break;
       case 'sherdog': await scrapeSherdogOnce(tracker); break;
+      case 'raf': await scrapeRAFOnce(tracker); break;
       default:
         console.warn(`[SCRAPER] Unknown scraper type: ${tracker.scraperType}`);
         return;
@@ -653,7 +703,7 @@ async function autoDiscoverEvents(): Promise<{ started: string[]; stopped: strin
     where: {
       eventStatus: 'LIVE',
       OR: [
-        { scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'tapology'] } },
+        { scraperType: { in: ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'tapology', 'raf'] } },
         { sherdogPbpUrl: { not: null } },
       ],
     },
@@ -906,6 +956,16 @@ server.listen(PORT, () => {
   console.log(`  Scrape interval: ${SCRAPE_INTERVAL_MS / 1000}s (tapology: ${TAPOLOGY_SCRAPE_INTERVAL_MS / 1000}s, Scrapfly-metered)`);
   console.log(`  Auth: ${API_KEY ? 'enabled' : 'DISABLED (dev mode)'}`);
   console.log(`========================================\n`);
+
+  // Hydrate the production-scraper cache from SystemConfig so parsers'
+  // shouldAutoPublish() reflects admin-toggled state (e.g. 'raf', which is NOT
+  // in the default cache). Without this, RAF results land in shadow fields only
+  // and the app never advances the card. Refresh on boot, then every 60s.
+  refreshProductionScrapersCache(prisma).catch(err =>
+    console.error('[STARTUP] production-scraper cache refresh failed:', err.message));
+  setInterval(() => {
+    refreshProductionScrapersCache(prisma).catch(() => {});
+  }, 60 * 1000);
 
   // Auto-discover on startup
   setTimeout(async () => {
