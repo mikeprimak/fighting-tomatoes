@@ -5,7 +5,7 @@ date: "2026-06-15"
 author: "Good Fights"
 excerpt: "Justin Gaethje stopped previously undefeated champion Ilia Topuria at UFC Freedom 250 to win the undisputed lightweight title, the belt that had eluded him for more than a decade. Afterward he told Joe Rogan, 'I'm the most exciting man that's ever been in this cage.' Here is how the fight ended, what it means for both men, and where Gaethje's career ranks by the fights our users rated highest."
 tags: ["justin-gaethje", "ilia-topuria", "ufc-freedom-250", "ufc", "feature"]
-image: "/blog/ufc-freedom-250-banner.jpg"
+image: "/blog/justin-gaethje-hero.jpg"
 draft: false
 ---
 
