@@ -97,6 +97,15 @@ export function WeekendEventsSection() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Past events, used only to surface "Event Last Night" — the most recent UFC
+  // card that ran in the last day. Past events come back most-recent-first, so a
+  // small page comfortably covers the window. UFC only (by design).
+  const { data: pastData } = useQuery({
+    queryKey: ['home', 'last-night-ufc'],
+    queryFn: () => getEvents({ type: 'past', includeFights: false, limit: 8 }),
+    staleTime: 5 * 60 * 1000,
+  });
+
   // "This weekend" window = today up to (but not including) the Monday that
   // starts next week — the rest of the current Mon–Sun week. On Monday it rolls
   // to the whole next week. UTC day keys (Event.date is a UTC-hour placeholder),
@@ -132,7 +141,17 @@ export function WeekendEventsSection() {
       return at - bt;
     });
 
-  if (events.length === 0) return null;
+  // "Event Last Night" — UFC only (not other promotions). A UFC card belongs here
+  // on the day(s) immediately after it ran: its UTC calendar day is today or
+  // yesterday (UFC events start late and roll past midnight ET, so "yesterday"
+  // catches the common Saturday-night → Sunday-morning case). Most-recent-first.
+  const lastNightUFC = (pastData?.events ?? []).filter((e: any) => {
+    if ((e.promotion ?? '').toUpperCase() !== 'UFC') return false;
+    const daysSince = Math.round((todayKey - eventDayKey(e.date)) / DAY_MS);
+    return daysSince >= 0 && daysSince <= 1;
+  });
+
+  if (events.length === 0 && lastNightUFC.length === 0) return null;
 
   // Group the sorted events into per-day buckets, first-appearance order
   // preserved (the list is already day-sorted), so each day gets its own heading.
@@ -151,6 +170,20 @@ export function WeekendEventsSection() {
 
   return (
     <div className="mb-8 flex flex-col gap-8">
+      {lastNightUFC.length > 0 && (
+        <section>
+          <SectionHeading
+            title="Event Last Night"
+            subtitle={lastNightUFC.length === 1 ? formatDaySubline(lastNightUFC[0].date) : undefined}
+            icon={CalendarDays}
+          />
+          <div className="flex flex-col gap-3">
+            {lastNightUFC.map((event: any) => (
+              <EventDayCard key={event.id} event={event} />
+            ))}
+          </div>
+        </section>
+      )}
       {eventsByDay.map((day, di) => (
         <section key={day.key}>
           <SectionHeading
