@@ -617,6 +617,15 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Past events, used only to surface "Event Last Night" — the most recent UFC
+  // card that ran in the last day (UFC only, by design). Past events come back
+  // most-recent-first, so a small page covers the window.
+  const { data: pastEventsData } = useQuery({
+    queryKey: ['events', 'past', 'lastNightUFC'],
+    queryFn: () => apiService.getEvents({ type: 'past', includeFights: false, limit: 8 }),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const { data: topUpcomingFights, isLoading: isUpcomingLoading } = useQuery({
     queryKey: ['topUpcomingFights', isAuthenticated, 'week'],
     queryFn: () => apiService.getTopUpcomingFights('week'),
@@ -733,6 +742,16 @@ export default function HomeScreen() {
     return groups;
   })();
 
+  // "Event Last Night" — UFC only (not other promotions). A UFC card belongs here
+  // on the day(s) immediately after it ran: its UTC calendar day is today or
+  // yesterday (UFC events start late and roll past midnight ET, so "yesterday"
+  // catches the common Saturday-night → Sunday-morning case). Most-recent-first.
+  const lastNightUFC: Event[] = (pastEventsData?.events || []).filter((e: Event) => {
+    if (!isUFC(e)) return false;
+    const daysSince = Math.round((todayKey - eventDayKey(e.date)) / DAY_MS);
+    return daysSince >= 0 && daysSince <= 1;
+  });
+
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   // Already capped + ordered server-side; group by event for the event-card UI.
   const recentGoodGroups = groupByEvent(recentGoodFights?.data || []);
@@ -830,6 +849,36 @@ export default function HomeScreen() {
       }
     >
         <View>
+      {/* Event Last Night — UFC only, the day(s) after a UFC card ran --------*/}
+      {lastNightUFC.length > 0 ? (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Event Last Night"
+          subtitle={lastNightUFC.length === 1 ? formatEventDate(lastNightUFC[0].date) : undefined}
+          icon="calendar"
+        >
+          <View style={styles.eventList}>
+            {lastNightUFC.map((event) => {
+              const description =
+                event.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary
+                  ? event.aiEventSummary
+                  : null;
+              return (
+                <EventRow
+                  key={event.id}
+                  event={event}
+                  description={description}
+                  colors={colors}
+                  styles={styles}
+                  onPress={() => router.push(`/event/${event.id}` as any)}
+                />
+              );
+            })}
+          </View>
+        </Section>
+      ) : null}
+
       {/* Events by day — Today / Tomorrow / Saturday … ---------------------*/}
       {isEventsLoading ? (
         <Section
