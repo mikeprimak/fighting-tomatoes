@@ -3,7 +3,7 @@ title: "Justin Gaethje, Finally Champion: A Tribute to the Most Honest Fighter o
 slug: "justin-gaethje-career-tribute"
 date: "2026-06-15"
 author: "Good Fights"
-excerpt: "Justin Gaethje walked into the White House a +460 underdog against an undefeated champion, and he broke Ilia Topuria's perfect record to become undisputed UFC lightweight champion. Topuria, his eyes swelling shut, could not answer the bell for the fifth round. It is the finish Gaethje's career always deserved. Here is the full story of why fans loved him, the wars that made him, and the fights our users rated highest, including a debut that still sits at the very top."
+excerpt: "Justin Gaethje walked into the White House a +460 underdog against an undefeated champion, and he broke Ilia Topuria's perfect record to become undisputed UFC lightweight champion. Then he took the mic from Joe Rogan and said it plainly: 'I'm the most exciting man that's ever been in this cage.' Here is the full story of why fans loved him, the wars that made him, and the fights our users rated highest, including a debut that still sits at the very top."
 tags: ["justin-gaethje", "ilia-topuria", "ufc-freedom-250", "ufc", "feature", "tribute"]
 image: "/blog/ufc-freedom-250-banner.jpg"
 draft: false
@@ -23,7 +23,11 @@ What makes the ending so striking is how close it came to never reaching that po
 
 It was, fittingly, settled the only way a Gaethje fight ever is: in the deep water, with the other man breaking first.
 
-## Why do fans love Justin Gaethje?
+## "I'm the most exciting man that's ever been in this cage"
+
+Moments after the belt was finally his, a bloodied, swollen Gaethje took the microphone from Joe Rogan in the middle of the Octagon and told the world exactly what he had just spent a career proving: "I'm the most exciting man that's ever been in this cage."
+
+From almost any other fighter, on almost any other night, that is empty bravado. From Justin Gaethje, standing over the first blemish on a perfect champion's record, it played as a simple statement of fact. And it is not just a feeling. The data on Good Fights backs him up: no fighter in the modern era has a body of work our users have rated this consistently high, win or lose. He did not just say it into a microphone. He earned the right to say it, one war at a time, for nearly a decade.
 
 Because he never, ever gave them a boring night. That is the whole answer, and it is also the rarest thing in the sport.
 
