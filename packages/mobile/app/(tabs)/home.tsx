@@ -205,12 +205,14 @@ function EventRow({
   colors,
   styles,
   onPress,
+  hideMeta = false,
 }: {
   event: Event;
   description?: string | null;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
+  hideMeta?: boolean;
 }) {
   const imageSource = event.bannerImage
     ? { uri: event.bannerImage }
@@ -226,7 +228,7 @@ function EventRow({
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches mainStartTime), then a whole-event one.
-  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  const { data: broadcastsData } = useEventBroadcasts(hideMeta ? '' : event.id);
   const channel = React.useMemo(() => {
     const bs = broadcastsData?.broadcasts || [];
     const entry =
@@ -257,7 +259,7 @@ function EventRow({
         <Text style={styles.eventRowName} numberOfLines={2}>
           {name}
         </Text>
-        {isLive ? (
+        {hideMeta ? null : isLive ? (
           // Live: the LIVE pill takes the start-time slot (start time dropped).
           <View style={styles.eventRowMetaLine}>
             <View style={styles.liveBadge}>
@@ -871,6 +873,7 @@ export default function HomeScreen() {
                   description={description}
                   colors={colors}
                   styles={styles}
+                  hideMeta
                   onPress={() => router.push(`/event/${event.id}` as any)}
                 />
               );
