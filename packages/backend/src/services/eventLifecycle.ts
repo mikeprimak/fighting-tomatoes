@@ -579,21 +579,42 @@ export async function runEventLifecycleCheck(): Promise<{
         isProductionScraper(event.scraperType) ||
         hasReliableLiveTracker(event.scraperType, event.promotion);
 
-      let completionMs: number;
+      const hardCapMs = HARD_CAP_HOURS * 60 * 60 * 1000;
+      let softCompletionMs: number;
       if (!trackerBacked) {
         // No-tracker events: fixed live window so users have time to rate
         // after watching. Independent of numFights.
-        completionMs = NO_TRACKER_LIVE_WINDOW_HOURS * 60 * 60 * 1000;
+        softCompletionMs = NO_TRACKER_LIVE_WINDOW_HOURS * 60 * 60 * 1000;
       } else {
         // Tracker-backed events: estimated duration = (numFights * 30 min) + 1 hour buffer
         const estimatedMs = (numFights * MINUTES_PER_FIGHT + BUFFER_HOURS * 60) * 60 * 1000;
-        const hardCapMs = HARD_CAP_HOURS * 60 * 60 * 1000;
-        completionMs = Math.min(estimatedMs, hardCapMs);
+        softCompletionMs = Math.min(estimatedMs, hardCapMs);
       }
 
-      const completionTime = new Date(startTime.getTime() + completionMs);
+      const softCompletionTime = new Date(startTime.getTime() + softCompletionMs);
+      const hardCapTime = new Date(startTime.getTime() + hardCapMs);
 
-      if (now >= completionTime) {
+      if (now < softCompletionTime) continue;
+
+      // The soft estimate has elapsed. For tracker-backed events the LIVE tracker —
+      // not this duration guess — owns fight-by-fight completion. If fights are still
+      // pending, the estimate has simply under-counted (a long prelim→main gap, a
+      // card running long, or a spurious section start time) and force-completing now
+      // would abandon the live broadcast. UFC Freedom 250 (2026-06-15) was bulk-
+      // completed 2 of 7 main-card fights in because the estimate, anchored on a
+      // prelimStartTime with no prelim fights, expired mid-card. Defer to the tracker
+      // until the 10h hard cap; only then force everything closed.
+      if (trackerBacked && now < hardCapTime) {
+        const pending = await prisma.fight.count({
+          where: { eventId: event.id, fightStatus: { in: ['UPCOMING', 'LIVE'] } },
+        });
+        if (pending > 0) {
+          console.log(`[Lifecycle] Deferring completion of ${event.name}: soft estimate elapsed but ${pending} fight(s) still pending (tracker-backed, before ${HARD_CAP_HOURS}h cap)`);
+          continue;
+        }
+      }
+
+      {
         // Complete any remaining incomplete fights first
         const remainingUpdated = await prisma.fight.updateMany({
           where: {
