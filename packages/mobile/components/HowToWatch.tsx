@@ -264,5 +264,6 @@ export function useEventBroadcasts(eventId: string) {
     queryKey: ['event-broadcasts', eventId, region ?? 'auto'],
     queryFn: () => api.getEventBroadcasts(eventId, region ?? undefined),
     staleTime: 5 * 60 * 1000,
+    enabled: !!eventId,
   });
 }
