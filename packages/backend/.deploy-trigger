@@ -1,0 +1,12 @@
+# Deploy trigger
+#
+# The render.yaml buildFilter intentionally ignores packages/web/**, docs/**,
+# and **/*.md so content-only commits don't restart the backend. But editorial
+# blog posts ARE baked into the backend image at build time (Dockerfile COPYs
+# packages/web/src/content/posts, then `build` runs scripts/syncBlogPosts.js),
+# so a new/edited post only reaches GET /api/editorial (mobile Home + web) on
+# the next backend deploy.
+#
+# Bump the line below (date + reason) and push to main to force one redeploy.
+
+2026-06-15 - publish Justin Gaethje career tribute to /api/editorial (mobile Home)
