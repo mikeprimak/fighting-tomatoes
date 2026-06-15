@@ -179,7 +179,7 @@ export function WeekendEventsSection() {
           />
           <div className="flex flex-col gap-3">
             {lastNightUFC.map((event: any) => (
-              <EventDayCard key={event.id} event={event} />
+              <EventDayCard key={event.id} event={event} hideMeta />
             ))}
           </div>
         </section>
@@ -209,15 +209,16 @@ export function WeekendEventsSection() {
  * channel — shown right after the start time / LIVE pill, mirroring the mobile
  * home's EventRow.
  */
-function EventDayCard({ event }: { event: any }) {
+function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: boolean }) {
   const summary = aiSummary(event);
   const firstStart = firstFightStart(event);
   const live = isEventLiveNow(event);
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches the headline start time), then a
-  // whole-event one, then whatever's first — same precedence as mobile.
-  const { data: broadcastsData } = useEventBroadcasts(event.id);
+  // whole-event one, then whatever's first — same precedence as mobile. Skipped
+  // when the card hides its meta line (e.g. the "Event Last Night" card).
+  const { data: broadcastsData } = useEventBroadcasts(hideMeta ? '' : event.id);
   const channel = useMemo(() => {
     const bs = broadcastsData?.broadcasts ?? [];
     const entry =
@@ -227,9 +228,10 @@ function EventDayCard({ event }: { event: any }) {
     return entry?.channel?.name ?? null;
   }, [broadcastsData]);
 
-  // Meta line: start time (or LIVE pill) then the broadcast channel.
+  // Meta line: start time (or LIVE pill) then the broadcast channel. Hidden for
+  // past cards like "Event Last Night", where neither is meaningful.
   const timeText = !live && firstStart ? formatTime(firstStart) : null;
-  const metaText = [timeText, channel].filter(Boolean).join(' · ');
+  const metaText = hideMeta ? '' : [timeText, channel].filter(Boolean).join(' · ');
 
   return (
     <Link
