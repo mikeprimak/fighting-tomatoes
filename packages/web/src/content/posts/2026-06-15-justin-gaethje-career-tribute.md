@@ -25,7 +25,7 @@ It was a finish in keeping with the rest of Gaethje's career: high-volume, high-
 
 In the cage afterward, a bloodied Gaethje took the microphone from Joe Rogan and made a blunt claim: "I'm the most exciting man that's ever been in this cage."
 
-It is the kind of line that would read as bravado from most fighters. In Gaethje's case it is at least a defensible argument, and the data on Good Fights supports it. Across his career, his fights rank among the highest-rated bouts our users have ever logged, in wins and losses alike. Few fighters of his era have a record of producing entertaining fights this consistently.
+It is the kind of line that would read as bravado from most fighters. In Gaethje's case it is at least a defensible argument, and the data on Good Fights supports it. Among every fighter with a substantial number of rated bouts on the platform, no one has a higher average fight rating than Justin Gaethje. His fights average roughly a 9 out of 10 across his entire career, ahead of names like Conor McGregor, Max Holloway, Dustin Poirier, and Charles Oliveira, and that holds whether you weight by the number of votes or not. Few fighters of any era have produced entertaining fights this consistently, in wins and losses alike.
 
 ## What are Justin Gaethje's best fights?
 
@@ -40,6 +40,16 @@ The rest of his résumé rates almost as highly:
 - **Gaethje vs Charles Oliveira, UFC 274 (2022)** - **9.28**. A lightweight title fight that was chaotic from the opening bell.
 
 Several of those fights are losses. The Holloway fight, the first Poirier fight, the Alvarez fight, and the Oliveira fight are all bouts Gaethje did not win, and they remain among the highest-rated fights in our database. That pattern is the clearest case for his appeal: his fights tended to be worth watching regardless of the result, because his pressure-heavy, stand-and-trade style created action and risk in roughly equal measure. It produced the highlights, and it also produced the knockouts against him.
+
+## Who is Justin Gaethje, and why couldn't he stop having wars?
+
+Gaethje grew up in Safford, Arizona, a copper-mining town, the son of a miner and one half of a set of identical twins; his brother Marcus spent years working the mines. Before MMA he was a wrestler at the University of Northern Colorado, where in 2010 he became the program's first Division I All-American since 1970. Outside the cage he has generally been one of the division's more measured figures, less interested in trash talk than in the work, and unusually candid about the toll that work takes.
+
+That candor is what makes his career arc interesting. Gaethje arrived as a pure all-action fighter whose stated goal, in his own words, was to "create chaos." It made him appointment viewing, and it also got him hurt. After back-to-back knockout losses to Eddie Alvarez and Dustin Poirier in 2017 and 2018, both of them wars, he spoke openly about the damage and about needing to be smarter: to control the chaos rather than only cause it, and to pick his spots. For a stretch he did exactly that, reeling off a run of quick, clinical first-round knockouts of James Vick, Edson Barboza, and Donald Cerrone that showed a more disciplined fighter.
+
+Then he kept having wars anyway. The brawl with Michael Chandler in 2021 and, above all, the Holloway fight at UFC 300 made the point. Ahead on the scorecards in the final round against Holloway, with a decision win there for the taking, Gaethje accepted an invitation to stand and trade in the closing seconds and was knocked out at the buzzer. The discipline was real, but the instinct usually won. Given the choice between the safe path and the fight, he tended to take the fight, even when it cost him.
+
+That tension, between a man who understood the risks better than most and a fighter who could not bring himself to avoid them, is a large part of why fans trust him. He has spoken for years about wanting to walk away with his health intact, which frames a career spent refusing to coast as a series of deliberate choices rather than recklessness. Whether tonight's win proves to be his exit or not, it is the same fighter who showed up for all of it.
 
 ## The undisputed title that eluded him
 
