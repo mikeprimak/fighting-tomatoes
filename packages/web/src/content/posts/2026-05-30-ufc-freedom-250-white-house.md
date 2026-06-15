@@ -2,7 +2,7 @@
 title: "UFC Freedom 250 at the White House: Everything You Need to Know"
 slug: "ufc-freedom-250-white-house"
 date: "2026-05-30"
-updated: "2026-06-13"
+updated: "2026-06-15"
 author: "Good Fights"
 excerpt: "UFC Freedom 250 lands on the White House South Lawn on Sunday, June 14, 2026, with two title fights and one of the deepest cards of the year. Ilia Topuria defends the lightweight belt against Justin Gaethje, Alex Pereira chases history against Ciryl Gane, Sean O'Malley returns, and undefeated Josh Hokit meets Derrick Lewis. Date, free CBS prelims, how to watch on Paramount+, the full card, odds, and predictions. All in one place."
 tags: ["ufc-freedom-250", "ilia-topuria", "alex-pereira", "sean-omalley", "josh-hokit", "ufc", "preview"]
@@ -27,6 +27,8 @@ event:
 ---
 
 The UFC is putting a cage on the South Lawn of the White House, and they stacked the card to match the setting. **UFC Freedom 250 takes place on Sunday, June 14, 2026**, and it is one of the deepest lineups of the year: two title fights, a former two-division champion chasing a piece of history, a returning superstar, and one of the wildest undefeated heavyweights in the sport. This is the full guide to the whole event: when it is, how to watch (including a free prelim broadcast), the complete card, the odds, and our honest take on every fight that matters. *You can rate how hyped you are for the card, and every fight on it, on [Good Fights](https://goodfights.app).*
+
+> **Result:** Justin Gaethje upset Ilia Topuria by fourth-round TKO to win the undisputed lightweight title, handing the champion the first loss of his career. Full breakdown: [Justin Gaethje beats Ilia Topuria to become champion](/blog/justin-gaethje-career-tribute).
 
 ## When is UFC Freedom 250?
 
