@@ -1,5 +1,5 @@
 ---
-title: "Justin Gaethje Beats Ilia Topuria: The Most Exciting Fighter of His Era Is Finally Champion"
+title: "Justin Gaethje, Finally Champion: UFC Freedom 250"
 slug: "justin-gaethje-career-tribute"
 date: "2026-06-15"
 author: "Good Fights"
