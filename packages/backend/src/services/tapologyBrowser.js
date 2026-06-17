@@ -40,6 +40,35 @@ const CHALLENGE_RE = /just a moment|attention required|verifying you are human|p
 const DEFAULT_UA =
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+// ─────────────────────────── Residential proxy path ──────────────────────────
+// The CHEAP, durable alternative to Scrapfly: run the real-Chrome+stealth recipe
+// THROUGH a residential rotating proxy (e.g. DataImpulse ~$1-5/mo) so Cloudflare
+// sees a residential IP and the JS/Turnstile challenge auto-solves in-browser,
+// exactly as it does on a home IP — but from CI/VPS. Cloudflare binds
+// cf_clearance to IP+UA+TLS, so the WHOLE browser must run through the proxy
+// (you can't solve elsewhere and relay the cookie). See
+// project_tapology_scraping_provider_research.
+//
+// Set TAPOLOGY_PROXY to the proxy URL, credentials inline:
+//   TAPOLOGY_PROXY=http://USER:PASS@gw.dataimpulse.com:823
+// Chrome's --proxy-server flag CANNOT carry credentials, so we split them out
+// here and apply them per-page via page.authenticate(). Leave SCRAPFLY_KEY unset
+// when using the proxy (Scrapfly wrapping overrides goto and would bypass it).
+function parseTapologyProxy() {
+  const raw = process.env.TAPOLOGY_PROXY;
+  if (!raw) return null;
+  try {
+    const u = new URL(raw);
+    const auth = u.username ? { username: decodeURIComponent(u.username), password: decodeURIComponent(u.password || '') } : null;
+    // --proxy-server wants protocol+host+port only (no creds, no trailing slash)
+    const server = `${u.protocol}//${u.host}`;
+    return { server, auth };
+  } catch (_) {
+    // Bare host:port (no scheme/creds) — pass through as-is, assume http.
+    return { server: raw, auth: null };
+  }
+}
+
 // ───────────────────────────── Scrapfly path ─────────────────────────────
 // The real-Chrome+stealth recipe above defeats Cloudflare's challenge ONLY from
 // a residential IP. From a DATACENTER IP (GitHub Actions runners, the Hetzner
@@ -152,6 +181,97 @@ function wrapBrowserForScrapfly(browser) {
 }
 // ──────────────────────────── end Scrapfly path ──────────────────────────
 
+// ─────────────────────────────── CapSolver path ──────────────────────────────
+// Around 2026-06-17 Tapology escalated to an INTERACTIVE Cloudflare Turnstile
+// that no stealth browser auto-solves — verified headless AND headful, on
+// datacenter AND residential IPs (the checkbox always appears). The cheap
+// durable fix: a STICKY residential proxy (TAPOLOGY_PROXY w/ a DataImpulse
+// sessid) + CapSolver's AntiCloudflareTask. CapSolver solves the challenge
+// THROUGH the same sticky IP and returns a cf_clearance cookie + the UA it used.
+// cf_clearance is bound to IP+UA, so we set both on the page (the browser already
+// egresses via that sticky IP through the proxy) and reload → cleared.
+// Env-gated on CAPSOLVER_KEY; requires a sticky TAPOLOGY_PROXY.
+const CAPSOLVER_API = 'https://api.capsolver.com';
+const CAPSOLVER_TIMEOUT_MS = Number(process.env.CAPSOLVER_TIMEOUT_MS || 120000);
+
+function isCapsolverEnabled() {
+  return !!process.env.CAPSOLVER_KEY;
+}
+
+function capsolverPostJson(path, payload) {
+  const body = JSON.stringify(payload);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      `${CAPSOLVER_API}${path}`,
+      { method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } },
+      (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          const text = Buffer.concat(chunks).toString('utf8');
+          try {
+            resolve(JSON.parse(text));
+          } catch (_) {
+            reject(new Error(`CapSolver: non-JSON response (HTTP ${res.statusCode}): ${text.slice(0, 200)}`));
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.setTimeout(CAPSOLVER_TIMEOUT_MS, () => req.destroy(new Error('CapSolver request timed out')));
+    req.end(body);
+  });
+}
+
+// CapSolver wants the proxy as "host:port:user:pass" so it solves from the SAME
+// sticky residential IP the browser uses (cf_clearance is IP-bound).
+function capsolverProxyString() {
+  const p = parseTapologyProxy();
+  if (!p) throw new Error('CapSolver requires a sticky TAPOLOGY_PROXY (none set)');
+  const hostPort = p.server.replace(/^\w+:\/\//, ''); // strip scheme → host:port
+  return p.auth ? `${hostPort}:${p.auth.username}:${p.auth.password}` : hostPort;
+}
+
+/** Solve a Cloudflare challenge for `websiteURL`; resolves {cfClearance, userAgent}. */
+async function capsolverSolveCloudflare(websiteURL) {
+  const clientKey = process.env.CAPSOLVER_KEY;
+  const create = await capsolverPostJson('/createTask', {
+    clientKey,
+    task: { type: 'AntiCloudflareTask', websiteURL, proxy: capsolverProxyString(), userAgent: DEFAULT_UA },
+  });
+  if (create.errorId) throw new Error(`CapSolver createTask: ${create.errorCode || ''} ${create.errorDescription || ''}`.trim());
+  const taskId = create.taskId;
+  const deadline = Date.now() + CAPSOLVER_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    const res = await capsolverPostJson('/getTaskResult', { clientKey, taskId });
+    if (res.errorId) throw new Error(`CapSolver getTaskResult: ${res.errorCode || ''} ${res.errorDescription || ''}`.trim());
+    if (res.status === 'ready') {
+      const sol = res.solution || {};
+      const cf = sol.cookies && sol.cookies.cf_clearance;
+      if (!cf) throw new Error('CapSolver solution missing cf_clearance');
+      return { cfClearance: cf, userAgent: sol.userAgent || DEFAULT_UA };
+    }
+  }
+  throw new Error('CapSolver solve timed out');
+}
+
+/**
+ * Solve the Cloudflare challenge blocking the page's current URL, apply the
+ * cf_clearance cookie + the solver's UA, and reload. Returns true if the reload
+ * shows the real page. Never used unless CAPSOLVER_KEY is set.
+ */
+async function applyCapsolverClearance(page) {
+  const url = page.url();
+  const { cfClearance, userAgent } = await capsolverSolveCloudflare(url);
+  await page.setUserAgent(userAgent);
+  await page.setCookie({ name: 'cf_clearance', value: cfClearance, domain: '.tapology.com', path: '/', httpOnly: true, secure: true });
+  await page.reload({ waitUntil: 'networkidle2', timeout: 60000 }).catch(() => {});
+  const title = await page.title().catch(() => '');
+  return !!title && !CHALLENGE_RE.test(title);
+}
+// ───────────────────────────── end CapSolver path ────────────────────────────
+
 /**
  * Launch a Cloudflare-resistant browser. Prefers a real system Chrome:
  *   - PUPPETEER_EXECUTABLE_PATH (set on CI to /usr/bin/google-chrome-stable), else
@@ -166,8 +286,9 @@ async function launchTapologyBrowser(opts = {}) {
     '--window-size=1920,1080',
     ...(opts.args || []),
   ];
-  if (process.env.TAPOLOGY_PROXY) {
-    args.push(`--proxy-server=${process.env.TAPOLOGY_PROXY}`);
+  const proxy = parseTapologyProxy();
+  if (proxy) {
+    args.push(`--proxy-server=${proxy.server}`);
   }
 
   const base = { headless: true, ...opts, args };
@@ -202,6 +323,13 @@ async function launchTapologyBrowser(opts = {}) {
 /** A page pre-set with a realistic viewport + desktop Chrome UA. */
 async function newTapologyPage(browser) {
   const page = await browser.newPage();
+  // Authenticate to the residential proxy (DataImpulse etc.) before any goto.
+  // Skipped when Scrapfly is active (it serves HTML via setContent, no proxy)
+  // or when the proxy is credential-less.
+  if (!isScrapflyEnabled()) {
+    const proxy = parseTapologyProxy();
+    if (proxy && proxy.auth) await page.authenticate(proxy.auth);
+  }
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent(DEFAULT_UA);
   return page;
@@ -213,8 +341,9 @@ async function newTapologyPage(browser) {
  * Never throws — callers decide how to handle a non-clear (usually their own
  * fail-closed / 0-fight path).
  */
-async function waitForCloudflareClear(page, { timeoutMs = 45000, intervalMs = 2000 } = {}) {
+async function waitForCloudflareClear(page, { timeoutMs = 120000, intervalMs = 2000 } = {}) {
   const deadline = Date.now() + timeoutMs;
+  let triedCapsolver = false;
   while (Date.now() < deadline) {
     let title = '';
     try {
@@ -223,6 +352,16 @@ async function waitForCloudflareClear(page, { timeoutMs = 45000, intervalMs = 20
       // navigation/redirect in flight — keep polling
     }
     if (title && !CHALLENGE_RE.test(title)) return true;
+    // Tapology's interactive Turnstile never auto-solves — hand it to CapSolver
+    // once (it returns cf_clearance for our sticky proxy IP, applied + reloaded).
+    if (!triedCapsolver && isCapsolverEnabled() && title && CHALLENGE_RE.test(title)) {
+      triedCapsolver = true;
+      try {
+        if (await applyCapsolverClearance(page)) return true;
+      } catch (_) {
+        // solve failed — keep polling until the overall timeout, then fail closed
+      }
+    }
     await new Promise((r) => setTimeout(r, intervalMs));
   }
   return false;
@@ -277,6 +416,8 @@ module.exports = {
   fetchTapologyHtml,
   isScrapflyEnabled,
   scrapflyFetchHtml,
+  isCapsolverEnabled,
+  capsolverSolveCloudflare,
   CHALLENGE_RE,
   DEFAULT_UA,
 };
