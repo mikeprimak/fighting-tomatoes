@@ -261,8 +261,25 @@ async function capsolverSolveCloudflare(websiteURL) {
  * cf_clearance cookie + the solver's UA, and reload. Returns true if the reload
  * shows the real page. Never used unless CAPSOLVER_KEY is set.
  */
+/**
+ * Cloudflare's interstitial redirects to <url>?__cf_chl_rt_tk=… — that token is
+ * single-use, and CapSolver fails (error 1001) if handed the challenge URL
+ * instead of the clean target. Strip any __cf* params before solving.
+ */
+function stripCfChallengeParams(rawUrl) {
+  try {
+    const u = new URL(rawUrl);
+    for (const k of [...u.searchParams.keys()]) {
+      if (k.toLowerCase().startsWith('__cf')) u.searchParams.delete(k);
+    }
+    return u.toString();
+  } catch (_) {
+    return rawUrl;
+  }
+}
+
 async function applyCapsolverClearance(page) {
-  const url = page.url();
+  const url = stripCfChallengeParams(page.url());
   console.log(`[capsolver] solving challenge for ${url}`);
   const { cfClearance, userAgent } = await capsolverSolveCloudflare(url);
   console.log(`[capsolver] solved (cf_clearance ${cfClearance.length} chars, ua "${userAgent.slice(0, 32)}…"), applying + reloading`);
