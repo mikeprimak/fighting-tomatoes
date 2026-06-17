@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { FastifyPluginAsync } from 'fastify';
+import { getOrganicSessionsByMonth, isGaConfigured } from '../services/googleAnalytics';
+import { EmailService } from '../utils/email';
 
 
 const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
@@ -378,9 +380,43 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       `;
       const lastEvent = lastEventRows[0] ?? null;
 
+      // ============= WEB (organic search) =============
+      // The buyer-credible web-property metric: real organic-search visitors
+      // per month, pulled live from GA4. Bot/redirect junk is excluded by GA's
+      // channel grouping. Null until GA creds are configured on this host
+      // (GA_SERVICE_ACCOUNT_JSON + GA4_PROPERTY_ID) — never blocks the snapshot.
+      const organicByMonth = await getOrganicSessionsByMonth(12);
+      let web: {
+        configured: boolean;
+        thisMonthOrganicSessions: number | null;
+        thisMonthOrganicUsers: number | null;
+        prevMonthOrganicSessions: number | null;
+        organicMoMGrowth: number | null;
+        byMonth: { month: string; sessions: number; activeUsers: number; engagedSessions: number }[];
+      } = {
+        configured: isGaConfigured(),
+        thisMonthOrganicSessions: null,
+        thisMonthOrganicUsers: null,
+        prevMonthOrganicSessions: null,
+        organicMoMGrowth: null,
+        byMonth: [],
+      };
+      if (organicByMonth && organicByMonth.length) {
+        web.byMonth = organicByMonth;
+        const last = organicByMonth[organicByMonth.length - 1];
+        const prev = organicByMonth.length > 1 ? organicByMonth[organicByMonth.length - 2] : null;
+        web.thisMonthOrganicSessions = last.sessions;
+        web.thisMonthOrganicUsers = last.activeUsers;
+        web.prevMonthOrganicSessions = prev?.sessions ?? null;
+        if (prev && prev.sessions > 0) {
+          web.organicMoMGrowth = Number(((last.sessions - prev.sessions) / prev.sessions).toFixed(4));
+        }
+      }
+
       // ============= RESPONSE =============
       return reply.send({
         capturedAt: now.toISOString(),
+        web,
         audience: {
           totalUsers,
           activeUsers30d,
@@ -422,6 +458,37 @@ const adminStatsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         error: 'Failed to fetch acquisition snapshot',
         code: 'ACQUISITION_SNAPSHOT_ERROR',
       });
+    }
+  });
+
+  /**
+   * Send the monthly web-traffic report email now (test/on-demand).
+   * POST /api/admin/metrics/web-report/test  { email?: string }
+   */
+  fastify.post('/metrics/web-report/test', async (request, reply) => {
+    try {
+      if (!isGaConfigured()) {
+        return reply.status(400).send({
+          error: 'GA not configured on backend. Set GA_SERVICE_ACCOUNT_JSON + GA4_PROPERTY_ID.',
+          code: 'GA_NOT_CONFIGURED',
+        });
+      }
+      const rows = await getOrganicSessionsByMonth(12);
+      if (!rows || !rows.length) {
+        return reply.status(502).send({ error: 'No organic data returned from GA', code: 'GA_NO_DATA' });
+      }
+      const body = (request.body || {}) as { email?: string };
+      const to =
+        body.email ||
+        process.env.WEB_REPORT_EMAIL ||
+        (process.env.ADMIN_EMAILS || '').split(',')[0].trim() ||
+        'michaelsprimak@gmail.com';
+      await EmailService.sendWebTrafficReport(to, rows);
+      const last = rows[rows.length - 1];
+      return reply.send({ sent: true, to, thisMonth: last });
+    } catch (error) {
+      console.error('Error sending web-traffic report:', error);
+      return reply.status(500).send({ error: 'Failed to send report', code: 'WEB_REPORT_ERROR' });
     }
   });
 

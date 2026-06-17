@@ -2340,6 +2340,22 @@
 
       <div class="ops-section">
         <div class="ops-section-header">
+          <span class="ops-section-title">Web property (organic search)</span>
+          <button class="btn btn-secondary btn-sm" onclick="sendWebReportTest()">Send test email</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem;">
+          Real visitors who found goodfights.app via Google — the buyer-credible web number.
+          Bot/redirect junk is excluded automatically. This is the line to watch grow month over month.
+        </p>
+        <div id="acqWeb" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
           <span class="ops-section-title">Live events (last completed card)</span>
         </div>
         <div id="acqLiveEvents" class="acq-grid">
@@ -4716,7 +4732,7 @@
     }
 
     async function loadAcquisitionData() {
-      const containers = ['acqAudience', 'acqDataset', 'acqEngagement', 'acqLiveEvents', 'acqOperational'];
+      const containers = ['acqAudience', 'acqDataset', 'acqEngagement', 'acqWeb', 'acqLiveEvents', 'acqOperational'];
       containers.forEach(id => {
         document.getElementById(id).innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
       });
@@ -4766,6 +4782,24 @@
           acqCard('Avg followed fighters / active user', e.avgFollowedFightersPerActiveUser),
         ].join('');
 
+        // Web property (organic search)
+        const w = data.web || { configured: false, byMonth: [] };
+        if (!w.configured) {
+          document.getElementById('acqWeb').innerHTML =
+            acqMutedCard('Organic search visitors', 'GA not configured on backend — set GA_SERVICE_ACCOUNT_JSON + GA4_PROPERTY_ID on Render');
+        } else if (!w.byMonth || !w.byMonth.length) {
+          document.getElementById('acqWeb').innerHTML =
+            acqMutedCard('Organic search visitors', 'No organic-search data yet');
+        } else {
+          document.getElementById('acqWeb').innerHTML = [
+            acqCard('Organic visitors (this month)', fmtNum(w.thisMonthOrganicSessions), 'Sessions from Google search, current month so far'),
+            acqCard('Organic users (this month)', fmtNum(w.thisMonthOrganicUsers), 'Distinct people'),
+            acqCard('Organic visitors (last month)', w.prevMonthOrganicSessions === null ? '—' : fmtNum(w.prevMonthOrganicSessions)),
+            acqCard('Month-over-month', w.organicMoMGrowth === null ? '—' : fmtPct(w.organicMoMGrowth), 'Growth vs last month'),
+            acqCard('Months of history', fmtNum(w.byMonth.length), w.byMonth[0] ? 'Since ' + w.byMonth[0].month : ''),
+          ].join('');
+        }
+
         // Live events
         const le = data.liveEvents;
         document.getElementById('acqLiveEvents').innerHTML = [
@@ -4793,6 +4827,18 @@
         containers.forEach(id => {
           document.getElementById(id).innerHTML = errMsg;
         });
+      }
+    }
+
+    async function sendWebReportTest() {
+      if (!confirm('Send the web-traffic report email now?')) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/metrics/web-report/test`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        alert(`Sent to ${data.to}\n${data.thisMonth.sessions} organic visitors (${data.thisMonth.month}).`);
+      } catch (err) {
+        alert('Failed to send: ' + err.message);
       }
     }
 
