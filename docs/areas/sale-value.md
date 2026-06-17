@@ -39,6 +39,15 @@ When Mike says "let's talk about building the sale value", "sale session", or
 
 ## Posture
 
+- **This doc is flexible.** It is not gospel. Every framing here can be
+  rewritten when Mike's read of the situation changes — don't cite the doc to
+  shut down a new idea (Mike, 2026-06-17).
+- **Web traffic matters.** Website visitors are a real, separately-sellable
+  asset (content/traffic sale), not just a marketing signal. Don't dismiss the
+  web property in favor of the app/data story — value both (Mike, 2026-06-17).
+- **Any opportunity to improve value is important.** Treat every lever that
+  raises the asset's worth — even small or web-side ones — as worth taking
+  seriously, not filtered out by stage (Mike, 2026-06-17).
 - **Honesty over optimism.** 200 users is small. Don't dress it up.
 - **Shape decisions now, gate execution.** Most items here unlock past 25K
   or 100K MAU. Build the surface; defer the productization.
@@ -316,6 +325,9 @@ These stay open across sessions. The point is to monitor, not decide.
 
 ## Changelog
 
+- **2026-06-17** — Added three guiding principles to Posture (Mike): doc is
+  flexible/not gospel, web traffic is a real separately-sellable asset, any
+  value-improving opportunity matters regardless of stage.
 - **2026-06-08** — **Allegiance-over-prediction pivot.** Reframed asset #4 from
   prediction calibration to an allegiance graph; resolved the "re-introduce
   predictions" open question (allegiance, not prediction); added the "Allegiance
