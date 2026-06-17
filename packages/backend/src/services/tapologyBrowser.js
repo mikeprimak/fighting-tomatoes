@@ -317,7 +317,24 @@ async function launchTapologyBrowser(opts = {}) {
   // When SCRAPFLY_KEY is set, route tapology.com navigations through Scrapfly.
   // The launched browser is then only a local DOM host for setContent — it
   // never touches Cloudflare, so even bundled Chromium would do here.
-  return isScrapflyEnabled() ? wrapBrowserForScrapfly(browser) : browser;
+  if (isScrapflyEnabled()) return wrapBrowserForScrapfly(browser);
+  // Otherwise, if TAPOLOGY_PROXY carries credentials, authenticate EVERY page —
+  // --proxy-server can't carry creds, and scrapers call browser.newPage()
+  // directly (not just newTapologyPage), so the auth must live at this level or
+  // navigations fail with net::ERR_INVALID_AUTH_CREDENTIALS.
+  if (proxy && proxy.auth) return wrapBrowserForProxy(browser, proxy.auth);
+  return browser;
+}
+
+/** Wrap a browser so every newPage() authenticates to the residential proxy. */
+function wrapBrowserForProxy(browser, auth) {
+  const origNewPage = browser.newPage.bind(browser);
+  browser.newPage = async (...a) => {
+    const page = await origNewPage(...a);
+    await page.authenticate(auth);
+    return page;
+  };
+  return browser;
 }
 
 /** A page pre-set with a realistic viewport + desktop Chrome UA. */
