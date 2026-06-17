@@ -263,12 +263,16 @@ async function capsolverSolveCloudflare(websiteURL) {
  */
 async function applyCapsolverClearance(page) {
   const url = page.url();
+  console.log(`[capsolver] solving challenge for ${url}`);
   const { cfClearance, userAgent } = await capsolverSolveCloudflare(url);
+  console.log(`[capsolver] solved (cf_clearance ${cfClearance.length} chars, ua "${userAgent.slice(0, 32)}…"), applying + reloading`);
   await page.setUserAgent(userAgent);
   await page.setCookie({ name: 'cf_clearance', value: cfClearance, domain: '.tapology.com', path: '/', httpOnly: true, secure: true });
-  await page.reload({ waitUntil: 'networkidle2', timeout: 60000 }).catch(() => {});
+  await page.reload({ waitUntil: 'networkidle2', timeout: 60000 }).catch((e) => console.log(`[capsolver] reload error: ${e.message}`));
   const title = await page.title().catch(() => '');
-  return !!title && !CHALLENGE_RE.test(title);
+  const cleared = !!title && !CHALLENGE_RE.test(title);
+  console.log(`[capsolver] post-reload title="${title}" cleared=${cleared}`);
+  return cleared;
 }
 // ───────────────────────────── end CapSolver path ────────────────────────────
 
@@ -375,8 +379,9 @@ async function waitForCloudflareClear(page, { timeoutMs = 120000, intervalMs = 2
       triedCapsolver = true;
       try {
         if (await applyCapsolverClearance(page)) return true;
-      } catch (_) {
-        // solve failed — keep polling until the overall timeout, then fail closed
+      } catch (e) {
+        console.log(`[capsolver] solve failed: ${e.message}`);
+        // keep polling until the overall timeout, then fail closed
       }
     }
     await new Promise((r) => setTimeout(r, intervalMs));
