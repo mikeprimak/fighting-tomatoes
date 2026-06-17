@@ -2384,6 +2384,17 @@
     <div class="ops-container">
       <div class="ops-section">
         <div class="ops-section-header">
+          <span class="ops-section-title">Drafts — review before publishing</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadDrafts()">Refresh</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 1rem;">
+          Unpublished posts (<code>draft: true</code>). They&rsquo;re hidden from the live site and the app &mdash; this is the only place to read them. Click <strong>Preview</strong> to read the full article. To publish, flip <code>draft: false</code> in the post file and push.
+        </p>
+        <div id="blogDraftsList"></div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
           <span class="ops-section-title">Blog Highlights — what's pinned to the top</span>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <button class="btn btn-secondary btn-sm" onclick="loadBlogHighlights()">Refresh</button>
@@ -2405,6 +2416,17 @@
         </div>
         <div id="blogAllPostsList"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Draft Preview Modal -->
+  <div id="draftPreviewModal" class="modal-overlay" onclick="closeModal(event, 'draftPreviewModal')">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width: 820px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="draftPreviewTitle">Draft preview</h2>
+        <button class="modal-close" onclick="document.getElementById('draftPreviewModal').classList.remove('active')">&times;</button>
+      </div>
+      <div id="draftPreviewBody" style="max-height: 72vh; overflow-y: auto; background:#fff; color:#111; padding: 20px 24px; border-radius: 8px; line-height: 1.65;"></div>
     </div>
   </div>
 
@@ -4578,7 +4600,59 @@
       } else if (tabName === 'acquisition') {
         loadAcquisitionData();
       } else if (tabName === 'blog') {
+        loadDrafts();
         loadBlogHighlights();
+      }
+    }
+
+    // ============================================
+    // BLOG DRAFTS (review before publishing)
+    // ============================================
+    async function loadDrafts() {
+      const el = document.getElementById('blogDraftsList');
+      el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/drafts`);
+        const data = await res.json();
+        const drafts = data.drafts || [];
+        if (drafts.length === 0) {
+          el.innerHTML = `<div class="empty-state">No drafts right now. Unpublished posts appear here.</div>`;
+          return;
+        }
+        el.innerHTML = drafts.map(d => blogRow(`
+          <span style="flex:1;min-width:0;">
+            <span style="font-weight:600;">${escapeHtml(d.title)}</span>
+            <span style="display:block;font-size:0.72rem;color:var(--text-muted);">${escapeHtml(d.slug)}</span>
+          </span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${fmtDate(d.date)}</span>
+          <button class="btn btn-primary btn-sm" onclick="previewDraft('${d.slug.replace(/'/g, "\\'")}')">Preview</button>
+        `)).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty-state">Failed to load drafts: ${e.message}</div>`;
+      }
+    }
+
+    async function previewDraft(slug) {
+      const modal = document.getElementById('draftPreviewModal');
+      const titleEl = document.getElementById('draftPreviewTitle');
+      const bodyEl = document.getElementById('draftPreviewBody');
+      titleEl.textContent = 'Loading…';
+      bodyEl.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      modal.classList.add('active');
+      try {
+        const res = await authFetch(`${API_BASE}/admin/drafts/${encodeURIComponent(slug)}`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const { post } = await res.json();
+        titleEl.textContent = post.title || slug;
+        // Root-relative assets/links live on the web host, not the backend.
+        // Point them at the live site so banners/images resolve in the preview.
+        const html = (post.html || '').replace(/(src|href)="\//g, '$1="https://goodfights.app/');
+        const hero = post.image
+          ? `<img src="https://goodfights.app${escapeHtml(post.image)}" alt="" style="width:100%;border-radius:8px;margin-bottom:16px;" onerror="this.style.display='none'">`
+          : '';
+        bodyEl.innerHTML = hero + html;
+      } catch (e) {
+        bodyEl.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Failed to load draft: ${e.message}</div>`;
       }
     }
 
