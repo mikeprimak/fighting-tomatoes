@@ -1,0 +1,51 @@
+name: UFC 329 Odds Update
+
+# Daily refresh of the McGregor vs Holloway 2 main-event odds graph.
+# Fetches current consensus odds (The Odds API, free tier), appends one
+# snapshot per day, regenerates the SVG graph, rewrites the article's
+# odds-snapshot block + `updated:` date, then commits and pushes to main
+# (Vercel auto-deploys packages/web). Self-no-ops after the event.
+#
+# Required secret: ODDS_API_KEY (https://the-odds-api.com, free tier).
+# Without it, the job is a harmless no-op (it never invents data).
+
+on:
+  schedule:
+    # Daily at 17:00 UTC (US late morning, before most line movement).
+    - cron: "0 17 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: ufc-329-odds
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Update odds + regenerate graph
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        working-directory: packages/web
+        run: node scripts/odds/update-odds.mjs
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "good-fights-bot"
+          git config user.email "bot@goodfights.app"
+          git add packages/web/src/content/odds packages/web/public/blog packages/web/src/content/posts
+          if git diff --cached --quiet; then
+            echo "No odds changes today."
+            exit 0
+          fi
+          git commit -m "chore(odds): daily UFC 329 main-event odds update"
+          git push origin HEAD:main

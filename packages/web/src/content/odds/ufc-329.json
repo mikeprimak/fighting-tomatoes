@@ -1,0 +1,41 @@
+{
+  "event": "UFC 329",
+  "eventSlug": "ufc-329",
+  "postSlug": "ufc-329-full-card-odds-predictions",
+  "eventDate": "2026-07-11",
+  "mainEvent": {
+    "fighterA": {
+      "name": "Conor McGregor",
+      "shortName": "McGregor",
+      "key": "mcgregor",
+      "color": "#f97316"
+    },
+    "fighterB": {
+      "name": "Max Holloway",
+      "shortName": "Holloway",
+      "key": "holloway",
+      "color": "#60a5fa"
+    }
+  },
+  "note": "American moneyline per fighter, one representative snapshot per date. Early points are real reported sportsbook lines; daily points come from The Odds API consensus. The graph plots implied win probability. Source of truth for the daily updater and the odds graph SVG.",
+  "snapshots": [
+    {
+      "date": "2026-05-16",
+      "mcgregor": 250,
+      "holloway": -310,
+      "source": "DraftKings opening line"
+    },
+    {
+      "date": "2026-05-20",
+      "mcgregor": 245,
+      "holloway": -270,
+      "source": "Kalshi"
+    },
+    {
+      "date": "2026-06-17",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 230,
+      "holloway": -289
+    }
+  ]
+}
