@@ -232,8 +232,26 @@ function capsolverProxyString() {
   return p.auth ? `${hostPort}:${p.auth.username}:${p.auth.password}` : hostPort;
 }
 
-/** Solve a Cloudflare challenge for `websiteURL`; resolves {cfClearance, userAgent}. */
-async function capsolverSolveCloudflare(websiteURL) {
+/**
+ * Solve a Cloudflare challenge for `websiteURL`; resolves {cfClearance, userAgent}.
+ * Retries on transient failure (CapSolver 1001 / proxy hiccups) — DataImpulse's
+ * residential pool is ~93% CF-success, so a couple retries are expected.
+ */
+async function capsolverSolveCloudflare(websiteURL, attempts = 3) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    try {
+      return await capsolverSolveCloudflareOnce(websiteURL);
+    } catch (e) {
+      lastErr = e;
+      console.log(`[capsolver] solve attempt ${i}/${attempts} failed: ${e.message}`);
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+  throw lastErr;
+}
+
+async function capsolverSolveCloudflareOnce(websiteURL) {
   const clientKey = process.env.CAPSOLVER_KEY;
   const create = await capsolverPostJson('/createTask', {
     clientKey,
