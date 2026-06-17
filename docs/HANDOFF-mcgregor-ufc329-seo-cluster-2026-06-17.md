@@ -1,9 +1,37 @@
 # HANDOFF: McGregor / UFC 329 SEO Content Cluster Expansion
 
 **Created:** 2026-06-17
-**Status:** 3 new blog posts written as `draft: true`, **not committed, not published, not fact-checked**.
+**Status:** 3 new blog posts written as `draft: true`, **now committed (pushed to main, `c816bf56`)**, still **not published (`draft: true`), not fully fact-checked by Mike.**
 **Owner of next step:** Mike fact-checks, then a session flips drafts live + does post-publish SEO.
 **Playbook this follows:** `docs/playbooks/seo-fight-preview-cluster.md` (read it first).
+
+---
+
+## UPDATE 2026-06-17 evening - paused here, resume next session
+
+Session 3 added an automated odds system + a draft-reading tool, then **stopped at
+Mike's request** (rest to be done in a later session). Full detail: `docs/daily/2026-06-17.md`
+(Session 3) and memory `project_odds_graph_system`.
+
+**Shipped this session (all pushed to main):**
+- **Daily odds graph** on the full-card post (`ufc-329-full-card-odds-predictions`):
+  main-event implied-win-probability line chart, file-based history
+  (`packages/web/src/content/odds/ufc-329.json`), SVG generator + daily updater
+  (`packages/web/scripts/odds/`), GH Action `.github/workflows/ufc-329-odds.yml`
+  (daily 17:00 UTC). **Validated in CI** - secret `ODDS_API_KEY` works, live line
+  today = McGregor +230 / Holloway -289. Self-no-ops after July 11.
+- **Admin draft viewer**: admin Blog tab "Drafts" section + preview modal
+  (`/admin/drafts` endpoints). Read drafts here once the backend redeploy lands.
+- Reworded the full-card post so no hardcoded main-event odds contradict the live chart.
+
+**Resume from here (in order):**
+1. **Fact-check all 3 drafts** (admin Drafts tab, or dev server). Honesty-first.
+2. **Eyeball `public/blog/ufc-329-betting-odds.png`** - static banner may still show
+   the old "-310 to -550" range in its pixels (alt text already neutralized).
+3. Then continue with the original NEXT STEPS below (publish, index, etc.).
+   Note: graph only shows on the LIVE site once the full-card post is `draft: false`.
+
+---
 
 ---
 
