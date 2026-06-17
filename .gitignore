@@ -139,6 +139,7 @@ nul
 db-backups/
 packages/mobile/fcm-service-account.json
 packages/mobile/fight-app-ba5cd-*.json
+packages/backend/ga-service-account.json
 
 # Legacy migration sensitive files
 db-creds.txt
