@@ -96,6 +96,12 @@ button:disabled,
   color: var(--color-primary);
   text-decoration: underline;
 }
+/* Embedded fight cards (hydrated into .gf-fight-card placeholders) bring their
+   own styling — opt their link out of the blog-content anchor underline/color. */
+.blog-content .gf-fight-card a {
+  color: inherit;
+  text-decoration: none;
+}
 .blog-content strong {
   font-weight: 700;
 }
