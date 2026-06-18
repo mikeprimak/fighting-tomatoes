@@ -365,12 +365,33 @@ async function launchTapologyBrowser(opts = {}) {
   return browser;
 }
 
-/** Wrap a browser so every newPage() authenticates to the residential proxy. */
+/**
+ * Wrap a browser so every newPage() authenticates to the residential proxy and
+ * retries page.goto on transient proxy/network errors — residential exits
+ * occasionally time out mid-connect (seen as net::ERR_TIMED_OUT on the initial
+ * load), which would otherwise fail the whole daily scrape.
+ */
 function wrapBrowserForProxy(browser, auth) {
   const origNewPage = browser.newPage.bind(browser);
   browser.newPage = async (...a) => {
     const page = await origNewPage(...a);
     await page.authenticate(auth);
+    const origGoto = page.goto.bind(page);
+    page.goto = async (url, opts = {}) => {
+      let lastErr;
+      for (let i = 1; i <= 3; i++) {
+        try {
+          return await origGoto(url, opts);
+        } catch (e) {
+          // Retry only transient proxy/network failures, not real navigation errors.
+          if (!/ERR_TIMED_OUT|ERR_CONNECTION|ERR_PROXY|ERR_TUNNEL|ERR_NETWORK|Navigation timeout/i.test(e.message)) throw e;
+          lastErr = e;
+          console.log(`[proxy] goto failed (${e.message.split(' at ')[0]}), retry ${i}/3`);
+          await new Promise((r) => setTimeout(r, 3000));
+        }
+      }
+      throw lastErr;
+    };
     return page;
   };
   return browser;
