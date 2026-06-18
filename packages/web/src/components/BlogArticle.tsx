@@ -5,6 +5,7 @@ import { DEFAULT_POST_IMAGE } from '@/lib/posts';
 import { SITE_URL } from '@/lib/site';
 import { ShareButtons } from '@/components/ShareButtons';
 import { TweetEmbeds } from '@/components/TweetEmbeds';
+import { FacebookEmbeds } from '@/components/FacebookEmbeds';
 import { BlogFightCards } from '@/components/BlogFightCards';
 
 function formatDate(date: string): string {
@@ -68,6 +69,7 @@ export function BlogArticle({ post }: { post: Post }) {
 
       <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
       <TweetEmbeds />
+      <FacebookEmbeds />
       <BlogFightCards />
 
       <ShareButtons url={`${SITE_URL}/blog/${post.slug}`} title={post.title} />
