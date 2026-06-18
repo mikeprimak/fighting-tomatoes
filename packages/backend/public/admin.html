@@ -4632,28 +4632,13 @@
       }
     }
 
-    async function previewDraft(slug) {
-      const modal = document.getElementById('draftPreviewModal');
-      const titleEl = document.getElementById('draftPreviewTitle');
-      const bodyEl = document.getElementById('draftPreviewBody');
-      titleEl.textContent = 'Loading…';
-      bodyEl.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
-      modal.classList.add('active');
-      try {
-        const res = await authFetch(`${API_BASE}/admin/drafts/${encodeURIComponent(slug)}`);
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const { post } = await res.json();
-        titleEl.textContent = post.title || slug;
-        // Root-relative assets/links live on the web host, not the backend.
-        // Point them at the live site so banners/images resolve in the preview.
-        const html = (post.html || '').replace(/(src|href)="\//g, '$1="https://goodfights.app/');
-        const hero = post.image
-          ? `<img src="https://goodfights.app${escapeHtml(post.image)}" alt="" style="width:100%;border-radius:8px;margin-bottom:16px;" onerror="this.style.display='none'">`
-          : '';
-        bodyEl.innerHTML = hero + html;
-      } catch (e) {
-        bodyEl.innerHTML = `<div class="empty-state" style="color:#b91c1c;">Failed to load draft: ${e.message}</div>`;
-      }
+    // Open the draft in a new tab, rendered by the REAL web app (same theme,
+    // real React — so embedded fight cards and other components hydrate exactly
+    // like the live article). The /blog-preview route renders drafts and is
+    // noindexed. NOTE: it shows the *deployed* web app, so push to main (Vercel
+    // auto-deploys) before previewing brand-new edits.
+    function previewDraft(slug) {
+      window.open(`https://goodfights.app/blog-preview/${encodeURIComponent(slug)}`, '_blank', 'noopener');
     }
 
     // ============================================

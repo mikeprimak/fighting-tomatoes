@@ -1,21 +1,11 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { getPost, getPostSlugs, DEFAULT_POST_IMAGE } from '@/lib/posts';
 import { SITE_URL } from '@/lib/site';
-import { ShareButtons } from '@/components/ShareButtons';
-import { TweetEmbeds } from '@/components/TweetEmbeds';
+import { BlogArticle } from '@/components/BlogArticle';
 
 export function generateStaticParams() {
   return getPostSlugs().map((slug) => ({ slug }));
-}
-
-function formatDate(date: string): string {
-  if (!date) return '';
-  const d = new Date(date);
-  if (isNaN(d.getTime())) return date;
-  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 }
 
 export async function generateMetadata({
@@ -137,7 +127,7 @@ export default async function BlogPostPage({
   ];
 
   return (
-    <article className="mx-auto max-w-2xl pb-8">
+    <>
       {jsonLd.map((schema, i) => (
         <script
           key={i}
@@ -145,65 +135,7 @@ export default async function BlogPostPage({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
         />
       ))}
-      <Link
-        href="/blog"
-        className="mb-6 inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
-      >
-        <ArrowLeft size={16} />
-        All posts
-      </Link>
-
-      {post.draft && (
-        <div className="mb-4 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm text-primary">
-          This post is a draft and is hidden in production.
-        </div>
-      )}
-
-      <h1 className="mb-2 text-3xl font-bold">{post.title}</h1>
-      <div className="mb-5 text-sm text-text-secondary">
-        Published: {formatDate(post.date)}
-        {post.updated && post.updated !== post.date ? ` · Updated: ${formatDate(post.updated)}` : ''} · {post.author}
-      </div>
-
-      {post.imageFit === 'contain' ? (
-        <div className="mb-8 flex w-full justify-center overflow-hidden rounded-xl bg-background-secondary">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image || DEFAULT_POST_IMAGE}
-            alt=""
-            aria-hidden="true"
-            className="max-h-[70vh] w-auto object-contain"
-          />
-        </div>
-      ) : (
-        <div className="mb-8 aspect-[16/9] w-full overflow-hidden rounded-xl bg-background-secondary">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={post.image || DEFAULT_POST_IMAGE}
-            alt=""
-            aria-hidden="true"
-            className="h-full w-full object-cover"
-          />
-        </div>
-      )}
-
-      <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.html }} />
-      <TweetEmbeds />
-
-      <ShareButtons url={`${SITE_URL}/blog/${post.slug}`} title={post.title} />
-
-      {post.tags.length > 0 && (
-        <div className="mt-10 flex flex-wrap gap-2 border-t border-border pt-6">
-          {post.tags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-full bg-background-secondary px-2.5 py-1 text-xs text-text-secondary"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-      )}
-    </article>
+      <BlogArticle post={post} />
+    </>
   );
 }
