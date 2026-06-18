@@ -22,6 +22,14 @@ Automated data collection for fight cards across 14+ promotions. Mix of direct s
 | MVP | Manual | — | — |
 | RAF | Manual | — | — |
 
+## Tapology Cloudflare bypass (`services/tapologyBrowser.js`)
+Shared launcher for every `scrape*Tapology.js` + the live tracker + backfill. Tapology sits behind Cloudflare; the defense has escalated over time and so has this module (single source of truth for the launch recipe). Three env-gated layers, picked in order:
+1. **`SCRAPFLY_KEY`** — Scrapfly Web Unlocker (solves Turnstile server-side). Capped/expensive on free tier; **abandoned for the daily MVP/Gamebred/Dirty Boxing scrapers 2026-06-17.**
+2. **`TAPOLOGY_PROXY` + `CAPSOLVER_KEY`** (current path for the 3 daily orgs) — real stealth Chrome through a **DataImpulse residential sticky proxy**; on the interactive Turnstile, **CapSolver** `AntiCloudflareTask` solves through the *same* sticky IP and returns `cf_clearance` + UA, applied + reloaded. **Leave `SCRAPFLY_KEY` unset or it overrides this path.**
+3. Neither set → plain stealth Chrome (clears only from a residential dev box).
+
+Gotchas (all load-bearing — see `docs/daily/2026-06-17.md`): proxy auth wraps `browser.newPage` (scrapers call it directly; `--proxy-server` can't carry creds); hand CapSolver the **clean** url (strip `__cf*` challenge params or it errors 1001); retry the solve (transient 1001s) and `page.goto` (transient `ERR_TIMED_OUT`); DataImpulse **port-based** sticky `10000-19999` + `__cr.us` (NOT `;sessid` — breaks CapSolver's parser); pin a resolved gateway IP (CapSolver rejects dynamic DNS). Smoke test: `src/scripts/testTapologyProxy.ts`.
+
 ## Live Trackers
 - **UFC Live Tracker:** `services/ufcLiveParser.ts` — dispatched by lifecycle
 - **Tapology Live Tracker:** `scripts/runTapologyLiveTracker.ts` — generic, covers multiple promotions
