@@ -102,7 +102,10 @@ function extractFaqs(markdown: string): Faq[] {
 
 const includeDrafts = process.env.NODE_ENV !== 'production';
 
-function parseFile(filename: string): { meta: PostMeta; content: string } | null {
+function parseFile(
+  filename: string,
+  forceIncludeDrafts = false,
+): { meta: PostMeta; content: string } | null {
   const fullPath = path.join(POSTS_DIR, filename);
   const raw = fs.readFileSync(fullPath, 'utf8');
   const { data, content } = matter(raw);
@@ -124,7 +127,7 @@ function parseFile(filename: string): { meta: PostMeta; content: string } | null
     hideFromHome: data.hideFromHome === true,
   };
 
-  if (meta.draft && !includeDrafts) return null;
+  if (meta.draft && !includeDrafts && !forceIncludeDrafts) return null;
   return { meta, content };
 }
 
@@ -135,7 +138,7 @@ function listFiles(): string[] {
 
 export function getAllPosts(): PostMeta[] {
   return listFiles()
-    .map(parseFile)
+    .map((f) => parseFile(f))
     .filter((p): p is { meta: PostMeta; content: string } => p !== null)
     .map((p) => p.meta)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -145,9 +148,9 @@ export function getPostSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }
 
-export function getPost(slug: string): Post | null {
+export function getPost(slug: string, opts: { includeDrafts?: boolean } = {}): Post | null {
   for (const filename of listFiles()) {
-    const parsed = parseFile(filename);
+    const parsed = parseFile(filename, opts.includeDrafts === true);
     if (parsed && parsed.meta.slug === slug) {
       return {
         ...parsed.meta,
