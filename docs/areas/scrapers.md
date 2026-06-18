@@ -30,6 +30,14 @@ Shared launcher for every `scrape*Tapology.js` + the live tracker + backfill. Ta
 
 Gotchas (all load-bearing — see `docs/daily/2026-06-17.md`): proxy auth wraps `browser.newPage` (scrapers call it directly; `--proxy-server` can't carry creds); hand CapSolver the **clean** url (strip `__cf*` challenge params or it errors 1001); retry the solve (transient 1001s) and `page.goto` (transient `ERR_TIMED_OUT`); DataImpulse **port-based** sticky `10000-19999` + `__cr.us` (NOT `;sessid` — breaks CapSolver's parser); pin a resolved gateway IP (CapSolver rejects dynamic DNS). Smoke test: `src/scripts/testTapologyProxy.ts`.
 
+**Config locations:** `TAPOLOGY_PROXY` + `CAPSOLVER_KEY` are GitHub repo secrets (set 2026-06-17, used by the mvp/gamebred/dirty-boxing workflow envs in place of `SCRAPFLY_KEY`). Secret format: `TAPOLOGY_PROXY=http://LOGIN__cr.us:PASS@64.34.81.65:10001`. DataImpulse login `dd3a19aaaaf426007da5`.
+
+**Still on the dead Scrapfly path (migrate when needed):**
+- **Other Tapology daily workflows** — `karate-combat`, `goldstar`, `goldenboy-tapology`, `toprank-tapology`, `zuffa-boxing`, `tapology-backfill` still inject `SCRAPFLY_KEY`. Fix each = same 1-line workflow-env swap (`SCRAPFLY_KEY` → `TAPOLOGY_PROXY` + `CAPSOLVER_KEY`); the secrets already exist.
+- **VPS live trackers** — Tapology live tracking runs on the Hetzner VPS (`/opt/scraper-service/.../.env`), NOT GitHub Actions. Add `TAPOLOGY_PROXY` + `CAPSOLVER_KEY` there and unset `SCRAPFLY_KEY`, then `vps-update.sh` + restart. ⚠️ Live polling re-challenges far more often than a daily run → watch CapSolver spend (and consider a longer cf_clearance reuse window).
+
+**Fragility:** the pinned gateway IP `64.34.81.65` is one of 3 `gw.dataimpulse.com` DNS A-records. If scrapers start timing out at the proxy, re-resolve `gw.dataimpulse.com` and update the `TAPOLOGY_PROXY` secret with a live IP.
+
 ## Live Trackers
 - **UFC Live Tracker:** `services/ufcLiveParser.ts` — dispatched by lifecycle
 - **Tapology Live Tracker:** `scripts/runTapologyLiveTracker.ts` — generic, covers multiple promotions
