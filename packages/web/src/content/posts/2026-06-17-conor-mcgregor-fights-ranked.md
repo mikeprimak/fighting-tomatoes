@@ -12,7 +12,7 @@ featured: false
 
 Conor McGregor is one of the most entertaining fighters combat sports has produced, and he has headlined some of its biggest events. Ahead of his return against Max Holloway at [UFC 329 on July 11](/blog/mcgregor-holloway-2-ufc-329), we ranked his whole career.
 
-The order is set by Good Fights users, who rate every bout on a ten-point scale. It measures how good a fight was to watch, not who won or how big the night was, so a five-round war can outrank a quick knockout and a loss can outrank a win. We count up from his lowest-rated fight to his highest. You do not need to know his catalogue to follow along: each entry explains who he was fighting, what was at stake and why it was entertaining.
+The order is set by Good Fights users, who rate every bout on a ten-point scale. It measures how good a fight was to watch, not who won or how big the night was, so a five-round war can outrank a quick knockout and a loss can outrank a win. We count up from his lowest-rated fight to his highest. You do not need to know his catalogue to follow along: each entry explains who he was fighting, what was at stake and what the fans thought.
 
 ## 15. Conor McGregor vs Floyd Mayweather (2017)
 
@@ -78,6 +78,10 @@ Two details show how deliberate it was. Footage later emerged of McGregor **dril
 
 <div class="gf-fight-card" data-fight-id="f2a42b6c-b111-4470-b827-6c4ff0fa51b8" data-rank="8"></div>
 
+<div style="display:flex;justify-content:center;margin:1.5rem 0;overflow-x:auto;">
+<iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fphoto.php%3Ffbid%3D1410397972361831%26set%3Da.272924977533699%26type%3D3&show_text=false&width=500" width="500" height="498" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+</div>
+
 McGregor's **UFC debut**, and he arrived already a draw. He had held **two titles at once, featherweight and lightweight, in the London-based Cage Warriors promotion**, and built a devoted Irish following on charisma and one-punch knockouts. The story goes that Dana White, on a trip to Ireland, was so overwhelmed by people urging him to sign McGregor that he did. The fight was a tidy preview of the style to come: he drew Marcus Brimage in, baited the exchange, and landed the **pull counter** that became his trademark, where he invites the opponent to throw, slips just clear, then strikes the opening they leave behind. He finished it **about a minute into the first round** and took a Knockout of the Night bonus.
 
 ## 7. Conor McGregor vs Dustin Poirier 3 (2021)
@@ -100,6 +104,10 @@ It was the **first time McGregor faced a high-level wrestler, and for a while it
 ## 5. Conor McGregor vs Eddie Alvarez (2016)
 
 <div class="gf-fight-card" data-fight-id="0eaa311b-3c71-487e-87d1-2740e3477a95" data-rank="5"></div>
+
+<div style="display:flex;justify-content:center;margin:1.5rem 0;overflow-x:auto;">
+<iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fphoto.php%3Ffbid%3D1420094521392176%26set%3Da.272924977533699%26type%3D3&show_text=false&width=500" width="500" height="333" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+</div>
 
 At UFC 205, the promotion's **first event at Madison Square Garden**, McGregor held the featherweight title and challenged lightweight champion Eddie Alvarez to become the **first fighter in UFC history to hold two titles at once**. It was a masterclass. He took the center of the cage, **dropped Alvarez repeatedly in the first round**, and made an accomplished champion look out of his depth, before a **clean four-punch combination** ended it in the second. One Good Fights user, a Villa Films, captured how lopsided it was: "Very one sided fight, would love to have seen Eddie try and implement some of that strategy he talked about. McGregor just too skilled though." It was his **most technically flawless title performance**, even if it lacked the back-and-forth of his highest-rated fights.
 
@@ -130,14 +138,15 @@ This is the fight that **first made McGregor look beatable**. Booked to challeng
 
 <div class="gf-fight-card" data-fight-id="f16940ca-39c6-4f7a-8050-58e4bb05293b" data-rank="1"></div>
 
-![Nate Diaz and Conor McGregor after their rematch at UFC 202](/blog/conor-mcgregor-vs-nate-diaz-2.png)
-*A bloodied Nate Diaz and Conor McGregor embrace after five rounds at UFC 202.*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;overflow-x:auto;">
+<iframe src="https://www.facebook.com/plugins/post.php?href=https%3A%2F%2Fwww.facebook.com%2Fphoto.php%3Ffbid%3D1616881692090330%26set%3Da.826828522140609%26type%3D3&show_text=false&width=500" width="500" height="498" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"></iframe>
+</div>
 
 McGregor's **highest-rated fight on Good Fights** is the rematch he spent five months obsessing over, and it is the clearest evidence of what he could be at his best. He kept it at welterweight again so neither man cut weight, then **changed his approach completely**. Instead of hunting an early knockout, he **attacked Diaz's lead leg with kicks** to slow him down, picked his shots, and **scored knockdowns across the first two rounds**. Then the fight turned: Diaz **rallied in the third**, pressing a visibly exhausted McGregor against the fence, before McGregor recovered in the fourth to circle and land clean left hands. The fifth was a grind. The judges scored it a **majority decision for McGregor**.
 
 It rates a notch above their first fight because it was the better, more complete contest, and because it answered the question that one raised. As one Good Fights user, theconstantines, wrote: "McGregor shows us he can train for specific opponents, and develop endurance and pace for a 5 round war. Well fought and great tempo the whole way through." Not everyone agreed on the result. Another, Cool Panda, still argues "Nate was the better fighter, it's criminal that we never got a trilogy." That disagreement is the fun of it. **"The king is back,"** McGregor said afterward, and for one night he was.
 
-Which brings us to the fight that prompted this list. The [UFC 329 rematch with Max Holloway](/blog/mcgregor-holloway-2-ufc-329) has no rating yet, because it has not happened, but Good Fights users can log how excited they are for it ahead of time. As of writing it carries a **perfect 10 out of 10 hype score from its first 8 fans**, the highest mark a fight can hold going in. Whether McGregor can produce one more entry worthy of the top of this list, after five years away, is the question that rating will settle on July 11.
+Which brings us to the fight that prompted this list. The [UFC 329 rematch with Max Holloway](/blog/mcgregor-holloway-2-ufc-329) has no rating yet, because it has not happened, but Good Fights users can log how excited they are for it ahead of time. As of writing it carries a **perfect 10 out of 10 hype score**, the highest mark a fight can hold going in. Whether McGregor can produce one more entry worthy of the top of this list, after five years away, is the question that will settle on July 11 at UFC 329.
 
 ## Related reading
 
