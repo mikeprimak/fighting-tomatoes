@@ -102,6 +102,13 @@ button:disabled,
   color: inherit;
   text-decoration: none;
 }
+/* Keep Facebook post embeds inside the column on narrow screens (the SDK
+   renders at a fixed pixel width with a 350px floor). */
+.blog-content .fb-post,
+.blog-content .fb-post > span,
+.blog-content .fb-post iframe {
+  max-width: 100% !important;
+}
 .blog-content strong {
   font-weight: 700;
 }

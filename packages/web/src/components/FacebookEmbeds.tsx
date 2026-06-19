@@ -32,11 +32,22 @@ export function FacebookEmbeds() {
     }
 
     const SRC = 'https://connect.facebook.net/en_US/sdk.js#xfbml=1&version=v21.0';
-    const parse = () => window.FB?.XFBML?.parse?.();
+
+    // The post plugin renders at a fixed data-width (default 500), which
+    // overflows narrow phones. Size each embed to its column width (FB clamps
+    // to a 350px minimum; the CSS max-width rule absorbs the few px of excess
+    // on the smallest screens) before letting the SDK render it.
+    const sizeAndParse = () => {
+      document.querySelectorAll<HTMLElement>('.fb-post').forEach((el) => {
+        const w = el.parentElement?.offsetWidth || 500;
+        el.setAttribute('data-width', String(Math.round(Math.max(350, Math.min(w, 500)))));
+      });
+      window.FB?.XFBML?.parse?.();
+    };
 
     const existing = document.querySelector<HTMLScriptElement>('script[data-fb-sdk]');
     if (existing) {
-      parse();
+      sizeAndParse();
       return;
     }
 
@@ -46,7 +57,7 @@ export function FacebookEmbeds() {
     script.defer = true;
     script.crossOrigin = 'anonymous';
     script.setAttribute('data-fb-sdk', 'true');
-    script.onload = parse;
+    script.onload = sizeAndParse;
     document.body.appendChild(script);
   }, []);
 
