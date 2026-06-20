@@ -1,13 +1,20 @@
 # Durable fix: read BKFC live results from the stats API (not rendered DOM)
 
-**Status:** Planned (not started). Written 2026-06-19 during BKFC Nashville.
-**Priority:** Medium — the live tracker currently *works*, but its result
-extraction is fragile. This hardens it.
+**Status:** Optional hardening (not started). Written 2026-06-19 during BKFC Nashville.
+**Priority:** Low — **there was no actual production failure.** The triggering
+report ("tracker not getting winners/methods") turned out to be a UI misread:
+the page was being viewed with **Spoiler-Free Mode ON**, which hides
+winner/method until rated/revealed. The tracker had correct results the whole
+time. This doc remains because the API *is* a genuinely more robust source than
+DOM scraping — but it's a nice-to-have, not a bug fix. Don't chase a phantom bug.
 
 ## Background / what happened 2026-06-19
 
-During BKFC Nashville, the live tracker correctly tracked the current bout but
-appeared to miss winners/methods early in the card. Investigation showed:
+During BKFC Nashville the live tracker appeared to miss winners/methods. After
+investigation this was a **Spoiler-Free Mode** UI misread — the data was always
+present (every completed fight had shadow + published winner/method, written
+per-fight as it finished). The notes below stand on their own merits re: the
+scraper being fragile, but were NOT prompted by a confirmed failure:
 
 - The live scraper (`services/scrapeBKFCLiveEvent.js`) extracts results by
   screen-scraping rendered Webflow DOM: `.fight-card_win-label` badges for
