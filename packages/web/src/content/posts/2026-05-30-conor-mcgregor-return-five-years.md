@@ -41,7 +41,7 @@ There was also the practical hurdle of drug testing. To return, McGregor had to 
 
 This is the comeback, finally. McGregor will be 37 on fight night, turning 38 just three days later. He chose a marquee International Fight Week main event over other options, and the UFC built its biggest weekend around him.
 
-As of mid-June, McGregor confirmed he is deep in training camp, describing himself as very energized heading into the fight.
+In mid-June McGregor confirmed that a second fight is already booked for **April 2027**, with no opponent yet named, making UFC 329 the first of two fights left on his current contract. He has described himself as very energized deep in training camp. For his part, Holloway has been sparring with Jack Della Maddalena, the former UFC welterweight champion, to replicate McGregor's range and timing in preparation.
 
 The problem is the opponent. McGregor is not easing back in against a tune-up. He is facing Max Holloway, one of the greatest featherweights in history and a heavy betting favorite. If you want to understand just how good Holloway has become since these two first fought in 2013, we wrote a full piece on [how the kid McGregor beat became a legend](/blog/max-holloway-career-explained).
 
