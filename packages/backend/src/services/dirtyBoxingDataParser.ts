@@ -624,8 +624,16 @@ export async function importDirtyBoxingData(options: {
   console.log(`📁 Athletes file: ${athletesFilePath}\n`);
 
   try {
-    // Read JSON files
-    const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    // A missing events file means the scraper found no events to write (e.g. the
+    // promotion has no upcoming events on Tapology). That's not a failure — skip
+    // the import instead of crashing, which would falsely page the admin.
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch (e) {
+      console.log('⚠ Events file not found - scraper likely found no events. Skipping import.');
+      return;
+    }
     const eventsData: ScrapedDirtyEventsData = JSON.parse(eventsJson);
 
     // Athletes file is optional
