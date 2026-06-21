@@ -84,7 +84,7 @@ function extractFaqs(markdown: string): Faq[] {
       const answerLines: string[] = [];
       i++;
       while (i < lines.length && !/^##\s+/.test(lines[i])) {
-        const line = lines[i].trim();
+        const line = lines[i].trim().replace(/^>\s?/, ''); // drop blockquote marker
         const isImage = line.startsWith('![');
         const isCaption = /^\*[^*].*\*$/.test(line); // italic-only caption line
         const isAnchor = line.startsWith('<a ');
