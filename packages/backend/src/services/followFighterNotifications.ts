@@ -109,6 +109,7 @@ export async function dispatchBookedNotification(args: {
     title,
     body,
     data: { fightId, screen: 'fight-detail', lane: 'booked' },
+    persist: { type: 'FIGHTER_FIGHTING_SOON', linkType: 'fight', linkId: fightId },
   });
 
   await prisma.$transaction([
@@ -330,6 +331,10 @@ async function dispatchLaneGroup(group: PendingDispatch[]): Promise<void> {
       group.length === 1
         ? { fightId: fight.id, screen: 'fight-detail', lane: lane.toLowerCase() }
         : { eventId: fight.event.id, screen: 'event-detail', lane: lane.toLowerCase() },
+    persist:
+      group.length === 1
+        ? { type: 'FIGHTER_FIGHTING_SOON', linkType: 'fight', linkId: fight.id }
+        : { type: 'FIGHTER_FIGHTING_SOON', linkType: 'event', linkId: fight.event.id },
   });
 
   for (const d of group) {

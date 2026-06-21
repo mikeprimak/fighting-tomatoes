@@ -1,5 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { Expo, ExpoPushMessage, ExpoPushTicket } from 'expo-server-sdk';
+import type { NotificationType } from '@prisma/client';
 
 const expo = new Expo();
 
@@ -7,6 +8,18 @@ interface NotificationPayload {
   title: string;
   body: string;
   data?: Record<string, any>;
+  /**
+   * When set, sendPushNotifications also writes one in-app inbox row
+   * (UserNotification) per push recipient, so the Notification Center can
+   * surface this notification later. Best-effort — a persist failure never
+   * fails the push. Notifications that persist their own rows explicitly
+   * (comment likes/replies) should NOT set this, to avoid double-writes.
+   */
+  persist?: {
+    type: NotificationType;
+    linkType?: string; // "fight" | "event" | ...
+    linkId?: string;
+  };
 }
 
 // Legacy notification system removed - now using unified notification rule system
@@ -64,6 +77,28 @@ export async function sendPushNotifications(
     } catch (error) {
       console.error('Error sending push notification chunk:', error);
       failedCount += chunk.length;
+    }
+  }
+
+  // In-app inbox rows (best-effort). One per recipient we attempted to push,
+  // so the Notification Center reflects what the user was notified about.
+  if (payload.persist) {
+    const recipientIds = validTokens.map((u) => u.id);
+    if (recipientIds.length > 0) {
+      await prisma.userNotification
+        .createMany({
+          data: recipientIds.map((userId) => ({
+            userId,
+            title: payload.title,
+            message: payload.body,
+            type: payload.persist!.type,
+            linkType: payload.persist!.linkType ?? null,
+            linkId: payload.persist!.linkId ?? null,
+          })),
+        })
+        .catch((err) => {
+          console.error('Failed to persist UserNotification inbox rows:', err);
+        });
     }
   }
 
@@ -237,6 +272,7 @@ export async function notifyFightStartViaRules(
       title: '🥊 Fight Up Next!',
       body: matchup,
       data: { fightId, screen: 'fight-detail' },
+      persist: { type: 'FIGHT_STARTING', linkType: 'fight', linkId: fightId },
     }
   );
 
@@ -397,6 +433,7 @@ export async function notifyEventSectionStart(
         title,
         body,
         data: { eventId, screen: 'event-detail' },
+        persist: { type: 'FIGHT_STARTING', linkType: 'event', linkId: eventId },
       },
     );
 
