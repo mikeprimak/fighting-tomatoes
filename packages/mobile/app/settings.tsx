@@ -23,8 +23,6 @@ import { useQueryClient } from '@tanstack/react-query';
 
 interface NotificationPreferences {
   notificationsEnabled: boolean;
-  notifyPreEventReport: boolean;
-  notifyHypedFights: boolean;
   // Followed-fighter per-lane toggles
   notifyFollowedBooked: boolean;
   notifyFollowed3DayWarn: boolean;
@@ -42,8 +40,6 @@ export default function SettingsScreen() {
   const [permissionStatus, setPermissionStatus] = useState<'granted' | 'denied' | 'undetermined'>('undetermined');
   const [preferences, setPreferences] = useState<NotificationPreferences>({
     notificationsEnabled: true,
-    notifyPreEventReport: true,
-    notifyHypedFights: true,
     notifyFollowedBooked: true,
     notifyFollowed3DayWarn: true,
     notifyFollowedMorningOf: true,
