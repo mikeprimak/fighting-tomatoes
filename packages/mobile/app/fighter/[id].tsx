@@ -42,6 +42,9 @@ export default function FighterDetailScreen() {
   const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
+  // Collapse the long About body (paragraphs + love/hate) behind a "See more"
+  // toggle; the short tldr stays visible.
+  const [showFullAbout, setShowFullAbout] = useState(false);
   // Hype quick-view modal for upcoming fights (completed cards open their own
   // rating modal internally and never call onPress).
   const [modalFight, setModalFight] = useState<Fight | null>(null);
@@ -252,30 +255,48 @@ export default function FighterDetailScreen() {
           const loveLabel = `WHY FANS LOVE ${fanSubject}`;
           const hateLabel = `WHY SOME FANS HATE ${fanSubject}`;
           const paragraphs = summary.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean);
+          // Anything beyond the short tldr is collapsible.
+          const hasMore = paragraphs.length > 0 || !!profile.whyFansLove || !!profile.whyFansHate;
           return (
             <View style={styles.aboutSection}>
               <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>About</Text>
               {profile.tldr ? (
                 <Text style={[styles.aboutTldr, { color: colors.text }]}>{profile.tldr}</Text>
               ) : null}
-              {paragraphs.map((p: string, i: number) => (
-                <Text key={i} style={[styles.aboutParagraph, { color: colors.text }]}>{p}</Text>
-              ))}
-              {(profile.whyFansLove || profile.whyFansHate) ? (
-                <View style={styles.drawContainer}>
-                  {profile.whyFansLove ? (
-                    <View style={styles.drawBlock}>
-                      <Text style={[styles.drawLabel, { color: colors.primary }]}>{loveLabel}</Text>
-                      <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansLove}</Text>
+              {(showFullAbout || !profile.tldr) ? (
+                <>
+                  {paragraphs.map((p: string, i: number) => (
+                    <Text key={i} style={[styles.aboutParagraph, { color: colors.text }]}>{p}</Text>
+                  ))}
+                  {(profile.whyFansLove || profile.whyFansHate) ? (
+                    <View style={styles.drawContainer}>
+                      {profile.whyFansLove ? (
+                        <View style={styles.drawBlock}>
+                          <Text style={[styles.drawLabel, { color: colors.primary }]}>{loveLabel}</Text>
+                          <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansLove}</Text>
+                        </View>
+                      ) : null}
+                      {profile.whyFansHate ? (
+                        <View style={styles.drawBlock}>
+                          <Text style={[styles.drawLabel, { color: colors.textSecondary }]}>{hateLabel}</Text>
+                          <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansHate}</Text>
+                        </View>
+                      ) : null}
                     </View>
                   ) : null}
-                  {profile.whyFansHate ? (
-                    <View style={styles.drawBlock}>
-                      <Text style={[styles.drawLabel, { color: colors.textSecondary }]}>{hateLabel}</Text>
-                      <Text style={[styles.drawText, { color: colors.text }]}>{profile.whyFansHate}</Text>
-                    </View>
-                  ) : null}
-                </View>
+                </>
+              ) : null}
+              {/* Only offer a toggle when there's a tldr to collapse behind. */}
+              {hasMore && profile.tldr ? (
+                <TouchableOpacity
+                  onPress={() => setShowFullAbout((v) => !v)}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                  style={{ marginTop: 10 }}
+                >
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>
+                    {showFullAbout ? 'See less' : 'See more'}
+                  </Text>
+                </TouchableOpacity>
               ) : null}
             </View>
           );

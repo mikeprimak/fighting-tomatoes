@@ -1,0 +1,178 @@
+# Good Fights — Master Backlog
+
+**Created:** 2026-06-21 · **Owner:** Mike · **Status:** living doc
+
+This is the single running list of everything queued. Each item has an **effort tag**, a **status** (grounded by a 2026-06-21 codebase audit), and notes. Check items off as they ship and log the work in `docs/daily/`.
+
+**Effort tags:** `S` = under ~1hr · `M` = one session · `L` = multi-session · `XL` = multi-week / big feature
+**Status:** `🟢 ready` (scoped, just do it) · `🟡 needs design` (decision/brainstorm first) · `🔵 needs Mike` (external/asset/decision blocker) · `⚪ idea` (not committed)
+
+---
+
+## ⭐ How to approach this (read first)
+
+The list is ~70 items. Don't go top-to-bottom — that thrashes between contexts. Instead work in **themed batches** so you stay in one mental area and one part of the code per session. Recommended order is in **§ Sequencing** at the bottom. The single most leveraged cluster is **Notifications** (a half-built system with an orphaned DB table) — fixing it well moves retention more than anything else here.
+
+Keep the **User-Focused Pivot** work in its own branch/folder (`C:\Users\avoca\fight-mobile-app-pivot`, branch `claude/user-focused-pivot-l8l6mg`) — never mix it into main-branch sessions.
+
+---
+
+## 1. Quick wins (high impact ÷ low effort — do these first)
+
+These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two sessions to clear noise.
+
+- [ ] `S` 🔵 **Admin alert email** → `ADMIN_ALERT_EMAIL` is a **Render env var** (read in `utils/email.ts`, no code default), so this is a Render-dashboard change, not code. Set it to `contact@goodfights.app`. *(Mike action, or guide him.)*
+- [x] `S` 🟢 **Roundtree Jr. name parse bug** → DONE on branch `backlog/round-1-quick-wins`. Root cause: `scrapeAllUFCData.js:174` built the event title via `.split(' ').pop()` (grabs the "Jr." suffix). Replaced with a suffix-aware surname helper (keeps "Rountree Jr."). `parseFighterName()` was already correct. **Follow-up: one-off DB rename** of the existing "UFC Fight Night Ankalaev vs. Jr." row + audit matchroom/tapology live parsers that use the same `.pop()` for winner-matching.
+- [x] `S` 🟢 **Event descriptions too long** → DONE. `extractFightEnrichment.ts` SYSTEM_PROMPT now: exactly ONE sentence (~15-25 words) + hard "never mention venue/city/country" rule (per Mike — stick to fighter style + storylines). New events pick it up; optionally re-run enrichment on recent ones.
+- [x] `S` 🟢 **Fighter "About" → collapse behind "see more"** → DONE on mobile (`app/fighter/[id].tsx`, tldr visible + See more/less toggle) and web (`FighterDetailClient.tsx`, native `<details>` so the body stays in the DOM for SEO).
+- [x] `S` 🟢 **Home screen copy** → DONE. (a) follow explainer added as the "Most Followed" section subtitle; (b) "Top Comments" → "Comments on recent fights".
+- [ ] `M` 🟢 **~~Remove redundant "…" menu~~ → DEFERRED into §3.** Mike clarified the fight-details screen does NOT currently expose the user's own rating/hype, so the menu isn't redundant yet. First add rating/hype access to the detail screen (§3), THEN remove the now-redundant menu. Do them together.
+- [ ] `S` 🟢 **Admin: confirm scraper health** → MVP/Gamebred/Dirty Boxing were fixed 2026-06-17/18 (DataImpulse proxy + CapSolver). Karate Combat, Top Rank, Golden Boy, Gold Star are still on the dead Scrapfly path — verify each ran recently; apply the same 1-line `tapologyBrowser.js` swap if any are failing.
+
+---
+
+## 2. Notifications (the highest-leverage cluster)
+
+**Audit finding:** A `UserNotification` table already exists in the schema (`schema.prisma:1084-1117`) **but is orphaned** — nothing writes to it, no API reads it, no screen shows it. Notifications are pushed via Expo and forgotten. Defaults are all-on. Aggregation is per-event only. Permission-check-on-enable already exists and is well done.
+
+- [ ] `L` 🟢 **Notification Center (in-app history)** — the anchor feature. Three parts:
+  1. Persist every push into `UserNotification` at send time (`services/notificationService.ts:sendPushNotifications`).
+  2. Add API routes to list/mark-read the last ~7 days.
+  3. New **Notifications screen** + an **envelope icon in the top nav bar** (between profile and the search/magnifying-glass icon). Also reachable from Profile.
+- [ ] `M` 🟢 **Reduce default notifications; default = walkouts only** → flip server defaults in `schema.prisma:47-58` so a NEW user gets walkout pings, not all four lanes. **Mike: leave EXISTING users' settings untouched** — change defaults for new signups only.
+- [ ] `M` 🟡 **Cross-event weekend aggregation** → today each event sends its own "N fighters fighting this weekend" (so UFC + RAF = two pushes — *by design*, in `followFighterNotifications.ts:472`). Add a cross-event weekend digest that rolls all of a user's followed fighters across the weekend into ONE message. Needs a small design decision (digest cadence vs per-event fallback — see `followup_notif_double_fire_suppression`).
+- [ ] `M` 🟢 **"Casual / Big Events Only" tier** → no tier exists today. Add a preset that maps to rule conditions (e.g. only numbered/PPV events, higher hype floor). Surface in settings.
+- [ ] `M` 🟢 **Silence for 8 hours** → no snooze exists. Add a mute-until timestamp (set from the Notifications screen) honored by the dispatch layer. Great for watching a live event without per-fight pings.
+- [ ] `S` 🟢 **Permission-off warning when enabling a fight notif** → `ensurePushPermissionAfterAction()` already exists (`notificationService.ts:180`). Verify it fires on every enable surface (fight bell, fighter follow) and the copy is clear. Mostly a coverage check.
+- [ ] `S` 🟢 **Remove the hidden toggles** → **Mike: delete `notifyHypedFights` + `notifyPreEventReport`** (the dead state fetched in `settings.tsx` but never rendered, plus their backend rule plumbing).
+
+## 3. Mobile app polish
+
+- [ ] `S` 🟢 **Android notification tray icon** → configured (`app.json:119` → `notification-icon.png`) but it's a 223KB raster; Android wants a small monochrome silhouette. Produce a proper white-silhouette drawable.
+- [ ] `M` 🟢 **Profile image on mobile = MISSING** → `app/edit-profile.tsx` only handles display name. Add image picker + upload to the existing `POST /upload/profile-image` (R2) endpoint the web already uses.
+- [ ] `M` 🟢 **Put rating/hype/prediction on the fight detail screen** → **Mike corrected the audit:** the "fight details" screen (fighter images, event details, outcome, hype/rating distribution chart, comments) does NOT show the user's OWN hype/rating anywhere, and offers no way to open the hype/rating modal to change it. Add: display the user's current hype/rating + a tap-to-open-modal to edit it, directly on this screen. **Then** remove the now-redundant `FightDetailsMenu.tsx` "…" menu (the deferred §1 item).
+- [ ] `S` 🟢 **Test biometric login** → shipped 2026-06-01 but never device-tested. Needs a real device + the native build.
+
+## 4. Web app
+
+- [ ] `M` 🟢 **Profile image broken on web "Edit Profile"** → **Mike: the picker lets you select a file from the PC, but it then renders as a BROKEN image.** UI + `uploadProfileImage()` → `POST /upload/profile-image` exist (`app/profile/edit/page.tsx:55`). Reproduce; likely the upload returns a bad/unreachable URL (R2 key, content-type, or the preview src). Check the network call + the returned URL + R2 object.
+- [ ] `M` 🟢 **Live tab auto-update (web)** → **Mike clarified this is the web app's "Live" tab / live-events screen**, not the home page. As results come in during a live event, the Upcoming/Live/Completed fight cards should change WITHOUT a manual reload (mobile does this). Verify/raise the `refetchInterval` on the Live screen + ensure individual cards re-render from the polled data.
+
+## 5. Search
+
+- [ ] `M` 🟢 **Typeahead / predictive search** → both platforms are search-on-submit, no debounce, no suggestions. Add a debounced typeahead dropdown (fighters/events/fights) on web `Navbar.tsx` + mobile `SearchBar.tsx`, reusing the existing `/search` endpoint (may need a lightweight `limit`-capped suggest mode).
+- [ ] `S` 🟢 **General search QA** → people actually use search; do a pass on relevance/ranking on both platforms.
+
+## 6. Scrapers & data
+
+- [ ] `M` 🟡 **Scrapers should capture odds** → `fighter1Odds`/`fighter2Odds` fields exist on `Fight` (`schema.prisma:540`) but no daily scraper populates them. A blog-only odds system exists (`scripts/odds/` + The Odds API). Decide: wire The Odds API consensus into daily ingestion to populate fight odds app-wide. (Feeds the "scrapers get odds" + future odds-on-card UI.)
+- [ ] `M` 🟢 **Broadcast: not all MVP events are Netflix** → MVP has per-event seeds (`seed-mvp-broadcasts.ts`) but no region defaults; some events wrongly read Netflix. Add correct per-event / `PromotionBroadcastDefault` rows.
+- [ ] `S` 🟢 **RAF broadcast channel** → add `PromotionBroadcastDefault`: YouTube (CA) + Fox Nation (US). Channels already seeded.
+- [ ] `M` 🟡 **Broadcast discovery: auto-accept, no manual review** → **Mike: kill the manual-review step.** Today `broadcastDiscovery/run.ts` surfaces NEW/CHANGED findings for admin triage. Redesign so high-confidence findings (above a tuned confidence threshold) are written directly to `PromotionBroadcastDefault` with no human in the loop; only low-confidence ones (if any) queue for review. Pick the threshold conservatively to avoid bad auto-writes.
+- [ ] `S` 🟢 **Confirm start-time AI system is live** → `startTimeDiscovery/run.ts` runs inside the daily scraper cycle (not a separate cron). Verify recent events got real first-bell times with provenance.
+- [ ] `M` 🟢 **Fighter image auto-refresh on belt/status changes** → **Mike: headshots are NOT updating automatically.** After UFC Freedom 250 (Ilia & Pereira lost belts; Gaethje & Gane gained them), ufc.com now serves updated headshots, but the app still shows the old ones. Build an automated refresh that re-pulls a fighter's headshot from source within a few days of them fighting (not the quarterly backfill). Likely: on fight-completion, queue a headshot re-fetch for both fighters.
+
+## 7. Ratings, hype & events-as-a-whole
+
+- [ ] `L` 🟡 **Event-level hype & rating (better algo)** — Mike wants help designing this. `Event.averageRating`/`totalRatings` fields exist but the legacy avg-of-all-ratings is crude (one hot fight skews a card). **Needs a design session** — see `§ Decisions` for algo options to react to.
+- [ ] `M` 🟡 **Comment section improvements:**
+  - Link on a post-fight comment → user's pre-fight comment (no pre/post link exists today; `PreFightComment` and `FightReview` are separate tables).
+  - New comments start self-upvoted (1, not 0) — *audit says this already happens for top-level comments* (`UpcomingFightDetailScreen.tsx:619`); verify + extend to replies if wanted.
+  - Allow deleting pre-fight comments after the fight (delete logic exists; confirm it's reachable post-completion).
+- [ ] `M` 🟢 **Comment edit/delete bug** → deleting on the details screen still shows in the modal; "Done" doesn't resave; re-editing opens an empty textarea. Modal vs details-screen state diverge — reproduce and fix the shared state in `UpcomingFightDetailScreen.tsx` / `CompletedFightDetailScreen.tsx`.
+
+## 8. Back catalog / legacy data
+
+- [ ] `L` 🟢 **Legacy event order (~hundreds)** → main-event-shows-as-first-prelim. Inversion script exists (`legacy-migration/.../sync-fight-order.js`) but it's NOT uniform (some legacy events are already correct — don't blanket-flip). Build a read-only audit first to find genuinely-inverted events, then fix only those. See `lesson_legacy_event_order_inversion`.
+- [ ] `M` 🟢 **Missing UFC banner images on historic events** → audit which legacy events lack a banner, backfill from a source.
+
+## 9. Editorial / articles / marketing content
+
+- [ ] `M` 🔵 **Conor "Fights Rated" article** → polish, embed images properly, fix existing images, add spoiler warning.
+- [ ] `L` 🔵 **Ruleset comparison infographic** → continue refinement (many `ruleset-comparison-v*` versions exist in `docs/marketing/infographics/`).
+- [ ] `M` 🔵 **Conor infographic** → complete.
+- [ ] `M` ⚪ **"What makes a good fight?" infographic** → finish + publish as a blog post.
+- [ ] `S` ⚪ **Gaethje/Rogan article** → Mike noted "do nothing?" — likely already done. Confirm + close.
+- [ ] `S` ⚪ **Article idea:** Conor's best insults of every fighter.
+- [ ] `S` ⚪ **Poll idea:** favorite MMA YouTube channels.
+- [ ] `L` 🟢 **Weekly Monday email recap** → community scores from the weekend, top-rated moments, biggest upsets vs pre-fight hype, week-ahead preview. Mostly auto-generated from existing data via Resend Broadcasts. High-leverage retention/marketing artifact.
+
+## 10. Voice of the app
+
+- [ ] `M` 🔵 **Apply voice guide** → there's a VOICE chat + a voice-guide doc on Mike's Desktop. **Mike must share both** before this can start. Then update post-rating + post-hype modals, and error/empty states.
+
+## 11. User-Focused Pivot ⚠️ (separate branch/folder)
+
+> Work ONLY in `C:\Users\avoca\fight-mobile-app-pivot`, branch `claude/user-focused-pivot-l8l6mg`. Dev user: `testdev+onb0612@goodfights.app` / `Testpass1!`. Never fold into main.
+
+- [ ] `XL` 🟡 **Finish onboarding**, then surface insights/cards/home-screen.
+- [ ] ⚪ Data capture: flag if a user rated **live** (within 4hr of event end).
+- [ ] ⚪ Sharable card — one clear message; define user *as* a fighter type ("Grappler", not "Grappler watcher").
+- [ ] ⚪ Onboarding quiz ("first fight you remember caring about?", fav fighter then/now…).
+- [ ] ⚪ "Is there a fight this weekend I might like?" pattern-matching.
+- [ ] ⚪ Specific fight recommendations post-onboarding ("you might like Rockhold vs Bisping because…").
+- [ ] ⚪ "Watch later" list feature.
+
+## 12. Winner prediction / "Who do you support?"
+
+- [ ] `L` 🟡 **"WHO DO YOU SUPPORT?" feature set** → already reframed from predictions to *allegiance* (`project_rooting_for_pivot`). Work continues on branch `winner-predictions`. Comms must defuse the trained predict-reflex.
+
+## 13. Infrastructure & technical debt
+
+- [ ] `L` 🔵 **Offsite backup redundancy** → codebase + DB + assets (R2). Needs a plan: where (provider), cadence, restore test. Codebase is on GitHub already; DB + R2 are the real gap.
+- [ ] `M` 🟢 **Remove all seed-data code** → fully delete seed data + remnants.
+- [ ] `M` 🟡 **Baseline typecheck errors** → decide policy. Current gate is "0 NEW errors" over an 84-error baseline (`feedback_multi_window_release_coordination`). Worth a cleanup pass but not urgent.
+- [ ] `M` 🟢 **Scheduled fighter enrichment must not overwrite good profiles** → `aiProfileSource` provenance exists (`project_fighter_profile_provenance`); ensure the cron respects it and never clobbers hand-authored/Opus bios.
+
+## 14. Security
+
+- [ ] `L` 🟡 **CAPTCHA / abuse prevention** → on signup + comment/rating write paths. (Vercel BotID is an option for web; mobile needs its own approach.)
+- [ ] `L` 🔵 **General security audit** → scope it: auth/token handling, rate limiting, input validation, R2 bucket perms, admin-panel access. Can run the `/security-review` skill on key surfaces.
+
+## 15. Monetization
+
+- [ ] `M` ⚪ **Affiliate links on "How to Watch" buttons** + click tracking.
+
+## 16. Admin panel
+
+- [ ] `M` 🟡 **Admin deep-dive** → audit the app + admin panel, propose new controls (emergency handling, manual overrides, ops levers Mike will want at scale).
+
+## 17. Brand / legal
+
+- [ ] `XL` 🔵 **Canadian IP lawyer** → trademark/IP protection. External, Mike-driven.
+- [ ] `M` 🔵 **App Store preview video** → ASC rejected it (wrong phone size). Re-record on a borrowed modern iPhone.
+
+---
+
+## Decisions needed from Mike (unblock these)
+
+1. **Event score algo** (§7) — react to the options below.
+2. **Voice guide** (§10) — share the Desktop doc + VOICE chat.
+3. **Backup plan** (§13) — pick a provider/budget for offsite DB + R2.
+4. **App Store video** (§17) — borrow an iPhone.
+5. **IP lawyer** (§17) — external engagement.
+6. **Odds in app** (§6) — confirm we want fight odds app-wide (cost: The Odds API tier), not just blog graphics.
+
+### Event-score algo — options to react to (for §7)
+
+The legacy "average of all fight ratings" over-weights one hot fight on an otherwise dead card. Better candidates:
+- **Confidence-weighted mean** (Bayesian shrinkage): pull a card's average toward the global mean until it has enough ratings, so a 1-rating card can't top the charts.
+- **Depth-aware score**: reward cards where *multiple* fights cleared a "good fight" bar (e.g. count of fights rated ≥ X), not just the single peak — captures "stacked card" feel.
+- **Peak + floor blend**: `α·(best fight) + β·(median fight)` so both the headliner banger and overall quality matter.
+- **Upset/surprise bonus** (past events): reward cards where results diverged from pre-fight hype.
+- For **upcoming events**, "will it be good?" = aggregate *hype* with the same shrinkage, plus a stylistic-matchup signal from AI enrichment.
+
+---
+
+## Recommended sequencing
+
+1. **Sprint 1 — Quick wins (§1).** One or two sessions. Clears 7 isolated items, several user-visible.
+2. **Sprint 2 — Notifications (§2).** The Notification Center + default reduction + snooze. Biggest retention lever; one coherent code area.
+3. **Sprint 3 — Scrapers/data correctness (§6) + back catalog audit (§8).** Batch all data-layer work together while in that headspace.
+4. **Sprint 4 — Mobile/web parity polish (§3, §4, §5).** Profile image (mobile), web home live-update, typeahead.
+5. **Sprint 5 — Comments + fight-detail (§7 comment items).** One UI area.
+6. **Parallel track — Editorial/marketing (§9).** Interleave on fight weeks; the weekly email is the standout.
+7. **Separate track — User-Focused Pivot (§11).** Its own branch/folder, never mixed in.
+8. **Design-first, schedule when Mike's ready** — event-score algo (§7), voice (§10), backup (§13), security (§14), admin (§16).
+
+Async/external (don't block dev): IP lawyer, App Store video, biometric device test.
