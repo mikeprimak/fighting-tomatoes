@@ -2,18 +2,25 @@ import { prisma } from '../lib/prisma';
 import { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { authenticateUser } from '../middleware/auth';
-import { notificationRuleEngine } from '../services/notificationRuleEngine';
-import { managePreEventReportRule, hasPreEventReportRule } from '../services/notificationRuleHelpers';
+import { hasPreEventReportRule } from '../services/notificationRuleHelpers';
 
 
 const registerTokenSchema = z.object({
   pushToken: z.string(),
 });
 
+const markReadSchema = z.object({
+  // Omit to mark ALL unread read; provide ids to mark a specific subset.
+  ids: z.array(z.string()).optional(),
+});
+
+const snoozeSchema = z.object({
+  // Hours to silence all push notifications. 0 (or omitted) clears the snooze.
+  hours: z.number().min(0).max(48).optional(),
+});
+
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
-  notifyHypedFights: z.boolean().optional(),
-  notifyPreEventReport: z.boolean().optional(),
   // Followed-fighter per-lane toggles
   notifyFollowedBooked: z.boolean().optional(),
   notifyFollowed3DayWarn: z.boolean().optional(),
@@ -23,67 +30,6 @@ const updatePreferencesSchema = z.object({
   // back to America/New_York in the cron rather than rejecting the write.
   timezone: z.string().min(1).max(64).optional(),
 });
-
-/**
- * Manages the "Hyped Fights" notification rule for a user
- * Creates/activates or deactivates the rule based on the enabled flag
- */
-async function manageHypedFightsRule(userId: string, enabled: boolean): Promise<void> {
-  const RULE_NAME = 'Hyped Fights';
-  const RULE_CONDITIONS = { minHype: 8.5 };
-  const NOTIFY_MINUTES_BEFORE = 15;
-
-  // Check if rule already exists
-  const existingRule = await prisma.userNotificationRule.findFirst({
-    where: {
-      userId,
-      name: RULE_NAME,
-    },
-  });
-
-  if (existingRule) {
-    // Update existing rule
-    await prisma.userNotificationRule.update({
-      where: { id: existingRule.id },
-      data: { isActive: enabled },
-    });
-
-    if (enabled) {
-      // If enabled, sync matches
-      notificationRuleEngine.syncRuleMatches(existingRule.id).catch(err => {
-        console.error('Error syncing Hyped Fights rule matches:', err);
-      });
-    } else {
-      // If disabled, deactivate all matches for this rule
-      await prisma.fightNotificationMatch.updateMany({
-        where: {
-          ruleId: existingRule.id,
-        },
-        data: {
-          isActive: false,
-        },
-      });
-    }
-  } else if (enabled) {
-    // Create new rule (only if enabled)
-    const newRule = await prisma.userNotificationRule.create({
-      data: {
-        userId,
-        name: RULE_NAME,
-        conditions: RULE_CONDITIONS,
-        notifyMinutesBefore: NOTIFY_MINUTES_BEFORE,
-        priority: 0,
-        isActive: true,
-      },
-    });
-
-    // Sync matches for new rule
-    notificationRuleEngine.syncRuleMatches(newRule.id).catch(err => {
-      console.error('Error syncing Hyped Fights rule matches:', err);
-    });
-  }
-  // If !enabled and no existing rule, nothing to do
-}
 
 const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
   /**
@@ -167,29 +113,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         return reply.status(404).send({ error: 'User not found' });
       }
 
-      // Check if user has the "Hyped Fights" notification rule active
-      const hypedFightsRule = await prisma.userNotificationRule.findFirst({
-        where: {
-          userId,
-          name: 'Hyped Fights',
-        },
-      });
-
-      // Check if user has the "Pre-Event Report" notification rule active
-      const preEventReportRule = await prisma.userNotificationRule.findFirst({
-        where: {
-          userId,
-          name: 'Pre-Event Report',
-        },
-      });
-
-      return reply.send({
-        preferences: {
-          ...user,
-          notifyHypedFights: hypedFightsRule?.isActive ?? false,
-          notifyPreEventReport: preEventReportRule?.isActive ?? false,
-        },
-      });
+      return reply.send({ preferences: user });
     }
   );
 
@@ -202,11 +126,8 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
     { preHandler: authenticateUser },
     async (request, reply) => {
       try {
-        const preferences = updatePreferencesSchema.parse(request.body);
+        const userPreferences = updatePreferencesSchema.parse(request.body);
         const userId = request.user!.id;
-
-        // Extract rule-based preferences from user preferences
-        const { notifyHypedFights, notifyPreEventReport, ...userPreferences } = preferences;
 
         // Update basic user preferences (includes lane toggles + timezone)
         const updatedUser = await prisma.user.update({
@@ -222,38 +143,9 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
           },
         });
 
-        // Handle Hyped Fights notification rule
-        if (notifyHypedFights !== undefined) {
-          await manageHypedFightsRule(userId, notifyHypedFights);
-        }
-
-        // Handle Pre-Event Report notification rule
-        if (notifyPreEventReport !== undefined) {
-          await managePreEventReportRule(userId, notifyPreEventReport);
-        }
-
-        // Get current state of notification rules for response
-        const hypedFightsRule = await prisma.userNotificationRule.findFirst({
-          where: {
-            userId,
-            name: 'Hyped Fights',
-          },
-        });
-
-        const preEventReportRule = await prisma.userNotificationRule.findFirst({
-          where: {
-            userId,
-            name: 'Pre-Event Report',
-          },
-        });
-
         return reply.send({
           message: 'Preferences updated successfully',
-          preferences: {
-            ...updatedUser,
-            notifyHypedFights: hypedFightsRule?.isActive ?? false,
-            notifyPreEventReport: preEventReportRule?.isActive ?? false,
-          },
+          preferences: updatedUser,
         });
       } catch (error: any) {
         if (error.name === 'ZodError') {
@@ -421,6 +313,114 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       });
     }
   });
+
+  // ============== Notification Center (in-app inbox) ==============
+
+  // List the current user's recent notifications (last 7 days) + unread count.
+  fastify.get(
+    '/',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const [notifications, unreadCount, user] = await Promise.all([
+        prisma.userNotification.findMany({
+          where: { userId, createdAt: { gte: since } },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            title: true,
+            message: true,
+            type: true,
+            isRead: true,
+            linkType: true,
+            linkId: true,
+            createdAt: true,
+          },
+        }),
+        prisma.userNotification.count({
+          where: { userId, isRead: false, createdAt: { gte: since } },
+        }),
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { notificationsSnoozedUntil: true },
+        }),
+      ]);
+
+      // Only report an active (future) snooze; a past timestamp reads as cleared.
+      const snoozedUntil =
+        user?.notificationsSnoozedUntil && user.notificationsSnoozedUntil > new Date()
+          ? user.notificationsSnoozedUntil
+          : null;
+
+      return reply.send({ notifications, unreadCount, snoozedUntil });
+    },
+  );
+
+  // Set or clear the "Silence for N hours" snooze. { hours: 8 } snoozes;
+  // { hours: 0 } or {} clears it. Honored centrally in sendPushNotifications.
+  fastify.post(
+    '/snooze',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const parsed = snoozeSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'Invalid request', details: parsed.error.flatten() });
+      }
+      const hours = parsed.data.hours ?? 0;
+      const snoozedUntil = hours > 0 ? new Date(Date.now() + hours * 60 * 60 * 1000) : null;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { notificationsSnoozedUntil: snoozedUntil },
+      });
+
+      return reply.send({ snoozedUntil });
+    },
+  );
+
+  // Lightweight unread-count for the nav-bar badge poll.
+  fastify.get(
+    '/unread-count',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const unreadCount = await prisma.userNotification.count({
+        where: { userId, isRead: false, createdAt: { gte: since } },
+      });
+      return reply.send({ unreadCount });
+    },
+  );
+
+  // Mark notifications read. Body { ids: string[] } marks those rows; omit `ids`
+  // to mark ALL of the user's unread notifications read (e.g. on screen open).
+  fastify.post(
+    '/mark-read',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const parsed = markReadSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'Invalid request', details: parsed.error.flatten() });
+      }
+      const { ids } = parsed.data;
+
+      const result = await prisma.userNotification.updateMany({
+        where: {
+          userId,
+          isRead: false,
+          ...(ids && ids.length > 0 ? { id: { in: ids } } : {}),
+        },
+        data: { isRead: true, readAt: new Date() },
+      });
+
+      return reply.send({ updated: result.count });
+    },
+  );
 };
 
 export default notificationsRoutes;

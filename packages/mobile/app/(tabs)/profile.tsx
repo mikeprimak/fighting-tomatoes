@@ -790,6 +790,20 @@ export default function ProfileScreen() {
             </View>
           )}
 
+          {/* Notification Center (in-app inbox) */}
+          <TouchableOpacity
+            style={[styles.settingsRow, { backgroundColor: SECTION_BG_EVEN }]}
+            onPress={() => router.push('/notifications' as any)}
+          >
+            <View style={styles.settingsRowLeft}>
+              <Text style={[styles.settingsRowLabel, { color: colors.text }]}>Notifications</Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
+                Your recent alerts and updates
+              </Text>
+            </View>
+            <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
+          </TouchableOpacity>
+
           {/* Notification settings */}
           <TouchableOpacity
             style={[styles.settingsRow, { backgroundColor: SECTION_BG_ODD }]}

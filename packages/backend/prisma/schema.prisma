@@ -47,10 +47,18 @@ model User {
   notificationsEnabled         Boolean   @default(true)
   // Followed-fighter per-lane toggles (gates each notification independently of the
   // Fighter Follow: rules — rules drive WHICH fighters, these drive WHICH LANES).
-  notifyFollowedBooked         Boolean   @default(true)
-  notifyFollowed3DayWarn       Boolean   @default(true)
-  notifyFollowedMorningOf      Boolean   @default(true)
+  // NEW-USER DEFAULTS: walkout-only. Booked/3-day/morning default OFF so a fresh
+  // signup gets the single highest-signal ping (their fighter is up next) and can
+  // opt into the rest. Existing users' stored values are untouched by this.
+  notifyFollowedBooked         Boolean   @default(false)
+  notifyFollowed3DayWarn       Boolean   @default(false)
+  notifyFollowedMorningOf      Boolean   @default(false)
   notifyFollowedWalkout        Boolean   @default(true)
+
+  // When set in the future, all push notifications to this user are suppressed
+  // until this instant ("Silence for 8 hours" snooze, set from the Notifications
+  // screen). Null = not snoozed.
+  notificationsSnoozedUntil    DateTime?
 
   // IANA timezone string, used by the 3-day-warn and morning-of crons to compute
   // each user's local "fight day" (with overnight rollback for late-night fights).
