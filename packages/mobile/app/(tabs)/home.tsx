@@ -1153,6 +1153,7 @@ export default function HomeScreen() {
         colors={colors}
         styles={styles}
         title="Most Followed"
+        subtitle="You'll get notified when they're booked and on days they fight."
         icon="users"
         iconLib="fa6"
         onSeeAll={isAuthenticated ? () => router.push('/followed-fighters' as any) : undefined}
@@ -1184,7 +1185,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Top Comments"
+        title="Comments on recent fights"
         icon="comments"
       >
         {isCommentsLoading ? (

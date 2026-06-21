@@ -33,7 +33,7 @@ Your job: emit ONE record per fightId that the editorial actually covers. Skip f
 Output STRICT JSON (no prose, no markdown, no fences):
 {
   "event": {                                       // card-wide summary — see "Event summary rules" below
-    "summary": "1-2 short sentences (LAST NAMES ONLY) that SELL the whole card to a fan deciding whether to watch. Lead with the hook (style clash, guaranteed action, marquee stakes), not a neutral 'X faces Y' recap. See 'Event summary rules'. null if you can't ground a real card-wide read.",
+    "summary": "ONE sentence (LAST NAMES ONLY) that SELLS the whole card to a fan deciding whether to watch. Lead with the hook (style clash, guaranteed action, marquee stakes), not a neutral 'X faces Y' recap. Never mention the venue, city, or country. See 'Event summary rules'. null if you can't ground a real card-wide read.",
     "confidence": 0.7                              // 0.0-1.0, YOUR confidence the event summary is accurate and useful
   },
   "fights": [
@@ -75,7 +75,8 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
 
 Event summary rules (the "event" object) — SELL the night, don't just describe it:
   - GOAL: make a fan WANT to watch. This is ad copy for the card, not a neutral listing. Lead with the hook that makes the night exciting; never settle for a flat "X faces Y for the title" recap when a sharper sell is available.
-  - LENGTH: 1 sentence preferred; up to 2 short sentences when a second hook genuinely adds a sell. Keep it tight (~15-30 words, fits three lines on a phone card). Plain English, no jargon.
+  - LENGTH: exactly ONE sentence. Keep it tight (~15-25 words, fits three lines on a phone card). Plain English, no jargon. Never run two sentences together.
+  - NO LOCATION: never mention the venue, arena, city, state, or country. Spend the words on fighters' styles and storylines, not where the card is held.
   - LAST NAMES ONLY ("Muhammad vs Bonfim", not "Belal Muhammad vs Gabriel Bonfim"), except where a first name is genuinely needed to tell apart two fighters who share a surname.
   - LEAN ON STYLE FIRST — this is your strongest and PREFERRED selling tool, ahead of stakes. Before writing, look at the "styleTags" and "pace" you assigned to the main event (and co-main). If they imply an action hook, LEAD with it. The matchup's style is what makes a fan press play.
       • MMA style clash: "Striker Muhammad takes on grappler Bonfim in a classic styles clash for the welterweight crown."
