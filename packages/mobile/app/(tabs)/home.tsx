@@ -693,26 +693,24 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
-  // "This weekend" = every event from today up to (but not including) the Monday
-  // that starts next week — i.e. the rest of the current Mon–Sun week. On Sat/Sun
-  // that's the remaining weekend; the instant Monday arrives the window rolls to
-  // the whole next week (Mon–Sun), so mid-week cards (Wed/Thu/Fri) are included.
-  // Compared as UTC day keys to line up with eventDayKey (Event.date is a
+  // "This week" = every event from today through the next 7 days (a rolling
+  // window, not the rest of the Mon–Sun calendar week). The old week-bounded
+  // window collapsed to a single day on Sunday — and since cards cluster Fri/Sat,
+  // by Sunday the next card was already outside it, so the band read "No events
+  // this weekend" all day Sunday. A rolling 7-day window always reaches the next
+  // card. Compared as UTC day keys to line up with eventDayKey (Event.date is a
   // UTC-hour placeholder); anchored on the user's local calendar date.
   const DAY_MS = 86_400_000;
   const nowLocal = new Date();
   const todayKey = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
-  const localDow = nowLocal.getDay(); // 0=Sun … 6=Sat
-  let daysUntilNextMonday = (1 - localDow + 7) % 7; // 0 when today is Monday
-  if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
-  const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
+  const windowEndKey = todayKey + 7 * DAY_MS; // today + next 6 days (7 calendar days)
   const upcomingEvents: Event[] = (eventsData?.events || [])
     // Keep LIVE events in the list (badged "LIVE" on the card) alongside the
     // UPCOMING ones — a card that just went live shouldn't vanish from the day.
     .filter((e: Event) => e.eventStatus === 'UPCOMING' || e.eventStatus === 'LIVE')
     .filter((e: Event) => {
       const k = eventDayKey(e.date);
-      return k >= todayKey && k < nextMondayKey;
+      return k >= todayKey && k < windowEndKey;
     })
     .sort((a: Event, b: Event) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
@@ -887,7 +885,7 @@ export default function HomeScreen() {
         <Section
           colors={colors}
           styles={styles}
-          title="This Weekend"
+          title="This Week"
           icon="fire-flame-curved"
           iconLib="fa6"
         >
@@ -931,11 +929,11 @@ export default function HomeScreen() {
         <Section
           colors={colors}
           styles={styles}
-          title="This Weekend"
+          title="This Week"
           icon="fire-flame-curved"
           iconLib="fa6"
         >
-          <Empty styles={styles} text="No events this weekend" />
+          <Empty styles={styles} text="No events in the next 7 days" />
         </Section>
       )}
 
