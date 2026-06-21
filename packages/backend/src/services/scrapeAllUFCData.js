@@ -171,8 +171,20 @@ async function scrapeEventsList(browser) {
           fighterA = fighterA.replace(/\s+\d+$/, '');
           fighterB = fighterB.replace(/\s+\d+$/, '');
 
-          const fighterALastName = fighterA.split(' ').pop();
-          const fighterBLastName = fighterB.split(' ').pop();
+          // Surname for the event title. The headline is already surname-form
+          // ("Ankalaev vs. Rountree Jr."), so a plain .pop() grabs the suffix
+          // ("Jr.") instead of the name. Keep the suffix attached to the surname.
+          const lastNameWithSuffix = (name) => {
+            const tokens = name.trim().split(/\s+/);
+            const isSuffix = (t) => /^(jr|sr|ii|iii|iv|v)\.?$/i.test(t);
+            if (tokens.length >= 2 && isSuffix(tokens[tokens.length - 1])) {
+              return tokens.slice(-2).join(' ');
+            }
+            return tokens[tokens.length - 1];
+          };
+
+          const fighterALastName = lastNameWithSuffix(fighterA);
+          const fighterBLastName = lastNameWithSuffix(fighterB);
 
           if (eventType === 'Fight Night') {
             eventName = `UFC Fight Night ${fighterALastName} vs. ${fighterBLastName}`;
