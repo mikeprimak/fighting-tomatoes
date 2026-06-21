@@ -160,6 +160,17 @@ interface ApiError {
   details?: any;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  linkType: string | null; // "fight" | "event" | "review" | ...
+  linkId: string | null;
+  createdAt: string;
+}
+
 export interface TopComment {
   id: string;
   content: string;
@@ -1069,6 +1080,22 @@ class ApiService {
     return this.makeRequest('/notifications/test-pre-event-report', {
       method: 'POST',
       body: JSON.stringify({ eventId }),
+    });
+  }
+
+  // Notification Center (in-app inbox)
+  async getNotifications(): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
+    return this.makeRequest('/notifications');
+  }
+
+  async getNotificationUnreadCount(): Promise<{ unreadCount: number }> {
+    return this.makeRequest('/notifications/unread-count');
+  }
+
+  async markNotificationsRead(ids?: string[]): Promise<{ updated: number }> {
+    return this.makeRequest('/notifications/mark-read', {
+      method: 'POST',
+      body: JSON.stringify(ids && ids.length > 0 ? { ids } : {}),
     });
   }
 
