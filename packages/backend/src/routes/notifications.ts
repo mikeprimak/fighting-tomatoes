@@ -10,6 +10,11 @@ const registerTokenSchema = z.object({
   pushToken: z.string(),
 });
 
+const markReadSchema = z.object({
+  // Omit to mark ALL unread read; provide ids to mark a specific subset.
+  ids: z.array(z.string()).optional(),
+});
+
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   notifyHypedFights: z.boolean().optional(),
@@ -421,6 +426,81 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       });
     }
   });
+
+  // ============== Notification Center (in-app inbox) ==============
+
+  // List the current user's recent notifications (last 7 days) + unread count.
+  fastify.get(
+    '/',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+      const [notifications, unreadCount] = await Promise.all([
+        prisma.userNotification.findMany({
+          where: { userId, createdAt: { gte: since } },
+          orderBy: { createdAt: 'desc' },
+          take: 50,
+          select: {
+            id: true,
+            title: true,
+            message: true,
+            type: true,
+            isRead: true,
+            linkType: true,
+            linkId: true,
+            createdAt: true,
+          },
+        }),
+        prisma.userNotification.count({
+          where: { userId, isRead: false, createdAt: { gte: since } },
+        }),
+      ]);
+
+      return reply.send({ notifications, unreadCount });
+    },
+  );
+
+  // Lightweight unread-count for the nav-bar badge poll.
+  fastify.get(
+    '/unread-count',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      const unreadCount = await prisma.userNotification.count({
+        where: { userId, isRead: false, createdAt: { gte: since } },
+      });
+      return reply.send({ unreadCount });
+    },
+  );
+
+  // Mark notifications read. Body { ids: string[] } marks those rows; omit `ids`
+  // to mark ALL of the user's unread notifications read (e.g. on screen open).
+  fastify.post(
+    '/mark-read',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const parsed = markReadSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'Invalid request', details: parsed.error.flatten() });
+      }
+      const { ids } = parsed.data;
+
+      const result = await prisma.userNotification.updateMany({
+        where: {
+          userId,
+          isRead: false,
+          ...(ids && ids.length > 0 ? { id: { in: ids } } : {}),
+        },
+        data: { isRead: true, readAt: new Date() },
+      });
+
+      return reply.send({ updated: result.count });
+    },
+  );
 };
 
 export default notificationsRoutes;
