@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 440" width="760" height="440" font-family="-apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" role="img" aria-label="UFC 329 main event odds movement: implied win probability for Conor McGregor and Max Holloway over time.">
 <rect x="0" y="0" width="760" height="440" rx="14" fill="#0b0d10"/>
 <text x="52" y="30" fill="#f5f5f5" font-size="19" font-weight="700">How the UFC 329 main event odds have moved</text>
-<text x="52" y="50" fill="#9aa3ad" font-size="12.5">Implied win probability from the moneyline. Updated through Jun 20.</text>
+<text x="52" y="50" fill="#9aa3ad" font-size="12.5">Implied win probability from the moneyline. Updated through Jun 21.</text>
 <line x1="52" y1="384.0" x2="628" y2="384.0" stroke="#1c2127" stroke-width="1"/>
 <text x="44" y="388.0" fill="#6b7480" font-size="11" text-anchor="end">0%</text>
 <line x1="52" y1="304.0" x2="628" y2="304.0" stroke="#1c2127" stroke-width="1"/>
@@ -13,27 +13,30 @@
 <line x1="52" y1="64.0" x2="628" y2="64.0" stroke="#1c2127" stroke-width="1"/>
 <text x="44" y="68.0" fill="#6b7480" font-size="11" text-anchor="end">100%</text>
 <text x="52.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">May 16</text>
-<text x="117.8" y="404" fill="#6b7480" font-size="11" text-anchor="middle">May 20</text>
-<text x="578.6" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 17</text>
-<text x="595.1" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 18</text>
-<text x="611.5" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 19</text>
-<text x="628.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 20</text>
-<polyline points="52.0,292.6 117.8,291.2 578.6,287.0 595.1,287.6 611.5,285.5 628.0,284.0" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<text x="116.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">May 20</text>
+<text x="564.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 17</text>
+<text x="580.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 18</text>
+<text x="596.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 19</text>
+<text x="612.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 20</text>
+<text x="628.0" y="404" fill="#6b7480" font-size="11" text-anchor="middle">Jun 21</text>
+<polyline points="52.0,292.6 116.0,291.2 564.0,287.0 580.0,287.6 596.0,285.5 612.0,284.0 628.0,278.4" fill="none" stroke="#f97316" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="52.0" cy="292.6" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<circle cx="117.8" cy="291.2" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<circle cx="578.6" cy="287.0" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<circle cx="595.1" cy="287.6" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<circle cx="611.5" cy="285.5" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<circle cx="628.0" cy="284.0" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
-<text x="638.0" y="280.0" fill="#f97316" font-size="13" font-weight="700">McGregor</text>
-<text x="638.0" y="296.0" fill="#9aa3ad" font-size="11.5">31% (+220)</text>
-<polyline points="52.0,142.0 117.8,150.5 578.6,146.3 595.1,145.6 611.5,147.6 628.0,148.7" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="116.0" cy="291.2" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<circle cx="564.0" cy="287.0" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<circle cx="580.0" cy="287.6" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<circle cx="596.0" cy="285.5" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<circle cx="612.0" cy="284.0" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<circle cx="628.0" cy="278.4" r="3.2" fill="#0b0d10" stroke="#f97316" stroke-width="2"/>
+<text x="638.0" y="274.4" fill="#f97316" font-size="13" font-weight="700">McGregor</text>
+<text x="638.0" y="290.4" fill="#9aa3ad" font-size="11.5">33% (+203)</text>
+<polyline points="52.0,142.0 116.0,150.5 564.0,146.3 580.0,145.6 596.0,147.6 612.0,148.7 628.0,154.1" fill="none" stroke="#60a5fa" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 <circle cx="52.0" cy="142.0" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<circle cx="117.8" cy="150.5" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<circle cx="578.6" cy="146.3" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<circle cx="595.1" cy="145.6" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<circle cx="611.5" cy="147.6" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<circle cx="628.0" cy="148.7" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
-<text x="638.0" y="144.7" fill="#60a5fa" font-size="13" font-weight="700">Holloway</text>
-<text x="638.0" y="160.7" fill="#9aa3ad" font-size="11.5">74% (-278)</text>
+<circle cx="116.0" cy="150.5" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<circle cx="564.0" cy="146.3" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<circle cx="580.0" cy="145.6" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<circle cx="596.0" cy="147.6" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<circle cx="612.0" cy="148.7" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<circle cx="628.0" cy="154.1" r="3.2" fill="#0b0d10" stroke="#60a5fa" stroke-width="2"/>
+<text x="638.0" y="150.1" fill="#60a5fa" font-size="13" font-weight="700">Holloway</text>
+<text x="638.0" y="166.1" fill="#9aa3ad" font-size="11.5">72% (-255)</text>
 </svg>
