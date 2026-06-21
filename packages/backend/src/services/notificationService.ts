@@ -32,12 +32,18 @@ export async function sendPushNotifications(
   userIds: string[],
   payload: NotificationPayload
 ): Promise<{ success: number; failed: number }> {
-  // Get push tokens for these users
+  // Get push tokens for these users. Snoozed users ("Silence for 8 hours")
+  // are excluded centrally here, so every dispatch path honors the snooze.
+  const now = new Date();
   const users = await prisma.user.findMany({
     where: {
       id: { in: userIds },
       pushToken: { not: null },
       notificationsEnabled: true,
+      OR: [
+        { notificationsSnoozedUntil: null },
+        { notificationsSnoozedUntil: { lte: now } },
+      ],
     },
     select: { id: true, pushToken: true },
   });

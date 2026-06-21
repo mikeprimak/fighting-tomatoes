@@ -49,4 +49,18 @@ export function useMarkNotificationsRead() {
   });
 }
 
+/**
+ * Set or clear the "Silence for N hours" snooze. Pass 0 hours to clear.
+ * Refreshes the list (which carries snoozedUntil).
+ */
+export function useSetNotificationSnooze() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (hours: number) => apiService.setNotificationSnooze(hours),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: LIST_KEY });
+    },
+  });
+}
+
 export type { AppNotification };

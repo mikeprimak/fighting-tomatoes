@@ -14,6 +14,11 @@ const markReadSchema = z.object({
   ids: z.array(z.string()).optional(),
 });
 
+const snoozeSchema = z.object({
+  // Hours to silence all push notifications. 0 (or omitted) clears the snooze.
+  hours: z.number().min(0).max(48).optional(),
+});
+
 const updatePreferencesSchema = z.object({
   notificationsEnabled: z.boolean().optional(),
   // Followed-fighter per-lane toggles
@@ -319,7 +324,7 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
       const userId = request.user!.id;
       const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-      const [notifications, unreadCount] = await Promise.all([
+      const [notifications, unreadCount, user] = await Promise.all([
         prisma.userNotification.findMany({
           where: { userId, createdAt: { gte: since } },
           orderBy: { createdAt: 'desc' },
@@ -338,9 +343,42 @@ const notificationsRoutes: FastifyPluginAsync = async (fastify, opts) => {
         prisma.userNotification.count({
           where: { userId, isRead: false, createdAt: { gte: since } },
         }),
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { notificationsSnoozedUntil: true },
+        }),
       ]);
 
-      return reply.send({ notifications, unreadCount });
+      // Only report an active (future) snooze; a past timestamp reads as cleared.
+      const snoozedUntil =
+        user?.notificationsSnoozedUntil && user.notificationsSnoozedUntil > new Date()
+          ? user.notificationsSnoozedUntil
+          : null;
+
+      return reply.send({ notifications, unreadCount, snoozedUntil });
+    },
+  );
+
+  // Set or clear the "Silence for N hours" snooze. { hours: 8 } snoozes;
+  // { hours: 0 } or {} clears it. Honored centrally in sendPushNotifications.
+  fastify.post(
+    '/snooze',
+    { preHandler: authenticateUser },
+    async (request, reply) => {
+      const userId = request.user!.id;
+      const parsed = snoozeSchema.safeParse(request.body ?? {});
+      if (!parsed.success) {
+        return reply.status(400).send({ error: 'Invalid request', details: parsed.error.flatten() });
+      }
+      const hours = parsed.data.hours ?? 0;
+      const snoozedUntil = hours > 0 ? new Date(Date.now() + hours * 60 * 60 * 1000) : null;
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: { notificationsSnoozedUntil: snoozedUntil },
+      });
+
+      return reply.send({ snoozedUntil });
     },
   );
 

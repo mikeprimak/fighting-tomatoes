@@ -16,8 +16,15 @@ import { Colors } from '../constants/Colors';
 import {
   useNotifications,
   useMarkNotificationsRead,
+  useSetNotificationSnooze,
   AppNotification,
 } from '../hooks/useNotifications';
+
+const SNOOZE_HOURS = 8;
+
+function formatSnoozeUntil(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
 
 function iconForType(type: string): React.ComponentProps<typeof FontAwesome>['name'] {
   switch (type) {
@@ -64,6 +71,9 @@ export default function NotificationsScreen() {
 
   const { data, isLoading, isError, refetch, isRefetching } = useNotifications();
   const markRead = useMarkNotificationsRead();
+  const setSnooze = useSetNotificationSnooze();
+
+  const snoozedUntil = data?.snoozedUntil ?? null;
 
   // Snapshot which ids were unread when the screen opened, so the "new" highlight
   // persists for this view even after we mark everything read in the background.
@@ -143,6 +153,45 @@ export default function NotificationsScreen() {
         }}
       />
 
+      {!isLoading && !isError && (
+        <View style={[styles.snoozeBar, { backgroundColor: colors.card, borderBottomColor: colors.border ?? '#2A2A2A' }]}>
+          <FontAwesome
+            name={snoozedUntil ? 'bell-slash' : 'bell-slash-o'}
+            size={16}
+            color={snoozedUntil ? colors.tint : colors.textSecondary}
+          />
+          {snoozedUntil ? (
+            <>
+              <Text style={[styles.snoozeText, { color: colors.text }]} numberOfLines={1}>
+                Silenced until {formatSnoozeUntil(snoozedUntil)}
+              </Text>
+              <TouchableOpacity
+                disabled={setSnooze.isPending}
+                onPress={() => setSnooze.mutate(0)}
+                style={[styles.snoozeAction, { borderColor: colors.tint }]}
+              >
+                <Text style={{ color: colors.tint, fontWeight: '600', fontSize: 13 }}>Resume</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.snoozeText, { color: colors.textSecondary }]} numberOfLines={1}>
+                Watching a live event?
+              </Text>
+              <TouchableOpacity
+                disabled={setSnooze.isPending}
+                onPress={() => setSnooze.mutate(SNOOZE_HOURS)}
+                style={[styles.snoozeAction, { borderColor: colors.tint }]}
+              >
+                <Text style={{ color: colors.tint, fontWeight: '600', fontSize: 13 }}>
+                  Silence {SNOOZE_HOURS}h
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
       {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -182,6 +231,16 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 12 },
+  snoozeBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  snoozeText: { flex: 1, fontSize: 13 },
+  snoozeAction: { borderWidth: 1, borderRadius: 8, paddingVertical: 5, paddingHorizontal: 12 },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
