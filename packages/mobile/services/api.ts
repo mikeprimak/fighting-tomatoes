@@ -1084,8 +1084,20 @@ class ApiService {
   }
 
   // Notification Center (in-app inbox)
-  async getNotifications(): Promise<{ notifications: AppNotification[]; unreadCount: number }> {
+  async getNotifications(): Promise<{
+    notifications: AppNotification[];
+    unreadCount: number;
+    snoozedUntil: string | null;
+  }> {
     return this.makeRequest('/notifications');
+  }
+
+  // Set/clear the "Silence for N hours" snooze. Pass 0 to clear.
+  async setNotificationSnooze(hours: number): Promise<{ snoozedUntil: string | null }> {
+    return this.makeRequest('/notifications/snooze', {
+      method: 'POST',
+      body: JSON.stringify({ hours }),
+    });
   }
 
   async getNotificationUnreadCount(): Promise<{ unreadCount: number }> {
