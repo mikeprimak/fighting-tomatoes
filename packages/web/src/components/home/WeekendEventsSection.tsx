@@ -10,12 +10,11 @@ import { useEventBroadcasts } from '@/components/HowToWatch';
 import { SectionHeading } from './SectionHeading';
 
 /**
- * "Events this weekend" — the upcoming cards happening between now and the end
- * of the current week, grouped into per-day sections exactly like the mobile
- * home: today through the upcoming Sunday; on a Monday it spans the full next
- * week so the band isn't empty at the top of the week. Each day renders under
- * its own "Events Today / Tomorrow / <weekday>" heading with the date as a
- * subline; compact teaser cards link into the event detail page.
+ * "Events this week" — the upcoming cards happening in the next 7 days (a
+ * rolling window from today), grouped into per-day sections exactly like the
+ * mobile home. Each day renders under its own "Events Today / Tomorrow /
+ * <weekday>" heading with the date as a subline; compact teaser cards link into
+ * the event detail page.
  */
 const DAY_MS = 86_400_000;
 
@@ -106,16 +105,16 @@ export function WeekendEventsSection() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // "This weekend" window = today up to (but not including) the Monday that
-  // starts next week — the rest of the current Mon–Sun week. On Monday it rolls
-  // to the whole next week. UTC day keys (Event.date is a UTC-hour placeholder),
-  // anchored on the user's local calendar date — identical to the mobile home.
+  // "This week" window = today through the next 7 days — a rolling window, not
+  // the rest of the Mon–Sun calendar week. The old week-bounded window collapsed
+  // to a single day on Sunday, and since cards cluster Fri/Sat the next card was
+  // already outside it, so the band rendered nothing all day Sunday. A rolling
+  // 7-day window always reaches the next card. UTC day keys (Event.date is a
+  // UTC-hour placeholder), anchored on the user's local calendar date — identical
+  // to the mobile home.
   const now = new Date();
   const todayKey = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const localDow = now.getDay(); // 0=Sun … 6=Sat
-  let daysUntilNextMonday = (1 - localDow + 7) % 7; // 0 when today is Monday
-  if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
-  const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
+  const windowEndKey = todayKey + 7 * DAY_MS; // today + next 6 days (7 calendar days)
 
   // The home screen is org-agnostic by design: every section shows content from
   // all promotions, regardless of the user's org filter selection (which only
@@ -128,7 +127,7 @@ export function WeekendEventsSection() {
   const events = (data?.events ?? [])
     .filter((e: any) => {
       const k = eventDayKey(e.date);
-      return k >= todayKey && k < nextMondayKey;
+      return k >= todayKey && k < windowEndKey;
     })
     .sort((a: any, b: any) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
