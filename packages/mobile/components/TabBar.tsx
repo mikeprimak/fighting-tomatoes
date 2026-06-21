@@ -9,6 +9,45 @@ import { useAnyLiveEvent } from '../hooks/useHasLiveEvent';
 import { useSearch } from '../store/SearchContext';
 import { useSpoilerFree } from '../store/SpoilerFreeContext';
 import HeaderProfileButton from './HeaderProfileButton';
+import { useUnreadNotificationCount } from '../hooks/useNotifications';
+
+/**
+ * Envelope icon + unread badge for the top nav bar. Routes to the Notification
+ * Center. Only rendered when a user is signed in.
+ */
+function NotificationBell({ color }: { color: string }) {
+  const router = useRouter();
+  const unread = useUnreadNotificationCount();
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/notifications' as any)}
+      style={{ padding: 8, marginRight: 8 }}
+      accessibilityLabel="Notifications"
+    >
+      <FontAwesome name="envelope-o" size={20} color={color} />
+      {unread > 0 && (
+        <View
+          style={{
+            position: 'absolute',
+            top: 2,
+            right: 2,
+            minWidth: 16,
+            height: 16,
+            borderRadius: 8,
+            backgroundColor: '#E11D48',
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingHorizontal: 3,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 10, fontWeight: '700' }}>
+            {unread > 9 ? '9+' : unread}
+          </Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+}
 
 /**
  * Tab Bar Icon Component
@@ -149,6 +188,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           color={isSearchVisible ? colors.tint : colors.text}
         />
       </TouchableOpacity>
+      {user && <NotificationBell color={colors.text} />}
       <HeaderProfileButton />
     </View>
   );
