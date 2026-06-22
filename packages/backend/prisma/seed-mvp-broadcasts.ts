@@ -59,6 +59,23 @@ const EVENTS: EventConfig[] = [
       { region: 'GB', section: null, channelSlug: 'sky-sports', tier: 'SUBSCRIPTION' },
     ],
   },
+  // ---- MVPW 5: Johnson vs. Thorslund (Aug 8 2026, Orlando) ----
+  // Sources (verified 2026-06-22):
+  //  - https://www.mostvaluablepromotions.com/johnson-vs-thorslund-headlines-mvpw-05-aug-8-on-espn/ (US: ESPN + ESPN App)
+  //  - https://www.skysports.com/boxing/news/12183/13548586/ (UK: Sky Sports)
+  //  - DAZN carries internationally (per MVP/ESPN announcements).
+  {
+    id: '677c80da-c2a6-46b7-9fb7-2c3ab0f85776',
+    label: 'MVPW 5: Johnson vs. Thorslund',
+    rows: [
+      { region: 'US', section: null, channelSlug: 'espn-plus',  tier: 'SUBSCRIPTION', note: 'ESPN + ESPN App' },
+      { region: 'GB', section: null, channelSlug: 'sky-sports', tier: 'SUBSCRIPTION' },
+      { region: 'CA', section: null, channelSlug: 'dazn',       tier: 'SUBSCRIPTION' },
+      { region: 'EU', section: null, channelSlug: 'dazn',       tier: 'SUBSCRIPTION' },
+      { region: 'AU', section: null, channelSlug: 'dazn',       tier: 'SUBSCRIPTION' },
+      { region: 'NZ', section: null, channelSlug: 'dazn',       tier: 'SUBSCRIPTION' },
+    ],
+  },
 ];
 
 (async () => {
