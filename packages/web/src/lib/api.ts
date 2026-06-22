@@ -510,6 +510,7 @@ export async function updateProfile(data: {
   displayName?: string;
   firstName?: string;
   lastName?: string;
+  avatar?: string;
 }) {
   return makeRequest<{ user: any; message: string }>('/auth/profile', {
     method: 'PUT',

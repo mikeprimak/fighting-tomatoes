@@ -8,10 +8,12 @@ import {
   TextInput,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, Stack } from 'expo-router';
 import { useColorScheme } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { Colors } from '../constants/Colors';
 import { useAuth } from '../store/AuthContext';
 import { useCustomAlert } from '../hooks/useCustomAlert';
@@ -26,6 +28,8 @@ export default function EditProfileScreen() {
   const { alertState, showSuccess, showError, hideAlert } = useCustomAlert();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [avatar, setAvatar] = useState<string | null>(user?.avatar || null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckingDisplayName, setIsCheckingDisplayName] = useState(false);
   const [displayNameAvailable, setDisplayNameAvailable] = useState<boolean | null>(null);
@@ -36,6 +40,7 @@ export default function EditProfileScreen() {
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName || '');
+      setAvatar(user.avatar || null);
       originalDisplayNameRef.current = user.displayName || '';
     }
   }, [user?.id]);
@@ -76,6 +81,49 @@ export default function EditProfileScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayName]);
 
+  const handlePickImage = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        showError('We need photo library access to set a profile photo.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (result.canceled || !result.assets?.[0]) return;
+
+      const imageUri = result.assets[0].uri;
+      setIsUploadingImage(true);
+
+      const formData = new FormData();
+      const uriParts = imageUri.split('.');
+      const fileType = uriParts[uriParts.length - 1];
+      formData.append('file', {
+        uri: imageUri,
+        name: `profile-image.${fileType}`,
+        type: `image/${fileType === 'jpg' ? 'jpeg' : fileType}`,
+      } as any);
+
+      const { imageUrl } = await api.uploadProfileImage(formData);
+      // Persist to the user record, then refresh so every avatar surface updates.
+      await api.updateProfile({ avatar: imageUrl });
+      await refreshUserData();
+      setAvatar(imageUrl);
+      showSuccess('Profile photo updated!');
+    } catch (error: any) {
+      console.error('Profile image upload failed:', error);
+      showError(error?.error || error?.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setIsLoading(true);
@@ -111,7 +159,7 @@ export default function EditProfileScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Edit Display Name',
+          title: 'Edit Profile',
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()} hitSlop={{ top: 24, bottom: 24, left: 24, right: 24 }} style={{ paddingVertical: 10, paddingHorizontal: 16, marginLeft: -8 }}>
               <Ionicons name="arrow-back" size={24} color={colors.text} />
@@ -132,6 +180,36 @@ export default function EditProfileScreen() {
             showsVerticalScrollIndicator={false}
             automaticallyAdjustKeyboardInsets={true}
           >
+            {/* Avatar */}
+            <View style={styles.avatarSection}>
+              <TouchableOpacity
+                onPress={handlePickImage}
+                disabled={isUploadingImage}
+                activeOpacity={0.8}
+                style={styles.avatarTouchable}
+              >
+                <View style={[styles.avatarCircle, { backgroundColor: colors.backgroundSecondary, borderColor: colors.border }]}>
+                  {avatar ? (
+                    <Image source={{ uri: avatar }} style={styles.avatarImage} />
+                  ) : (
+                    <Text style={[styles.avatarInitial, { color: colors.primary }]}>
+                      {(displayName || user?.email || '?').charAt(0).toUpperCase()}
+                    </Text>
+                  )}
+                  <View style={styles.avatarBadge}>
+                    {isUploadingImage ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <FontAwesome name="camera" size={14} color="#fff" />
+                    )}
+                  </View>
+                </View>
+              </TouchableOpacity>
+              <Text style={[styles.helperText, { color: colors.textSecondary, textAlign: 'center' }]}>
+                {isUploadingImage ? 'Uploading…' : 'Tap to change photo'}
+              </Text>
+            </View>
+
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>Display Name</Text>
               <TextInput
@@ -223,6 +301,42 @@ const createStyles = (colors: any) => StyleSheet.create({
   fullWidthSaveButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 24,
+    gap: 8,
+  },
+  avatarTouchable: {
+    borderRadius: 48,
+  },
+  avatarCircle: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+  },
+  avatarInitial: {
+    fontSize: 36,
+    fontWeight: '700',
+  },
+  avatarBadge: {
+    position: 'absolute',
+    right: 0,
+    bottom: 0,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputGroup: {
     marginBottom: 16,

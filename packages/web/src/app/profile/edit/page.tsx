@@ -15,6 +15,7 @@ export default function EditProfilePage() {
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -55,11 +56,22 @@ export default function EditProfilePage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setError('');
+    setSuccess('');
+    setUploadingImage(true);
     try {
       const { imageUrl } = await uploadProfileImage(file);
-      setUser({ ...user, avatar: imageUrl });
+      // Persist to the user record — previously the avatar was only set in
+      // memory, so it vanished on reload and was never saved server-side.
+      const { user: updatedUser } = await updateProfile({ avatar: imageUrl });
+      setUser({ ...user, ...updatedUser });
+      setSuccess('Profile photo updated!');
     } catch (err: any) {
       setError(err.error || 'Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+      // Allow re-selecting the same file after an error.
+      e.target.value = '';
     }
   };
 
@@ -79,10 +91,14 @@ export default function EditProfilePage() {
               </span>
             )}
           </div>
-          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-            <Camera size={20} className="text-white" />
+          <div className={`absolute inset-0 flex items-center justify-center rounded-full bg-black/50 transition-opacity ${uploadingImage ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+            {uploadingImage ? (
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+            ) : (
+              <Camera size={20} className="text-white" />
+            )}
           </div>
-          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
         </label>
       </div>
 
