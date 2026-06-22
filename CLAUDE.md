@@ -101,6 +101,10 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **API endpoints**: `docs/API.md`
 - **Doc system overview**: `docs/README.md`
 
+## ⏳ Pending native change — apply on NEXT Android build
+
+**Android notification tray icon fix (commit `f112c5c1`, 2026-06-22) is NOT in any live/in-review build.** The vc39/2.1.2 build submitted 2026-06-22 predates it. Native drawables (`android/app/src/main/res/drawable-*/notification_icon.png`) are **not OTA-able**, so the corrected white-glove icon only reaches users via a **new Android build** (vc40+). Don't cut a build solely for this — fold it into the next Android build whenever one happens. The fix is already committed on `main` (both the committed drawables AND the managed `assets/notification-icon.png`), so any new build picks it up automatically. See `docs/daily/2026-06-22.md`.
+
 ## Current Store Versions (as of June 6, 2026)
 
 | Platform | Version | Build # | Status |
