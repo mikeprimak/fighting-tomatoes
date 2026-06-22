@@ -150,6 +150,18 @@ function buildTitleName(weightClassStr: string): string {
 }
 
 /**
+ * Normalize a scraped moneyline odds string to a stored value or null.
+ * ufc.com renders American odds (e.g. "-120", "+100") next to each corner and
+ * uses "-" as the placeholder when no line is posted. Accept only a real
+ * +/- followed by digits; everything else (incl. "-", "", "EVEN", stray text)
+ * becomes null so we never store a junk line.
+ */
+function normalizeOdds(raw?: string): string | null {
+  const t = (raw ?? '').trim();
+  return /^[+-]\d+$/.test(t) ? t : null;
+}
+
+/**
  * Infer gender from weight class
  */
 function inferGenderFromWeightClass(weightClass: WeightClass | null): Gender {
@@ -675,6 +687,20 @@ async function importEvents(
       // Upsert fight using eventId + fighter1Id + fighter2Id unique constraint
       const titleName = fightData.isTitle ? buildTitleName(fightData.weightClass) : undefined;
 
+      // Moneyline odds from ufc.com (rendered next to each corner). The page uses
+      // "-" as the no-odds placeholder, so accept only a real American-odds value
+      // (+/- followed by digits). Odds align with the current scrape's A/B corners;
+      // upsertFightSwapAware reorders fighter1/fighter2 to match this same scrape,
+      // so fighter1Odds/fighter2Odds stay paired with the right fighter.
+      const f1Odds = normalizeOdds(fightData.fighterA.odds);
+      const f2Odds = normalizeOdds(fightData.fighterB.odds);
+      // Only write odds when present, so a later scrape that shows "-" (odds pulled
+      // close to fight night) doesn't wipe a previously captured line.
+      const oddsData = {
+        ...(f1Odds ? { fighter1Odds: f1Odds } : {}),
+        ...(f2Odds ? { fighter2Odds: f2Odds } : {}),
+      };
+
       const upsertedFight = await upsertFightSwapAware(
         prisma,
         { eventId: event.id, fighter1Id, fighter2Id },
@@ -688,6 +714,7 @@ async function importEvents(
           startTime: fightData.startTime,
           ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
           missingScrapeCount: 0, // fight present in this scrape — clear strike counter
+          ...oddsData,
         },
         {
           eventId: event.id,
@@ -702,6 +729,7 @@ async function importEvents(
           ufcFightId: fightData.fightId,  // UFC's data-fmid for reliable live tracking
           startTime: fightData.startTime,
           fightStatus: 'UPCOMING',
+          ...oddsData,
         },
       );
 
