@@ -13,6 +13,7 @@ const channels = [
   { slug: 'prime-video',        name: 'Prime Video',           homepageUrl: 'https://www.primevideo.com/' },
   { slug: 'netflix',            name: 'Netflix',               homepageUrl: 'https://www.netflix.com/' },
   { slug: 'youtube',            name: 'YouTube',               homepageUrl: 'https://www.youtube.com/' },
+  { slug: 'raf-youtube',        name: 'YouTube',               homepageUrl: 'https://www.youtube.com/@RAFwrestling' },
   { slug: 'fox-nation',         name: 'Fox Nation',            homepageUrl: 'https://nation.foxnews.com/' },
 
   // UFC legacy / archive

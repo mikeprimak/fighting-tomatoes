@@ -86,8 +86,12 @@ const defaults: DefaultRow[] = [
     promotion: 'Karate Combat', region, channelSlug: 'youtube', tier: 'FREE' as Tier,
   })),
 
-  // ---- RAF (Fox Nation US — region-locked subscription) ----
+  // ---- RAF (Fox Nation US — region-locked subscription; free on RAF's YouTube everywhere else) ----
   { promotion: 'RAF', region: 'US', channelSlug: 'fox-nation', tier: 'SUBSCRIPTION' },
+  ...(['CA','GB','EU','AU','NZ'] as Region[]).map(region => ({
+    promotion: 'RAF', region, channelSlug: 'raf-youtube', tier: 'FREE' as Tier,
+    note: 'Free on RAF\'s YouTube (@RAFwrestling) outside the US',
+  })),
 
   // ---- Dirty Boxing (YouTube free) ----
   ...(['US','CA','GB','EU','AU','NZ'] as Region[]).map(region => ({
