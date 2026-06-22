@@ -36,7 +36,7 @@ import { useVerification } from '../store/VerificationContext';
 import { FlagReviewModal } from '.';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from './CustomAlert';
-import FightDetailsMenu from './FightDetailsMenu';
+import UpcomingFightModal from './UpcomingFightModal';
 import Button from './Button';
 import SectionContainer from './SectionContainer';
 import { isTBAFighterName } from '../constants/tba';
@@ -158,10 +158,8 @@ export default function UpcomingFightDetailScreen({
   // Edit reply state
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editReplyText, setEditReplyText] = useState<string>('');
-  // Use external state if provided, otherwise use local state
-  const [localDetailsMenuVisible, setLocalDetailsMenuVisible] = useState(false);
-  const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : localDetailsMenuVisible;
-  const setDetailsMenuVisible = externalSetDetailsMenuVisible || setLocalDetailsMenuVisible;
+  // Tap-to-open hype modal from the "Your Hype" card below.
+  const [hypeModalVisible, setHypeModalVisible] = useState(false);
   const [isFollowing, setIsFollowing] = useState(fight.isFollowing ?? false);
   const [toastMessage, setToastMessage] = useState<string>('');
   const [localFighter1Notification, setLocalFighter1Notification] = useState(fight.isFollowingFighter1);
@@ -1005,8 +1003,7 @@ export default function UpcomingFightDetailScreen({
       }
     },
     onSuccess: () => {
-      // Only invalidate queries if menu is closed to prevent jank
-      if (!detailsMenuVisible) {
+      {
         queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
         queryClient.invalidateQueries({ queryKey: ['fights'] });
         queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
@@ -1282,6 +1279,42 @@ export default function UpcomingFightDetailScreen({
           </View>
         );
       })()}
+
+      {/* Your Hype — shows the user's own hype and opens the hype modal to set/change it */}
+      <TouchableOpacity
+        onPress={() => setHypeModalVisible(true)}
+        activeOpacity={0.7}
+        style={{
+          marginHorizontal: 16,
+          marginTop: 8,
+          marginBottom: 4,
+          padding: 14,
+          borderRadius: 12,
+          borderWidth: 1,
+          borderColor: colors.border,
+          backgroundColor: colors.card,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <FontAwesome6
+            name="fire-flame-curved"
+            size={20}
+            color={fight.userHypePrediction ? '#F5C518' : colors.textSecondary}
+          />
+          <View>
+            <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: colors.textSecondary }}>
+              Your Hype
+            </Text>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+              {fight.userHypePrediction ? `${fight.userHypePrediction}/10` : 'Tap to add your hype'}
+            </Text>
+          </View>
+        </View>
+        <FontAwesome name="pencil" size={16} color={colors.textSecondary} />
+      </TouchableOpacity>
 
       {/* Crowd Hype */}
       <View style={{ paddingHorizontal: 16, marginTop: 5, marginBottom: 8 }}>
@@ -2170,32 +2203,16 @@ export default function UpcomingFightDetailScreen({
       )}
 
       {/* Fight Details Menu */}
-      <FightDetailsMenu
-        fight={{
-          ...menuFightSnapshot,
-          isFollowingFighter1: localFighter1Notification,
-          isFollowingFighter2: localFighter2Notification,
-          notificationReasons: localNotificationReasons,
-        }}
-        visible={detailsMenuVisible}
+      {/* Hype modal — opened from the "Your Hype" card; lets the user set/change hype. */}
+      <UpcomingFightModal
+        visible={hypeModalVisible}
+        fight={fight as any}
+        hideSeeComments
         onClose={() => {
-          setDetailsMenuVisible(false);
-          // Invalidate queries when menu closes to update bell icons
+          setHypeModalVisible(false);
+          // Refetch so the "Your Hype" card + crowd stats reflect the new value.
           queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
-          queryClient.invalidateQueries({ queryKey: ['fights'] });
-          queryClient.invalidateQueries({ queryKey: ['fighterFights'] });
-      queryClient.invalidateQueries({ queryKey: ['myRatings'] });
-          queryClient.invalidateQueries({ queryKey: ['eventFights'] });
-          queryClient.invalidateQueries({ queryKey: ['topUpcomingFights'] });
         }}
-        isFollowing={isFollowing}
-        onToggleNotification={handleToggleNotification}
-        isTogglingNotification={toggleNotificationMutation.isPending}
-        onToggleFighterNotification={handleToggleFighterNotification}
-        isTogglingFighterNotification={toggleFighterNotificationMutation.isPending}
-        toastMessage={toastMessage}
-        toastOpacity={toastOpacity}
-        toastTranslateY={toastTranslateY}
       />
     </ScrollView>
   );

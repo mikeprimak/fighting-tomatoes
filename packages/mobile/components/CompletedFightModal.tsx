@@ -59,13 +59,16 @@ interface CompletedFightModalProps {
   visible: boolean;
   fight: Fight | null;
   onClose: () => void;
+  // Hide the "See Comments" link when opened from the fight-detail screen
+  // (the user is already there, so the link would just stack another screen).
+  hideSeeComments?: boolean;
 }
 
 // Wheel constants (matching UpcomingFightModal)
 const STAR_SLOT_HEIGHT = 115;
 const BLANK_POSITION = 1150; // 10 slots * 115
 
-export default function CompletedFightModal({ visible, fight, onClose }: CompletedFightModalProps) {
+export default function CompletedFightModal({ visible, fight, onClose, hideSeeComments = false }: CompletedFightModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -621,19 +624,21 @@ export default function CompletedFightModal({ visible, fight, onClose }: Complet
                 />
               </View>
             )}
-            <TouchableOpacity
-              style={styles.seeDetailsLink}
-              onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}?mode=completed` as any); }}
-            >
-              <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
-                {(() => {
-                  const count = fightDetailData?.fight?.totalReviews || fightDetailData?.fight?.reviewCount || fight.totalReviews || fight.reviewCount || 0;
-                  return count > 0
-                    ? `See ${count} ${count === 1 ? 'Comment' : 'Comments'} >`
-                    : 'See Comments >';
-                })()}
-              </Text>
-            </TouchableOpacity>
+            {!hideSeeComments && (
+              <TouchableOpacity
+                style={styles.seeDetailsLink}
+                onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}?mode=completed` as any); }}
+              >
+                <Text style={[styles.seeDetailsText, { color: colors.textSecondary }]}>
+                  {(() => {
+                    const count = fightDetailData?.fight?.totalReviews || fightDetailData?.fight?.reviewCount || fight.totalReviews || fight.reviewCount || 0;
+                    return count > 0
+                      ? `See ${count} ${count === 1 ? 'Comment' : 'Comments'} >`
+                      : 'See Comments >';
+                  })()}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Done button */}

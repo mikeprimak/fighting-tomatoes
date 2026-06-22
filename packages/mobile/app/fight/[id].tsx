@@ -11,7 +11,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { useAuth } from '../../store/AuthContext';
@@ -257,13 +257,9 @@ export default function FightDetailScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Three dots menu - separate from bell */}
-        <TouchableOpacity
-          onPress={() => setDetailsMenuVisible(true)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="ellipsis-vertical" size={24} color={colors.text} />
-        </TouchableOpacity>
+        {/* "…" menu removed — fighter/event links + weight class/date are now on the
+            detail screen itself, and hype/rating are surfaced via the "Your Hype" /
+            "Your Rating" cards, making the menu redundant. */}
       </View>
     );
   };
