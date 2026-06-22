@@ -15,7 +15,13 @@ export default function LiveEventsPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['events', 'live'],
     queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 20 }),
-    refetchInterval: 60000,
+    // Poll fast (15s) while something is actually live so fight results/up-next
+    // refresh without a manual reload (matches the event-detail screen's live
+    // cadence); relax to 60s when nothing's on to avoid hammering the backend.
+    refetchInterval: (query) =>
+      (query.state.data?.events ?? []).some((e: any) => isEventLiveNow(e))
+        ? 15000
+        : 60000,
   });
 
   const allEvents = data?.events ?? [];
