@@ -152,19 +152,35 @@ function upsertSnapshot(data, today, consensus) {
   return true;
 }
 
-/** Rewrite the post's snapshot block + `updated:` frontmatter from latest data. */
-function updateArticle(data) {
-  if (!data.postSlug || !fs.existsSync(POSTS_DIR)) return;
+/**
+ * Every post slug this odds data feeds. Supports a `postSlugs` array (preferred)
+ * and falls back to the legacy single `postSlug`. Any post that embeds the
+ * <!--ODDS-SNAPSHOT--> markers + the graph gets kept in sync.
+ */
+function articleSlugs(data) {
+  const slugs = Array.isArray(data.postSlugs) ? data.postSlugs : [];
+  if (data.postSlug && !slugs.includes(data.postSlug)) slugs.unshift(data.postSlug);
+  return slugs.filter(Boolean);
+}
+
+/** Rewrite the snapshot block + `updated:` frontmatter for every linked post. */
+function updateArticles(data) {
+  if (!fs.existsSync(POSTS_DIR)) return;
+  for (const slug of articleSlugs(data)) updateArticle(data, slug);
+}
+
+/** Rewrite a single post's snapshot block + `updated:` frontmatter from latest data. */
+function updateArticle(data, slug) {
   const file = fs
     .readdirSync(POSTS_DIR)
     .filter((f) => f.endsWith('.md'))
     .find((f) => {
       const raw = fs.readFileSync(path.join(POSTS_DIR, f), 'utf8');
       const m = raw.match(/^slug:\s*["']?([^"'\n]+)["']?\s*$/m);
-      return m && m[1].trim() === data.postSlug;
+      return m && m[1].trim() === slug;
     });
   if (!file) {
-    console.log(`[odds] Post for slug ${data.postSlug} not found - skipping article update.`);
+    console.log(`[odds] Post for slug ${slug} not found - skipping article update.`);
     return;
   }
   const fp = path.join(POSTS_DIR, file);
@@ -242,7 +258,7 @@ async function main() {
 
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2) + '\n', 'utf8');
   const svgPath = writeGraph(data);
-  updateArticle(data);
+  updateArticles(data);
   console.log(`[odds] Done. Snapshot for ${today} written. Graph: ${path.basename(svgPath)}`);
 }
 
