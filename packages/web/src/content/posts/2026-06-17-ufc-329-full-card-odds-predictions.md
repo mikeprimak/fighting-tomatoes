@@ -7,7 +7,7 @@ author: "Good Fights"
 excerpt: "The complete UFC 329 fight card for McGregor vs Holloway 2 on July 11 in Las Vegas: every bout, the latest betting odds, the favorites and underdogs, and our honest prediction for each fight on the card, from the main event down to the prelims."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-card", "ufc-329-odds", "predictions", "ufc"]
 image: "/blog/mcgregor-holloway-banner.png"
-draft: true
+draft: false
 featured: false
 event:
   name: "UFC 329: McGregor vs Holloway 2"
