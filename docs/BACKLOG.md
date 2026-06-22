@@ -53,7 +53,7 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 ## 4. Web app
 
 - [x] `M` 🟢 **Profile image broken on web "Edit Profile"** → DONE (2026-06-22, merge `d478af67`). Root cause exactly as suspected: the endpoint returned a relative `/uploads/...` URL that resolved against goodfights.app (404), AND the page never persisted the avatar (only in-memory `setUser`). Fixed at the backend (R2 + absolute URL) + web now persists via `updateProfile({avatar})` + uploading spinner.
-- [ ] `M` 🟢 **Live tab auto-update (web)** → **Mike clarified this is the web app's "Live" tab / live-events screen**, not the home page. As results come in during a live event, the Upcoming/Live/Completed fight cards should change WITHOUT a manual reload (mobile does this). Verify/raise the `refetchInterval` on the Live screen + ensure individual cards re-render from the polled data.
+- [x] `M` 🟢 **Live tab auto-update (web)** → DONE (2026-06-22). `events/live/page.tsx` polled `['events','live']` at a flat 60s. Made `refetchInterval` a function: **15s while any event is live** (matches event-detail's live cadence so results/up-next refresh without reload), **60s otherwise** (no backend hammering when nothing's on). Cards re-render automatically — `EventCard`/`FightSectionList` render from the polled `data.events` props.
 
 ## 5. Search
 
