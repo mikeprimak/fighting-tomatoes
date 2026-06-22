@@ -1,0 +1,91 @@
+name: UFC Headshot Refresh
+# Re-pulls headshots from ufc.com for fighters who fought on a UFC card that
+# completed in the last N days, OVERWRITING the stored image when UFC has
+# published a new portrait (most commonly after a belt/status change).
+#
+# Distinct from "UFC Headshot Backfill" (manual, null-only). This one is the
+# daily refresh: it keeps recently-active fighters' photos current without
+# touching the rest of the roster. Cheap on no-change days — one page fetch per
+# fighter; an R2 download only when the source photo actually changed.
+#
+# Runs from GitHub Actions IPs so we don't get CDN-blocked like local runs.
+# Scheduled at 14:00 UTC, separated from the 17:00 UTC daily UFC scrape so we
+# don't hit ufc.com's CDN concurrently.
+
+on:
+  schedule:
+    - cron: '0 14 * * *'
+  workflow_dispatch:
+    inputs:
+      window_days:
+        description: 'Look-back window in days (blank = default 10)'
+        required: false
+        default: ''
+      limit:
+        description: 'Max fighters to process (blank = no limit)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'true = log intended writes without executing'
+        required: false
+        default: ''
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate Prisma client
+        run: |
+          cd packages/backend
+          npx prisma generate
+
+      - name: Install Chromium for Puppeteer
+        run: |
+          cd packages/backend
+          npx puppeteer browsers install chrome
+
+      - name: Run headshot refresh
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
+          R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          BRAVE_API_KEY: ${{ secrets.BRAVE_API_KEY }}
+          REFRESH_HEADSHOT_WINDOW_DAYS: ${{ inputs.window_days }}
+          REFRESH_HEADSHOT_LIMIT: ${{ inputs.limit }}
+          REFRESH_HEADSHOT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          cd packages/backend
+          pnpm tsx src/scripts/refreshRecentUFCHeadshots.ts
+
+      - name: Report success
+        if: success()
+        run: |
+          echo "UFC headshot refresh completed at $(date)"
+
+      - name: Report failure
+        if: failure()
+        run: |
+          echo "UFC headshot refresh FAILED at $(date)"
