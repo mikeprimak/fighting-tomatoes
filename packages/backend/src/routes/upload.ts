@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import path from 'path';
 import fs from 'fs';
 import { pipeline } from 'stream/promises';
+import { uploadLocalFileToR2 } from '../services/imageStorage';
 
 // Allowed image types (validated by magic bytes, not just MIME type)
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -74,21 +75,36 @@ export async function uploadRoutes(fastify: FastifyInstance) {
       };
       const fileExt = extMap[validation.detectedType!] || '.jpg';
       const fileName = `${randomUUID()}${fileExt}`;
+
+      // Prefer R2: durable + returns an absolute URL. Render's local filesystem
+      // is ephemeral (files vanish on redeploy), and a relative /uploads/... URL
+      // resolves against the web/app host (goodfights.app), not the backend —
+      // which is why profile images rendered broken. Store to R2 and return the
+      // absolute public URL so every client renders it as-is.
+      const r2Url = await uploadLocalFileToR2(
+        fileBuffer,
+        `profiles/${fileName}`,
+        validation.detectedType,
+      );
+      if (r2Url) {
+        request.log.info(`Profile image uploaded to R2: ${r2Url}`);
+        return reply.status(200).send({
+          imageUrl: r2Url,
+          message: 'Profile image uploaded successfully',
+        });
+      }
+
+      // Fallback (R2 not configured, e.g. local dev): write to disk and return
+      // an absolute URL built from the request host so it still resolves.
       const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'profiles');
       const filePath = path.join(uploadDir, fileName);
-
-      // Ensure upload directory exists
       if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir, { recursive: true });
       }
-
-      // Save file
       fs.writeFileSync(filePath, fileBuffer);
 
-      // Return the URL
-      const fileUrl = `/uploads/profiles/${fileName}`;
-
-      request.log.info(`Profile image uploaded successfully: ${fileUrl}`);
+      const fileUrl = `${request.protocol}://${request.headers.host}/uploads/profiles/${fileName}`;
+      request.log.info(`Profile image uploaded (local disk fallback): ${fileUrl}`);
 
       return reply.status(200).send({
         imageUrl: fileUrl,
