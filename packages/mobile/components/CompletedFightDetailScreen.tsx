@@ -3064,6 +3064,7 @@ export default function CompletedFightDetailScreen({
       <CompletedFightModal
         visible={ratingModalVisible}
         fight={fight as any}
+        hideSeeComments
         onClose={() => {
           setRatingModalVisible(false);
           // Refetch so the "Your Rating" card + crowd stats reflect the new value.

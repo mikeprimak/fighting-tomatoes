@@ -2207,6 +2207,7 @@ export default function UpcomingFightDetailScreen({
       <UpcomingFightModal
         visible={hypeModalVisible}
         fight={fight as any}
+        hideSeeComments
         onClose={() => {
           setHypeModalVisible(false);
           // Refetch so the "Your Hype" card + crowd stats reflect the new value.
