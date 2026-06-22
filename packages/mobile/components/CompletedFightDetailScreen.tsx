@@ -39,7 +39,7 @@ import PredictionBarChart from './PredictionBarChart';
 import Button from './Button';
 import FightDetailsSection from './FightDetailsSection';
 import { useFightStats } from '../hooks/useFightStats';
-import FightDetailsMenu from './FightDetailsMenu';
+import CompletedFightModal from './CompletedFightModal';
 import SectionContainer from './SectionContainer';
 import { formatEventDate } from '../utils/dateFormatters';
 
@@ -378,10 +378,8 @@ export default function CompletedFightDetailScreen({
   // Frozen review order - prevents layout shifts when upvoting
   const [frozenReviewOrder, setFrozenReviewOrder] = useState<string[]>([]);
 
-  // Use external state if provided, otherwise use internal state
-  const [internalDetailsMenuVisible, setInternalDetailsMenuVisible] = useState(false);
-  const detailsMenuVisible = externalDetailsMenuVisible !== undefined ? externalDetailsMenuVisible : internalDetailsMenuVisible;
-  const setDetailsMenuVisible = externalSetDetailsMenuVisible || setInternalDetailsMenuVisible;
+  // Tap-to-open rating modal from the "Your Rating" card below.
+  const [ratingModalVisible, setRatingModalVisible] = useState(false);
 
   const [predictionTab, setPredictionTab] = useState<'mine' | 'community'>('mine');
   const [commentsTab, setCommentsTab] = useState<'postfight' | 'preflight'>('postfight');
@@ -1812,6 +1810,42 @@ export default function CompletedFightDetailScreen({
           );
         })()}
 
+        {/* Your Rating — shows the user's own rating and opens the rating modal to set/change it */}
+        <TouchableOpacity
+          onPress={() => setRatingModalVisible(true)}
+          activeOpacity={0.7}
+          style={{
+            marginHorizontal: 16,
+            marginTop: 16,
+            marginBottom: 4,
+            padding: 14,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: colors.border,
+            backgroundColor: colors.card,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <FontAwesome
+              name="star"
+              size={20}
+              color={rating > 0 ? '#F5C518' : colors.textSecondary}
+            />
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: colors.textSecondary }}>
+                Your Rating
+              </Text>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, marginTop: 2 }}>
+                {rating > 0 ? `${rating}/10` : 'Tap to rate this fight'}
+              </Text>
+            </View>
+          </View>
+          <FontAwesome name="pencil" size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         {/* Reactions Section */}
         <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 8 }}>
           <Text style={{ fontSize: 13, color: colors.textSecondary, marginTop: 16, marginBottom: 12 }}>
@@ -3026,10 +3060,15 @@ export default function CompletedFightDetailScreen({
       )}
 
       {/* Fight Details Menu */}
-      <FightDetailsMenu
-        fight={fight}
-        visible={detailsMenuVisible}
-        onClose={() => setDetailsMenuVisible(false)}
+      {/* Rating modal — opened from the "Your Rating" card; lets the user set/change rating. */}
+      <CompletedFightModal
+        visible={ratingModalVisible}
+        fight={fight as any}
+        onClose={() => {
+          setRatingModalVisible(false);
+          // Refetch so the "Your Rating" card + crowd stats reflect the new value.
+          queryClient.invalidateQueries({ queryKey: ['fight', fight.id] });
+        }}
       />
     </>
   );
