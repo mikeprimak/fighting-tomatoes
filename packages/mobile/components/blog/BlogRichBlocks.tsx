@@ -22,6 +22,7 @@ import {
 import { WebView } from 'react-native-webview';
 import { useQuery } from '@tanstack/react-query';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import {
   HTMLElementModel,
   HTMLContentModel,
@@ -202,7 +203,67 @@ const FB_INJECTED = `
   true;
 `;
 
-function FacebookEmbed({ href, width }: { href: string; width: number }) {
+/**
+ * Catches a render failure from the WebView (e.g. an older app binary shipped
+ * before `react-native-webview` was bundled) and shows a tappable fallback
+ * instead of crashing. This keeps the JS bundle safe to OTA to every runtime,
+ * so we don't have to fork the Android OTA runtime just for this feature.
+ */
+class EmbedBoundary extends React.Component<
+  { fallback: React.ReactNode; children: React.ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  componentDidCatch() {
+    /* swallow — fallback is rendered */
+  }
+  render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
+}
+
+function FbFallback({
+  href,
+  width,
+  colors,
+}: {
+  href: string;
+  width: number;
+  colors: typeof Colors.light;
+}) {
+  return (
+    <View style={styles.embedWrap}>
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={() => WebBrowser.openBrowserAsync(href).catch(() => {})}
+        style={[
+          styles.fbFallback,
+          { width: Math.min(width, 500), borderColor: colors.border, backgroundColor: colors.card },
+        ]}
+      >
+        <Text style={[styles.fbFallbackTitle, { color: colors.text }]}>
+          View this moment on Facebook
+        </Text>
+        <Text style={[styles.fbFallbackSub, { color: colors.textSecondary }]}>
+          Opens facebook.com
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+function FacebookEmbed({
+  href,
+  width,
+  colors,
+}: {
+  href: string;
+  width: number;
+  colors: typeof Colors.light;
+}) {
   const [height, setHeight] = useState(360);
   // FB's post plugin floors at 350px; on the narrowest phones a few px clip,
   // which the column already tolerates. Cap at the plugin's 500px max.
@@ -213,23 +274,25 @@ function FacebookEmbed({ href, width }: { href: string; width: number }) {
 
   return (
     <LazyMount minHeight={320}>
-      <View style={styles.embedWrap}>
-        <WebView
-          source={{ uri }}
-          style={{ width: fbWidth, height, backgroundColor: 'transparent' }}
-          originWhitelist={['*']}
-          javaScriptEnabled
-          domStorageEnabled
-          scrollEnabled={false}
-          showsVerticalScrollIndicator={false}
-          injectedJavaScript={FB_INJECTED}
-          onMessage={(e) => {
-            const h = parseInt(e.nativeEvent.data, 10);
-            if (!Number.isNaN(h) && h > 80 && Math.abs(h - height) > 4) setHeight(h);
-          }}
-          androidLayerType="hardware"
-        />
-      </View>
+      <EmbedBoundary fallback={<FbFallback href={href} width={width} colors={colors} />}>
+        <View style={styles.embedWrap}>
+          <WebView
+            source={{ uri }}
+            style={{ width: fbWidth, height, backgroundColor: 'transparent' }}
+            originWhitelist={['*']}
+            javaScriptEnabled
+            domStorageEnabled
+            scrollEnabled={false}
+            showsVerticalScrollIndicator={false}
+            injectedJavaScript={FB_INJECTED}
+            onMessage={(e) => {
+              const h = parseInt(e.nativeEvent.data, 10);
+              if (!Number.isNaN(h) && h > 80 && Math.abs(h - height) > 4) setHeight(h);
+            }}
+            androidLayerType="hardware"
+          />
+        </View>
+      </EmbedBoundary>
     </LazyMount>
   );
 }
@@ -416,7 +479,7 @@ export function makeBlogRenderers(contentWidth: number, colors: typeof Colors.li
   const FbRenderer: CustomBlockRenderer = ({ tnode }) => {
     const href = tnode.attributes['data-href'];
     if (!href) return null;
-    return <FacebookEmbed href={href} width={contentWidth} />;
+    return <FacebookEmbed href={href} width={contentWidth} colors={colors} />;
   };
 
   const FightRenderer: CustomBlockRenderer = ({ tnode }) => {
@@ -440,6 +503,21 @@ const styles = StyleSheet.create({
   embedWrap: {
     alignItems: 'center',
     marginVertical: 16,
+  },
+  fbFallback: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 18,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  fbFallbackTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  fbFallbackSub: {
+    fontSize: 12,
+    marginTop: 4,
   },
   card: {
     flexDirection: 'row',
