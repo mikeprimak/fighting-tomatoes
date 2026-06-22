@@ -46,13 +46,13 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 ## 3. Mobile app polish
 
 - [ ] `S` 🟢 **Android notification tray icon** → configured (`app.json:119` → `notification-icon.png`) but it's a 223KB raster; Android wants a small monochrome silhouette. Produce a proper white-silhouette drawable.
-- [ ] `M` 🟢 **Profile image on mobile = MISSING** → `app/edit-profile.tsx` only handles display name. Add image picker + upload to the existing `POST /upload/profile-image` (R2) endpoint the web already uses.
+- [x] `M` 🟢 **Profile image on mobile = MISSING** → DONE (2026-06-22, merge `d478af67`). Added avatar picker UI to `app/edit-profile.tsx` (expo-image-picker, already in the native build → OTA-safe), upload → `updateProfile({avatar})` → refresh. **Also fixed the root cause for web:** `/upload/profile-image` was writing to Render's ephemeral disk + returning a RELATIVE url (resolved against goodfights.app → 404) — now uploads to R2 and returns an absolute url.
 - [ ] `M` 🟢 **Put rating/hype/prediction on the fight detail screen** → **Mike corrected the audit:** the "fight details" screen (fighter images, event details, outcome, hype/rating distribution chart, comments) does NOT show the user's OWN hype/rating anywhere, and offers no way to open the hype/rating modal to change it. Add: display the user's current hype/rating + a tap-to-open-modal to edit it, directly on this screen. **Then** remove the now-redundant `FightDetailsMenu.tsx` "…" menu (the deferred §1 item).
 - [ ] `S` 🟢 **Test biometric login** → shipped 2026-06-01 but never device-tested. Needs a real device + the native build.
 
 ## 4. Web app
 
-- [ ] `M` 🟢 **Profile image broken on web "Edit Profile"** → **Mike: the picker lets you select a file from the PC, but it then renders as a BROKEN image.** UI + `uploadProfileImage()` → `POST /upload/profile-image` exist (`app/profile/edit/page.tsx:55`). Reproduce; likely the upload returns a bad/unreachable URL (R2 key, content-type, or the preview src). Check the network call + the returned URL + R2 object.
+- [x] `M` 🟢 **Profile image broken on web "Edit Profile"** → DONE (2026-06-22, merge `d478af67`). Root cause exactly as suspected: the endpoint returned a relative `/uploads/...` URL that resolved against goodfights.app (404), AND the page never persisted the avatar (only in-memory `setUser`). Fixed at the backend (R2 + absolute URL) + web now persists via `updateProfile({avatar})` + uploading spinner.
 - [ ] `M` 🟢 **Live tab auto-update (web)** → **Mike clarified this is the web app's "Live" tab / live-events screen**, not the home page. As results come in during a live event, the Upcoming/Live/Completed fight cards should change WITHOUT a manual reload (mobile does this). Verify/raise the `refetchInterval` on the Live screen + ensure individual cards re-render from the polled data.
 
 ## 5. Search
