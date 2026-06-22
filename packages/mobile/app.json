@@ -133,7 +133,8 @@
       "@react-native-google-signin/google-signin",
       "expo-apple-authentication",
       "@sentry/react-native",
-      "expo-localization"
+      "expo-localization",
+      "./plugins/withModularHeaders"
     ],
     "scheme": "goodfights",
     "extra": {
