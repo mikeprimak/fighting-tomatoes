@@ -18,8 +18,9 @@ The order is set by Good Fights users, who rate every bout on a ten-point scale.
 
 <div class="gf-fight-card" data-fight-id="c7d58984-4e04-4dad-a953-aa9e57754a7f" data-rank="15"></div>
 
-![Floyd Mayweather](/blog/floyd-mayweather.jpg)
-*Floyd Mayweather. Photo via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Floyd_Mayweather%2C_Jr._at_DeWalt_event_2.jpg).*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/GiveMeSport/posts/pfbid02oLgfK4y8BfJKrGzBtjXS6vmEW39TpkN5EqPG7EFxnxWqwJMP3y2vcy1CsCpUuT6Cl" data-show-text="false"></div>
+</div>
 
 We start with the outlier, a fight that was **not an MMA fight at all**. After becoming a two-division UFC champion, McGregor crossed over into a professional boxing match against **Floyd Mayweather, one of the greatest boxers of his era**. That the UFC allowed one of its champions to do this was remarkable on its own, and Dana White helped promote it.
 
@@ -29,17 +30,29 @@ It was more competitive than skeptics expected. McGregor, who had **never boxed 
 
 <div class="gf-fight-card" data-fight-id="2ae3e73d-294d-40ca-bc6f-61db07841908" data-rank="14"></div>
 
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/UFC/photos/conor-mcgregor-lands-a-knee-to-the-face-of-donald-cerrone-on-his-way-to-finishin/10157848540786276/" data-show-text="false"></div>
+</div>
+
 Returning after a **15-month layoff** that followed the Khabib loss and the Mayweather bout, McGregor needed a clean night against **Donald Cerrone, a popular and experienced veteran**, and it was over almost immediately. He opened with an unusual tactic in the clinch, **shoulder strikes that bloodied and broke Cerrone's nose**, then followed with a head kick and punches to finish it in **40 seconds**. It was the **second-fastest win of his career**, behind only the Aldo knockout. Good Fights users saw it for what it was; one, Cool Panda, called it "the notorious Conor Mc mismatch." It remains, to date, his most recent victory.
 
 ## 13. Conor McGregor vs Dennis Siver (2015)
 
 <div class="gf-fight-card" data-fight-id="56b8b4e2-6dbd-4891-b66e-860eedb80ab0" data-rank="13"></div>
 
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/mmalockerroom/photos/til-dennis-siver-triggered-the-heel-turn-of-conor-mcgregor-/1225657422911368/" data-show-text="false"></div>
+</div>
+
 McGregor dismantled Dennis Siver with kicks and boxing for a **second-round stoppage**. The win was a formality. What is remembered is the moment after, when McGregor **leapt over the cage** to confront Jose Aldo at ringside, theater that helped sell the title fight to come. Siver week was also the first time McGregor spoke openly about **how he studies an opponent's body type and movement** and trains for it specifically, dismissing Siver as a wrestler with an overhand who gases. The analyst and the showman, side by side.
 
 ## 12. Conor McGregor vs Diego Brandao (2014)
 
 <div class="gf-fight-card" data-fight-id="e29e4044-c0da-4eb8-9f75-723f5dc3cfa0" data-rank="12"></div>
+
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/ufceurope/photos/conor-mcgregor-lands-a-left-to-the-head-of-diego-brandao-in-their-featherweight-/706447482724538/" data-show-text="false"></div>
+</div>
 
 This is the night McGregor's star truly took off. Headlining in his **home city of Dublin** for the first time, in front of a roaring home crowd, he stopped Diego Brandao in the **first round** and earned a Performance of the Night bonus. It was his **second first-round finish in the UFC**, and it made the wider audience take notice. It also produced an enduring line. With Irish fighters going 4-0 on the card, McGregor told the crowd, **"We're not here to take part, we're here to take over."**
 
@@ -56,8 +69,9 @@ This fight looks very different now than it did then, which is what makes the [U
 
 <div class="gf-fight-card" data-fight-id="04c424b1-569b-43c7-ab03-f9744b92abed" data-rank="10"></div>
 
-![Dustin Poirier](/blog/dustin-poirier.jpg)
-*Dustin Poirier. Photo via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Dustin_poirier_2024.jpg).*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/100092665861402/photos/conor-mcgregor-vs-dustin-poirier-1-/893067357125452/" data-show-text="false"></div>
+</div>
 
 This is the fight that proved the hype translated against top competition. **Dustin Poirier was a rising contender** and a genuine test, and McGregor passed it, using his reach and counter-striking to **finish Poirier in the first round**. On the broadcast, Mike Goldberg captured the style moments before the end: "He's very good at using all of that reach, turning his shoulder, fighting long." When it was over, Joe Rogan put it simply: "He said he would make it look easy. He made it look easy. Another first round KO."
 
@@ -67,8 +81,9 @@ It is also where the showman fully arrived. Asked by Rogan in the cage why the w
 
 <div class="gf-fight-card" data-fight-id="ed79d1b9-8de4-4636-bb5d-305e88a8362c" data-rank="9"></div>
 
-![José Aldo and Conor McGregor face off on the UFC 189 World Tour in London, 2015](/blog/mcgregor-aldo-ufc189-world-tour.jpg)
-*José Aldo and Conor McGregor on the UFC 189 World Tour, London, 2015. Photo via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Jos%C3%A9_Aldo_vs._Conor_McGregor,_UFC_189_World_Tour_London.jpg).*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/ufceurope/photos/featherweight-champion-jose-aldo-and-conor-mcgregor-face-off/823987470970538/" data-show-text="false"></div>
+</div>
 
 **Jose Aldo had not lost in roughly a decade** and was the only featherweight champion the UFC had ever crowned. After a long, heated buildup, the unification fight was over in **13 seconds**. McGregor goaded Aldo into a hard right hand, slipped inside it, and landed a **counter left** as the champion came forward, dropping him and finishing on the spot. It remains the **fastest finish in UFC title-fight history**.
 
@@ -88,14 +103,19 @@ McGregor's **UFC debut**, and he arrived already a draw. He had held **two title
 
 <div class="gf-fight-card" data-fight-id="dcced014-d20d-4626-a596-806e6ad5fb46" data-rank="7"></div>
 
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/southafricanmma/posts/dustin-poirier-vs-conor-mcgregor-3-being-targeted-via-arielhelwani/3915449455152562/" data-show-text="false"></div>
+</div>
+
 The trilogy decider, with the rivalry **tied at one win each**, is the grimmest entry here. The two traded in the opening round, Poirier finding his range, and then it ended in a way no one wanted. In the **final seconds of round one, McGregor stepped back onto his lower leg and it snapped**, and the fight was waved off by doctor's stoppage. There was barely a fight to judge, which is reflected in how it rates, but the consequences were large. The injury **began the long layoff** McGregor is only now returning from. One Good Fights user spoke for many, calling it a "terrible climax to the trilogy."
 
 ## 6. Conor McGregor vs Chad Mendes (2015)
 
 <div class="gf-fight-card" data-fight-id="ac907fa0-9a43-4132-a7c4-ec7fd29a41ce" data-rank="6"></div>
 
-![Conor McGregor on the UFC 189 World Tour in 2015](/blog/mcgregor-ufc189-2015.jpg)
-*Conor McGregor on the UFC 189 World Tour, 2015. Photo: Andrius Petrucenia / CC BY-SA 2.0 (cropped).*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/ufceurope/photos/%F0%9D%91%B7%F0%9D%92%8A%F0%9D%92%84%F0%9D%92%94-%F0%9D%92%95%F0%9D%92%89%F0%9D%92%82%F0%9D%92%95-%F0%9D%92%88%F0%9D%92%90-%F0%9D%92%89%F0%9D%92%82%F0%9D%92%93%F0%9D%92%85-conor-mcgregor-vs-chad-mendes-was-special/1508639003960535/" data-show-text="false"></div>
+</div>
 
 **UFC 189 was the first pay-per-view McGregor headlined**, and the event around it became part of the sport's history. He was meant to fight Aldo after a multi-country promotional World Tour, but Aldo withdrew with a rib injury and **elite wrestler Chad Mendes stepped in on short notice** for an interim title.
 
@@ -106,7 +126,7 @@ It was the **first time McGregor faced a high-level wrestler, and for a while it
 <div class="gf-fight-card" data-fight-id="0eaa311b-3c71-487e-87d1-2740e3477a95" data-rank="5"></div>
 
 <div style="display:flex;justify-content:center;margin:1.5rem 0;">
-<div class="fb-post" data-href="https://www.facebook.com/photo.php?fbid=1420094521392176&set=a.272924977533699&type=3" data-show-text="false"></div>
+<div class="fb-post" data-href="https://www.facebook.com/UFC/photos/conor-mcgregor-being-introduced-for-his-match-against-eddie-alvarez-for-the-ligh/10154546287221276/" data-show-text="false"></div>
 </div>
 
 At UFC 205, the promotion's **first event at Madison Square Garden**, McGregor held the featherweight title and challenged lightweight champion Eddie Alvarez to become the **first fighter in UFC history to hold two titles at once**. It was a masterclass. He took the center of the cage, **dropped Alvarez repeatedly in the first round**, and made an accomplished champion look out of his depth, before a **clean four-punch combination** ended it in the second. One Good Fights user, a Villa Films, captured how lopsided it was: "Very one sided fight, would love to have seen Eddie try and implement some of that strategy he talked about. McGregor just too skilled though." It was his **most technically flawless title performance**, even if it lacked the back-and-forth of his highest-rated fights.
@@ -115,8 +135,9 @@ At UFC 205, the promotion's **first event at Madison Square Garden**, McGregor h
 
 <div class="gf-fight-card" data-fight-id="0a1ba0bd-f3c9-41b5-8a76-5c9da32d26fb" data-rank="4"></div>
 
-![Khabib Nurmagomedov](/blog/khabib-nurmagomedov.jpg)
-*Khabib Nurmagomedov. Photo via [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Khabib_nurmagomedov_interview_2022_ufc_hall_of_fame.jpg).*
+<div style="display:flex;justify-content:center;margin:1.5rem 0;">
+<div class="fb-post" data-href="https://www.facebook.com/mmafighting/photos/khabib-nurmagomedov-loved-getting-paid-to-punch-conor-mcgregor/1401981414622645/" data-show-text="false"></div>
+</div>
 
 This was the **biggest event of McGregor's career** and the most personal rivalry the sport has produced. The buildup turned genuinely ugly, including an incident months earlier when McGregor **threw a hand truck at a bus** carrying Khabib and other fighters. The fight itself was a one-sided demonstration of what Khabib does to everyone. He weathered the early going, **took McGregor down and battered him**, and the constant threat of the takedown forced McGregor to drop his hands and absorb clean punches. Khabib **finished it with a neck crank in the fourth round**, then leapt the cage to go after a member of McGregor's team, setting off a **post-fight brawl**. One Good Fights user, PaoloReaper, remembers it for the room: "One of the best, most heated atmospheres ever, in the biggest and most anticipated fight of all time."
 
@@ -157,5 +178,3 @@ Which brings us to the fight that prompted this list. The [UFC 329 rematch with 
 - [The full UFC 329 card, odds, and predictions](/blog/ufc-329-full-card-odds-predictions) - every fight on the card and who we think wins.
 
 *Disagree with the order? Rate every McGregor fight yourself and see how the fan base scores them on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
-
-<sub>UFC 189 World Tour solo photo: Andrius Petrucenia, [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0), via Wikimedia Commons.</sub>
