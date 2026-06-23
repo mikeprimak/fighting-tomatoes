@@ -2,7 +2,7 @@
 title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-06-22"
+updated: "2026-06-23"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
@@ -144,7 +144,7 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 The odds tell the whole story of how the fight is viewed. **Max Holloway is the favorite and Conor McGregor the underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. One telling pattern in the betting: the public is piling onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large wagers are overwhelmingly on Holloway. That sharp-versus-public split has kept the line from swinging hard, though McGregor has slowly gained ground since it opened. Lines will keep shifting as fight week approaches, so check current prices before placing anything.
 
 <!--ODDS-SNAPSHOT-->
-As of June 22, 2026, Max Holloway is the favorite at around -252, roughly a 72% implied chance, and Conor McGregor is the underdog at about +202, roughly 33%. McGregor has gained ground since the line opened in May.
+As of June 23, 2026, Max Holloway is the favorite at around -252, roughly a 72% implied chance, and Conor McGregor is the underdog at about +202, roughly 33%. McGregor has gained ground since the line opened in May.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
