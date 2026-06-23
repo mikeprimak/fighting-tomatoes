@@ -81,7 +81,7 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 
 ## 8. Back catalog / legacy data
 
-- [ ] `L` 🟢 **Legacy event order (~hundreds)** → main-event-shows-as-first-prelim. Inversion script exists (`legacy-migration/.../sync-fight-order.js`) but it's NOT uniform (some legacy events are already correct — don't blanket-flip). Build a read-only audit first to find genuinely-inverted events, then fix only those. See `lesson_legacy_event_order_inversion`.
+- [~] `L` 🟢 **Legacy event order (~hundreds)** → main-event-shows-as-first-prelim. **Phase 1 (read-only audit) DONE 2026-06-22** — `packages/backend/scripts/audit-legacy-event-order.ts` + report `docs/audits/legacy-order-audit.{md,csv}`. Scores each legacy event with an authoritative **name-match** signal (UFC cards are named after the main event) + title + (weak) rating, so it doesn't rely on the rating heuristic the memory warns about. Of 1130 scored: **225 safe-to-fix** (211 `INVERTED-HIGH` name+rating agree, validated by spot-check + 14 `INVERTED-STRUCTURAL`), 325 `INVERTED-RATING-ONLY` (need ufcstats/Wikipedia), 30 `SENTINEL`, 341 already-correct. **Phase 2 (the fix) NOT applied** — awaiting Mike's go-ahead since it's a 225-event user-facing prod mutation. Transform is self-inverse `newOrder=(min+max)−old`; re-run the audit after to confirm flips. See `lesson_legacy_event_order_inversion`.
 - [ ] `M` 🟢 **Missing UFC banner images on historic events** → audit which legacy events lack a banner, backfill from a source.
 
 ## 9. Editorial / articles / marketing content
