@@ -1,8 +1,14 @@
 # Legacy event-order inversion audit (BACKLOG §8, phase 1)
 
-**Generated:** 2026-06-22 · **Script:** `packages/backend/scripts/audit-legacy-event-order.ts`
-(read-only) · **Data:** `legacy-order-audit.csv` (this dir) · **Status:** audit done, **fix
-not yet applied** (awaiting Mike's go-ahead — it's a large user-facing prod mutation).
+**Generated:** 2026-06-22 · **Audit script:** `packages/backend/scripts/audit-legacy-event-order.ts`
+(read-only) · **Fix script:** `packages/backend/scripts/fix-legacy-event-order.ts` · **Data:**
+`legacy-order-audit.csv` (this dir, **pre-fix snapshot** — the record of what was inverted).
+
+**Status: phase 2 DONE 2026-06-22.** The 225 safe-to-fix events (`INVERTED-HIGH` +
+`INVERTED-STRUCTURAL`) were flipped on prod (2491 fight rows). Post-fix verification: all 225
+re-classify `CORRECT`, 0 still inverted; spot-checked Kattar/Dos Anjos/Blaydes — main event now
+at order 1. **Still open:** 325 `INVERTED-RATING-ONLY` + 30 `SENTINEL` (need an authoritative
+external source, not the rating heuristic).
 
 ## The bug
 
@@ -50,14 +56,21 @@ highest `orderOnCard`**, with order 1 an early prelim:
 - *FN Dos Anjos vs Fiziev* — Dos Anjos vs Fiziev at order **11**; order 1 = Lawrence vs Kakhramonov.
 - *FN Blaydes vs Aspinall* — Blaydes vs Aspinall at order **14**; order 1 = Silva vs Dalby.
 
-## Proposed fix (next step, not yet run)
+## Fix
 
-Self-inverse transform per event: `newOrder = (minOrder + maxOrder) − oldOrder`.
+Self-inverse transform per event: `newOrder = (minOrder + maxOrder) − oldOrder`, applied as a
+single set-based `UPDATE` over the target IDs (safe: `orderOnCard` is in no unique key; the
+Fight unique is `(eventId, fighter1Id, fighter2Id)`).
 
-1. Apply to the **225 structural-INVERTED** events first (HIGH + STRUCTURAL) — authoritative,
-   spot-checked, and reversible. Re-run this audit afterward to confirm they flip to `CORRECT`.
-2. For the **325 rating-only** + **30 sentinel**, resolve from an authoritative source
-   (ufcstats / Wikipedia main-event lookup) rather than the rating heuristic.
-3. Leave `UNCERTAIN` / `CORRECT` untouched.
+1. ✅ **DONE** — applied to the **225 structural-INVERTED** events (HIGH + STRUCTURAL).
+   `fix-legacy-event-order.ts` is dry-run by default; ran with `--apply`. 2491 rows updated,
+   all 225 verified flipping to `CORRECT`.
+2. **TODO** — the **325 rating-only** + **30 sentinel**: resolve from an authoritative source
+   (ufcstats / Wikipedia main-event lookup) rather than the rating heuristic. (Re-run the audit
+   to regenerate the current candidate list — the committed CSV is the pre-fix snapshot.)
+3. `UNCERTAIN` / `CORRECT` left untouched.
 
-Modern scraped events (`scraperType` set) are correct — out of scope.
+Modern scraped events (`scraperType` set) are correct — out of scope. **Re-running
+`fix-legacy-event-order.ts --apply` is safe/idempotent**: it re-classifies live each run and
+only targets events that *currently* classify as inverted — the 225 now classify `CORRECT`, so
+a re-run skips them and would only catch newly-imported inversions.
