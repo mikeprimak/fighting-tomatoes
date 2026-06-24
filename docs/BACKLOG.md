@@ -72,6 +72,8 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 
 ## 7. Ratings, hype & events-as-a-whole
 
+- [ ] `L` 🟡 **Shareable card from the post-hype / post-rate modal (virality play)** → **NEW (2026-06-24).** Today, after a user hypes or rates a fight in the app, they see a post-hype modal / post-rating modal. **Convert that post-modal into a shareable card.** The card summarizes their action in a clean, branded graphic, e.g. *"I'm hyped for this fight: 8/10. Backing [Fighter B]. '[their comment]'"* (rating variant: *"I rated this fight X/10…"*), with a **"Share?"** CTA that uses the **native share sheet** (text-message chats, Instagram, X, etc.). Mobile: native share via `expo-sharing` / RN `Share`, rendering the card to an image (view-shot) for image-based shares. **Web parity:** add the same shareability on the web app — **NOTE the web app does NOT have post-hype / post-rate modals yet**, so web needs (a) the post-action modals built first, then (b) the shareable card + Web Share API / copy-link fallback. Each shared card should carry brand watermark + a deep link back to the fight (drives installs / web traffic — ties into the SEO/growth thesis). Aligns with the pivot's "sharable card" idea (§11) but for the mainstream hype/rate flow, not onboarding. Voice of the modals (§10) should land before/with this.
+
 - [ ] `L` 🟡 **Event-level hype & rating (better algo)** — Mike wants help designing this. `Event.averageRating`/`totalRatings` fields exist but the legacy avg-of-all-ratings is crude (one hot fight skews a card). **Needs a design session** — see `§ Decisions` for algo options to react to.
 - [ ] `M` 🟡 **Comment section improvements:**
   - Link on a post-fight comment → user's pre-fight comment (no pre/post link exists today; `PreFightComment` and `FightReview` are separate tables).
@@ -86,6 +88,9 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 
 ## 9. Editorial / articles / marketing content
 
+> **⭐ STRATEGIC DIRECTION (2026-06-24): we are going HARD on the SEO play.** The thesis: publish a steady stream of **SEO-targeted blog articles** that, over time, **cumulatively build organic web traffic and compound the asset's value.** Every editorial item below should be evaluated through this lens — pick topics with real search demand, structure each post for SEO (title/H1, meta description, internal links via the hub+cluster model, schema/structured data, clean slugs), and treat publishing cadence as the lever. This compounds: each article is a permanent traffic-earning asset, and the back catalog grows month over month. Source of truth for the mechanics: `docs/playbooks/seo-fight-preview-cluster.md` ([[project_seo_fight_preview_playbook]]). Track organic-visitors/mo in the admin Acquisition tab ([[project_web_traffic_acquisition_metric]]). Don't chase one-off viral posts at the expense of the evergreen, search-targeted back catalog.
+
+- [ ] `M` 🟢 **Continue "Placement on the Card Rankings" article** → in active iteration (4 drafts as of 2026-06-23, see `docs/daily/2026-06-23.md`). Newest canonical candidate: `docs/marketing/card-placement-rankings-article-v3-ppv-split.md` (avg-card-slot scale, PPV vs Fight Night split, activity gate, richer fighter stories, em-dash-free). **Open before publish:** (1) confirm which draft becomes canonical + delete the 2 dead drafts (`...-v2-position.md`, the single-list "editing version"); (2) convert to a real blog post (`packages/web/src/content/posts/*.md`, `draft: true`, run `syncBlogPosts.js`, deploy → shows in admin Blog > Drafts); (3) make it a flagship **SEO** piece per the strategic direction above (search-targeted title/slug, internal links, structured for organic discovery). Scripts behind it are read-only analysis tools in `packages/backend/scripts/`.
 - [ ] `M` 🔵 **Conor "Fights Rated" article** → polish, embed images properly, fix existing images, add spoiler warning.
 - [ ] `L` 🔵 **Ruleset comparison infographic** → continue refinement (many `ruleset-comparison-v*` versions exist in `docs/marketing/infographics/`).
 - [ ] `M` 🔵 **Conor infographic** → complete.
@@ -129,7 +134,7 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 
 ## 15. Monetization
 
-- [ ] `M` ⚪ **Affiliate links on "How to Watch" buttons** + click tracking.
+- [ ] `M` 🟢 **Affiliate links on ALL "How to Watch" links** + click tracking. **STRATEGIC (2026-06-24): this is now an active revenue play — we're going to start making money as an affiliate.** Wrap every "How to Watch" / broadcaster link (mobile + web + any blog/editorial "where to watch" CTA) in an affiliate/referral URL where the broadcaster or streaming partner has an affiliate program (DAZN, ESPN+, Sky, FITE/Triller, Amazon Prime, etc.), with UTM + click tracking so we can attribute conversions. Audit every surface that renders a broadcaster link today (`EventBroadcast` / `PromotionBroadcastDefault` render sites on mobile + web, plus editorial), centralize the affiliate-wrap so a single map of `channelId → affiliate template` covers all of them, and log clicks for attribution. Sign up for the relevant affiliate programs (Mike-driven where an application is required).
 
 ## 16. Admin panel
 
