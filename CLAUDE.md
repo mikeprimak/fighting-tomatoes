@@ -105,18 +105,18 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 
 **Android notification tray icon fix (commit `f112c5c1`, 2026-06-22) is NOT in any live/in-review build.** The vc39/2.1.2 build submitted 2026-06-22 predates it. Native drawables (`android/app/src/main/res/drawable-*/notification_icon.png`) are **not OTA-able**, so the corrected white-glove icon only reaches users via a **new Android build** (vc40+). Don't cut a build solely for this — fold it into the next Android build whenever one happens. The fix is already committed on `main` (both the committed drawables AND the managed `assets/notification-icon.png`), so any new build picks it up automatically. See `docs/daily/2026-06-22.md`.
 
-## Current Store Versions (as of June 6, 2026)
+## Current Store Versions (as of June 25, 2026)
 
 | Platform | Version | Build # | Status |
 |---|---|---|---|
 | Android (Play Store) | 2.1.0 | versionCode 38 | **LIVE** (passed review ~early June 2026) |
-| iOS (App Store) | 2.1.1 | buildNumber 21 | **LIVE** (passed App Store review ~early June 2026) |
+| iOS (App Store) | 2.1.2 | buildNumber (vc39) | **LIVE** (the 2.1.2 build submitted 2026-06-22 is now live) |
 
-- **Both store builds are live**, so production OTAs reach the full user base. OTA runtime targeting: **Android = `1.0.0`** (hardcoded `app.json` android `runtimeVersion`), **iOS = `2.1.1`** (`appVersion` policy). `eas update --branch production` auto-targets both. Verify the live runtime empirically with `eas update:list --branch production` before publishing.
+- **Both store builds are live**, so production OTAs reach the full user base. OTA runtime targeting: **Android = `1.0.0`** (hardcoded `app.json` android `runtimeVersion`), **iOS = `2.1.2`** (`appVersion` policy). `eas update --branch production` auto-targets both. Verify the live runtime empirically with `eas update:list --branch production` before publishing — confirmed 2026-06-25 that recent production OTAs all target iOS `2.1.2`.
 
 - **Android prod was versionCode 36 (2.0.x); 2.1.0 shipped as vc 37 then vc 38** (2026-06-01, profile redesign + biometric native build). Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
-- `build.gradle`: Android versionCode `38`, versionName `2.1.0`. `app.json`: version `2.1.1`, iOS buildNumber `21`. **Note iOS marketing version (2.1.1) is ahead of Android versionName (2.1.0)** — they diverged because the iOS 2.1.0 train was sealed (see below).
-- **iOS 2.1.0 train is CLOSED** — an approved build sealed it, so ASC rejects new 2.1.0 builds (ITMS-90186 + 90062). Bump `app.json` version (e.g. 2.1.1) for any new iOS build. iOS `runtimeVersion` uses the `appVersion` policy, so the version bump also moves the iOS OTA runtime (now `2.1.1`).
+- `build.gradle`: Android versionCode `38`, versionName `2.1.0`. `app.json`: version `2.1.2`, iOS buildNumber vc39. **Note iOS marketing version (2.1.2) is ahead of Android versionName (2.1.0)** — they diverged because the iOS 2.1.0 train was sealed (see below).
+- **iOS 2.1.0 train is CLOSED** — an approved build sealed it, so ASC rejects new 2.1.0 builds (ITMS-90186 + 90062). Bump `app.json` version for any new iOS build. iOS `runtimeVersion` uses the `appVersion` policy, so the version bump also moves the iOS OTA runtime (now `2.1.2`).
 - Android `eas submit` fails due to Google service account permissions — download `.aab` and upload manually in Play Console.
 - iOS App Store Connect won't let you swap builds on an existing version — create a new version instead.
 - **`eas build` needs eas-cli >= 20** (eas.json constraint); the global install is a stale 16.28.0, so use `npx eas-cli@latest ...`. `eas update` works on the old one.
