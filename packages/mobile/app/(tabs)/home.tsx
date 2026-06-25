@@ -124,7 +124,18 @@ interface Event {
   mainStartTime?: string | null;
   aiEventSummary?: string | null;
   aiEventConfidence?: number | null;
+  fights?: any[];
 }
+
+// A fight counts as "hyped" once the community signal is real, not noise: at
+// least 3 hype predictions and a 7.5+ average. Returns the qualifying fights
+// sorted by average hype (desc) so the caller can show the count + the top few.
+const HYPE_MIN_COUNT = 3;
+const HYPE_MIN_AVG = 7.5;
+const getHypeFights = (event: Event): any[] =>
+  (event.fights || [])
+    .filter((f: any) => (f.hypeCount || 0) >= HYPE_MIN_COUNT && (f.averageHype || 0) >= HYPE_MIN_AVG)
+    .sort((a: any, b: any) => (b.averageHype || 0) - (a.averageHype || 0));
 
 // --- Presentational helpers (module scope so they don't remount on state change) ---
 
@@ -202,6 +213,7 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
 function EventRow({
   event,
   description,
+  hypeFights,
   colors,
   styles,
   onPress,
@@ -209,6 +221,9 @@ function EventRow({
 }: {
   event: Event;
   description?: string | null;
+  // When provided (the "This Week" cards), render a "N hype fight(s)" line plus
+  // the top couple of qualifying matchups. Omitted elsewhere (e.g. Last Night).
+  hypeFights?: any[];
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
@@ -272,7 +287,30 @@ function EventRow({
           <Text style={styles.eventRowDate}>{dateLine}</Text>
         ) : null}
         {description ? (
-          <Text style={styles.eventRowDesc}>{description}</Text>
+          <Text style={styles.eventRowDesc} numberOfLines={2}>{description}</Text>
+        ) : null}
+        {hypeFights ? (
+          <View style={styles.eventRowHype}>
+            <View style={styles.eventRowHypeHeader}>
+              <FontAwesome6 name="fire-flame-curved" size={11} color={colors.primary} />
+              <Text style={styles.eventRowHypeCount}>
+                {hypeFights.length} hype {hypeFights.length === 1 ? 'fight' : 'fights'}
+              </Text>
+            </View>
+            {hypeFights.slice(0, 2).map((f) => {
+              const avg = f.averageHype || 0;
+              return (
+                <View key={f.id} style={styles.eventRowHypeFight}>
+                  <Text style={styles.eventRowHypeMatchup} numberOfLines={1}>
+                    {getFighterPrimaryName(f.fighter1)} vs {getFighterPrimaryName(f.fighter2)}
+                  </Text>
+                  <Text style={[styles.eventRowHypeScore, { color: getHypeHeatmapColor(avg) }]}>
+                    {avg === 10 ? '10' : avg.toFixed(1)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -611,11 +649,11 @@ export default function HomeScreen() {
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
     queryKey: ['events', 'upcoming', 'withFights'],
-    // Home event cards show only the event + its AI "why care" summary (no fight
-    // list), so don't pull fight cards here — includeFights makes the backend
-    // aggregate hype/counts for every fight on every event (slow + heavy). The
-    // events SCREENS still use includeFights; the home doesn't need it.
-    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: false }),
+    // Home "This Week" cards show the event's AI "why care" summary PLUS a count
+    // of its genuinely-hyped fights (>= 3 predictions, >= 7.5 avg) and the top
+    // couple — so we need includeFights here for the per-fight hype aggregates
+    // (averageHype/hypeCount). This mirrors the work the events SCREENS already do.
+    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: true }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -916,6 +954,7 @@ export default function HomeScreen() {
                     key={event.id}
                     event={event}
                     description={description}
+                    hypeFights={getHypeFights(event)}
                     colors={colors}
                     styles={styles}
                     onPress={() => router.push(`/event/${event.id}` as any)}
@@ -1431,6 +1470,40 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 11,
       lineHeight: 15,
       color: colors.textSecondary,
+    },
+    // "N hype fights" + the top couple of qualifying matchups, under the blurb.
+    eventRowHype: {
+      marginTop: 8,
+    },
+    eventRowHypeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginBottom: 4,
+    },
+    eventRowHypeCount: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.text,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    eventRowHypeFight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      marginTop: 1,
+    },
+    eventRowHypeMatchup: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    eventRowHypeScore: {
+      fontSize: 12,
+      fontWeight: '800',
     },
     // --- Hyped Upcoming Fights: event-grouped cards ----------------------
     hypedCard: {
