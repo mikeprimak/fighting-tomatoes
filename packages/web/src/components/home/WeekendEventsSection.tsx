@@ -3,9 +3,10 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronRight, Flame } from 'lucide-react';
 import { getEvents } from '@/lib/api';
 import { isEventLiveNow } from '@/lib/eventStatus';
+import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useEventBroadcasts } from '@/components/HowToWatch';
 import { SectionHeading } from './SectionHeading';
 
@@ -83,16 +84,32 @@ function aiSummary(event: any): string | null {
     : null;
 }
 
+// A fight counts as "hyped" once the community signal is real, not noise: at
+// least 3 hype predictions and a 7.5+ average. Returns the qualifying fights
+// sorted by average hype (desc). Mirrors the mobile home.
+const HYPE_MIN_COUNT = 3;
+const HYPE_MIN_AVG = 7.5;
+function getHypeFights(event: any): any[] {
+  return (event.fights ?? [])
+    .filter((f: any) => (f.hypeCount ?? 0) >= HYPE_MIN_COUNT && (f.averageHype ?? 0) >= HYPE_MIN_AVG)
+    .sort((a: any, b: any) => (b.averageHype ?? 0) - (a.averageHype ?? 0));
+}
+
+// Compact matchup name — last name if present, else first (e.g. "Jones vs Miocic").
+function primaryName(fighter: any): string {
+  return (fighter?.lastName?.trim() || fighter?.firstName?.trim() || '').trim();
+}
+
 export function WeekendEventsSection() {
   // Upcoming events come back soonest-first, so this weekend's cards are always
-  // among the first handful. The home cards show only the event + its AI "why
-  // care" summary, so we do NOT request includeFights — that made the backend
-  // aggregate hype/counts for every fight on every event (the slowest part of
-  // this above-the-fold band). 16 safely covers a full week of events (incl. the
-  // Monday-spans-next-week window).
+  // among the first handful. The cards now show a "N hype fights" line + the top
+  // couple of genuinely-hyped matchups under the AI "why care" summary, so we
+  // request includeFights for the per-fight hype aggregates (averageHype /
+  // hypeCount). 16 safely covers a full week of events (incl. the Monday-
+  // spans-next-week window).
   const { data } = useQuery({
-    queryKey: ['home', 'weekend-events'],
-    queryFn: () => getEvents({ type: 'upcoming', includeFights: false, limit: 16 }),
+    queryKey: ['home', 'weekend-events', 'withFights'],
+    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 16 }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -212,6 +229,9 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
   const summary = aiSummary(event);
   const firstStart = firstFightStart(event);
   const live = isEventLiveNow(event);
+  // "N hype fights" + the top couple of qualifying matchups, on the by-day cards
+  // only (the "Event Last Night" card passes hideMeta and has no fight data).
+  const hypeFights = hideMeta ? [] : getHypeFights(event);
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches the headline start time), then a
@@ -279,6 +299,27 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
             <p className="mt-1 text-[11px] leading-snug text-text-secondary">
               {summary}
             </p>
+          )}
+          {!hideMeta && (
+            <div className="mt-2">
+              <div className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-foreground">
+                <Flame size={11} className="text-primary" />
+                {hypeFights.length} hype {hypeFights.length === 1 ? 'fight' : 'fights'}
+              </div>
+              {hypeFights.slice(0, 2).map((f: any) => {
+                const avg = f.averageHype ?? 0;
+                return (
+                  <div key={f.id} className="mt-0.5 flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text-secondary">
+                      {primaryName(f.fighter1)} vs {primaryName(f.fighter2)}
+                    </span>
+                    <span className="text-xs font-extrabold" style={{ color: getHypeHeatmapColor(avg) }}>
+                      {avg === 10 ? '10' : avg.toFixed(1)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
         <ChevronRight size={16} className="shrink-0 self-center text-text-secondary group-hover:text-primary" />
