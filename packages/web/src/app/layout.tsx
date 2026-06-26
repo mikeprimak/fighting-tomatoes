@@ -49,6 +49,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {/* Impact.com affiliate-network site-ownership verification. Uses the
+            non-standard `value` attribute Impact requires (the Next metadata API
+            only emits `content`), so it is rendered raw here; React 19 hoists it
+            into <head>. */}
+        <meta {...({ name: 'impact-site-verification', value: 'f2b859d9-9488-40d9-afe1-e3eed6306156' } as Record<string, string>)} />
         <Providers>
           <AppDownloadBanner />
           <Navbar />
