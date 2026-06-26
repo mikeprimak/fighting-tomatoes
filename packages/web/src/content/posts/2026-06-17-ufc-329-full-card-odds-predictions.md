@@ -2,7 +2,7 @@
 title: "UFC 329 Full Card, Odds, and Predictions: Every Fight on McGregor vs Holloway 2"
 slug: "ufc-329-full-card-odds-predictions"
 date: "2026-06-17"
-updated: "2026-06-25"
+updated: "2026-06-26"
 author: "Good Fights"
 excerpt: "The complete UFC 329 fight card for McGregor vs Holloway 2 on July 11 in Las Vegas: every bout, the latest betting odds, the favorites and underdogs, and our honest prediction for each fight on the card, from the main event down to the prelims."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-card", "ufc-329-odds", "predictions", "ufc"]
@@ -61,7 +61,7 @@ Here are the latest lines across major sportsbooks. Odds vary by book and will k
 ## How have the McGregor vs Holloway odds moved?
 
 <!--ODDS-SNAPSHOT-->
-As of June 25, 2026, Max Holloway is the favorite at around -260, roughly a 72% implied chance, and Conor McGregor is the underdog at about +207, roughly 33%. McGregor has gained ground since the line opened in May.
+As of June 26, 2026, Max Holloway is the favorite at around -249, roughly a 71% implied chance, and Conor McGregor is the underdog at about +200, roughly 33%. McGregor has gained ground since the line opened in May.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
