@@ -128,7 +128,9 @@ export function HowToWatch({ eventId, section, label, time }: Props) {
           </button>
         )}
 
-        {matching.some((e) => e.deepLink) && (
+        {/* Affiliate disclosure: only on the whole-event (top) card per screen,
+            not the per-section cards below it — otherwise it repeats. */}
+        {!section && matching.some((e) => e.deepLink) && (
           <p className="mt-1 border-t border-border/50 pt-1 text-[10px] italic leading-tight text-text-secondary opacity-70">
             Some &ldquo;How to Watch&rdquo; links are affiliate links. We may earn a commission.
           </p>

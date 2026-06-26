@@ -1,6 +1,8 @@
 # HANDOFF — How-to-Watch Affiliate Monetization (2026-06-26)
 
-**Status: BUILT, NOT SHIPPED.** All code is on the `main` working tree, **uncommitted**. Mike wants to **test before shipping**. Do not commit/push/deploy until he confirms.
+**Status: ✅ SHIPPED + LIVE (2026-06-26 evening).** All code committed/pushed/deployed; backend `/api/r/b` confirmed live; FTC/ASA disclosure shipped (web + mobile OTA); affiliate research corrected (UFC→Paramount+; ESPN+ program is real); Impact site verification live on goodfights.app. **Open item is non-engineering:** affiliate-program applications are being DECLINED at current traffic scale (Impact Marketplace + Paramount+ both denied) — gated on traffic, revisit with click data as the app grows. Full details + commit list + path-forward in `docs/daily/2026-06-26.md` (the "Evening follow-on session" section is the source of truth now). The rest of this doc is the original pre-ship build record.
+
+---
 
 ## What this is
 Monetize the broadcaster links in the How-to-Watch cards (every org, every region, web + mobile). The system already had a `BroadcastChannel.affiliateUrl` field and link precedence that preferred it — this session built the tracked-redirect + click telemetry + operator tooling around it so links earn and clicks are measured.

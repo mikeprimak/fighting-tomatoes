@@ -90,7 +90,9 @@ export default function HowToWatch({ eventId, section, label, time }: Props) {
         </TouchableOpacity>
       )}
 
-      {matching.some(e => e.deepLink) && (
+      {/* Affiliate disclosure: only on the whole-event (top) card per screen,
+          not the per-section cards below it — otherwise it repeats. */}
+      {!section && matching.some(e => e.deepLink) && (
         <Text style={[styles.disclosure, { color: colors.textSecondary, borderTopColor: colors.border }]}>
           Some &ldquo;How to Watch&rdquo; links are affiliate links. We may earn a commission.
         </Text>
