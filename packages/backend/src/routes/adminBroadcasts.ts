@@ -97,6 +97,68 @@ export default async function adminBroadcastsRoutes(fastify: FastifyInstance) {
     return reply.send({ channel: updated });
   });
 
+  // ============== CLICK STATS (monetization) ==============
+  // Aggregate How-to-Watch outbound clicks. Drives the admin dashboard panel
+  // so we can see which broadcasters/regions earn and how many clicks hit a
+  // real affiliate link vs the un-monetized homepage fallback.
+  fastify.get('/admin/broadcast-clicks/stats', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { days = '30' } = request.query as { days?: string };
+    const windowDays = Math.min(365, Math.max(1, parseInt(days, 10) || 30));
+    const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+
+    const [total, affiliate, byChannel, byRegion, byPlacement] = await Promise.all([
+      fastify.prisma.broadcastClick.count({ where: { createdAt: { gte: since } } }),
+      fastify.prisma.broadcastClick.count({ where: { createdAt: { gte: since }, isAffiliate: true } }),
+      fastify.prisma.broadcastClick.groupBy({
+        by: ['channelId'],
+        where: { createdAt: { gte: since } },
+        _count: { _all: true },
+      }),
+      fastify.prisma.broadcastClick.groupBy({
+        by: ['region'],
+        where: { createdAt: { gte: since } },
+        _count: { _all: true },
+      }),
+      fastify.prisma.broadcastClick.groupBy({
+        by: ['placement'],
+        where: { createdAt: { gte: since } },
+        _count: { _all: true },
+      }),
+    ]);
+
+    // Resolve channel names + whether they currently carry an affiliate URL.
+    const channelIds = byChannel.map(c => c.channelId);
+    const channels = channelIds.length
+      ? await fastify.prisma.broadcastChannel.findMany({
+          where: { id: { in: channelIds } },
+          select: { id: true, name: true, slug: true, affiliateUrl: true },
+        })
+      : [];
+    const chById = Object.fromEntries(channels.map(c => [c.id, c]));
+
+    const channelRows = byChannel
+      .map(c => ({
+        channelId: c.channelId,
+        name: chById[c.channelId]?.name ?? '(deleted)',
+        slug: chById[c.channelId]?.slug ?? null,
+        hasAffiliate: !!chById[c.channelId]?.affiliateUrl,
+        clicks: c._count._all,
+      }))
+      .sort((a, b) => b.clicks - a.clicks);
+
+    return reply.send({
+      windowDays,
+      total,
+      affiliate,
+      homepage: total - affiliate,
+      byChannel: channelRows,
+      byRegion: byRegion.map(r => ({ region: r.region, clicks: r._count._all })).sort((a, b) => b.clicks - a.clicks),
+      byPlacement: byPlacement.map(p => ({ placement: p.placement ?? 'unknown', clicks: p._count._all })).sort((a, b) => b.clicks - a.clicks),
+    });
+  });
+
   // ============== EVENT BROADCASTS ==============
   fastify.get('/admin/broadcasts', {
     preValidation: [fastify.authenticate, requireAdmin],

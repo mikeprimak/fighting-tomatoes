@@ -59,7 +59,11 @@ async function makeRequest<T>(
   isRetry = false,
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    // Lets the backend tag broadcaster-link clicks (and any other telemetry) by
+    // origin platform. Same-origin request, so no CORS preflight concern.
+    'x-client-platform': 'web',
+  };
 
   if (options.body && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';

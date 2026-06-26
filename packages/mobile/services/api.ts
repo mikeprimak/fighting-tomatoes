@@ -342,6 +342,9 @@ class ApiService {
     const token = await this.getAuthToken();
 
     const headers: HeadersInit = {
+      // Lets the backend tag broadcaster-link clicks (and other telemetry) by
+      // origin platform. RN requests have no Origin, so CORS never blocks this.
+      'x-client-platform': 'mobile',
       ...options.headers,
     };
 

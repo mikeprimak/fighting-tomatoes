@@ -381,11 +381,51 @@ model BroadcastChannel {
 
   broadcasts      EventBroadcast[]
   defaults        PromotionBroadcastDefault[]
+  clicks          BroadcastClick[]
 
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   @@map("broadcast_channels")
+}
+
+// One row per outbound "How to Watch" link click. This is the monetization
+// telemetry: every time a user taps a broadcaster link we log it here, then
+// 302-redirect them to the resolved affiliate (or homepage) URL. Owned,
+// queryable click data — the basis for affiliate-revenue attribution and a
+// real engagement signal for the acquisition narrative.
+model BroadcastClick {
+  id           String   @id @default(uuid())
+
+  channelId    String
+  channel      BroadcastChannel @relation(fields: [channelId], references: [id])
+
+  eventId      String?
+  region       String
+  cardSection  String?  // null | EARLY_PRELIMS | PRELIMS | MAIN_CARD
+  tier         String?  // FREE | SUBSCRIPTION | PPV
+
+  // Where the click originated: 'web' | 'mobile' | 'unknown'. Baked into the
+  // tracked link at render time from the x-client-platform request header.
+  placement    String?
+
+  // The URL we redirected to, captured at click time (affiliate URLs can change).
+  targetUrl    String
+  // true when targetUrl came from an affiliate/event deep link (monetized),
+  // false when it fell back to the plain homepage URL (un-monetized).
+  isAffiliate  Boolean  @default(false)
+
+  ipHash       String?  // sha256(ip).slice(0,16) — coarse dedup, not PII
+  userAgent    String?
+  referer      String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([channelId])
+  @@index([eventId])
+  @@index([createdAt])
+  @@index([isAffiliate])
+  @@map("broadcast_clicks")
 }
 
 model EventBroadcast {
