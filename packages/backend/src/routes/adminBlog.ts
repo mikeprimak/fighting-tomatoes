@@ -128,6 +128,39 @@ function renderDraft(slug: string): (DraftRow & { html: string }) | null {
   return null;
 }
 
+// Find the markdown FILENAME of a draft by its frontmatter slug (slug may differ
+// from the filename), so we can target the exact file on GitHub.
+function findDraftFile(slug: string): string | null {
+  const dir = resolvePostsDir();
+  if (!dir) return null;
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.md'))) {
+    try {
+      const { data } = matter(fs.readFileSync(path.join(dir, f), 'utf8'));
+      if (data.draft !== true) continue;
+      const fileSlug = (data.slug as string) || f.replace(/\.md$/, '');
+      if (fileSlug === slug) return f;
+    } catch {
+      // Skip unparseable files.
+    }
+  }
+  return null;
+}
+
+// Surgically flip `draft: true` -> `draft: false` inside the leading frontmatter
+// block ONLY, preserving the rest of the file byte-for-byte (no YAML re-serialize,
+// so comments/quoting/ordering survive). Returns null if there's no `draft: true`
+// line in the frontmatter (already published, or no flag).
+function flipDraftFalse(raw: string): string | null {
+  const m = raw.match(/^(---\r?\n)([\s\S]*?)(\r?\n---)/);
+  if (!m) return null;
+  const [full, open, body, close] = m;
+  if (!/^draft:[ \t]*true[ \t]*$/m.test(body)) return null;
+  const newBody = body.replace(/^draft:[ \t]*true[ \t]*$/m, 'draft: false');
+  return raw.replace(full, open + newBody + close);
+}
+
+const GITHUB_REPO = 'mikeprimak/fighting-tomatoes';
+
 async function readHighlights(prisma: any): Promise<string[]> {
   const cfg = await prisma.systemConfig.findUnique({ where: { key: HIGHLIGHTS_KEY } });
   if (cfg && Array.isArray(cfg.value)) {
@@ -187,5 +220,108 @@ export default async function adminBlogRoutes(fastify: FastifyInstance) {
     const post = renderDraft(slug);
     if (!post) return reply.code(404).send({ error: 'Draft not found' });
     return reply.send({ post });
+  });
+
+  // Publish a draft: flip `draft: false` and commit to main via the GitHub
+  // Contents API (git is the canonical source — the backend FS is ephemeral and
+  // Vercel builds the web blog straight from the repo). The commit triggers the
+  // web auto-deploy (Vercel) so the post goes live at goodfights.app/blog.
+  //
+  // Render's buildFilter ignores packages/web/** and **/*.md, so this commit does
+  // NOT redeploy the backend — which would leave the mobile /api/editorial feed
+  // (served from the build-time copy) stale until the next backend deploy. To
+  // avoid that, we ALSO flip the backend's local synced copy at runtime;
+  // /api/editorial reads from disk per-request, so mobile updates immediately,
+  // and the local write is harmless once the next redeploy regenerates it from
+  // the now-matching git source.
+  fastify.post('/admin/drafts/:slug/publish', {
+    preValidation: [fastify.authenticate, requireAdmin],
+  }, async (request, reply) => {
+    const { slug } = request.params as { slug: string };
+
+    const token = process.env.GITHUB_TOKEN;
+    if (!token) {
+      return reply.code(500).send({
+        error: 'GITHUB_TOKEN is not configured on this server, so the panel cannot publish. Set it on Render (needs contents:write on ' + GITHUB_REPO + '), or flip draft:false in the post file and push.',
+      });
+    }
+
+    const filename = findDraftFile(slug);
+    if (!filename) {
+      return reply.code(404).send({ error: 'No draft found for that slug (it may already be published).' });
+    }
+
+    const repoPath = `packages/web/src/content/posts/${filename}`;
+    const apiUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${repoPath}`;
+    const ghHeaders: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+      Accept: 'application/vnd.github+json',
+      'User-Agent': 'goodfights-admin',
+    };
+
+    try {
+      // 1. Read the current file (need its blob sha + content) from main.
+      const getRes = await fetch(`${apiUrl}?ref=main`, { headers: ghHeaders });
+      if (!getRes.ok) {
+        const t = await getRes.text();
+        return reply.code(502).send({ error: `GitHub read failed (${getRes.status}): ${t.slice(0, 300)}` });
+      }
+      const getJson = (await getRes.json()) as { sha: string; content: string };
+      const current = Buffer.from(getJson.content, 'base64').toString('utf8');
+
+      // 2. Flip the frontmatter flag.
+      const updated = flipDraftFalse(current);
+      if (!updated) {
+        return reply.code(409).send({ error: 'The post in the repo is not marked draft:true (it may already be published).' });
+      }
+
+      // 3. Commit back to main.
+      const putRes = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: { ...ghHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `chore(blog): publish "${slug}" via admin panel`,
+          content: Buffer.from(updated, 'utf8').toString('base64'),
+          sha: getJson.sha,
+          branch: 'main',
+        }),
+      });
+      if (!putRes.ok) {
+        const t = await putRes.text();
+        return reply.code(502).send({ error: `GitHub commit failed (${putRes.status}): ${t.slice(0, 300)}` });
+      }
+      const putJson = (await putRes.json()) as { commit?: { html_url?: string } };
+
+      // 4. Best-effort: flip the backend's local copy so /api/editorial (mobile
+      //    "Latest") reflects it now, without waiting for a backend redeploy.
+      let localUpdated = false;
+      try {
+        const dir = resolvePostsDir();
+        if (dir) {
+          const local = path.join(dir, filename);
+          if (fs.existsSync(local)) {
+            const flipped = flipDraftFalse(fs.readFileSync(local, 'utf8'));
+            if (flipped) {
+              fs.writeFileSync(local, flipped, 'utf8');
+              localUpdated = true;
+            }
+          }
+        }
+      } catch {
+        // Non-fatal: web still publishes via the commit; mobile catches up on next deploy.
+      }
+
+      return reply.send({
+        success: true,
+        slug,
+        commitUrl: putJson.commit?.html_url || null,
+        localUpdated,
+        message: localUpdated
+          ? 'Published. Live in the app feed now; the web blog goes live after Vercel finishes the auto-deploy (~2-3 min).'
+          : 'Committed draft:false to main. The web blog goes live after Vercel auto-deploys (~2-3 min); the app feed catches up on the next backend deploy.',
+      });
+    } catch (err: any) {
+      return reply.code(502).send({ error: `Publish failed: ${err?.message || 'unknown error'}` });
+    }
   });
 }
