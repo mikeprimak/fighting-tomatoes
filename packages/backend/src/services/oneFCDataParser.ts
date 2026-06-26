@@ -607,6 +607,11 @@ async function importOneFCEvents(
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
           },
+          // ONE FC reports the same Thai fighter under drifting name forms
+          // (canonical "Hern Looksuan" vs camp-token "Hern NF Looksuan"), which
+          // would otherwise create a duplicate bout the live tracker has already
+          // advanced. Collapse onto the existing fight instead. See fightUpsert.ts.
+          { sameEventNameDedup: true },
         );
 
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
