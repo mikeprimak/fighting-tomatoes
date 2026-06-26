@@ -2069,6 +2069,49 @@
   <!-- Broadcasts Tab -->
   <div id="broadcastsTab" class="tab-content">
     <div class="ops-container">
+      <!-- 💰 Affiliate / Monetization reference (always-available operator docs) -->
+      <div class="ops-section" style="border: 1px solid #f59e0b55; background: #f59e0b0d;">
+        <details>
+          <summary style="cursor: pointer; font-weight: 700; font-size: 0.95rem; list-style: none;">
+            💰 How "How to Watch" monetization works — affiliate setup &amp; programs (click to expand)
+          </summary>
+          <div style="font-size: 0.84rem; line-height: 1.55; color: var(--text-primary); margin-top: 12px;">
+
+            <p style="margin: 0 0 10px;"><strong>The lever:</strong> every broadcaster link in the app routes through our click tracker (<code>/api/r/b</code>) and out to whatever URL is on that channel. Set a channel's <strong>Affiliate URL</strong> (Broadcast Channels → Edit, below) and every tap for that channel earns. Blank affiliate URL = falls back to the homepage link (still tracked, but un-monetized — shown as "Homepage (lost)" in the revenue panel).</p>
+
+            <p style="margin: 0 0 10px;"><strong>Link precedence at click time:</strong> event-specific deep link → channel <strong>Affiliate URL</strong> → channel Homepage URL. The destination is re-resolved server-side on every click, so updating an affiliate URL here takes effect immediately for everyone — no app update needed.</p>
+
+            <p style="margin: 12px 0 6px; font-weight: 700;">▶ Do this, in order:</p>
+            <ol style="margin: 0 0 10px; padding-left: 20px;">
+              <li>Join <a href="https://impact.com/" target="_blank">Impact.com</a> first — covers Fubo, Kayo (AU) &amp; many US streamers in one account.</li>
+              <li>Join <a href="https://www.awin.com/" target="_blank">Awin</a> — Sky (UK) + European broadcasters (also owns Commission Factory AU).</li>
+              <li>Apply to <a href="https://affiliate.dazn.com/" target="_blank">DAZN direct</a> (or via <a href="https://dazn.partnerize.com/signup/en" target="_blank">Partnerize</a>) — highest-value combat-sports channel globally.</li>
+              <li>Apply to <a href="https://www.fubo.tv/stream/affiliate/" target="_blank">Fubo</a> (via Impact) — ~$30/confirmed sub, 30-day cookie.</li>
+              <li><a href="https://affiliate-program.amazon.com/" target="_blank">Amazon Associates</a> — for Prime Video events (e.g. PFL). Instant-ish, low rate, 24h cookie.</li>
+              <li>Paste each approved affiliate URL into the matching channel below as approvals land.</li>
+            </ol>
+
+            <p style="margin: 12px 0 6px; font-weight: 700;">Programs by region (verify terms at signup — researched 2026-06-26):</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+              <thead><tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary);">
+                <th style="padding: 4px 6px;">Region</th><th style="padding: 4px 6px;">Best channels to monetize</th><th style="padding: 4px 6px;">Network</th>
+              </tr></thead>
+              <tbody style="vertical-align: top;">
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇺🇸 US</td><td style="padding: 4px 6px;">DAZN, Fubo, Sling, DirecTV Stream, Prime Video, TrillerTV/FITE, Paramount+</td><td style="padding: 4px 6px;">Impact, DAZN direct, Amazon</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇬🇧 UK</td><td style="padding: 4px 6px;">DAZN, Sky Sports</td><td style="padding: 4px 6px;">DAZN direct, Awin</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇨🇦 CA</td><td style="padding: 4px 6px;">DAZN Canada</td><td style="padding: 4px 6px;">DAZN direct / Partnerize</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇦🇺 AU / 🇳🇿 NZ</td><td style="padding: 4px 6px;">Kayo Sports, Main Event, DAZN AU</td><td style="padding: 4px 6px;">Impact (~10%), DAZN</td></tr>
+                <tr><td style="padding: 4px 6px;">🇪🇺 EU</td><td style="padding: 4px 6px;">DAZN (DE/IT/ES), country nets</td><td style="padding: 4px 6px;">DAZN direct, Awin</td></tr>
+              </tbody>
+            </table>
+
+            <p style="margin: 12px 0 6px; color: #f59e0b;"><strong>⚠ Reality check:</strong> the official marquee rights-holders — <strong>ESPN+</strong> (UFC US PPV), <strong>TNT Sports</strong> (UFC UK), <strong>UFC Fight Pass</strong> — have <strong>no open affiliate program</strong> we could find (2026-06). Monetizable surface is mostly the aggregators (Fubo, Sling, Kayo, Sky) + DAZN. Treat this as supplemental revenue at current scale.</p>
+
+            <p style="margin: 10px 0 0; color: var(--text-secondary);"><strong>Compliance:</strong> affiliate links must be disclosed (FTC/ASA). A "we may earn a commission" line near How-to-Watch is a TODO. · Full doc: <code>docs/marketing/affiliate-programs-by-region.md</code> in the repo.</p>
+          </div>
+        </details>
+      </div>
+
       <!-- Discovery Inbox -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -2122,6 +2165,25 @@
           The streaming/cable/PPV channels that broadcasters use. Keep slugs stable — defaults reference them.
         </p>
         <div id="channelsList"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- Affiliate click stats -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">💰 How-to-Watch Click Revenue</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="clickStatsDays" class="form-select" style="width: 130px;" onchange="loadBroadcastClickStats()">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+            <button class="btn btn-sm" onclick="loadBroadcastClickStats()">↻</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Outbound clicks on broadcaster links. "Affiliate" = clicks that hit a monetized link; "Homepage" = un-monetized fallback (add an affiliate URL to that channel to capture them).
+        </p>
+        <div id="broadcastClickStats"><div class="empty-state"><div class="empty-state-text">Click ↻ to load click stats.</div></div></div>
       </div>
     </div>
   </div>
@@ -2242,8 +2304,13 @@
           <input type="text" id="channelEditName" class="form-input" placeholder="e.g. Paramount+">
         </div>
         <div class="form-group">
-          <label>Homepage URL</label>
+          <label>Homepage URL (fallback when no affiliate link)</label>
           <input type="text" id="channelEditHomepage" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>💰 Affiliate URL (monetized — used instead of homepage when set)</label>
+          <input type="text" id="channelEditAffiliate" class="form-input" placeholder="https://affiliate-network.com/...?aff=YOURID">
+          <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px;">Paste your tracked affiliate/referral link. All How-to-Watch taps for this channel route through the click tracker and out to this URL. Leave blank to fall back to the homepage.</div>
         </div>
         <div class="form-group">
           <label>Logo URL (optional)</label>
@@ -5793,17 +5860,61 @@
           <td style="padding: 8px;"><code style="background: var(--bg-input); padding: 2px 6px; border-radius: 3px;">${escapeHtml(c.slug)}</code></td>
           <td style="padding: 8px;">${escapeHtml(c.name)}</td>
           <td style="padding: 8px;">${c.homepageUrl ? `<a href="${escapeHtml(c.homepageUrl)}" target="_blank" style="color: var(--accent-blue); font-size: 0.8rem;">${escapeHtml(c.homepageUrl.replace(/^https?:\/\//, '').slice(0, 32))}…</a>` : '—'}</td>
+          <td style="padding: 8px; text-align: center;">${c.affiliateUrl ? '<span title="Affiliate link set — clicks are monetized" style="color: #f59e0b; font-weight: 700;">💰 Yes</span>' : '<span style="color: #6b7280;">No</span>'}</td>
           <td style="padding: 8px; color: ${c.isActive ? '#10b981' : '#6b7280'};">${c.isActive ? 'Active' : 'Inactive'}</td>
           <td style="padding: 8px; text-align: right;"><button class="btn btn-sm" onclick="editChannel('${escapeHtml(c.slug)}')">Edit</button></td>
         </tr>
       `).join('');
+      const withAff = broadcastChannelsCache.filter(c => c.affiliateUrl).length;
       container.innerHTML = `
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
           <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
-            <th style="padding: 8px;">Slug</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Homepage</th><th style="padding: 8px;">Status</th><th></th>
+            <th style="padding: 8px;">Slug</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Homepage</th><th style="padding: 8px; text-align: center;">Affiliate</th><th style="padding: 8px;">Status</th><th></th>
           </tr></thead>
           <tbody>${rows}</tbody>
-        </table>`;
+        </table>
+        <div style="margin-top: 8px; font-size: 0.78rem; color: var(--text-secondary);">${withAff} of ${broadcastChannelsCache.length} channels monetized with an affiliate link.</div>`;
+    }
+
+    async function loadBroadcastClickStats() {
+      const container = document.getElementById('broadcastClickStats');
+      const days = document.getElementById('clickStatsDays').value || '30';
+      container.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-clicks/stats?days=${days}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const s = await res.json();
+        if (s.total === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-state-text">No clicks in the last ${s.windowDays} days yet.</div></div>`;
+          return;
+        }
+        const affPct = s.total ? Math.round((s.affiliate / s.total) * 100) : 0;
+        const channelRows = s.byChannel.map(c => `
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 6px 8px;">${escapeHtml(c.name)}</td>
+            <td style="padding: 6px 8px; text-align: center;">${c.hasAffiliate ? '<span style="color:#f59e0b;">💰</span>' : '<span style="color:#6b7280;" title="No affiliate URL — these clicks are not monetized">—</span>'}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 600;">${c.clicks}</td>
+            <td style="padding: 6px 8px; text-align: right;">${c.slug && !c.hasAffiliate ? `<button class="btn btn-sm" onclick="editChannel('${escapeHtml(c.slug)}')">Add link</button>` : ''}</td>
+          </tr>`).join('');
+        const regionPills = s.byRegion.map(r => `<span style="display:inline-block; background: var(--bg-input); padding: 2px 8px; border-radius: 999px; margin: 2px; font-size: 0.78rem;">${escapeHtml(r.region)}: <strong>${r.clicks}</strong></span>`).join('');
+        const placePills = s.byPlacement.map(p => `<span style="display:inline-block; background: var(--bg-input); padding: 2px 8px; border-radius: 999px; margin: 2px; font-size: 0.78rem;">${escapeHtml(p.placement)}: <strong>${p.clicks}</strong></span>`).join('');
+        container.innerHTML = `
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Total clicks</div><div style="font-size: 1.4rem; font-weight: 700;">${s.total}</div></div>
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Monetized</div><div style="font-size: 1.4rem; font-weight: 700; color: #f59e0b;">${s.affiliate} <span style="font-size: 0.8rem; color: var(--text-secondary);">(${affPct}%)</span></div></div>
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Homepage (lost)</div><div style="font-size: 1.4rem; font-weight: 700; color: #6b7280;">${s.homepage}</div></div>
+          </div>
+          <div style="margin-bottom: 10px;"><span style="font-size: 0.75rem; color: var(--text-secondary);">By region:</span> ${regionPills}</div>
+          <div style="margin-bottom: 12px;"><span style="font-size: 0.75rem; color: var(--text-secondary);">By platform:</span> ${placePills}</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
+              <th style="padding: 6px 8px;">Channel</th><th style="padding: 6px 8px; text-align: center;">Aff</th><th style="padding: 6px 8px; text-align: right;">Clicks</th><th></th>
+            </tr></thead>
+            <tbody>${channelRows}</tbody>
+          </table>`;
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load click stats: ${escapeHtml(err.message)}</div></div>`;
+      }
     }
 
     function openChannelModal() {
@@ -5813,6 +5924,7 @@
       document.getElementById('channelEditSlug').disabled = false;
       document.getElementById('channelEditName').value = '';
       document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditAffiliate').value = '';
       document.getElementById('channelEditLogo').value = '';
       document.getElementById('channelEditActive').checked = true;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5838,6 +5950,7 @@
       document.getElementById('channelEditSlug').disabled = false;
       document.getElementById('channelEditName').value = row.channelNameRaw || '';
       document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditAffiliate').value = '';
       document.getElementById('channelEditLogo').value = '';
       document.getElementById('channelEditActive').checked = true;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5852,6 +5965,7 @@
       document.getElementById('channelEditSlug').disabled = true;
       document.getElementById('channelEditName').value = c.name;
       document.getElementById('channelEditHomepage').value = c.homepageUrl || '';
+      document.getElementById('channelEditAffiliate').value = c.affiliateUrl || '';
       document.getElementById('channelEditLogo').value = c.logoUrl || '';
       document.getElementById('channelEditActive').checked = c.isActive;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5866,6 +5980,7 @@
       const body = {
         name: document.getElementById('channelEditName').value.trim(),
         homepageUrl: document.getElementById('channelEditHomepage').value.trim() || null,
+        affiliateUrl: document.getElementById('channelEditAffiliate').value.trim() || null,
         logoUrl: document.getElementById('channelEditLogo').value.trim() || null,
         isActive: document.getElementById('channelEditActive').checked,
       };
