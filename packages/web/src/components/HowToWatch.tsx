@@ -127,6 +127,12 @@ export function HowToWatch({ eventId, section, label, time }: Props) {
             + {hidden} more option{hidden > 1 ? 's' : ''}
           </button>
         )}
+
+        {matching.some((e) => e.deepLink) && (
+          <p className="mt-1 border-t border-border/50 pt-1 text-[10px] italic leading-tight text-text-secondary opacity-70">
+            Some &ldquo;How to Watch&rdquo; links are affiliate links. We may earn a commission.
+          </p>
+        )}
       </div>
 
       {pickerOpen && (

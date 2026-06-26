@@ -90,6 +90,12 @@ export default function HowToWatch({ eventId, section, label, time }: Props) {
         </TouchableOpacity>
       )}
 
+      {matching.some(e => e.deepLink) && (
+        <Text style={[styles.disclosure, { color: colors.textSecondary, borderTopColor: colors.border }]}>
+          Some &ldquo;How to Watch&rdquo; links are affiliate links. We may earn a commission.
+        </Text>
+      )}
+
       <RegionPickerSheet
         visible={pickerOpen}
         currentRegion={region}
@@ -250,6 +256,15 @@ const styles = StyleSheet.create({
   moreText: {
     fontSize: 11,
     fontStyle: 'italic',
+  },
+  disclosure: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    lineHeight: 13,
+    opacity: 0.7,
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });
 
