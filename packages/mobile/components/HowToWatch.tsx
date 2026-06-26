@@ -90,11 +90,12 @@ export default function HowToWatch({ eventId, section, label, time }: Props) {
         </TouchableOpacity>
       )}
 
-      {/* Affiliate disclosure: only on the whole-event (top) card per screen,
-          not the per-section cards below it — otherwise it repeats. */}
-      {!section && matching.some(e => e.deepLink) && (
+      {/* Affiliate disclosure: only on the whole-event (top) card per screen
+          (not the per-section cards), and only once at least one shown channel
+          actually has an affiliate URL set — stays hidden until we've signed up. */}
+      {!section && matching.some(e => e.channel.affiliateUrl) && (
         <Text style={[styles.disclosure, { color: colors.textSecondary, borderTopColor: colors.border }]}>
-          Some &ldquo;How to Watch&rdquo; links are affiliate links. We may earn a commission.
+          Some &ldquo;How To Watch&rdquo; links earn us an affiliate commission.
         </Text>
       )}
 
