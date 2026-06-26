@@ -8,14 +8,23 @@ Last researched: **2026-06-26.** Programs and rates change — **verify current 
 
 ## TL;DR — what to do, in order
 
-1. **Join [Impact.com](https://impact.com/) first.** It's the single biggest unlock — Fubo, Kayo (AU), and many US streamers run their programs there. One account, many brands.
-2. **Join [Awin](https://www.awin.com/).** Covers Sky (UK) and most European broadcasters. Awin now also owns Commission Factory (AU), so it doubles as AU reach.
-3. **Apply to [DAZN direct](https://affiliate.dazn.com/)** (also on [Partnerize](https://dazn.partnerize.com/signup/en) and FlexOffers). DAZN is the highest-value combat-sports channel globally (boxing + some MMA), live in US/UK/CA/AU/DE/IT/ES.
-4. **Apply to [Fubo](https://www.fubo.tv/stream/affiliate/)** (via Impact) — best documented payout for a US live-TV service that carries fight cards.
-5. **[Amazon Associates](https://affiliate-program.amazon.com/)** — for any Prime Video event (PFL has been on Prime). Easy to get, low payout, but instant links.
-6. Add the affiliate URLs to the matching channels in the admin panel as approvals land.
+> **🚨 BIG SHIFT — UFC left ESPN for Paramount+ on Jan 1, 2026.** A 7-yr / $7.7B deal makes **Paramount+ the exclusive US home of ALL UFC** (12 numbered events, 30 Fight Nights, UFC White House; marquee cards simulcast on CBS). **UFC PPV no longer exists in the US** — every event is included in a standard Paramount+ sub. So for UFC-US monetization the channel is now **Paramount+ (affiliate via Impact, ~$9/sub)**, NOT ESPN+. This also means our UFC US broadcast rows should show **Paramount+ at the SUBSCRIPTION tier, not ESPN+/PPV** — a data-accuracy fix, separate from affiliates. Expansion to LatAm + Australia also began 2026.
 
-**Reality check:** the *official* rights-holders for the marquee promotions — **ESPN+ (UFC US PPV), TNT Sports (UFC UK), UFC Fight Pass** — do **not** run open affiliate programs we could find (2026-06). So the monetizable surface is mostly the **aggregator / live-TV bundlers** (Fubo, Sling, Kayo, Sky) and **DAZN**, not the promotion's first-party platform. Set realistic expectations: this is supplemental revenue, not a primary line, at current scale.
+1. **Join [Impact.com](https://impact.com/) first.** Now the single biggest unlock — it hosts **Paramount+ (the new UFC US home, ~$9/sub)**, **Fubo (~$30/sub)**, Kayo (AU), and many US streamers. One account, the two highest-value US channels.
+2. **Apply to [DAZN direct](https://affiliate.dazn.com/)** (also [Partnerize](https://dazn.partnerize.com/signup/en) / FlexOffers). Highest-value combat-sports channel globally (boxing + some MMA); **~$24/sale US**, 30-day cookie; live US/UK/CA/AU/DE/IT/ES.
+3. **Join [Awin](https://www.awin.com/).** Covers Sky (UK) + European broadcasters. Owns Commission Factory (AU), so it doubles as AU reach.
+4. **Join [CJ](https://www.cj.com/) for [TrillerTV / FITE](https://www.trillertv.com/affiliate)** — free, covers **BKFC, Showtime Boxing, Top Rank/ESPN PPVs, kickboxing, Muay Thai, wrestling**. Best fit for our long-tail orgs.
+5. **[Amazon Associates](https://affiliate-program.amazon.com/)** — for any Prime Video event (PFL has been on Prime). Easy, low payout, 24h cookie.
+6. Add affiliate URLs to the matching channels in admin as approvals land. Prioritize the channels the Click Revenue panel shows getting the most taps.
+
+**Reality check (corrected + re-researched 2026-06-26):** earlier "no marquee programs" was wrong, AND the UFC landscape just flipped:
+- **Paramount+** — NEW UFC US home (Jan 2026). Affiliate via **Impact**, ~$9/confirmed sub. **This is the #1 UFC-US channel now.**
+- **ESPN+** — still has an **active** program (FlexOffers, ~$8–$24/sub, 21-day cookie) but **lost UFC** as of 2026; value to us is now boxing (Top Rank) + other sports, not UFC. Disney/ESPN also runs a first-party portal at affiliate.disney.espn.co.
+- **UFC Fight Pass / Fight Club** — official program at **ufcfightclub.com/affiliate**; covers Fight Club memberships + PPV "and more" — **whether Fight Pass subs are in scope is unconfirmed** (verify in signup). Network listings (FlexOffers/Adtogame) show "Closed" → apply direct. Fight Pass remains the home for UFC's library + some international/contender cards even after the Paramount move.
+- **DAZN** ~$24/sale US · **Fubo** ~$30/sub · **Sling** 20%/sale · all 30-day cookie — confirmed live.
+- **TNT Sports (UFC UK)** — still no program found; moved to **HBO Max UK (Mar 2026)**. Future route would be WBD/HBO Max. Genuine gap.
+
+Still supplemental revenue at current scale, but the monetizable surface is materially bigger than the first pass claimed — Paramount+, DAZN, Fubo, and TrillerTV are the four to chase.
 
 ---
 
@@ -41,8 +50,8 @@ Last researched: **2026-06-26.** Programs and rates change — **verify current 
 | **Sling TV** | Sling affiliate | Impact / CJ | Carries some combat sports via add-ons. |
 | **DirecTV Stream** | affiliate | Impact / CJ | PPV carrier. |
 | **Prime Video** | Amazon Associates | Amazon | For PFL-on-Prime style events. |
-| **ESPN+** | ❌ no open program found | — | UFC US PPV home; first-party only. Re-check periodically. |
-| **UFC Fight Pass** | ❌ no open program found | — | Owned by TKO; ESPN closing in on acquiring on-demand rights. Re-check. |
+| **ESPN+** | ESPN+ affiliate (ACTIVE, verified 2026-06-26) | FlexOffers | $8–$24 per sub, 21-day cookie, US only. UFC US PPV home. (PostAffiliatePro lists "30%" but that entry looks templated — trust FlexOffers' live rate at signup.) |
+| **UFC Fight Pass / Fight Club** | UFC affiliate — apply DIRECT | ufcfightclub.com/affiliate (network listings FlexOffers/Adtogame show "Closed") | ~6–8% PPV + $1–$14 per signup per older listings; 30-day cookie; US/CA/UK/EU/AU/NZ. Covers Fight Club memberships + PPV "and more" — **whether Fight Pass subs are in scope is unconfirmed**; verify in the signup flow. |
 | **TrillerTV / FITE** | FITE/TrillerTV affiliate | direct | Historically had an affiliate program; carries smaller MMA/boxing/kickboxing promotions — good fit for our long-tail orgs. Verify it's still live. |
 | **Paramount+** | Paramount+ affiliate | Impact / CJ | Carried Bellator (Showtime legacy); some PFL. |
 
