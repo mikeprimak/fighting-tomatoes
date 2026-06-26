@@ -2457,7 +2457,7 @@
           <button class="btn btn-secondary btn-sm" onclick="loadDrafts()">Refresh</button>
         </div>
         <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 1rem;">
-          Unpublished posts (<code>draft: true</code>). They&rsquo;re hidden from the live site and the app &mdash; this is the only place to read them. Click <strong>Preview</strong> to read the full article. To publish, flip <code>draft: false</code> in the post file and push.
+          Unpublished posts (<code>draft: true</code>). They&rsquo;re hidden from the live site and the app &mdash; this is the only place to read them. <strong>Preview</strong> reads the full article; <strong>Publish</strong> commits <code>draft: false</code> to <code>main</code> for you (web blog goes live after the Vercel deploy, ~2-3 min; the app feed updates immediately).
         </p>
         <div id="blogDraftsList"></div>
       </div>
@@ -4694,7 +4694,8 @@
             <span style="display:block;font-size:0.72rem;color:var(--text-muted);">${escapeHtml(d.slug)}</span>
           </span>
           <span style="font-size:0.75rem;color:var(--text-muted);">${fmtDate(d.date)}</span>
-          <button class="btn btn-primary btn-sm" onclick="previewDraft('${d.slug.replace(/'/g, "\\'")}')">Preview</button>
+          <button class="btn btn-secondary btn-sm" onclick="previewDraft('${d.slug.replace(/'/g, "\\'")}')">Preview</button>
+          <button class="btn btn-primary btn-sm" onclick="publishDraft('${d.slug.replace(/'/g, "\\'")}')">Publish</button>
         `)).join('');
       } catch (e) {
         el.innerHTML = `<div class="empty-state">Failed to load drafts: ${e.message}</div>`;
@@ -4708,6 +4709,23 @@
     // auto-deploys) before previewing brand-new edits.
     function previewDraft(slug) {
       window.open(`https://goodfights.app/blog-preview/${encodeURIComponent(slug)}`, '_blank', 'noopener');
+    }
+
+    // Publish a draft: the backend flips draft:false and commits to main via the
+    // GitHub API (web blog auto-deploys via Vercel ~2-3 min) + flips the backend's
+    // local copy so the mobile feed updates immediately. See routes/adminBlog.ts.
+    async function publishDraft(slug) {
+      if (!confirm(`Publish this post live?\n\n"${slug}"\n\nThis commits draft:false to main. The web blog goes live after the Vercel deploy (~2-3 min); the app feed updates right away. You can unpublish only by editing the file + pushing.`)) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/drafts/${encodeURIComponent(slug)}/publish`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        alert(data.message || 'Published.');
+        loadDrafts();
+        if (typeof loadBlogHighlights === 'function') loadBlogHighlights();
+      } catch (e) {
+        alert(`Publish failed: ${e.message}`);
+      }
     }
 
     // ============================================
