@@ -74,18 +74,24 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # Stage only the generated outputs (not node_modules / prisma client, etc.)
+          # "Worthy" signal: only PR when something a human actually reviews changed —
+          # the article itself, the banner, or the REVIEW sidecar (career/climbs/
+          # headliners). The snapshot.json / CHANGES.md carry a run-date stamp that
+          # churns every month, so they must NOT trigger a PR on their own.
           git add \
             packages/web/src/content/posts/2026-06-24-ufc-card-placement-rankings.md \
             packages/web/public/blog/card-placement-thumb.png \
-            packages/backend/scripts/card-placement/snapshot.json \
-            packages/backend/scripts/card-placement/CHANGES.md \
             packages/backend/scripts/card-placement/suggested.md
 
           if git diff --cached --quiet; then
-            echo "No changes this run — nothing to PR."
+            echo "No substantive change this run — skipping PR (date-only churn ignored)."
             exit 0
           fi
+
+          # Fold in the bookkeeping files now that we know the run is PR-worthy.
+          git add \
+            packages/backend/scripts/card-placement/snapshot.json \
+            packages/backend/scripts/card-placement/CHANGES.md
 
           git checkout -B "$BRANCH"
           git commit -m "content(blog): monthly card-placement evergreen refresh"
