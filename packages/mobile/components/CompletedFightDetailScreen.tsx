@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useQueryClient, useQuery, useInfiniteQuery, useMutation } from '@tanstack/react-query';
 import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
@@ -546,6 +546,7 @@ export default function CompletedFightDetailScreen({
     hasNextPage,
     isFetchingNextPage,
     isLoading: isReviewsLoading,
+    refetch: refetchReviews,
   } = useInfiniteQuery({
     queryKey: ['fightReviews', fight.id],
     queryFn: ({ pageParam = 1 }) =>
@@ -558,7 +559,19 @@ export default function CompletedFightDetailScreen({
       return undefined;
     },
     staleTime: 30 * 1000,
+    // Always refetch on mount so comments left by others after the screen was
+    // first loaded show up when the user returns (matches the stats query above).
+    refetchOnMount: 'always',
   });
+
+  // Refetch comments whenever the screen regains focus. A stack-navigated screen
+  // can stay mounted in the back stack, so refetchOnMount alone won't catch
+  // comments that other users posted while this screen was open but backgrounded.
+  useFocusEffect(
+    useCallback(() => {
+      refetchReviews();
+    }, [refetchReviews])
+  );
 
   // Fetch pre-fight comments
   const { data: preFightCommentsData } = useQuery({
