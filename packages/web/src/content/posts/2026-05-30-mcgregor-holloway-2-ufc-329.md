@@ -2,7 +2,7 @@
 title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-06-26"
+updated: "2026-06-27"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
@@ -67,22 +67,21 @@ Paramount+ is the UFC's home in the United States, but the rest of the world is 
 
 ## What is the full UFC 329 fight card?
 
-UFC 329 is a stacked card. The confirmed lineup includes:
+UFC 329 is a stacked card. The confirmed main card lineup:
 
 - Conor McGregor vs Max Holloway 2 (Welterweight, main event)
 - Benoit Saint-Denis vs Paddy Pimblett (Lightweight, co-main)
 - Cory Sandhagen vs Mario Bautista 2 (Bantamweight)
 - Brandon Royval vs Lone'er Kavanagh (Flyweight)
 - Robert Whittaker vs Nikita Krylov (Light Heavyweight)
-- Gable Steveson vs Elisha Ellison (Heavyweight)
 - Cody Garbrandt vs Adrian Yanez (Bantamweight)
 - Luke Riley vs Kai Kamaka III (Featherweight)
 - Tracy Cortez vs Wang Cong (Women's Flyweight)
 - Damian Pinas vs Cesar Almeida (Middleweight)
 - Ryan Gandra vs Zachary Reese (Middleweight)
-- Ode' Osbourne vs Cody Durden (Flyweight)
+- Bobby Green vs Terrance McKinney (Lightweight)
 
-Card placement and matchups can change in the weeks before the event, so treat the undercard order as provisional until fight week.
+Two changes from the original card: Gable Steveson vs Elisha Ellison has been moved to the prelims, and the flyweight opener between Ode' Osbourne and Cody Durden was canceled after Osbourne withdrew. Bobby Green vs Terrance McKinney stepped in to open the main card.
 
 ## Who is on the UFC 329 co-main event?
 
@@ -144,7 +143,7 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 The odds tell the whole story of how the fight is viewed. **Max Holloway is the favorite and Conor McGregor the underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. One telling pattern in the betting: the public is piling onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large wagers are overwhelmingly on Holloway. That sharp-versus-public split has kept the line from swinging hard, though McGregor has slowly gained ground since it opened. Lines will keep shifting as fight week approaches, so check current prices before placing anything.
 
 <!--ODDS-SNAPSHOT-->
-As of June 26, 2026, Max Holloway is the favorite at around -249, roughly a 71% implied chance, and Conor McGregor is the underdog at about +200, roughly 33%. McGregor has gained ground since the line opened in May.
+As of June 27, 2026, Max Holloway is the favorite at around -240 to -260 across major sportsbooks, roughly a 70-72% implied chance, while Conor McGregor is the underdog at about +190 to +215. The line has moved steadily toward McGregor since it opened above -400 in May, though the sharp money continues to land on Holloway.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
@@ -216,7 +215,7 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
 - **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
-- **Favorite:** Max Holloway (around -255; McGregor the underdog near +203, and trending his way - see the live chart above)
+- **Favorite:** Max Holloway (around -240 to -260; McGregor the underdog near +190 to +215, trending his way - see the live chart above)
 - **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 
