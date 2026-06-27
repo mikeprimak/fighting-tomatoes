@@ -1,0 +1,1209 @@
+{
+  "asof": "2026-06-22",
+  "p4pBig": [
+    {
+      "name": "Ilia Topuria",
+      "avg": 1
+    },
+    {
+      "name": "Sean Strickland",
+      "avg": 1
+    },
+    {
+      "name": "Jack Della Maddalena",
+      "avg": 1
+    },
+    {
+      "name": "Max Holloway",
+      "avg": 1
+    },
+    {
+      "name": "Charles Oliveira",
+      "avg": 1
+    },
+    {
+      "name": "Alexander Volkanovski",
+      "avg": 1
+    },
+    {
+      "name": "Islam Makhachev",
+      "avg": 1
+    },
+    {
+      "name": "Dricus Du Plessis",
+      "avg": 1
+    },
+    {
+      "name": "Alex Pereira",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Justin Gaethje",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Khamzat Chimaev",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Merab Dvalishvili",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Alexandre Pantoja",
+      "avg": 1.6666666666666667
+    },
+    {
+      "name": "Tom Aspinall",
+      "avg": 1.6666666666666667
+    },
+    {
+      "name": "Magomed Ankalaev",
+      "avg": 1.6666666666666667
+    },
+    {
+      "name": "Khalil Rountree Jr.",
+      "avg": 1.6666666666666667
+    },
+    {
+      "name": "Kai Kara-France",
+      "avg": 1.6666666666666667
+    },
+    {
+      "name": "Jamahal Hill",
+      "avg": 1.6666666666666667
+    }
+  ],
+  "p4pNight": [
+    {
+      "name": "Manel Kape",
+      "avg": 1
+    },
+    {
+      "name": "Gilbert Burns",
+      "avg": 1
+    },
+    {
+      "name": "Israel Adesanya",
+      "avg": 1
+    },
+    {
+      "name": "Belal Muhammad",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Gabriel Bonfim",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Song Yadong",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Carlos Ulberg",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Lerone Murphy",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Caio Borralho",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Anthony Hernandez",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Amir Albazi",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Petr Yan",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Mackenzie Dern",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Reinier De Ridder",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Cory Sandhagen",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Nassourdine Imavov",
+      "avg": 1.3333333333333333
+    },
+    {
+      "name": "Robert Whittaker",
+      "avg": 1.3333333333333333
+    }
+  ],
+  "divisions": {
+    "HEAVYWEIGHT": {
+      "bigLeader": "Alex Pereira",
+      "nightLeader": "Ciryl Gane",
+      "big": 10,
+      "night": 29
+    },
+    "LIGHT_HEAVYWEIGHT": {
+      "bigLeader": "Magomed Ankalaev",
+      "nightLeader": "Carlos Ulberg",
+      "big": 12,
+      "night": 29
+    },
+    "MIDDLEWEIGHT": {
+      "bigLeader": "Sean Strickland",
+      "nightLeader": "Israel Adesanya",
+      "big": 18,
+      "night": 53
+    },
+    "WELTERWEIGHT": {
+      "bigLeader": "Jack Della Maddalena",
+      "nightLeader": "Gilbert Burns",
+      "big": 12,
+      "night": 50
+    },
+    "LIGHTWEIGHT": {
+      "bigLeader": "Ilia Topuria",
+      "nightLeader": "Mauricio Ruffy",
+      "big": 27,
+      "night": 51
+    },
+    "FEATHERWEIGHT": {
+      "bigLeader": "Alexander Volkanovski",
+      "nightLeader": "Lerone Murphy",
+      "big": 13,
+      "night": 52
+    },
+    "BANTAMWEIGHT": {
+      "bigLeader": "Merab Dvalishvili",
+      "nightLeader": "Song Yadong",
+      "big": 10,
+      "night": 59
+    },
+    "FLYWEIGHT": {
+      "bigLeader": "Alexandre Pantoja",
+      "nightLeader": "Manel Kape",
+      "big": 5,
+      "night": 43
+    },
+    "WOMENS_BANTAMWEIGHT": {
+      "bigLeader": "Kayla Harrison",
+      "nightLeader": "Norma Dumont",
+      "big": 1,
+      "night": 24
+    },
+    "WOMENS_FLYWEIGHT": {
+      "bigLeader": "Valentina Shevchenko",
+      "nightLeader": "Manon Fiorot",
+      "big": 9,
+      "night": 14
+    },
+    "WOMENS_STRAWWEIGHT": {
+      "bigLeader": "Zhang Weili",
+      "nightLeader": "Mackenzie Dern",
+      "big": 7,
+      "night": 32
+    }
+  },
+  "chartMen": [
+    {
+      "short": "FLY",
+      "count": 5
+    },
+    {
+      "short": "BW",
+      "count": 10
+    },
+    {
+      "short": "FW",
+      "count": 13
+    },
+    {
+      "short": "LW",
+      "count": 27
+    },
+    {
+      "short": "WW",
+      "count": 12
+    },
+    {
+      "short": "MW",
+      "count": 18
+    },
+    {
+      "short": "LHW",
+      "count": 12
+    },
+    {
+      "short": "HW",
+      "count": 10
+    }
+  ],
+  "chartWomen": [
+    {
+      "short": "SW",
+      "count": 7
+    },
+    {
+      "short": "FLY",
+      "count": 9
+    },
+    {
+      "short": "BW",
+      "count": 1
+    }
+  ],
+  "alltimeMains": [
+    {
+      "name": "Anderson Silva",
+      "mains": 18
+    },
+    {
+      "name": "Jon Jones",
+      "mains": 17
+    },
+    {
+      "name": "Israel Adesanya",
+      "mains": 15
+    },
+    {
+      "name": "Max Holloway",
+      "mains": 15
+    },
+    {
+      "name": "Stipe Miocic",
+      "mains": 13
+    },
+    {
+      "name": "Derrick Lewis",
+      "mains": 13
+    },
+    {
+      "name": "Dustin Poirier",
+      "mains": 13
+    }
+  ],
+  "careerAvg": [
+    {
+      "name": "Daniel Cormier",
+      "avg": 1.4666666666666666
+    },
+    {
+      "name": "Chan Sung Jung",
+      "avg": 1.5833333333333333
+    },
+    {
+      "name": "Israel Adesanya",
+      "avg": 1.6842105263157894
+    },
+    {
+      "name": "Justin Gaethje",
+      "avg": 1.6875
+    },
+    {
+      "name": "Alex Pereira",
+      "avg": 1.75
+    },
+    {
+      "name": "Holly Holm",
+      "avg": 2
+    },
+    {
+      "name": "Mark Hunt",
+      "avg": 2
+    },
+    {
+      "name": "Jose Aldo",
+      "avg": 2.0434782608695654
+    },
+    {
+      "name": "Glover Teixeira",
+      "avg": 2.0869565217391304
+    }
+  ],
+  "climbs": [
+    {
+      "name": "Mario Bautista",
+      "from": 11.5,
+      "to": 2.75
+    },
+    {
+      "name": "Sean Brady",
+      "from": 10.75,
+      "to": 2.25
+    },
+    {
+      "name": "Colby Covington",
+      "from": 9,
+      "to": 1
+    },
+    {
+      "name": "Merab Dvalishvili",
+      "from": 9,
+      "to": 1.4
+    },
+    {
+      "name": "Cory Sandhagen",
+      "from": 8.4,
+      "to": 1.2
+    }
+  ],
+  "headliners": [
+    {
+      "year": 2026,
+      "fighters": [
+        {
+          "name": "Alexander Volkanovski",
+          "count": 1
+        },
+        {
+          "name": "Carlos Ulberg",
+          "count": 1
+        },
+        {
+          "name": "Charles Oliveira",
+          "count": 1
+        },
+        {
+          "name": "Diego Lopes",
+          "count": 1
+        },
+        {
+          "name": "Jiri Prochazka",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2025,
+      "fighters": [
+        {
+          "name": "Alex Pereira",
+          "count": 2
+        },
+        {
+          "name": "Dricus Du Plessis",
+          "count": 2
+        },
+        {
+          "name": "Islam Makhachev",
+          "count": 2
+        },
+        {
+          "name": "Jack Della Maddalena",
+          "count": 2
+        },
+        {
+          "name": "Magomed Ankalaev",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2024,
+      "fighters": [
+        {
+          "name": "Alex Pereira",
+          "count": 3
+        },
+        {
+          "name": "Dricus Du Plessis",
+          "count": 2
+        },
+        {
+          "name": "Ilia Topuria",
+          "count": 2
+        },
+        {
+          "name": "Sean O'Malley",
+          "count": 2
+        },
+        {
+          "name": "Alexander Volkanovski",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2023,
+      "fighters": [
+        {
+          "name": "Alexander Volkanovski",
+          "count": 3
+        },
+        {
+          "name": "Alex Pereira",
+          "count": 2
+        },
+        {
+          "name": "Aljamain Sterling",
+          "count": 2
+        },
+        {
+          "name": "Islam Makhachev",
+          "count": 2
+        },
+        {
+          "name": "Israel Adesanya",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2022,
+      "fighters": [
+        {
+          "name": "Israel Adesanya",
+          "count": 3
+        },
+        {
+          "name": "Charles Oliveira",
+          "count": 2
+        },
+        {
+          "name": "Alex Pereira",
+          "count": 1
+        },
+        {
+          "name": "Alexander Volkanovski",
+          "count": 1
+        },
+        {
+          "name": "Amanda Nunes",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2021,
+      "fighters": [
+        {
+          "name": "Dustin Poirier",
+          "count": 3
+        },
+        {
+          "name": "Kamaru Usman",
+          "count": 3
+        },
+        {
+          "name": "Charles Oliveira",
+          "count": 2
+        },
+        {
+          "name": "Conor McGregor",
+          "count": 2
+        },
+        {
+          "name": "Israel Adesanya",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2020,
+      "fighters": [
+        {
+          "name": "Israel Adesanya",
+          "count": 2
+        },
+        {
+          "name": "Justin Gaethje",
+          "count": 2
+        },
+        {
+          "name": "Amanda Nunes",
+          "count": 1
+        },
+        {
+          "name": "Brandon Moreno",
+          "count": 1
+        },
+        {
+          "name": "Conor McGregor",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2019,
+      "fighters": [
+        {
+          "name": "Dustin Poirier",
+          "count": 2
+        },
+        {
+          "name": "Israel Adesanya",
+          "count": 2
+        },
+        {
+          "name": "Jon Jones",
+          "count": 2
+        },
+        {
+          "name": "Max Holloway",
+          "count": 2
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2018,
+      "fighters": [
+        {
+          "name": "Daniel Cormier",
+          "count": 2
+        },
+        {
+          "name": "Khabib Nurmagomedov",
+          "count": 2
+        },
+        {
+          "name": "Stipe Miocic",
+          "count": 2
+        },
+        {
+          "name": "Yoel Romero",
+          "count": 2
+        },
+        {
+          "name": "Al Iaquinta",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2017,
+      "fighters": [
+        {
+          "name": "Daniel Cormier",
+          "count": 2
+        },
+        {
+          "name": "Holly Holm",
+          "count": 2
+        },
+        {
+          "name": "Jose Aldo",
+          "count": 2
+        },
+        {
+          "name": "Max Holloway",
+          "count": 2
+        },
+        {
+          "name": "Amanda Nunes",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2016,
+      "fighters": [
+        {
+          "name": "Conor McGregor",
+          "count": 3
+        },
+        {
+          "name": "Amanda Nunes",
+          "count": 2
+        },
+        {
+          "name": "Nate Diaz",
+          "count": 2
+        },
+        {
+          "name": "Robbie Lawler",
+          "count": 2
+        },
+        {
+          "name": "Stipe Miocic",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2015,
+      "fighters": [
+        {
+          "name": "Daniel Cormier",
+          "count": 3
+        },
+        {
+          "name": "Ronda Rousey",
+          "count": 3
+        },
+        {
+          "name": "Conor McGregor",
+          "count": 2
+        },
+        {
+          "name": "Aisling Daly",
+          "count": 1
+        },
+        {
+          "name": "Alexander Gustafsson",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2014,
+      "fighters": [
+        {
+          "name": "Demetrious Johnson",
+          "count": 2
+        },
+        {
+          "name": "Johny Hendricks",
+          "count": 2
+        },
+        {
+          "name": "Renan Barao",
+          "count": 2
+        },
+        {
+          "name": "Robbie Lawler",
+          "count": 2
+        },
+        {
+          "name": "TJ Dillashaw",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2013,
+      "fighters": [
+        {
+          "name": "Anderson Silva",
+          "count": 2
+        },
+        {
+          "name": "Cain Velasquez",
+          "count": 2
+        },
+        {
+          "name": "Chris Weidman",
+          "count": 2
+        },
+        {
+          "name": "Georges St-Pierre",
+          "count": 2
+        },
+        {
+          "name": "Jon Jones",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2012,
+      "fighters": [
+        {
+          "name": "Anderson Silva",
+          "count": 2
+        },
+        {
+          "name": "Carlos Condit",
+          "count": 2
+        },
+        {
+          "name": "Jon Jones",
+          "count": 2
+        },
+        {
+          "name": "Benson Henderson",
+          "count": 1
+        },
+        {
+          "name": "Chad Mendes",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2011,
+      "fighters": [
+        {
+          "name": "Jon Jones",
+          "count": 3
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 2
+        },
+        {
+          "name": "Frankie Edgar",
+          "count": 2
+        },
+        {
+          "name": "Gray Maynard",
+          "count": 2
+        },
+        {
+          "name": "Mauricio Rua",
+          "count": 2
+        }
+      ]
+    },
+    {
+      "year": 2010,
+      "fighters": [
+        {
+          "name": "Anderson Silva",
+          "count": 2
+        },
+        {
+          "name": "Brock Lesnar",
+          "count": 2
+        },
+        {
+          "name": "Amilcar Alves",
+          "count": 1
+        },
+        {
+          "name": "Cain Velasquez",
+          "count": 1
+        },
+        {
+          "name": "Carlos Eduardo Rocha",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2009,
+      "fighters": [
+        {
+          "name": "BJ Penn",
+          "count": 2
+        },
+        {
+          "name": "Aaron Riley",
+          "count": 1
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 1
+        },
+        {
+          "name": "Andre Winner",
+          "count": 1
+        },
+        {
+          "name": "Brock Lesnar",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2008,
+      "fighters": [
+        {
+          "name": "Antoni Hardonk",
+          "count": 2
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 1
+        },
+        {
+          "name": "Chistian Wellisch",
+          "count": 1
+        },
+        {
+          "name": "Colin Robinson",
+          "count": 1
+        },
+        {
+          "name": "Corey Hill",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2007,
+      "fighters": [
+        {
+          "name": "Akihiro Gono",
+          "count": 1
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 1
+        },
+        {
+          "name": "Anthony Torres",
+          "count": 1
+        },
+        {
+          "name": "Chuck Liddell",
+          "count": 1
+        },
+        {
+          "name": "Diego Saraiva",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2006,
+      "fighters": [
+        {
+          "name": "Alan Belcher",
+          "count": 1
+        },
+        {
+          "name": "Anderson Silva",
+          "count": 1
+        },
+        {
+          "name": "Andrei Arlovski",
+          "count": 1
+        },
+        {
+          "name": "Anthony Perosh",
+          "count": 1
+        },
+        {
+          "name": "Christian Wellisch",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2005,
+      "fighters": [
+        {
+          "name": "Nick Diaz",
+          "count": 2
+        },
+        {
+          "name": "Alessio Sakara",
+          "count": 1
+        },
+        {
+          "name": "Chuck Liddell",
+          "count": 1
+        },
+        {
+          "name": "Drew Fickett",
+          "count": 1
+        },
+        {
+          "name": "James Irvin",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2004,
+      "fighters": [
+        {
+          "name": "Genki Sudo",
+          "count": 1
+        },
+        {
+          "name": "Georges St-Pierre",
+          "count": 1
+        },
+        {
+          "name": "Jay Hieron",
+          "count": 1
+        },
+        {
+          "name": "Jeff Curran",
+          "count": 1
+        },
+        {
+          "name": "Josh Thompson",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2003,
+      "fighters": [
+        {
+          "name": "Yves Edwards",
+          "count": 3
+        },
+        {
+          "name": "Caol Uno",
+          "count": 1
+        },
+        {
+          "name": "David Loiseau",
+          "count": 1
+        },
+        {
+          "name": "Eddie Ruiz",
+          "count": 1
+        },
+        {
+          "name": "Hermes Franca",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2002,
+      "fighters": [
+        {
+          "name": "Sean Sherk",
+          "count": 2
+        },
+        {
+          "name": "Aaron Riley",
+          "count": 1
+        },
+        {
+          "name": "Benji Radach",
+          "count": 1
+        },
+        {
+          "name": "Chris Haseman",
+          "count": 1
+        },
+        {
+          "name": "Eugene Jackson",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2001,
+      "fighters": [
+        {
+          "name": "Tony DeSouza",
+          "count": 2
+        },
+        {
+          "name": "Din Thomas",
+          "count": 1
+        },
+        {
+          "name": "Fabiano Iha",
+          "count": 1
+        },
+        {
+          "name": "Frank Mir",
+          "count": 1
+        },
+        {
+          "name": "Paul Rodriguez",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 2000,
+      "fighters": [
+        {
+          "name": "Brad Gumm",
+          "count": 2
+        },
+        {
+          "name": "Shonie Carter",
+          "count": 2
+        },
+        {
+          "name": "Adrian Serrano",
+          "count": 1
+        },
+        {
+          "name": "Ben Earwood",
+          "count": 1
+        },
+        {
+          "name": "Chris Lytle",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1999,
+      "fighters": [
+        {
+          "name": "Chris Condo",
+          "count": 1
+        },
+        {
+          "name": "Chuck Liddell",
+          "count": 1
+        },
+        {
+          "name": "Daiju Takase",
+          "count": 1
+        },
+        {
+          "name": "David Dodd",
+          "count": 1
+        },
+        {
+          "name": "Frank Caracci",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1998,
+      "fighters": [
+        {
+          "name": "Bob Gilstrap",
+          "count": 1
+        },
+        {
+          "name": "Carlos Newton",
+          "count": 1
+        },
+        {
+          "name": "Chris Brennan",
+          "count": 1
+        },
+        {
+          "name": "Courtney Turner",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1997,
+      "fighters": [
+        {
+          "name": "Alex Hunter",
+          "count": 1
+        },
+        {
+          "name": "Eric Martin",
+          "count": 1
+        },
+        {
+          "name": "Jack Nilson",
+          "count": 1
+        },
+        {
+          "name": "Justin Martin",
+          "count": 1
+        },
+        {
+          "name": "Randy Couture",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1996,
+      "fighters": [
+        {
+          "name": "Amaury Bitetti",
+          "count": 1
+        },
+        {
+          "name": "Don Frye",
+          "count": 1
+        },
+        {
+          "name": "Fabio Gurgel",
+          "count": 1
+        },
+        {
+          "name": "Gary Goodridge",
+          "count": 1
+        },
+        {
+          "name": "Jerry Bohlander",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1995,
+      "fighters": [
+        {
+          "name": "Dan Severn",
+          "count": 1
+        },
+        {
+          "name": "Dave Beneteau",
+          "count": 1
+        },
+        {
+          "name": "David Hood",
+          "count": 1
+        },
+        {
+          "name": "Joe Charles",
+          "count": 1
+        },
+        {
+          "name": "Oleg Taktarov",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1994,
+      "fighters": [
+        {
+          "name": "Anthony Macias",
+          "count": 1
+        },
+        {
+          "name": "Dan Severn",
+          "count": 1
+        },
+        {
+          "name": "Harold Howard",
+          "count": 1
+        },
+        {
+          "name": "Orlando Weit",
+          "count": 1
+        },
+        {
+          "name": "Robert Lucarelli",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "year": 1993,
+      "fighters": [
+        {
+          "name": "Jason DeLucia",
+          "count": 1
+        },
+        {
+          "name": "Trent Jenkins",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "perfect1Big": [
+    "Ilia Topuria",
+    "Sean Strickland",
+    "Jack Della Maddalena",
+    "Max Holloway",
+    "Charles Oliveira",
+    "Alexander Volkanovski",
+    "Islam Makhachev",
+    "Dricus Du Plessis"
+  ],
+  "perfect1Night": [
+    "Manel Kape",
+    "Gilbert Burns",
+    "Israel Adesanya"
+  ]
+}

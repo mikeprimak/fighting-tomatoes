@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "node scripts/syncBlogPosts.js && nodemon --ext ts --ignore 'live-event-data/**' --ignore 'scraped-data/**' --ignore 'test-results/**' src/server.ts",
     "sync:blog": "node scripts/syncBlogPosts.js",
+    "card-placement:generate": "tsx scripts/card-placement/generate-article.ts",
+    "card-placement:check": "tsx scripts/card-placement/generate-article.ts --check",
     "build": "node scripts/syncBlogPosts.js && prisma generate && tsc --project tsconfig.production.json && { cp src/services/*.js dist/services/ 2>/dev/null || true; }",
     "start": "node dist/server.js",
     "test": "jest",

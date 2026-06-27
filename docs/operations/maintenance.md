@@ -59,6 +59,11 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Why:** Reviews are the only direct user-feedback channel; recurring complaints predict churn.
 - **Time:** ~15 min.
 
+### Card-placement evergreen PR review
+- **What:** The `Card Placement Evergreen` GitHub Action opens a PR (`bot/card-placement-evergreen`) on the 1st of each month. Read its `CHANGES.md` body: confirm the prose flags (e.g. "Eight fighters average a perfect 1.0"), check any banner missing a headshot, eyeball the article render, then merge. Hand-curate the REVIEW blocks (career avg / climbs / per-year headliners) from `suggested.md` only if you've verified them.
+- **Why:** Keeps the card-placement rankings article fresh without a full manual rebuild; the bot regenerates the data, a human keeps editorial control. See `packages/backend/scripts/card-placement/README.md`.
+- **Time:** ~10 min (more if REVIEW blocks changed).
+
 ## Quarterly
 
 ### Fan DNA — new trait additions
