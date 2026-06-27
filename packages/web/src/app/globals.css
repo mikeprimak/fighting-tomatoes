@@ -102,6 +102,23 @@ button:disabled,
   color: inherit;
   text-decoration: none;
 }
+/* Side-by-side division columns (Big Events / Fight Nights). Wraps to a single
+   column on narrow screens via flex-basis + flex-wrap. */
+.blog-content .division-cols {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.75rem;
+}
+.blog-content .division-col {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+.blog-content .division-col > * + * {
+  margin-top: 1.25rem;
+}
+.blog-content .division-col h3 {
+  margin-top: 0;
+}
 /* Keep Facebook post embeds inside the column on narrow screens (the SDK
    renders at a fixed pixel width with a 350px floor). */
 .blog-content .fb-post,
