@@ -6,7 +6,7 @@ author: "Good Fights"
 excerpt: "Chael Sonnen says ignore the rankings and mind your placement on the card. We ranked every active UFC fighter by their average card placement over their last three fights, split into Big Card and Fight Night boards, across all twelve divisions, plus the all-time main event leaders and the marquee year by year."
 tags: ["ufc", "rankings", "card-placement", "pound-for-pound", "feature"]
 image: "/blog/card-placement-thumb.png"
-draft: true
+draft: false
 featured: false
 hideFromHome: true
 ---
