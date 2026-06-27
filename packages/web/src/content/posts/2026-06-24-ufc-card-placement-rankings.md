@@ -20,8 +20,7 @@ MMA Analyst Chael Sonnen says placement on the card is more important than rank.
 - Numbered events (the big cards) and Fight Night events are largely populated by different sets of fighters, so we built a separate list for each.
 - Within a list, a tie is broken by whoever fought most recently.
 - A fighter counts as a Big Card fighter if at least two of their last three bouts were on a numbered event; everyone else lands on the Fight Night list.
-
-*Only currently active fighters are listed, meaning at least two bouts in the last two years.*
+- Only currently active fighters are listed, meaning at least two bouts in the last two years.
 
 ## Pound-for-pound: Big Card fighters
 
@@ -48,7 +47,7 @@ The fighters the UFC books highest on its numbered cards, across every division:
 17. Kai Kara-France: **1.7**
 18. Jamahal Hill: **1.7**
 
-A few notes on the A-side:
+A few notes:
 
 - Eight fighters average a perfect 1.0, having main-evented each of their last three numbered cards. They are separated only by recency, so [Ilia Topuria](/blog/ilia-topuria-undefeated-run), out most recently, leads.
 - This list is dominated by champions and former champions in the middle divisions. The number of Big Card fighters each division produces is lopsided:
@@ -95,7 +94,7 @@ A few notes on the A-side:
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Flyweight · avg. card placement 1.0</div></div></div>
 
-The same measure for the fighters the UFC features on its weekly Fight Night cards:
+Fighters the UFC features on its weekly Fight Night cards:
 
 1. Manel Kape: **1**
 2. Gilbert Burns: **1**
@@ -118,405 +117,459 @@ The same measure for the fighters the UFC features on its weekly Fight Night car
 The Fight Night list tells a different story:
 
 - **Manel Kape**, **Gilbert Burns**, and **Israel Adesanya** all sit at a perfect 1.0, having main-evented each of their last three events. Kape has done it without ever headlining a numbered card, the clearest example of a fighter the UFC trusts to carry a free show but not yet a numbered one. Burns and Adesanya are proven names the promotion has simply been routing through Fight Nights for now.
-- Some big names land here by circumstance, their recent bouts happening to fall on Fight Night cards. **Belal Muhammad** and **Cory Sandhagen** are contenders the promotion has been building on its weekly shows.
 
 ## The divisions
 
-Each division is split the same way, Big Events fighters first, then Fight Nights. The number is average card placement, so lower is higher up the card.
+Each division is split the same way, Big Events fighters first, then Fight Nights.
 
-### Heavyweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Heavyweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alex-pereira-537d80db.png" alt="Alex Pereira" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alex Pereira</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
-
-1. Alex Pereira: **1.3**
-2. Tom Aspinall: **1.7**
-3. Curtis Blaydes: **2.7**
-4. Alexander Volkov: **3.3**
-5. Jailton Almeida: **3.7**
-6. Sergey Spivak: **4.3**
-7. Aleksandar Rakic: **4.7**
-8. Josh Hokit: **5.7**
-9. Chris Barnett: **10**
-10. Denzel Freeman: **12**
-11. Lukasz Brzeski: **13**
-
-### Heavyweight Fight Nights
-
+<ol>
+<li>Alex Pereira: <strong>1.3</strong></li>
+<li>Tom Aspinall: <strong>1.7</strong></li>
+<li>Curtis Blaydes: <strong>2.7</strong></li>
+<li>Alexander Volkov: <strong>3.3</strong></li>
+<li>Jailton Almeida: <strong>3.7</strong></li>
+<li>Sergey Spivak: <strong>4.3</strong></li>
+<li>Aleksandar Rakic: <strong>4.7</strong></li>
+<li>Josh Hokit: <strong>5.7</strong></li>
+<li>Chris Barnett: <strong>10</strong></li>
+<li>Denzel Freeman: <strong>12</strong></li>
+<li>Lukasz Brzeski: <strong>13</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Heavyweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ciryl-gane-0c62400e.png" alt="Ciryl Gane" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ciryl Gane</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
+<ol>
+<li>Ciryl Gane: <strong>2</strong></li>
+<li>Derrick Lewis: <strong>2.7</strong></li>
+<li>Tallison Teixeira: <strong>2.7</strong></li>
+<li>Jairzinho Rozenstruik: <strong>2.7</strong></li>
+<li>Sergei Pavlovich: <strong>3</strong></li>
+<li>Rizvan Kuniev: <strong>3</strong></li>
+<li>Waldo Cortes-Acosta: <strong>3.3</strong></li>
+<li>Ante Delija: <strong>4.7</strong></li>
+<li>Tai Tuivasa: <strong>5.3</strong></li>
+<li>Shamil Gaziev: <strong>5.7</strong></li>
+<li>Vitor Petrino: <strong>7</strong></li>
+<li>Sean Sharaf: <strong>7.7</strong></li>
+<li>Jhonata Diniz: <strong>8</strong></li>
+<li>Mario Pinto: <strong>8</strong></li>
+<li>Marcus Buchecha: <strong>8.3</strong></li>
+</ol>
+</div>
+</div>
 
-1. Ciryl Gane: **2**
-2. Derrick Lewis: **2.7**
-3. Tallison Teixeira: **2.7**
-4. Jairzinho Rozenstruik: **2.7**
-5. Sergei Pavlovich: **3**
-6. Rizvan Kuniev: **3**
-7. Waldo Cortes-Acosta: **3.3**
-8. Ante Delija: **4.7**
-9. Tai Tuivasa: **5.3**
-10. Shamil Gaziev: **5.7**
-11. Vitor Petrino: **7**
-12. Sean Sharaf: **7.7**
-13. Jhonata Diniz: **8**
-14. Mario Pinto: **8**
-15. Marcus Buchecha: **8.3**
-
-### Light Heavyweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Light Heavyweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://www.ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ROUNTREE_KHALIL_10-04.png?itok=9bf6_L0B" alt="Khalil Rountree Jr." width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Khalil Rountree Jr.</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
-
-1. Khalil Rountree Jr.: **1.7**
-2. Magomed Ankalaev: **1.7**
-3. Jamahal Hill: **1.7**
-4. Paulo Costa: **2**
-5. Jiri Prochazka: **2.3**
-6. Dominick Reyes: **3.3**
-7. Jan Blachowicz: **4.3**
-8. Azamat Murzakanov: **4.7**
-9. Bogdan Guskov: **5.3**
-10. Jim Crute: **5.7**
-11. Nikita Krylov: **6**
-12. Marcin Prachnio: **10.7**
-
-### Light Heavyweight Fight Nights
-
+<ol>
+<li>Khalil Rountree Jr.: <strong>1.7</strong></li>
+<li>Magomed Ankalaev: <strong>1.7</strong></li>
+<li>Jamahal Hill: <strong>1.7</strong></li>
+<li>Paulo Costa: <strong>2</strong></li>
+<li>Jiri Prochazka: <strong>2.3</strong></li>
+<li>Dominick Reyes: <strong>3.3</strong></li>
+<li>Jan Blachowicz: <strong>4.3</strong></li>
+<li>Azamat Murzakanov: <strong>4.7</strong></li>
+<li>Bogdan Guskov: <strong>5.3</strong></li>
+<li>Jim Crute: <strong>5.7</strong></li>
+<li>Nikita Krylov: <strong>6</strong></li>
+<li>Marcin Prachnio: <strong>10.7</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Light Heavyweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/carlos-ulberg-ef6e9667.png" alt="Carlos Ulberg" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Carlos Ulberg</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<ol>
+<li>Carlos Ulberg: <strong>1.3</strong></li>
+<li>Robert Whittaker: <strong>1.3</strong></li>
+<li>Zhang Mingyang: <strong>1.7</strong></li>
+<li>Johnny Walker: <strong>3.3</strong></li>
+<li>Alonzo Menifield: <strong>3.7</strong></li>
+<li>Anthony Smith: <strong>3.7</strong></li>
+<li>Dustin Jacoby: <strong>4.3</strong></li>
+<li>Volkan Oezdemir: <strong>4.3</strong></li>
+<li>Ion Cutelaba: <strong>5</strong></li>
+<li>Austen Lane: <strong>5</strong></li>
+<li>Iwo Baraniewski: <strong>5.3</strong></li>
+<li>Modestas Bukauskas: <strong>5.3</strong></li>
+<li>Brendson Ribeiro: <strong>5.7</strong></li>
+<li>Oumar Sy: <strong>6</strong></li>
+<li>Julius Walker: <strong>6</strong></li>
+</ol>
+</div>
+</div>
 
-1. Carlos Ulberg: **1.3**
-2. Robert Whittaker: **1.3**
-3. Zhang Mingyang: **1.7**
-4. Johnny Walker: **3.3**
-5. Alonzo Menifield: **3.7**
-6. Anthony Smith: **3.7**
-7. Dustin Jacoby: **4.3**
-8. Volkan Oezdemir: **4.3**
-9. Ion Cutelaba: **5**
-10. Austen Lane: **5**
-11. Iwo Baraniewski: **5.3**
-12. Modestas Bukauskas: **5.3**
-13. Brendson Ribeiro: **5.7**
-14. Oumar Sy: **6**
-15. Julius Walker: **6**
-
-### Middleweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Middleweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/sean-strickland-d0e6322c.png" alt="Sean Strickland" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Sean Strickland</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-1. Sean Strickland: **1**
-2. Dricus Du Plessis: **1**
-3. Khamzat Chimaev: **1.3**
-4. Joe Pyfer: **3**
-5. Ozzy Diaz: **6**
-6. Kelvin Gastelum: **6**
-7. Marvin Vettori: **6**
-8. Armen Petrosyan: **6**
-9. Vicente Luque: **6.3**
-10. Gregory Rodrigues: **6.3**
-11. Roman Kopylov: **6.7**
-12. Torrez Finney: **7**
-13. Cameron Rowston: **7**
-14. Abusupiyan Magomedov: **7**
-15. Ateba Abega Gautier: **7.3**
-
-### Middleweight Fight Nights
-
+<ol>
+<li>Sean Strickland: <strong>1</strong></li>
+<li>Dricus Du Plessis: <strong>1</strong></li>
+<li>Khamzat Chimaev: <strong>1.3</strong></li>
+<li>Joe Pyfer: <strong>3</strong></li>
+<li>Ozzy Diaz: <strong>6</strong></li>
+<li>Kelvin Gastelum: <strong>6</strong></li>
+<li>Marvin Vettori: <strong>6</strong></li>
+<li>Armen Petrosyan: <strong>6</strong></li>
+<li>Vicente Luque: <strong>6.3</strong></li>
+<li>Gregory Rodrigues: <strong>6.3</strong></li>
+<li>Roman Kopylov: <strong>6.7</strong></li>
+<li>Torrez Finney: <strong>7</strong></li>
+<li>Cameron Rowston: <strong>7</strong></li>
+<li>Abusupiyan Magomedov: <strong>7</strong></li>
+<li>Ateba Abega Gautier: <strong>7.3</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Middleweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/israel-adesanya-8b84f3f9.png" alt="Israel Adesanya" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Israel Adesanya</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<ol>
+<li>Israel Adesanya: <strong>1</strong></li>
+<li>Caio Borralho: <strong>1.3</strong></li>
+<li>Anthony Hernandez: <strong>1.3</strong></li>
+<li>Reinier De Ridder: <strong>1.3</strong></li>
+<li>Nassourdine Imavov: <strong>1.3</strong></li>
+<li>Jared Cannonier: <strong>2</strong></li>
+<li>Roman Dolidze: <strong>2.3</strong></li>
+<li>Cesar Almeida: <strong>3</strong></li>
+<li>Brendan Allen: <strong>3.3</strong></li>
+<li>Sharabutdin Magomedov: <strong>3.3</strong></li>
+<li>Jack Hermansson: <strong>3.7</strong></li>
+<li>Dustin Stoltzfus: <strong>4</strong></li>
+<li>Abdul Razak Alhassan: <strong>4</strong></li>
+<li>Paul Craig: <strong>4.3</strong></li>
+<li>Bo Nickal: <strong>4.7</strong></li>
+<li>Ikram Aliskerov: <strong>4.7</strong></li>
+</ol>
+</div>
+</div>
 
-1. Israel Adesanya: **1**
-2. Caio Borralho: **1.3**
-3. Anthony Hernandez: **1.3**
-4. Reinier De Ridder: **1.3**
-5. Nassourdine Imavov: **1.3**
-6. Jared Cannonier: **2**
-7. Roman Dolidze: **2.3**
-8. Cesar Almeida: **3**
-9. Brendan Allen: **3.3**
-10. Sharabutdin Magomedov: **3.3**
-11. Jack Hermansson: **3.7**
-12. Dustin Stoltzfus: **4**
-13. Abdul Razak Alhassan: **4**
-14. Paul Craig: **4.3**
-15. Bo Nickal: **4.7**
-16. Ikram Aliskerov: **4.7**
-
-### Welterweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Welterweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/jack-della-maddalena-d87dd499.png" alt="Jack Della Maddalena" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Jack Della Maddalena</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-1. Jack Della Maddalena: **1**
-2. Islam Makhachev: **1**
-3. Leon Edwards: **2**
-4. Sean Brady: **2.7**
-5. Carlos Prates: **2.7**
-6. Stephen Thompson: **3.7**
-7. Kevin Holland: **4**
-8. Geoff Neal: **4**
-9. Yaroslav Amosov: **8**
-10. Francisco Prado: **8.3**
-11. Oban Elliott: **9**
-12. Adam Fugitt: **9**
-13. Charles Radtke: **10**
-14. Jonathan Micallef: **11**
-15. Austin Vanderford: **11.5**
-
-### Welterweight Fight Nights
-
+<ol>
+<li>Jack Della Maddalena: <strong>1</strong></li>
+<li>Islam Makhachev: <strong>1</strong></li>
+<li>Leon Edwards: <strong>2</strong></li>
+<li>Sean Brady: <strong>2.7</strong></li>
+<li>Carlos Prates: <strong>2.7</strong></li>
+<li>Stephen Thompson: <strong>3.7</strong></li>
+<li>Kevin Holland: <strong>4</strong></li>
+<li>Geoff Neal: <strong>4</strong></li>
+<li>Yaroslav Amosov: <strong>8</strong></li>
+<li>Francisco Prado: <strong>8.3</strong></li>
+<li>Oban Elliott: <strong>9</strong></li>
+<li>Adam Fugitt: <strong>9</strong></li>
+<li>Charles Radtke: <strong>10</strong></li>
+<li>Jonathan Micallef: <strong>11</strong></li>
+<li>Austin Vanderford: <strong>11.5</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Welterweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/gilbert-burns-398fef27.png" alt="Gilbert Burns" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Gilbert Burns</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<ol>
+<li>Gilbert Burns: <strong>1</strong></li>
+<li>Gabriel Bonfim: <strong>1.3</strong></li>
+<li>Belal Muhammad: <strong>1.3</strong></li>
+<li>Ian Garry: <strong>1.7</strong></li>
+<li>Joaquin Buckley: <strong>2</strong></li>
+<li>Santiagio Ponzinibbio: <strong>2.3</strong></li>
+<li>Carlston Harris: <strong>3</strong></li>
+<li>Mike Malott: <strong>3</strong></li>
+<li>Michael Page: <strong>3</strong></li>
+<li>Michael Morales: <strong>3</strong></li>
+<li>Daniel Rodriguez: <strong>3.7</strong></li>
+<li>Randy Brown: <strong>4.3</strong></li>
+<li>Jake Matthews: <strong>4.7</strong></li>
+<li>Elizeu Zaleski dos Santos: <strong>4.7</strong></li>
+<li>Muslim Salikhov: <strong>5</strong></li>
+<li>Uros Medic: <strong>5</strong></li>
+</ol>
+</div>
+</div>
 
-1. Gilbert Burns: **1**
-2. Gabriel Bonfim: **1.3**
-3. Belal Muhammad: **1.3**
-4. Ian Garry: **1.7**
-5. Joaquin Buckley: **2**
-6. Santiagio Ponzinibbio: **2.3**
-7. Carlston Harris: **3**
-8. Mike Malott: **3**
-9. Michael Page: **3**
-10. Michael Morales: **3**
-11. Daniel Rodriguez: **3.7**
-12. Randy Brown: **4.3**
-13. Jake Matthews: **4.7**
-14. Elizeu Zaleski dos Santos: **4.7**
-15. Muslim Salikhov: **5**
-16. Uros Medic: **5**
-
-### Lightweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Lightweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-1. Ilia Topuria: **1**
-2. Charles Oliveira: **1**
-3. Max Holloway: **1**
-4. Justin Gaethje: **1.3**
-5. Dan Hooker: **2**
-6. Paddy Pimblett: **2**
-7. Rafael Fiziev: **2.3**
-8. Renato Moicano: **2.7**
-9. Brian Ortega: **2.7**
-10. Michael Chandler: **3**
-11. Benoit St. Denis: **3**
-12. Beneil Dariush: **3.7**
-13. King Green: **4**
-14. Daniel Zellhuber: **4**
-15. Quillan Salkilld: **4.3**
-
-### Lightweight Fight Nights
-
+<ol>
+<li>Ilia Topuria: <strong>1</strong></li>
+<li>Charles Oliveira: <strong>1</strong></li>
+<li>Max Holloway: <strong>1</strong></li>
+<li>Justin Gaethje: <strong>1.3</strong></li>
+<li>Dan Hooker: <strong>2</strong></li>
+<li>Paddy Pimblett: <strong>2</strong></li>
+<li>Rafael Fiziev: <strong>2.3</strong></li>
+<li>Renato Moicano: <strong>2.7</strong></li>
+<li>Brian Ortega: <strong>2.7</strong></li>
+<li>Michael Chandler: <strong>3</strong></li>
+<li>Benoit St. Denis: <strong>3</strong></li>
+<li>Beneil Dariush: <strong>3.7</strong></li>
+<li>King Green: <strong>4</strong></li>
+<li>Daniel Zellhuber: <strong>4</strong></li>
+<li>Quillan Salkilld: <strong>4.3</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Lightweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mauricio-ruffy-427a3185.png" alt="Mauricio Ruffy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mauricio Ruffy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 3.3</div></div></div>
+<ol>
+<li>Mauricio Ruffy: <strong>3.3</strong></li>
+<li>Mateusz Gamrot: <strong>3.3</strong></li>
+<li>Chris Duncan: <strong>3.3</strong></li>
+<li>Ignacio Bahamondes: <strong>4</strong></li>
+<li>Kurt Holobaugh: <strong>4.3</strong></li>
+<li>Jeremy Stephens: <strong>4.7</strong></li>
+<li>Esteban Ribovics: <strong>4.7</strong></li>
+<li>Tofiq Musayev: <strong>4.7</strong></li>
+<li>Drew Dober: <strong>4.7</strong></li>
+<li>Tom Nolan: <strong>5</strong></li>
+<li>Kyle Nelson: <strong>5</strong></li>
+<li>Nasrat Haqparast: <strong>5</strong></li>
+<li>Manuel Torres: <strong>5</strong></li>
+<li>Myktybek Orolbai Uulu: <strong>5.3</strong></li>
+<li>Matt Frevola: <strong>5.3</strong></li>
+</ol>
+</div>
+</div>
 
-1. Mauricio Ruffy: **3.3**
-2. Mateusz Gamrot: **3.3**
-3. Chris Duncan: **3.3**
-4. Ignacio Bahamondes: **4**
-5. Kurt Holobaugh: **4.3**
-6. Jeremy Stephens: **4.7**
-7. Esteban Ribovics: **4.7**
-8. Tofiq Musayev: **4.7**
-9. Drew Dober: **4.7**
-10. Tom Nolan: **5**
-11. Kyle Nelson: **5**
-12. Nasrat Haqparast: **5**
-13. Manuel Torres: **5**
-14. Myktybek Orolbai Uulu: **5.3**
-15. Matt Frevola: **5.3**
-
-### Featherweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Featherweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexander-volkanovski-e838cef3.png" alt="Alexander Volkanovski" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexander Volkanovski</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-1. Alexander Volkanovski: **1**
-2. Jean Silva: **3.3**
-3. Josh Emmet: **3.3**
-4. Arnold Allen: **3.7**
-5. Aaron Pico: **4**
-6. Patricio Pitbull: **4.3**
-7. Dan Ige: **4.3**
-8. Cub Swanson: **4.7**
-9. Daniel Santos: **6.7**
-10. Jose Miguel Delgado: **6.7**
-11. Ricky Turcios: **8.3**
-12. Yoo Joo-sang: **9**
-13. Gaston Bolanos: **13**
-
-### Featherweight Fight Nights
-
+<ol>
+<li>Alexander Volkanovski: <strong>1</strong></li>
+<li>Jean Silva: <strong>3.3</strong></li>
+<li>Josh Emmet: <strong>3.3</strong></li>
+<li>Arnold Allen: <strong>3.7</strong></li>
+<li>Aaron Pico: <strong>4</strong></li>
+<li>Patricio Pitbull: <strong>4.3</strong></li>
+<li>Dan Ige: <strong>4.3</strong></li>
+<li>Cub Swanson: <strong>4.7</strong></li>
+<li>Daniel Santos: <strong>6.7</strong></li>
+<li>Jose Miguel Delgado: <strong>6.7</strong></li>
+<li>Ricky Turcios: <strong>8.3</strong></li>
+<li>Yoo Joo-sang: <strong>9</strong></li>
+<li>Gaston Bolanos: <strong>13</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Featherweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/lerone-murphy-3430484c.png" alt="Lerone Murphy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Lerone Murphy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<ol>
+<li>Lerone Murphy: <strong>1.3</strong></li>
+<li>Youssef Zalal: <strong>2.3</strong></li>
+<li>Giga Chikadze: <strong>2.7</strong></li>
+<li>Melquizael Costa: <strong>2.7</strong></li>
+<li>Diego Lopes: <strong>3</strong></li>
+<li>Kevin Vallejos: <strong>3</strong></li>
+<li>Cortavious Romious: <strong>3</strong></li>
+<li>Vinicius Oliveira: <strong>3.3</strong></li>
+<li>Steve Garcia: <strong>3.7</strong></li>
+<li>Aljamain Sterling: <strong>3.7</strong></li>
+<li>Marwan Rahiki: <strong>4</strong></li>
+<li>David Onama: <strong>4</strong></li>
+<li>Calvin Kattar: <strong>4</strong></li>
+<li>Andre Fili: <strong>4.3</strong></li>
+<li>Luke Riley: <strong>4.5</strong></li>
+</ol>
+</div>
+</div>
 
-1. Lerone Murphy: **1.3**
-2. Youssef Zalal: **2.3**
-3. Giga Chikadze: **2.7**
-4. Melquizael Costa: **2.7**
-5. Diego Lopes: **3**
-6. Kevin Vallejos: **3**
-7. Cortavious Romious: **3**
-8. Vinicius Oliveira: **3.3**
-9. Steve Garcia: **3.7**
-10. Aljamain Sterling: **3.7**
-11. Marwan Rahiki: **4**
-12. David Onama: **4**
-13. Calvin Kattar: **4**
-14. Andre Fili: **4.3**
-15. Luke Riley: **4.5**
-
-### Bantamweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Bantamweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://cdn.prod.website-files.com/6894e4ad1ccbead79b5fd57b/69efaef3089c7104af6ded4f_Merab.png" alt="Merab Dvalishvili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Merab Dvalishvili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
-
-1. Merab Dvalishvili: **1.3**
-2. Sean O'Malley: **2**
-3. Mario Bautista: **2.7**
-4. Jose Aldo: **2.7**
-5. Henry Cejudo: **3**
-6. Umar Nurmagomedov: **3.7**
-7. Payton Talbott: **5**
-8. Raul Rosas Jr.: **5.7**
-9. Patchy Mix: **6**
-10. Cody Garbrandt: **8**
-
-### Bantamweight Fight Nights
-
+<ol>
+<li>Merab Dvalishvili: <strong>1.3</strong></li>
+<li>Sean O'Malley: <strong>2</strong></li>
+<li>Mario Bautista: <strong>2.7</strong></li>
+<li>Jose Aldo: <strong>2.7</strong></li>
+<li>Henry Cejudo: <strong>3</strong></li>
+<li>Umar Nurmagomedov: <strong>3.7</strong></li>
+<li>Payton Talbott: <strong>5</strong></li>
+<li>Raul Rosas Jr.: <strong>5.7</strong></li>
+<li>Patchy Mix: <strong>6</strong></li>
+<li>Cody Garbrandt: <strong>8</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Bantamweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/song-yadong-a3f23c39.png" alt="Song Yadong" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Song Yadong</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<ol>
+<li>Song Yadong: <strong>1.3</strong></li>
+<li>Petr Yan: <strong>1.3</strong></li>
+<li>Cory Sandhagen: <strong>1.3</strong></li>
+<li>Rob Font: <strong>2.7</strong></li>
+<li>Marlon Vera: <strong>2.7</strong></li>
+<li>Aiemann Zahabi: <strong>3</strong></li>
+<li>Deiveson Figueiredo: <strong>3</strong></li>
+<li>David Martinez: <strong>3</strong></li>
+<li>Kai Asakura: <strong>3.3</strong></li>
+<li>Kyler Phillips: <strong>3.3</strong></li>
+<li>Montel Jackson: <strong>4.3</strong></li>
+<li>Jean Matsumoto: <strong>4.3</strong></li>
+<li>Bryce Mitchell: <strong>4.7</strong></li>
+<li>Davey Grant: <strong>5</strong></li>
+<li>Charles Jourdain: <strong>5</strong></li>
+<li>Said Nurmagomedov: <strong>5</strong></li>
+</ol>
+</div>
+</div>
 
-1. Song Yadong: **1.3**
-2. Petr Yan: **1.3**
-3. Cory Sandhagen: **1.3**
-4. Rob Font: **2.7**
-5. Marlon Vera: **2.7**
-6. Aiemann Zahabi: **3**
-7. Deiveson Figueiredo: **3**
-8. David Martinez: **3**
-9. Kai Asakura: **3.3**
-10. Kyler Phillips: **3.3**
-11. Montel Jackson: **4.3**
-12. Jean Matsumoto: **4.3**
-13. Bryce Mitchell: **4.7**
-14. Davey Grant: **5**
-15. Charles Jourdain: **5**
-16. Said Nurmagomedov: **5**
-
-### Flyweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Flyweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexandre-pantoja-39450bad.png" alt="Alexandre Pantoja" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexandre Pantoja</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
-
-1. Alexandre Pantoja: **1.7**
-2. Kai Kara-France: **1.7**
-3. Tatsuro Taira: **2**
-4. Joshua Van: **2.3**
-5. Nyamjargal Tumendemberel: **10.5**
-6. Clayton Carpenter: **11.3**
-
-### Flyweight Fight Nights
-
+<ol>
+<li>Alexandre Pantoja: <strong>1.7</strong></li>
+<li>Kai Kara-France: <strong>1.7</strong></li>
+<li>Tatsuro Taira: <strong>2</strong></li>
+<li>Joshua Van: <strong>2.3</strong></li>
+<li>Nyamjargal Tumendemberel: <strong>10.5</strong></li>
+<li>Clayton Carpenter: <strong>11.3</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Flyweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<ol>
+<li>Manel Kape: <strong>1</strong></li>
+<li>Amir Albazi: <strong>1.3</strong></li>
+<li>Brandon Moreno: <strong>1.7</strong></li>
+<li>Brandon Royval: <strong>1.7</strong></li>
+<li>Steve Erceg: <strong>2</strong></li>
+<li>Kyoji Horiguchi: <strong>3</strong></li>
+<li>Tim Elliott: <strong>4</strong></li>
+<li>Ode Osbourne: <strong>4</strong></li>
+<li>Asu Almabayev: <strong>4.7</strong></li>
+<li>Kevin Borjas: <strong>5.3</strong></li>
+<li>Ronaldo Rodriguez: <strong>5.5</strong></li>
+<li>Matt Schnell: <strong>6</strong></li>
+<li>Bruno Gustavo da Silva: <strong>6</strong></li>
+<li>Su Mudaerji: <strong>6</strong></li>
+<li>Edgar Chairez: <strong>6.3</strong></li>
+<li>Jose Johnson: <strong>6.3</strong></li>
+</ol>
+</div>
+</div>
 
-1. Manel Kape: **1**
-2. Amir Albazi: **1.3**
-3. Brandon Moreno: **1.7**
-4. Brandon Royval: **1.7**
-5. Steve Erceg: **2**
-6. Kyoji Horiguchi: **3**
-7. Tim Elliott: **4**
-8. Ode Osbourne: **4**
-9. Asu Almabayev: **4.7**
-10. Kevin Borjas: **5.3**
-11. Ronaldo Rodriguez: **5.5**
-12. Matt Schnell: **6**
-13. Bruno Gustavo da Silva: **6**
-14. Su Mudaerji: **6**
-15. Edgar Chairez: **6.3**
-16. Jose Johnson: **6.3**
-
-### Women’s Bantamweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Women’s Bantamweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/kayla-harrison-76353b59.png" alt="Kayla Harrison" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Kayla Harrison</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 4.7</div></div></div>
-
-1. Kayla Harrison: **4.7**
-
-### Women’s Bantamweight Fight Nights
-
+<ol>
+<li>Kayla Harrison: <strong>4.7</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Women’s Bantamweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/norma-dumont-3fa1c20e.png" alt="Norma Dumont" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Norma Dumont</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 6.3</div></div></div>
+<ol>
+<li>Norma Dumont: <strong>6.3</strong></li>
+<li>Joselyne Edwards: <strong>7.3</strong></li>
+<li>Macy Chiasson: <strong>7.7</strong></li>
+<li>Yana Kunitskaya: <strong>7.7</strong></li>
+<li>Ketlen Vieira: <strong>8.7</strong></li>
+<li>Nora Cornolle: <strong>9</strong></li>
+<li>Tainara Lisboa: <strong>9</strong></li>
+<li>Karol Rosa: <strong>9.3</strong></li>
+<li>Mayra Bueno Silva: <strong>9.7</strong></li>
+<li>Ailin Perez: <strong>9.7</strong></li>
+<li>Bia Mesquita: <strong>10</strong></li>
+<li>Daria Zheleznyakova: <strong>10</strong></li>
+<li>Josiane Nunes: <strong>10</strong></li>
+<li>Luana Santos: <strong>10.3</strong></li>
+<li>Melissa Mullins: <strong>10.7</strong></li>
+<li>Chelsea Chandler: <strong>10.7</strong></li>
+<li>Jacqueline Cavalcanti: <strong>10.7</strong></li>
+</ol>
+</div>
+</div>
 
-1. Norma Dumont: **6.3**
-2. Joselyne Edwards: **7.3**
-3. Macy Chiasson: **7.7**
-4. Yana Kunitskaya: **7.7**
-5. Ketlen Vieira: **8.7**
-6. Nora Cornolle: **9**
-7. Tainara Lisboa: **9**
-8. Karol Rosa: **9.3**
-9. Mayra Bueno Silva: **9.7**
-10. Ailin Perez: **9.7**
-11. Bia Mesquita: **10**
-12. Daria Zheleznyakova: **10**
-13. Josiane Nunes: **10**
-14. Luana Santos: **10.3**
-15. Melissa Mullins: **10.7**
-16. Chelsea Chandler: **10.7**
-17. Jacqueline Cavalcanti: **10.7**
-
-### Women’s Flyweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Women’s Flyweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/valentina-shevchenko-7c0473d5.png" alt="Valentina Shevchenko" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Valentina Shevchenko</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
-
-1. Valentina Shevchenko: **2**
-2. Alexa Grasso: **2.7**
-3. Natalia Silva: **3.3**
-4. Viviane Araujo: **5.3**
-5. Maycee Barber: **5.7**
-6. Tracy Cortez: **5.7**
-7. Jessica Andrade: **5.7**
-8. Karine Silva: **7.7**
-9. Veronica Macedo: **12.7**
-
-### Women’s Flyweight Fight Nights
-
+<ol>
+<li>Valentina Shevchenko: <strong>2</strong></li>
+<li>Alexa Grasso: <strong>2.7</strong></li>
+<li>Natalia Silva: <strong>3.3</strong></li>
+<li>Viviane Araujo: <strong>5.3</strong></li>
+<li>Maycee Barber: <strong>5.7</strong></li>
+<li>Tracy Cortez: <strong>5.7</strong></li>
+<li>Jessica Andrade: <strong>5.7</strong></li>
+<li>Karine Silva: <strong>7.7</strong></li>
+<li>Veronica Macedo: <strong>12.7</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Women’s Flyweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manon-fiorot-db6b842f.png" alt="Manon Fiorot" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manon Fiorot</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.3</div></div></div>
+<ol>
+<li>Manon Fiorot: <strong>2.3</strong></li>
+<li>Rose Namajunas: <strong>2.7</strong></li>
+<li>Erin Blanchfield: <strong>3.7</strong></li>
+<li>Jasmine Jasudavicius: <strong>5</strong></li>
+<li>Miranda Maverick: <strong>7</strong></li>
+<li>Gabriella Fernandes: <strong>8.7</strong></li>
+<li>JJ Aldrich: <strong>10.7</strong></li>
+<li>Dione Barbosa: <strong>11</strong></li>
+<li>Ernesta Kareckaite: <strong>11</strong></li>
+<li>Jamey-Lyn Horth: <strong>12</strong></li>
+<li>Juliana Miller: <strong>13</strong></li>
+<li>Carli Judice: <strong>13.7</strong></li>
+<li>Yuneisy Duben: <strong>14</strong></li>
+</ol>
+</div>
+</div>
 
-1. Manon Fiorot: **2.3**
-2. Rose Namajunas: **2.7**
-3. Erin Blanchfield: **3.7**
-4. Jasmine Jasudavicius: **5**
-5. Miranda Maverick: **7**
-6. Gabriella Fernandes: **8.7**
-7. JJ Aldrich: **10.7**
-8. Dione Barbosa: **11**
-9. Ernesta Kareckaite: **11**
-10. Jamey-Lyn Horth: **12**
-11. Juliana Miller: **13**
-12. Carli Judice: **13.7**
-13. Yuneisy Duben: **14**
-
-### Women’s Strawweight Big Events
-
+<div class="division-cols">
+<div class="division-col">
+<h3>Women’s Strawweight Big Events</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/zhang-weili-aafa1566.png" alt="Zhang Weili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Zhang Weili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
-
-1. Zhang Weili: **2**
-2. Virna Jandiroba: **3.7**
-3. Yan Xiaonan: **3.7**
-4. Iasmin Lucindo: **4.7**
-5. Tatiana Suarez: **6.7**
-6. Marina Rodriguez: **9**
-7. Cong Wang: **9.7**
-
-### Women’s Strawweight Fight Nights
-
+<ol>
+<li>Zhang Weili: <strong>2</strong></li>
+<li>Virna Jandiroba: <strong>3.7</strong></li>
+<li>Yan Xiaonan: <strong>3.7</strong></li>
+<li>Iasmin Lucindo: <strong>4.7</strong></li>
+<li>Tatiana Suarez: <strong>6.7</strong></li>
+<li>Marina Rodriguez: <strong>9</strong></li>
+<li>Cong Wang: <strong>9.7</strong></li>
+</ol>
+</div>
+<div class="division-col">
+<h3>Women’s Strawweight Fight Nights</h3>
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mackenzie-dern-de0a88db.png" alt="Mackenzie Dern" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mackenzie Dern</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
-
-1. Mackenzie Dern: **1.3**
-2. Amanda Ribas: **3.7**
-3. Tabatha Ricci: **4.3**
-4. Gillian Robertson: **5**
-5. Amanda Lemos: **5**
-6. Molly McCann: **6**
-7. Luana Pinheiro: **6.7**
-8. Lupita Godinez: **7.3**
-9. Karolina Kowalkiewicz: **8**
-10. Elise Reed: **8**
-11. Denise Gomes: **8.3**
-12. Angela Hill: **9.3**
-13. Alexia Thainara: **10.3**
-14. Bruna Brasil: **10.7**
-15. Ravena Oliveira: **10.7**
-16. Tecia Torres: **10.7**
+<ol>
+<li>Mackenzie Dern: <strong>1.3</strong></li>
+<li>Amanda Ribas: <strong>3.7</strong></li>
+<li>Tabatha Ricci: <strong>4.3</strong></li>
+<li>Gillian Robertson: <strong>5</strong></li>
+<li>Amanda Lemos: <strong>5</strong></li>
+<li>Molly McCann: <strong>6</strong></li>
+<li>Luana Pinheiro: <strong>6.7</strong></li>
+<li>Lupita Godinez: <strong>7.3</strong></li>
+<li>Karolina Kowalkiewicz: <strong>8</strong></li>
+<li>Elise Reed: <strong>8</strong></li>
+<li>Denise Gomes: <strong>8.3</strong></li>
+<li>Angela Hill: <strong>9.3</strong></li>
+<li>Alexia Thainara: <strong>10.3</strong></li>
+<li>Bruna Brasil: <strong>10.7</strong></li>
+<li>Ravena Oliveira: <strong>10.7</strong></li>
+<li>Tecia Torres: <strong>10.7</strong></li>
+</ol>
+</div>
+</div>
 
 ---
 
@@ -534,7 +587,7 @@ The data runs back to 1993, so the same idea applies across whole careers. These
 
 ## Highest Average Placement Across a Career
 
-By career average card placement (minimum 12 UFC fights), the fighters the promotion entrusted to close the show.
+By career average card placement, the fighters the UFC entrusted to close the show.
 
 1. Daniel Cormier: **1.5**
 2. Chan Sung Jung (the Korean Zombie): **1.6**
@@ -556,7 +609,7 @@ Comparing the first third of a career to the last third traces the arc, the clim
 - Cory Sandhagen: 8.4 to 1.2
 - Merab Dvalishvili: 9.0 to 1.4
 
-The common thread is a long winning streak. Covington, Khabib, Makhachev, and Dvalishvili all stacked victory on victory, most of them relentless wrestlers who kept getting their hand raised, until the matchmaker had no choice but to keep moving them up the card. Winning is what opens the door. A rivalry or a persona can speed the climb (Covington's heel turn, Khabib's feud with McGregor), but none of these fighters arrived as attractions. They earned the top of the card one fight at a time.
+The common thread is a long winning streak. Covington, Khabib, Makhachev, and Dvalishvili all stacked victory on victory, most of them relentless wrestlers who kept getting their hand raised, until the matchmaker had no choice but to keep moving them up the card. Winning is what opens the door. A rivalry or a persona can speed the climb (Covington's heel turn), but none of these fighters arrived as attractions. They earned the top of the card one fight at a time.
 
 ## Headlining a Fight Night means incoming Title Shot
 
@@ -564,88 +617,87 @@ Here is a pattern worth knowing: once a fighter starts headlining Fight Night ca
 
 The numbers back it up. We looked at every fighter who headlined a run of recent Fight Nights, then checked what came next. About one in four was booked into a main event or co-main on a numbered Big Card within their following three fights, a clear sign the promotion was moving them up to the big stage.
 
-And the fighters who jumped straight to headlining a numbered card almost all went on to challenge for or win a belt: Sean Strickland, Colby Covington, Dustin Poirier, Jiri Prochazka, Jamahal Hill, Ciryl Gane, Glover Teixeira, and Marlon Vera. Topping the free shows is often the last stop before a title run.
+And here are fighters who jumped straight from headlining a Fight Night to headlining a Big Event: Sean Strickland, Colby Covington, Dustin Poirier, Jiri Prochazka, Jamahal Hill, Ciryl Gane, Glover Teixeira, and Marlon Vera. Topping the free shows is often the last stop before a title challenge.
 
 ## Historical Card Headliners
 
-Here are the main event leaders for the past decade:
-
-**2026**
-
-1. Max Holloway
-2. Alexander Volkanovski
-3. Islam Makhachev
-4. Dricus Du Plessis
-5. Khamzat Chimaev
+Numbered cards (the big PPVs) only. The number after each name is how many numbered cards they headlined that year:
 
 **2025**
 
-1. Islam Makhachev
-2. Alex Pereira
-3. Dricus Du Plessis
-4. Ilia Topuria
-5. Sean O'Malley
+1. Merab Dvalishvili — 2
+2. Jack Della Maddalena — 2
+3. Islam Makhachev — 2
+4. Magomed Ankalaev — 2
+5. Alex Pereira — 2
 
 **2024**
 
-1. Alex Pereira
-2. Sean O'Malley
-3. Israel Adesanya
-4. Leon Edwards
-5. Islam Makhachev
+1. Alex Pereira — 3
+2. Dricus Du Plessis — 2
+3. Ilia Topuria — 2
+4. Sean O'Malley — 2
+5. Sean Strickland — 1
 
 **2023**
 
-1. Alexander Volkanovski
-2. Islam Makhachev
-3. Israel Adesanya
-4. Aljamain Sterling
-5. Alex Pereira
+1. Alexander Volkanovski — 3
+2. Leon Edwards — 2
+3. Alex Pereira — 2
+4. Islam Makhachev — 2
+5. Israel Adesanya — 2
 
 **2022**
 
-1. Chan Sung Jung (the Korean Zombie)
-2. Israel Adesanya
-3. Magomed Ankalaev
-4. Calvin Kattar
-5. TJ Dillashaw
+1. Israel Adesanya — 3
+2. Charles Oliveira — 2
+3. Alexander Volkanovski — 1
+4. Chan Sung Jung (the Korean Zombie) — 1
+5. Colby Covington — 1
 
 **2021**
 
-1. Colby Covington
-2. Omar Morales
-3. Darren Till
-4. Paul Felder
-5. Derek Brunson
+1. Dustin Poirier — 3
+2. Kamaru Usman — 3
+3. Charles Oliveira — 2
+4. Jan Blachowicz — 2
+5. Conor McGregor — 2
 
 **2020**
 
-1. Dustin Poirier
-2. Colby Covington
-3. Anderson Silva
-4. Frankie Edgar
-5. Al Iaquinta
+1. Justin Gaethje — 2
+2. Israel Adesanya — 2
+3. Deiveson Figueiredo — 1
+4. Brandon Moreno — 1
 
 **2019**
 
-1. Robert Whittaker
-2. Khabib Nurmagomedov
-3. Daniel Cormier
-4. Jon Jones
-5. Dustin Poirier
+1. Dustin Poirier — 2
+2. Israel Adesanya — 2
+3. Jon Jones — 2
+4. Max Holloway — 2
+5. Daniel Cormier — 1
 
 **2018**
 
-1. Jon Jones
-2. Yoel Romero
-3. Tyron Woodley
-4. Amanda Nunes
-5. Robert Whittaker
+1. Stipe Miocic — 2
+2. Yoel Romero — 2
+3. Khabib Nurmagomedov — 2
+4. Daniel Cormier — 2
+5. Francis Ngannou — 1
 
 **2017**
 
-1. Daniel Cormier
-2. Valentina Shevchenko
-3. Junior dos Santos
-4. Germaine de Randamie
-5. Jon Jones
+1. Holly Holm — 2
+2. Max Holloway — 2
+3. Jose Aldo — 2
+4. Daniel Cormier — 2
+5. Cris Cyborg — 1
+
+**2016**
+
+1. Conor McGregor — 3
+2. Amanda Nunes — 2
+3. Stipe Miocic — 2
+4. Nate Diaz — 2
+5. Robbie Lawler — 2
