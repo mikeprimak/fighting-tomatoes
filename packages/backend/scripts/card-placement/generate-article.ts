@@ -91,7 +91,7 @@ function chartBlock(r: ComputeResult): string {
   const maxWomen = Math.max(...r.chartWomen.map(c => c.count), 1);
   return [
     `<div style="margin:18px 0 10px;">`,
-    `<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:16px;">Big Card fighters by division (men)</div>`,
+    `<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:16px;">Men</div>`,
     `<div style="display:flex;align-items:flex-end;gap:8px;height:180px;border-bottom:2px solid #2b2b2b;">`,
     bars(r.chartMen, maxMen),
     `</div>`,
@@ -244,10 +244,6 @@ function changeReport(prev: Snapshot | null, cur: Snapshot, r: ComputeResult, mi
   L.push(``);
   L.push(`## Prose to verify (claims tied to the data)`);
   const flags: string[] = [];
-  const nBig1 = cur.perfect1Big.length;
-  flags.push(`"A few notes" says **Eight fighters average a perfect 1.0** — current count is **${nBig1}** (${cur.perfect1Big.join(', ')}). ${nBig1 === 8 ? 'OK.' : '⚠ UPDATE the sentence.'}`);
-  const lead = r.p4pBig[0]?.name;
-  flags.push(`"...so [Ilia Topuria], out most recently, leads." — current Big Card P4P leader is **${lead}**. ${lead === 'Ilia Topuria' ? 'OK.' : '⚠ UPDATE the name/link.'}`);
   const fn1 = cur.perfect1Night.join(', ');
   flags.push(`Fight Night story names **Manel Kape, Gilbert Burns, Israel Adesanya** at a perfect 1.0 — current 1.0 FN fighters: **${fn1 || 'none'}**. ${cur.perfect1Night.length === 3 && ['Manel Kape', 'Gilbert Burns', 'Israel Adesanya'].every(n => cur.perfect1Night.includes(n)) ? 'OK.' : '⚠ UPDATE the names.'}`);
   flags.forEach(f => L.push(`- ${f}`));
