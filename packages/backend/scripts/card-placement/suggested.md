@@ -1,5 +1,5 @@
 # Suggested REVIEW blocks (verify before pasting into the article)
-Generated 2026-06-22. These are NOT auto-applied — legacy event-order recovery can produce false positives in older years.
+Generated 2026-06-27. These are NOT auto-applied — legacy event-order recovery can produce false positives in older years.
 
 ## Highest Average Placement Across a Career
 1. Daniel Cormier: **1.5**
