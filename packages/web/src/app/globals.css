@@ -119,6 +119,12 @@ button:disabled,
 .blog-content .division-col h3 {
   margin-top: 0;
 }
+.blog-content .division-title {
+  text-align: center;
+  font-size: 1.625rem;
+  font-weight: 800;
+  margin-top: 2.5rem;
+}
 /* Keep Facebook post embeds inside the column on narrow screens (the SDK
    renders at a fixed pixel width with a 350px floor). */
 .blog-content .fb-post,

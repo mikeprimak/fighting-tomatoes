@@ -24,7 +24,7 @@ MMA Analyst Chael Sonnen says placement on the card is more important than rank.
 
 ## Pound-for-pound: Big Card fighters
 
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Lightweight · avg. card placement 1.0</div></div></div>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Lightweight · avg. card placement 1.0</div></div></div>
 
 The fighters the UFC books highest on its numbered cards, across every division:
 
@@ -92,7 +92,7 @@ A few notes:
 
 ## Pound-for-pound: Fight Night fighters
 
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Flyweight · avg. card placement 1.0</div></div></div>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Flyweight · avg. card placement 1.0</div></div></div>
 
 Fighters the UFC features on its weekly Fight Night cards:
 
@@ -122,10 +122,11 @@ The Fight Night list tells a different story:
 
 Each division is split the same way, Big Events fighters first, then Fight Nights.
 
+<div class="division-title">Heavyweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Heavyweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alex-pereira-537d80db.png" alt="Alex Pereira" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alex Pereira</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alex-pereira-537d80db.png" alt="Alex Pereira" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alex Pereira</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Alex Pereira: <strong>1.3</strong></li>
 <li>Tom Aspinall: <strong>1.7</strong></li>
@@ -141,8 +142,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Heavyweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ciryl-gane-0c62400e.png" alt="Ciryl Gane" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ciryl Gane</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ciryl-gane-0c62400e.png" alt="Ciryl Gane" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ciryl Gane</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
 <ol>
 <li>Ciryl Gane: <strong>2</strong></li>
 <li>Derrick Lewis: <strong>2.7</strong></li>
@@ -163,10 +164,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Light Heavyweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Light Heavyweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://www.ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ROUNTREE_KHALIL_10-04.png?itok=9bf6_L0B" alt="Khalil Rountree Jr." width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Khalil Rountree Jr.</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://www.ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ROUNTREE_KHALIL_10-04.png?itok=9bf6_L0B" alt="Khalil Rountree Jr." width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Khalil Rountree Jr.</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
 <ol>
 <li>Khalil Rountree Jr.: <strong>1.7</strong></li>
 <li>Magomed Ankalaev: <strong>1.7</strong></li>
@@ -183,8 +185,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Light Heavyweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/carlos-ulberg-ef6e9667.png" alt="Carlos Ulberg" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Carlos Ulberg</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/carlos-ulberg-ef6e9667.png" alt="Carlos Ulberg" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Carlos Ulberg</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Carlos Ulberg: <strong>1.3</strong></li>
 <li>Robert Whittaker: <strong>1.3</strong></li>
@@ -205,10 +207,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Middleweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Middleweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/sean-strickland-d0e6322c.png" alt="Sean Strickland" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Sean Strickland</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/sean-strickland-d0e6322c.png" alt="Sean Strickland" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Sean Strickland</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Sean Strickland: <strong>1</strong></li>
 <li>Dricus Du Plessis: <strong>1</strong></li>
@@ -228,8 +231,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Middleweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/israel-adesanya-8b84f3f9.png" alt="Israel Adesanya" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Israel Adesanya</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/israel-adesanya-8b84f3f9.png" alt="Israel Adesanya" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Israel Adesanya</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Israel Adesanya: <strong>1</strong></li>
 <li>Caio Borralho: <strong>1.3</strong></li>
@@ -251,10 +254,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Welterweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Welterweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/jack-della-maddalena-d87dd499.png" alt="Jack Della Maddalena" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Jack Della Maddalena</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/jack-della-maddalena-d87dd499.png" alt="Jack Della Maddalena" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Jack Della Maddalena</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Jack Della Maddalena: <strong>1</strong></li>
 <li>Islam Makhachev: <strong>1</strong></li>
@@ -274,8 +278,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Welterweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/gilbert-burns-398fef27.png" alt="Gilbert Burns" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Gilbert Burns</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/gilbert-burns-398fef27.png" alt="Gilbert Burns" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Gilbert Burns</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Gilbert Burns: <strong>1</strong></li>
 <li>Gabriel Bonfim: <strong>1.3</strong></li>
@@ -297,10 +301,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Lightweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Lightweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Ilia Topuria: <strong>1</strong></li>
 <li>Charles Oliveira: <strong>1</strong></li>
@@ -320,8 +325,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Lightweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mauricio-ruffy-427a3185.png" alt="Mauricio Ruffy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mauricio Ruffy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 3.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mauricio-ruffy-427a3185.png" alt="Mauricio Ruffy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mauricio Ruffy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 3.3</div></div></div>
 <ol>
 <li>Mauricio Ruffy: <strong>3.3</strong></li>
 <li>Mateusz Gamrot: <strong>3.3</strong></li>
@@ -342,10 +347,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Featherweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Featherweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexander-volkanovski-e838cef3.png" alt="Alexander Volkanovski" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexander Volkanovski</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexander-volkanovski-e838cef3.png" alt="Alexander Volkanovski" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexander Volkanovski</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Alexander Volkanovski: <strong>1</strong></li>
 <li>Jean Silva: <strong>3.3</strong></li>
@@ -363,8 +369,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Featherweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/lerone-murphy-3430484c.png" alt="Lerone Murphy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Lerone Murphy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/lerone-murphy-3430484c.png" alt="Lerone Murphy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Lerone Murphy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Lerone Murphy: <strong>1.3</strong></li>
 <li>Youssef Zalal: <strong>2.3</strong></li>
@@ -385,10 +391,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Bantamweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Bantamweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://cdn.prod.website-files.com/6894e4ad1ccbead79b5fd57b/69efaef3089c7104af6ded4f_Merab.png" alt="Merab Dvalishvili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Merab Dvalishvili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://cdn.prod.website-files.com/6894e4ad1ccbead79b5fd57b/69efaef3089c7104af6ded4f_Merab.png" alt="Merab Dvalishvili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Merab Dvalishvili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Merab Dvalishvili: <strong>1.3</strong></li>
 <li>Sean O'Malley: <strong>2</strong></li>
@@ -403,8 +410,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Bantamweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/song-yadong-a3f23c39.png" alt="Song Yadong" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Song Yadong</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/song-yadong-a3f23c39.png" alt="Song Yadong" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Song Yadong</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Song Yadong: <strong>1.3</strong></li>
 <li>Petr Yan: <strong>1.3</strong></li>
@@ -426,10 +433,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Flyweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Flyweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexandre-pantoja-39450bad.png" alt="Alexandre Pantoja" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexandre Pantoja</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexandre-pantoja-39450bad.png" alt="Alexandre Pantoja" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexandre Pantoja</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
 <ol>
 <li>Alexandre Pantoja: <strong>1.7</strong></li>
 <li>Kai Kara-France: <strong>1.7</strong></li>
@@ -440,8 +448,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Flyweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 <ol>
 <li>Manel Kape: <strong>1</strong></li>
 <li>Amir Albazi: <strong>1.3</strong></li>
@@ -463,17 +471,18 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Women’s Bantamweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Women’s Bantamweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/kayla-harrison-76353b59.png" alt="Kayla Harrison" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Kayla Harrison</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 4.7</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/kayla-harrison-76353b59.png" alt="Kayla Harrison" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Kayla Harrison</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 4.7</div></div></div>
 <ol>
 <li>Kayla Harrison: <strong>4.7</strong></li>
 </ol>
 </div>
 <div class="division-col">
-<h3>Women’s Bantamweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/norma-dumont-3fa1c20e.png" alt="Norma Dumont" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Norma Dumont</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 6.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/norma-dumont-3fa1c20e.png" alt="Norma Dumont" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Norma Dumont</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 6.3</div></div></div>
 <ol>
 <li>Norma Dumont: <strong>6.3</strong></li>
 <li>Joselyne Edwards: <strong>7.3</strong></li>
@@ -496,10 +505,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Women’s Flyweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Women’s Flyweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/valentina-shevchenko-7c0473d5.png" alt="Valentina Shevchenko" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Valentina Shevchenko</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/valentina-shevchenko-7c0473d5.png" alt="Valentina Shevchenko" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Valentina Shevchenko</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
 <ol>
 <li>Valentina Shevchenko: <strong>2</strong></li>
 <li>Alexa Grasso: <strong>2.7</strong></li>
@@ -513,8 +523,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Women’s Flyweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manon-fiorot-db6b842f.png" alt="Manon Fiorot" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manon Fiorot</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manon-fiorot-db6b842f.png" alt="Manon Fiorot" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manon Fiorot</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.3</div></div></div>
 <ol>
 <li>Manon Fiorot: <strong>2.3</strong></li>
 <li>Rose Namajunas: <strong>2.7</strong></li>
@@ -533,10 +543,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </div>
 </div>
 
+<div class="division-title">Women’s Strawweight</div>
 <div class="division-cols">
 <div class="division-col">
-<h3>Women’s Strawweight Big Events</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/zhang-weili-aafa1566.png" alt="Zhang Weili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Zhang Weili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
+<h3>Big Event Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/zhang-weili-aafa1566.png" alt="Zhang Weili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Zhang Weili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
 <ol>
 <li>Zhang Weili: <strong>2</strong></li>
 <li>Virna Jandiroba: <strong>3.7</strong></li>
@@ -548,8 +559,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 </ol>
 </div>
 <div class="division-col">
-<h3>Women’s Strawweight Fight Nights</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mackenzie-dern-de0a88db.png" alt="Mackenzie Dern" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mackenzie Dern</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
+<h3>Fight Night Fighters</h3>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mackenzie-dern-de0a88db.png" alt="Mackenzie Dern" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mackenzie Dern</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 <ol>
 <li>Mackenzie Dern: <strong>1.3</strong></li>
 <li>Amanda Ribas: <strong>3.7</strong></li>
