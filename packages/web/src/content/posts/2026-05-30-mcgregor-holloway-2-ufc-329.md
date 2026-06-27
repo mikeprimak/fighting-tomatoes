@@ -143,7 +143,7 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 The odds tell the whole story of how the fight is viewed. **Max Holloway is the favorite and Conor McGregor the underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. One telling pattern in the betting: the public is piling onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large wagers are overwhelmingly on Holloway. That sharp-versus-public split has kept the line from swinging hard, though McGregor has slowly gained ground since it opened. Lines will keep shifting as fight week approaches, so check current prices before placing anything.
 
 <!--ODDS-SNAPSHOT-->
-As of June 27, 2026, Max Holloway is the favorite at around -240 to -260 across major sportsbooks, roughly a 70-72% implied chance, while Conor McGregor is the underdog at about +190 to +215. The line has moved steadily toward McGregor since it opened above -400 in May, though the sharp money continues to land on Holloway.
+As of June 27, 2026, Max Holloway is the favorite at around -249, roughly a 71% implied chance, and Conor McGregor is the underdog at about +200, roughly 33%. McGregor has gained ground since the line opened in May.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
