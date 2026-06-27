@@ -278,7 +278,7 @@ function changeReport(prev: Snapshot | null, cur: Snapshot, r: ComputeResult, mi
 function suggestedBlocks(r: ComputeResult): string {
   const L: string[] = [];
   L.push(`# Suggested REVIEW blocks (verify before pasting into the article)`);
-  L.push(`Generated ${r.asof}. These are NOT auto-applied — legacy event-order recovery can produce false positives in older years.`);
+  L.push(`These are NOT auto-applied — legacy event-order recovery can produce false positives in older years. (Run date is in CHANGES.md.)`);
   L.push(``);
   L.push(`## Highest Average Placement Across a Career`);
   r.allTime.careerAvg.forEach((m, i) => L.push(`${i + 1}. ${m.name}: **${m.avg.toFixed(1)}**`));
