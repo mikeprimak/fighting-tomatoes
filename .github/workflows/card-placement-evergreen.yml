@@ -63,21 +63,47 @@ jobs:
             pnpm card-placement:generate
           fi
 
-      - name: Open / update PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          branch: bot/card-placement-evergreen
-          base: main
-          commit-message: "content(blog): monthly card-placement evergreen refresh"
-          title: "Card-placement evergreen refresh"
-          body-path: packages/backend/scripts/card-placement/CHANGES.md
-          labels: content, automated
-          add-paths: |
-            packages/web/src/content/posts/2026-06-24-ufc-card-placement-rankings.md
-            packages/web/public/blog/card-placement-thumb.png
-            packages/backend/scripts/card-placement/snapshot.json
-            packages/backend/scripts/card-placement/CHANGES.md
+      - name: Open / update PR (built-in gh CLI)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH=bot/card-placement-evergreen
+          BODY=packages/backend/scripts/card-placement/CHANGES.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Stage only the generated outputs (not node_modules / prisma client, etc.)
+          git add \
+            packages/web/src/content/posts/2026-06-24-ufc-card-placement-rankings.md \
+            packages/web/public/blog/card-placement-thumb.png \
+            packages/backend/scripts/card-placement/snapshot.json \
+            packages/backend/scripts/card-placement/CHANGES.md \
             packages/backend/scripts/card-placement/suggested.md
+
+          if git diff --cached --quiet; then
+            echo "No changes this run — nothing to PR."
+            exit 0
+          fi
+
+          git checkout -B "$BRANCH"
+          git commit -m "content(blog): monthly card-placement evergreen refresh"
+          git push -f origin "$BRANCH"
+
+          # Labels are optional; create them if missing so --label never fails the run.
+          gh label create content   --color C2E0C6 --description "Editorial / blog content" 2>/dev/null || true
+          gh label create automated --color FBCA04 --description "Opened by a scheduled job"  2>/dev/null || true
+
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --body-file "$BODY"
+            echo "Updated existing PR for $BRANCH."
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "Card-placement evergreen refresh" \
+              --body-file "$BODY" \
+              --label content --label automated
+          fi
 
       - name: Report failure
         if: failure()
