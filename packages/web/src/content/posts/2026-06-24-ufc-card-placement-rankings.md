@@ -5,7 +5,7 @@ date: "2026-06-24"
 author: "Good Fights"
 excerpt: "Chael Sonnen says ignore the rankings and mind your placement on the card. We ranked every active UFC fighter by their average card placement over their last three fights, split into Big Card and Fight Night boards, across all twelve divisions, plus the all-time main event leaders and the marquee year by year."
 tags: ["ufc", "rankings", "card-placement", "pound-for-pound", "feature"]
-image: ""
+image: "/blog/card-placement-thumb.png"
 draft: true
 featured: false
 hideFromHome: true
@@ -15,8 +15,8 @@ MMA Analyst Chael Sonnen says placement on the card is more important than rank.
 
 ## How the rankings work
 
-- Card position is the slot on the card: main event = 1, co-main = 2, and down from there.
-- Each fighter's number is the average of their last three card positions. Ex: main event (1) + main event (1) + co-main (2), divided by 3, equals 1.3.
+- Every card position is given a number: main event = 1, co-main = 2, and down from there.
+- Each fighter's number is the average of their last three card positions. Ex: main event (1) + main event (1) + co-main (2), divided by 3, equals 1.3. (Justin Gaethje)
 - Numbered events (the big cards) and Fight Night events are largely populated by different sets of fighters, so we built a separate list for each.
 - Within a list, a tie is broken by whoever fought most recently.
 - A fighter counts as a Big Card fighter if at least two of their last three bouts were on a numbered event; everyone else lands on the Fight Night list.
@@ -53,19 +53,42 @@ A few notes on the A-side:
 - Eight fighters average a perfect 1.0, having main-evented each of their last three numbered cards. They are separated only by recency, so [Ilia Topuria](/blog/ilia-topuria-undefeated-run), out most recently, leads.
 - This list is dominated by champions and former champions in the middle divisions. The number of Big Card fighters each division produces is lopsided:
 
-<div style="margin:16px 0 24px;">
-<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:12px;">Big Card fighters by division</div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Lightweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:100%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">29</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Middleweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:72%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">21</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Welterweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:52%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">15</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Featherweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:45%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">13</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Light Heavyweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:41%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">12</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Heavyweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:38%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">11</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Bantamweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:34%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">10</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Women's Flyweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:31%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">9</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Women's Strawweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:24%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">7</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Flyweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:21%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">6</span></div>
-<div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px;"><span style="flex:none;width:118px;color:#cbd2d9;">Women's Bantamweight</span><span style="flex:1;background:#1c1c1c;border-radius:3px;overflow:hidden;"><span style="display:block;height:12px;width:3%;background:#F5C518;"></span></span><span style="flex:none;width:22px;text-align:right;color:#9aa0a6;font-weight:700;">1</span></div>
+<div style="margin:18px 0 10px;">
+<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:16px;">Big Card fighters by division (men)</div>
+<div style="display:flex;align-items:flex-end;gap:8px;height:180px;border-bottom:2px solid #2b2b2b;">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">6</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:19%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">10</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:31%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">13</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:40%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">29</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:90%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">15</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:47%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">21</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:65%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">12</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:37%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">11</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:34%;"></span></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:7px;">
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">FLY</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">BW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">FW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">LW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">WW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">MW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">LHW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">HW</span>
+</div>
+</div>
+
+<div style="margin:14px 0 24px;max-width:300px;">
+<div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:16px;">Women</div>
+<div style="display:flex;align-items:flex-end;gap:8px;height:120px;border-bottom:2px solid #2b2b2b;">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">7</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:70%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">9</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:90%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">1</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:10%;"></span></div>
+</div>
+<div style="display:flex;gap:8px;margin-top:7px;">
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">SW</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">FLY</span>
+<span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">BW</span>
+</div>
 </div>
 
 ## Pound-for-pound: Fight Night fighters
@@ -101,11 +124,9 @@ The Fight Night list tells a different story:
 
 Each division is split the same way, Big Events fighters first, then Fight Nights. The number is average card placement, so lower is higher up the card.
 
-### Heavyweight
+### Heavyweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alex-pereira-537d80db.png" alt="Alex Pereira" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alex Pereira</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
-
-**Heavyweight Big Events**
 
 1. Alex Pereira: **1.3**
 2. Tom Aspinall: **1.7**
@@ -119,7 +140,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 10. Denzel Freeman: **12**
 11. Lukasz Brzeski: **13**
 
-**Heavyweight Fight Nights**
+### Heavyweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ciryl-gane-0c62400e.png" alt="Ciryl Gane" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ciryl Gane</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
 
 1. Ciryl Gane: **2**
 2. Derrick Lewis: **2.7**
@@ -137,11 +160,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Mario Pinto: **8**
 15. Marcus Buchecha: **8.3**
 
-### Light Heavyweight
+### Light Heavyweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://www.ufc.com/images/styles/event_results_athlete_headshot/s3/2025-10/ROUNTREE_KHALIL_10-04.png?itok=9bf6_L0B" alt="Khalil Rountree Jr." width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Khalil Rountree Jr.</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
-
-**Light Heavyweight Big Events**
 
 1. Khalil Rountree Jr.: **1.7**
 2. Magomed Ankalaev: **1.7**
@@ -156,7 +177,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 11. Nikita Krylov: **6**
 12. Marcin Prachnio: **10.7**
 
-**Light Heavyweight Fight Nights**
+### Light Heavyweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/carlos-ulberg-ef6e9667.png" alt="Carlos Ulberg" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Carlos Ulberg</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 
 1. Carlos Ulberg: **1.3**
 2. Robert Whittaker: **1.3**
@@ -174,11 +197,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Oumar Sy: **6**
 15. Julius Walker: **6**
 
-### Middleweight
+### Middleweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/sean-strickland-d0e6322c.png" alt="Sean Strickland" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Sean Strickland</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-**Middleweight Big Events**
 
 1. Sean Strickland: **1**
 2. Dricus Du Plessis: **1**
@@ -196,7 +217,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Abusupiyan Magomedov: **7**
 15. Ateba Abega Gautier: **7.3**
 
-**Middleweight Fight Nights**
+### Middleweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/israel-adesanya-8b84f3f9.png" alt="Israel Adesanya" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Israel Adesanya</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 
 1. Israel Adesanya: **1**
 2. Caio Borralho: **1.3**
@@ -215,11 +238,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 15. Bo Nickal: **4.7**
 16. Ikram Aliskerov: **4.7**
 
-### Welterweight
+### Welterweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/jack-della-maddalena-d87dd499.png" alt="Jack Della Maddalena" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Jack Della Maddalena</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-**Welterweight Big Events**
 
 1. Jack Della Maddalena: **1**
 2. Islam Makhachev: **1**
@@ -237,7 +258,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Jonathan Micallef: **11**
 15. Austin Vanderford: **11.5**
 
-**Welterweight Fight Nights**
+### Welterweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/gilbert-burns-398fef27.png" alt="Gilbert Burns" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Gilbert Burns</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 
 1. Gilbert Burns: **1**
 2. Gabriel Bonfim: **1.3**
@@ -256,11 +279,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 15. Muslim Salikhov: **5**
 16. Uros Medic: **5**
 
-### Lightweight
+### Lightweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/ilia-topuria-9a5cac6e.png" alt="Ilia Topuria" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Ilia Topuria</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-**Lightweight Big Events**
 
 1. Ilia Topuria: **1**
 2. Charles Oliveira: **1**
@@ -278,7 +299,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Daniel Zellhuber: **4**
 15. Quillan Salkilld: **4.3**
 
-**Lightweight Fight Nights**
+### Lightweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mauricio-ruffy-427a3185.png" alt="Mauricio Ruffy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mauricio Ruffy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 3.3</div></div></div>
 
 1. Mauricio Ruffy: **3.3**
 2. Mateusz Gamrot: **3.3**
@@ -296,11 +319,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Myktybek Orolbai Uulu: **5.3**
 15. Matt Frevola: **5.3**
 
-### Featherweight
+### Featherweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexander-volkanovski-e838cef3.png" alt="Alexander Volkanovski" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexander Volkanovski</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
-
-**Featherweight Big Events**
 
 1. Alexander Volkanovski: **1**
 2. Jean Silva: **3.3**
@@ -316,7 +337,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 12. Yoo Joo-sang: **9**
 13. Gaston Bolanos: **13**
 
-**Featherweight Fight Nights**
+### Featherweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/lerone-murphy-3430484c.png" alt="Lerone Murphy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Lerone Murphy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 
 1. Lerone Murphy: **1.3**
 2. Youssef Zalal: **2.3**
@@ -334,11 +357,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 14. Andre Fili: **4.3**
 15. Luke Riley: **4.5**
 
-### Bantamweight
+### Bantamweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://cdn.prod.website-files.com/6894e4ad1ccbead79b5fd57b/69efaef3089c7104af6ded4f_Merab.png" alt="Merab Dvalishvili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Merab Dvalishvili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
-
-**Bantamweight Big Events**
 
 1. Merab Dvalishvili: **1.3**
 2. Sean O'Malley: **2**
@@ -351,7 +372,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 9. Patchy Mix: **6**
 10. Cody Garbrandt: **8**
 
-**Bantamweight Fight Nights**
+### Bantamweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/song-yadong-a3f23c39.png" alt="Song Yadong" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Song Yadong</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 
 1. Song Yadong: **1.3**
 2. Petr Yan: **1.3**
@@ -370,11 +393,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 15. Charles Jourdain: **5**
 16. Said Nurmagomedov: **5**
 
-### Flyweight
+### Flyweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/alexandre-pantoja-39450bad.png" alt="Alexandre Pantoja" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Alexandre Pantoja</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.7</div></div></div>
-
-**Flyweight Big Events**
 
 1. Alexandre Pantoja: **1.7**
 2. Kai Kara-France: **1.7**
@@ -383,7 +404,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 5. Nyamjargal Tumendemberel: **10.5**
 6. Clayton Carpenter: **11.3**
 
-**Flyweight Fight Nights**
+### Flyweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manel-kape-5b30ab83.png" alt="Manel Kape" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manel Kape</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.0</div></div></div>
 
 1. Manel Kape: **1**
 2. Amir Albazi: **1.3**
@@ -402,15 +425,15 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 15. Edgar Chairez: **6.3**
 16. Jose Johnson: **6.3**
 
-### Women’s Bantamweight
+### Women’s Bantamweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/kayla-harrison-76353b59.png" alt="Kayla Harrison" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Kayla Harrison</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 4.7</div></div></div>
 
-**Women’s Bantamweight Big Events**
-
 1. Kayla Harrison: **4.7**
 
-**Women’s Bantamweight Fight Nights**
+### Women’s Bantamweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/norma-dumont-3fa1c20e.png" alt="Norma Dumont" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Norma Dumont</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 6.3</div></div></div>
 
 1. Norma Dumont: **6.3**
 2. Joselyne Edwards: **7.3**
@@ -430,11 +453,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 16. Chelsea Chandler: **10.7**
 17. Jacqueline Cavalcanti: **10.7**
 
-### Women’s Flyweight
+### Women’s Flyweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/valentina-shevchenko-7c0473d5.png" alt="Valentina Shevchenko" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Valentina Shevchenko</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
-
-**Women’s Flyweight Big Events**
 
 1. Valentina Shevchenko: **2**
 2. Alexa Grasso: **2.7**
@@ -446,7 +467,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 8. Karine Silva: **7.7**
 9. Veronica Macedo: **12.7**
 
-**Women’s Flyweight Fight Nights**
+### Women’s Flyweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/manon-fiorot-db6b842f.png" alt="Manon Fiorot" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Manon Fiorot</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.3</div></div></div>
 
 1. Manon Fiorot: **2.3**
 2. Rose Namajunas: **2.7**
@@ -462,11 +485,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 12. Carli Judice: **13.7**
 13. Yuneisy Duben: **14**
 
-### Women’s Strawweight
+### Women’s Strawweight Big Events
 
 <div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/zhang-weili-aafa1566.png" alt="Zhang Weili" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Zhang Weili</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
-
-**Women’s Strawweight Big Events**
 
 1. Zhang Weili: **2**
 2. Virna Jandiroba: **3.7**
@@ -476,7 +497,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 6. Marina Rodriguez: **9**
 7. Cong Wang: **9.7**
 
-**Women’s Strawweight Fight Nights**
+### Women’s Strawweight Fight Nights
+
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mackenzie-dern-de0a88db.png" alt="Mackenzie Dern" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:#F5C518;font-weight:700;">Booked highest</div><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mackenzie Dern</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 1.3</div></div></div>
 
 1. Mackenzie Dern: **1.3**
 2. Amanda Ribas: **3.7**
