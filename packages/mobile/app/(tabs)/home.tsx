@@ -731,17 +731,20 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
-  // "This week" = every event from today through the next 7 days (a rolling
-  // window, not the rest of the Mon–Sun calendar week). The old week-bounded
-  // window collapsed to a single day on Sunday — and since cards cluster Fri/Sat,
-  // by Sunday the next card was already outside it, so the band read "No events
-  // this weekend" all day Sunday. A rolling 7-day window always reaches the next
-  // card. Compared as UTC day keys to line up with eventDayKey (Event.date is a
-  // UTC-hour placeholder); anchored on the user's local calendar date.
+  // "This week" = the upcoming weekend chunk, from today through the coming Monday
+  // (inclusive). Fights cluster Fri–Sun, so this keeps the band focused on the
+  // immediate weekend instead of bleeding a full 7 days ahead (which surfaced
+  // events a week out, e.g. "next Friday"). The chunk always ends Monday so a
+  // Sunday-night card that rolls into Monday still shows. On Monday itself we
+  // reach the *next* Monday so the band doesn't collapse to a single day (the old
+  // failure mode the rolling-7 window was patching). Compared as UTC day keys to
+  // line up with eventDayKey (Event.date is a UTC-hour placeholder); anchored on
+  // the user's local calendar date.
   const DAY_MS = 86_400_000;
   const nowLocal = new Date();
   const todayKey = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
-  const windowEndKey = todayKey + 7 * DAY_MS; // today + next 6 days (7 calendar days)
+  const daysUntilMonday = ((1 - nowLocal.getDay() + 7) % 7) || 7; // Mon → next Mon (7)
+  const windowEndKey = todayKey + (daysUntilMonday + 1) * DAY_MS; // through Monday, exclusive bound
   const upcomingEvents: Event[] = (eventsData?.events || [])
     // Keep LIVE events in the list (badged "LIVE" on the card) alongside the
     // UPCOMING ones — a card that just went live shouldn't vanish from the day.
