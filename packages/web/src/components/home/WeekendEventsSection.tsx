@@ -157,15 +157,25 @@ export function WeekendEventsSection() {
       return at - bt;
     });
 
-  // "Event Last Night" — UFC only (not other promotions). A UFC card belongs here
-  // on the day(s) immediately after it ran: its UTC calendar day is today or
-  // yesterday (UFC events start late and roll past midnight ET, so "yesterday"
-  // catches the common Saturday-night → Sunday-morning case). Most-recent-first.
+  // Most-recent UFC card that ran in the last day — UFC only (not other
+  // promotions). It belongs here on the day(s) immediately after it ran: its UTC
+  // calendar day is today or yesterday (UFC events start late and roll past
+  // midnight ET, so "yesterday" catches the common Saturday-night → Sunday-morning
+  // case). Most-recent-first.
   const lastNightUFC = (pastData?.events ?? []).filter((e: any) => {
     if ((e.promotion ?? '').toUpperCase() !== 'UFC') return false;
     const daysSince = Math.round((todayKey - eventDayKey(e.date)) / DAY_MS);
     return daysSince >= 0 && daysSince <= 1;
   });
+
+  // Title reflects when the freshest card actually ran: a card whose day is today
+  // ran "earlier today", not "last night". lastNightUFC is most-recent-first, so
+  // its first entry is the freshest.
+  const lastNightTitle =
+    lastNightUFC.length > 0 &&
+    Math.round((todayKey - eventDayKey(lastNightUFC[0].date)) / DAY_MS) <= 0
+      ? 'Event Earlier Today'
+      : 'Event Last Night';
 
   if (events.length === 0 && lastNightUFC.length === 0) return null;
 
@@ -189,7 +199,7 @@ export function WeekendEventsSection() {
       {lastNightUFC.length > 0 && (
         <section>
           <SectionHeading
-            title="Event Last Night"
+            title={lastNightTitle}
             subtitle={lastNightUFC.length === 1 ? formatDaySubline(lastNightUFC[0].date) : undefined}
             icon={CalendarDays}
           />

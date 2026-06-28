@@ -790,6 +790,14 @@ export default function HomeScreen() {
     return daysSince >= 0 && daysSince <= 1;
   });
 
+  // Title reflects when the freshest card actually ran: a card whose day is today
+  // ran "earlier today", not "last night". lastNightUFC is most-recent-first.
+  const lastNightTitle =
+    lastNightUFC.length > 0 &&
+    Math.round((todayKey - eventDayKey(lastNightUFC[0].date)) / DAY_MS) <= 0
+      ? 'Event Earlier Today'
+      : 'Event Last Night';
+
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   // Already capped + ordered server-side; group by event for the event-card UI.
   const recentGoodGroups = groupByEvent(recentGoodFights?.data || []);
@@ -887,12 +895,12 @@ export default function HomeScreen() {
       }
     >
         <View>
-      {/* Event Last Night — UFC only, the day(s) after a UFC card ran --------*/}
+      {/* Event Last Night / Earlier Today — UFC only, the day(s) after a card ran */}
       {lastNightUFC.length > 0 ? (
         <Section
           colors={colors}
           styles={styles}
-          title="Event Last Night"
+          title={lastNightTitle}
           subtitle={lastNightUFC.length === 1 ? formatEventDate(lastNightUFC[0].date) : undefined}
           icon="calendar"
         >
