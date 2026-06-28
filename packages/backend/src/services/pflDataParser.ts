@@ -204,30 +204,16 @@ function parsePFLEventStartTime(
     ));
   }
 
-  // Priority 2: Parse time string and combine with event date
+  // Priority 2: Parse the time string in ET and combine with the event date.
+  // PFL publishes section times in Eastern Time. Use the DST-aware
+  // America/New_York conversion (eventTimeToUTC) instead of a hardcoded
+  // UTC-5 offset — a flat +5 is correct only in winter (EST). During EDT
+  // (Mar–Nov, which covers most PFL cards) it stored every start time an
+  // hour late, e.g. PFL San Diego's 10:00 PM ET main card landed at
+  // 03:00Z instead of 02:00Z (2026-06-27).
   if (eventStartTime) {
-    const timeMatch = eventStartTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-    if (timeMatch) {
-      let hours = parseInt(timeMatch[1], 10);
-      const minutes = parseInt(timeMatch[2], 10);
-      const isPM = timeMatch[3].toUpperCase() === 'PM';
-
-      // Convert to 24-hour format
-      if (isPM && hours !== 12) {
-        hours += 12;
-      } else if (!isPM && hours === 12) {
-        hours = 0;
-      }
-
-      // PFL times are typically ET (Eastern Time, UTC-5)
-      // Convert to UTC by adding 5 hours
-      const year = eventDate.getUTCFullYear();
-      const month = eventDate.getUTCMonth();
-      const day = eventDate.getUTCDate();
-      const utcHours = hours + 5;
-
-      return new Date(Date.UTC(year, month, day, utcHours, minutes, 0, 0));
-    }
+    const utc = eventTimeToUTC(eventDate, eventStartTime, 'America/New_York');
+    if (utc) return utc;
   }
 
   return null;
