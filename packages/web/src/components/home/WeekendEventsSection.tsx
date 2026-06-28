@@ -122,16 +122,18 @@ export function WeekendEventsSection() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // "This week" window = today through the next 7 days — a rolling window, not
-  // the rest of the Mon–Sun calendar week. The old week-bounded window collapsed
-  // to a single day on Sunday, and since cards cluster Fri/Sat the next card was
-  // already outside it, so the band rendered nothing all day Sunday. A rolling
-  // 7-day window always reaches the next card. UTC day keys (Event.date is a
-  // UTC-hour placeholder), anchored on the user's local calendar date — identical
-  // to the mobile home.
+  // "This week" window = the upcoming weekend chunk, from today through the coming
+  // Monday (inclusive). Fights cluster Fri–Sun, so this keeps the band focused on
+  // the immediate weekend instead of bleeding a full 7 days ahead (which surfaced
+  // events a week out, e.g. "next Friday"). The chunk always ends Monday so a
+  // Sunday-night card that rolls into Monday still shows. On Monday itself we reach
+  // the *next* Monday so the band doesn't collapse to a single day (the old failure
+  // mode the rolling-7 window was patching). UTC day keys (Event.date is a UTC-hour
+  // placeholder), anchored on the user's local calendar date — identical to mobile.
   const now = new Date();
   const todayKey = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const windowEndKey = todayKey + 7 * DAY_MS; // today + next 6 days (7 calendar days)
+  const daysUntilMonday = ((1 - now.getDay() + 7) % 7) || 7; // Mon → next Mon (7)
+  const windowEndKey = todayKey + (daysUntilMonday + 1) * DAY_MS; // through Monday, exclusive bound
 
   // The home screen is org-agnostic by design: every section shows content from
   // all promotions, regardless of the user's org filter selection (which only
