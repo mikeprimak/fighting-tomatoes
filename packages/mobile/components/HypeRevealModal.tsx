@@ -27,6 +27,7 @@ interface HypeRevealOverlayProps {
   distribution: Record<number, number>;
   totalPredictions: number;
   averageHype: number;
+  comment?: string;
 }
 
 export default function HypeRevealModal({
@@ -37,6 +38,7 @@ export default function HypeRevealModal({
   distribution,
   totalPredictions,
   averageHype,
+  comment,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -91,6 +93,7 @@ export default function HypeRevealModal({
               average={averageHype}
               distribution={distribution}
               total={totalPredictions}
+              comment={comment}
             />
 
             {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
