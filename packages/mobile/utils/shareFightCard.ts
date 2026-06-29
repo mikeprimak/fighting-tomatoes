@@ -25,8 +25,8 @@ export async function shareFightLink({ fight, variant, value }: ShareArgs): Prom
 
   const message =
     variant === 'hype'
-      ? `I'm hyped for ${f1} vs ${f2} — ${display}/10 🔥\nRate it on Good Fights: ${url}`
-      : `I rated ${f1} vs ${f2} ${display}/10 ⭐\nRate it on Good Fights: ${url}`;
+      ? `${f1} vs ${f2} 🔥\nMy hype: ${display}/10 — how hyped are you?\n${url}`
+      : `${f1} vs ${f2} ⭐\nMy rating: ${display}/10 — what would you give it?\n${url}`;
 
   try {
     const result = await Share.share(
