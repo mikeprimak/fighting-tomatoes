@@ -151,6 +151,7 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
               {renderIcon(commAccent, 22)}
               <Text style={[styles.scoreNumber, { color: commAccent }]}>{commDisplay}</Text>
             </View>
+            {hasCommunity && <Text style={styles.scoreCount}>({total})</Text>}
           </View>
         </View>
 
@@ -273,6 +274,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   scoreDivider: {
     width: 1,
@@ -293,6 +295,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: '900',
     marginLeft: 8,
+  },
+  scoreCount: {
+    color: CARD.textSecondary,
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 2,
   },
   chartWrap: {
     width: '100%',
