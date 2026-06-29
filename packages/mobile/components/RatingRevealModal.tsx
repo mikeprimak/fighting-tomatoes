@@ -9,20 +9,17 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import RatingDistributionChart from './RatingDistributionChart';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
 import { shareFightLink } from '../utils/shareFightCard';
 
 // Rendered INSIDE CompletedFightModal's <Modal> tree (not as its own <Modal>)
-// so both modalContainers share the same parent overlay View — `width: '88%'`
-// resolves to identical pixels on both. Mirrors HypeRevealModal exactly.
+// so the reveal container shares the same parent overlay View — `width: '88%'`
+// resolves to identical pixels. Mirrors HypeRevealModal exactly.
 
 interface RatingRevealOverlayProps {
   visible: boolean;
   onClose: () => void;
   fight: ShareCardFight;
-  distribution: Record<number, number>;
-  totalRatings: number;
   userRating: number;
 }
 
@@ -30,8 +27,6 @@ export default function RatingRevealModal({
   visible,
   onClose,
   fight,
-  distribution,
-  totalRatings,
   userRating,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
@@ -41,29 +36,19 @@ export default function RatingRevealModal({
   // will snapshot exactly this view to a PNG for the native share sheet.
   const cardRef = useRef<View>(null);
 
-  const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Open animation — overlay + chart. Runs exactly once per visible→true.
+  // Open animation — fade the whole overlay in once per visible→true transition.
   useEffect(() => {
     if (visible) {
-      chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(overlayFadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(chartFadeAnim, {
-          toValue: 1,
-          duration: 380,
-          delay: 120,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.timing(overlayFadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim]);
+  }, [visible, overlayFadeAnim]);
 
   const [sharing, setSharing] = useState(false);
   const handleShare = async () => {
@@ -90,16 +75,6 @@ export default function RatingRevealModal({
           <View style={styles.scrollContent}>
             {/* Branded, shareable card — the hero of the reveal */}
             <ShareableFightCard ref={cardRef} variant="rating" fight={fight} value={userRating} />
-
-            {/* Community distribution — in-app context, not part of the shared card */}
-            <View style={styles.chartWrap}>
-              <RatingDistributionChart
-                distribution={distribution}
-                totalRatings={totalRatings}
-                userRating={userRating}
-                fadeAnim={chartFadeAnim}
-              />
-            </View>
 
             <TouchableOpacity
               style={[styles.shareButton, { backgroundColor: colors.primary }]}
@@ -143,10 +118,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     alignItems: 'center',
-  },
-  chartWrap: {
-    width: '100%',
-    marginTop: 22,
   },
   shareButton: {
     flexDirection: 'row',

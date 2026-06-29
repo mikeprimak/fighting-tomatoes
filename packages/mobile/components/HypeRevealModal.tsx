@@ -9,22 +9,18 @@ import {
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
-import HypeDistributionChart from './HypeDistributionChart';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
 import { shareFightLink } from '../utils/shareFightCard';
 
 // NOTE: this component is rendered INSIDE UpcomingFightModal's <Modal> tree,
-// not as its own <Modal>. That guarantees both the hype container and the
-// reveal container share the exact same parent View (flex:1 overlay), so
-// `width: '88%'` resolves to identical pixels for both. Two stacked native
-// Modals were producing slightly different computed widths.
+// not as its own <Modal>. That guarantees the reveal container shares the exact
+// same parent View (flex:1 overlay) as the hype content, so `width: '88%'`
+// resolves to identical pixels for both.
 
 interface HypeRevealOverlayProps {
   visible: boolean;
   onClose: () => void;
   fight: ShareCardFight;
-  distribution: Record<number, number>;
-  totalPredictions: number;
   userHype: number;
 }
 
@@ -32,8 +28,6 @@ export default function HypeRevealModal({
   visible,
   onClose,
   fight,
-  distribution,
-  totalPredictions,
   userHype,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
@@ -43,30 +37,19 @@ export default function HypeRevealModal({
   // will snapshot exactly this view to a PNG for the native share sheet.
   const cardRef = useRef<View>(null);
 
-  const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Open animation — overlay + chart. Runs exactly once per visible→true
-  // transition.
+  // Open animation — fade the whole overlay in once per visible→true transition.
   useEffect(() => {
     if (visible) {
-      chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(overlayFadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(chartFadeAnim, {
-          toValue: 1,
-          duration: 380,
-          delay: 120,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      Animated.timing(overlayFadeAnim, {
+        toValue: 1,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim]);
+  }, [visible, overlayFadeAnim]);
 
   const [sharing, setSharing] = useState(false);
   const handleShare = async () => {
@@ -84,8 +67,6 @@ export default function HypeRevealModal({
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.overlay, { opacity: overlayFadeAnim }]} pointerEvents="auto">
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-      {/* Same KAV + modalContainer + scrollContent primitives as the hype
-          modal so the two stacks compute identical widths. */}
       <View style={styles.kavContainer} pointerEvents="box-none">
         <TouchableOpacity
           style={[styles.modalContainer, { backgroundColor: colors.background }]}
@@ -95,17 +76,6 @@ export default function HypeRevealModal({
           <View style={styles.scrollContent}>
             {/* Branded, shareable card — the hero of the reveal */}
             <ShareableFightCard ref={cardRef} variant="hype" fight={fight} value={userHype} />
-
-            {/* Community distribution — in-app context, not part of the shared card */}
-            <View style={styles.chartWrap}>
-              <HypeDistributionChart
-                distribution={distribution}
-                totalPredictions={totalPredictions}
-                hasRevealedHype={true}
-                fadeAnim={chartFadeAnim}
-                userHype={userHype}
-              />
-            </View>
 
             <TouchableOpacity
               style={[styles.shareButton, { backgroundColor: colors.primary }]}
@@ -127,9 +97,6 @@ export default function HypeRevealModal({
   );
 }
 
-// All sizing primitives copy UpcomingFightModal's overlay / kavContainer /
-// modalContainer / scrollContent verbatim. No extra horizontal constraints
-// or alignSelf overrides that could fight Yoga's '88%' calculation.
 const styles = StyleSheet.create({
   overlay: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -152,10 +119,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     alignItems: 'center',
-  },
-  chartWrap: {
-    width: '100%',
-    marginTop: 22,
   },
   shareButton: {
     flexDirection: 'row',

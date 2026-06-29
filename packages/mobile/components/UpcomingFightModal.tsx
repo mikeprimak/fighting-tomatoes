@@ -810,8 +810,6 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           visible={revealVisible}
           onClose={handleRevealClose}
           fight={fight}
-          distribution={revealDistribution}
-          totalPredictions={revealTotal}
           userHype={sessionLastHypeRef.current ?? 0}
         />
       </View>
