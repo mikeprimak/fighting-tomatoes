@@ -13,6 +13,22 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
 
 
+const GENERATIONAL_SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
+
+/**
+ * Last-name token for matching, stripping generational suffixes. The DB stores
+ * suffixes inside lastName ("Mosley Jr."), so a plain .split(' ').pop() returns
+ * "jr." and never matches a Jr./Sr./III boxer (Chavez Jr., Roach Jr, etc.).
+ * Apply this to BOTH the scraped name and the stored lastName.
+ */
+function extractBoxerLastName(fullName: string): string {
+  const parts = stripDiacritics(fullName).toLowerCase().trim().split(/\s+/).filter(Boolean);
+  let i = parts.length - 1;
+  while (i > 0 && GENERATIONAL_SUFFIXES.has(parts[i])) i--;
+  return parts[i] || '';
+}
+
+
 // ============== UTILITY FUNCTIONS ==============
 
 /**
@@ -66,15 +82,13 @@ function parseBoxerName(fullName: string): { firstName: string; lastName: string
  * Find fight by fighter names (matches by last name)
  */
 function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: string) {
-  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
-
   return fights.find(fight => {
-    const f1LastName = fight.fighter1.lastName.toLowerCase();
-    const f2LastName = fight.fighter2.lastName.toLowerCase();
+    const f1LastName = extractBoxerLastName(fight.fighter1.lastName);
+    const f2LastName = extractBoxerLastName(fight.fighter2.lastName);
 
-    // Get last names from input
-    const fighter1Last = normalize(fighter1Name).split(' ').pop() || '';
-    const fighter2Last = normalize(fighter2Name).split(' ').pop() || '';
+    // Get last names from input (suffix-aware on both sides)
+    const fighter1Last = extractBoxerLastName(fighter1Name);
+    const fighter2Last = extractBoxerLastName(fighter2Name);
 
     // Match either ordering
     return (
@@ -90,23 +104,22 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
 function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): string | null {
   if (!winnerName) return null;
 
-  const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
-  const winnerLast = normalize(winnerName).split(' ').pop() || '';
+  const winnerLast = extractBoxerLastName(winnerName);
+  const f1Last = extractBoxerLastName(fighter1.lastName);
+  const f2Last = extractBoxerLastName(fighter2.lastName);
 
-  if (fighter1.lastName.toLowerCase() === winnerLast) {
+  if (f1Last === winnerLast) {
     return fighter1.id;
   }
-  if (fighter2.lastName.toLowerCase() === winnerLast) {
+  if (f2Last === winnerLast) {
     return fighter2.id;
   }
 
   // Try partial match
-  if (fighter1.lastName.toLowerCase().includes(winnerLast) ||
-      winnerLast.includes(fighter1.lastName.toLowerCase())) {
+  if (f1Last.includes(winnerLast) || winnerLast.includes(f1Last)) {
     return fighter1.id;
   }
-  if (fighter2.lastName.toLowerCase().includes(winnerLast) ||
-      winnerLast.includes(fighter2.lastName.toLowerCase())) {
+  if (f2Last.includes(winnerLast) || winnerLast.includes(f2Last)) {
     return fighter2.id;
   }
 

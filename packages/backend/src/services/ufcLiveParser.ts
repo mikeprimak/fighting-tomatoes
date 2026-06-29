@@ -219,8 +219,11 @@ function findFightByFighters(fights: any[], fighter1Name: string, fighter2Name: 
   const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
 
   return fights.find(fight => {
-    const f1LastName = fight.fighter1.lastName.toLowerCase();
-    const f2LastName = fight.fighter2.lastName.toLowerCase();
+    // Strip generational suffixes on BOTH sides: the DB stores them in lastName
+    // ("Rountree Jr.") while extractLastName drops them, so comparing raw would
+    // never match a Jr./Sr./III fighter (Ankalaev vs. Rountree Jr., 2026-07-25).
+    const f1LastName = extractLastName(normalize(fight.fighter1.lastName));
+    const f2LastName = extractLastName(normalize(fight.fighter2.lastName));
     const fighter1Last = extractLastName(normalize(fighter1Name));
     const fighter2Last = extractLastName(normalize(fighter2Name));
 
@@ -302,10 +305,11 @@ function getWinnerFighterId(winnerName: string, fighter1: any, fighter2: any): s
   const normalize = (name: string) => stripDiacritics(name).toLowerCase().trim();
   const winnerLast = extractLastName(normalize(winnerName));
 
-  if (fighter1.lastName.toLowerCase() === winnerLast) {
+  // Suffix-aware on both sides (DB lastName keeps "Jr."/"III"; extractLastName drops it).
+  if (extractLastName(normalize(fighter1.lastName)) === winnerLast) {
     return fighter1.id;
   }
-  if (fighter2.lastName.toLowerCase() === winnerLast) {
+  if (extractLastName(normalize(fighter2.lastName)) === winnerLast) {
     return fighter2.id;
   }
 

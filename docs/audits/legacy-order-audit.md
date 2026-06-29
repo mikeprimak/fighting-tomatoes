@@ -74,3 +74,33 @@ Modern scraped events (`scraperType` set) are correct — out of scope. **Re-run
 `fix-legacy-event-order.ts --apply` is safe/idempotent**: it re-classifies live each run and
 only targets events that *currently* classify as inverted — the 225 now classify `CORRECT`, so
 a re-run skips them and would only catch newly-imported inversions.
+
+## Phase 3 — authoritative Wikipedia pass (2026-06-29)
+
+Resolved the bulk of the phase-2 leftover (`INVERTED-RATING-ONLY` / `SENTINEL`) for **numbered
+UFC events** using Wikipedia as the external source. Script:
+`packages/backend/scripts/verify-legacy-order-wikipedia.ts` (dry-run by default, `--apply` writes).
+
+**Why Wikipedia, not ufcstats:** ufcstats.com now serves a JS "Loading…" bot interstitial to
+plain HTTP clients, so the existing `fetchUFCStatsEventList()` returns 0 rows. Wikipedia's
+*List of UFC events* wikitext names every modern numbered card by its **main event**
+(`[[UFC 209|UFC 209: Woodley vs. Thompson 2]]`) — exactly the signal our bare `UFC 209` rows
+lack. Method: number → Wikipedia main-event surnames → find the matching DB fight → if it sits
+at the card's **max** `orderOnCard` it's inverted; flip with the same self-inverse transform.
+Self-correcting: already-correct events (main event at min) are skipped, so it can't double-flip
+the 225 fixed in phase 2.
+
+**Result (`--apply`, 2026-06-29):** **134 numbered UFC events flipped** (1498 fight rows); a
+follow-up dry-run shows **0 remaining INVERTED**, 225 numbered events now `CORRECT`. Spot-checked
+(UFC 272 Covington/Masvidal, 269 Oliveira/Poirier, 254 Khabib/Gaethje, 135 Jones/Rampage) — main
+event now at `orderOnCard = 1`.
+
+**Still open (left untouched, all safe — no wrong flips):**
+- **12 `NOMATCH`** numbered UFC — Wikipedia names the main event by **nickname** only
+  (`Volkanovski vs. The Korean Zombie`, `McGregor vs. Cowboy`, `Velasquez vs. Bigfoot`,
+  `… vs. Shogun`). Would need nickname data on the fighter rows or per-article parsing.
+- **83 `NO-WIKI`** numbered UFC — **tagline-era** older cards whose Wikipedia link carries a
+  slogan, not a matchup (`UFC 92: The Ultimate 2008`, `UFC 100`). The list-name trick can't help;
+  needs each article's results table or another source.
+- **Non-UFC legacy** (Bellator/PRIDE/Invicta/WSOF/…) and **UFC Fight Night** named cards — out of
+  scope for the numbered-list trick entirely.
