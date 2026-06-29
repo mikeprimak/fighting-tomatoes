@@ -3,8 +3,9 @@
     "apps": [],
     "details": [
       {
-        "appID": "TEAM_ID.com.fightcrewapp.mobile",
+        "appID": "K7TB3SVUMP.com.fightcrewapp.mobile",
         "paths": [
+          "/fights/*",
           "/verify-email*",
           "/reset-password*"
         ]
@@ -13,7 +14,7 @@
   },
   "webcredentials": {
     "apps": [
-      "TEAM_ID.com.fightcrewapp.mobile"
+      "K7TB3SVUMP.com.fightcrewapp.mobile"
     ]
   }
 }
