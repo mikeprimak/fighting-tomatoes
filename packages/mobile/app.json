@@ -84,6 +84,11 @@
             {
               "scheme": "https",
               "host": "goodfights.app",
+              "pathPrefix": "/fights"
+            },
+            {
+              "scheme": "https",
+              "host": "goodfights.app",
               "pathPrefix": "/verify-email"
             },
             {
