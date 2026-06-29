@@ -76,19 +76,26 @@ export default function RatingRevealModal({
             {/* Branded, shareable card — the hero of the reveal */}
             <ShareableFightCard ref={cardRef} variant="rating" fight={fight} value={userRating} />
 
-            <TouchableOpacity
-              style={[styles.shareButton, { backgroundColor: colors.primary }]}
-              onPress={handleShare}
-              activeOpacity={0.85}
-              disabled={sharing}
-            >
-              <FontAwesome name="share" size={15} color="#000" style={styles.shareIcon} />
-              <Text style={styles.shareText}>Share</Text>
-            </TouchableOpacity>
+            {/* Bottom row mirrors the hype modal's notify-bell + Done layout:
+                a small bordered share-icon button + a large yellow Close. */}
+            <View style={styles.bottomRow}>
+              <TouchableOpacity
+                style={[styles.shareIconButton, { borderColor: colors.border }]}
+                onPress={handleShare}
+                activeOpacity={0.7}
+                disabled={sharing}
+              >
+                <FontAwesome name="share" size={18} color={colors.textSecondary} />
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
-              <Text style={[styles.closeText, { color: colors.textSecondary }]}>Close</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.closeButton, { backgroundColor: colors.primary }]}
+                onPress={onClose}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.closeButtonText}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </View>
@@ -119,31 +126,31 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     alignItems: 'center',
   },
-  shareButton: {
+  bottomRow: {
     flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     marginTop: 24,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  shareIconButton: {
+    width: 46,
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButton: {
+    flex: 1,
     paddingVertical: 13,
     borderRadius: 12,
     alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'stretch',
   },
-  shareIcon: {
-    marginRight: 8,
-  },
-  shareText: {
+  closeButtonText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#000',
-  },
-  closeButton: {
-    marginTop: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    alignSelf: 'stretch',
-  },
-  closeText: {
-    fontSize: 15,
-    fontWeight: '600',
   },
 });
