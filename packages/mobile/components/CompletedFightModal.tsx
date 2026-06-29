@@ -663,6 +663,9 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
           onClose={handleRevealClose}
           fight={fight}
           userRating={sessionLastRatingRef.current ?? 0}
+          distribution={revealDistribution}
+          totalRatings={revealTotal}
+          averageRating={revealAvgRating}
         />
       </View>
     </Modal>
