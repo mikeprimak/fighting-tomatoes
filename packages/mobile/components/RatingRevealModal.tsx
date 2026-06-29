@@ -1,15 +1,17 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Animated,
-  ActivityIndicator,
   useColorScheme,
 } from 'react-native';
+import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import RatingDistributionChart from './RatingDistributionChart';
+import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
+import { shareFightLink } from '../utils/shareFightCard';
 
 // Rendered INSIDE CompletedFightModal's <Modal> tree (not as its own <Modal>)
 // so both modalContainers share the same parent overlay View — `width: '88%'`
@@ -18,59 +20,35 @@ import RatingDistributionChart from './RatingDistributionChart';
 interface RatingRevealOverlayProps {
   visible: boolean;
   onClose: () => void;
+  fight: ShareCardFight;
   distribution: Record<number, number>;
   totalRatings: number;
-  averageRating: number;
   userRating: number;
-  // Prefetched Fan DNA beat from the rate mutation response (same roundtrip
-  // as the commit). Null = engine had nothing to say.
-  dnaLine?: string | null;
-  // True iff the rate mutation is still in flight. When set we render a
-  // spinner placeholder in the dna slot so the modal opens fully composed
-  // instead of fading a new line in mid-conversation.
-  dnaLoading?: boolean;
-}
-
-function getComparisonText(userRating: number, avgRating: number, totalRatings: number): string {
-  // First rater (or only rater): no community baseline yet — calling them "the
-  // average fan" is nonsense. Trailblazer language only.
-  if (totalRatings <= 1 || !avgRating) {
-    return 'First to rate this fight';
-  }
-  const delta = userRating - avgRating;
-  if (delta >= 2.5) return 'You rated this much higher than the average fan';
-  if (delta >= 1) return 'You rated this higher than the average fan';
-  if (delta > -1) return 'You rated this about the same as the average fan';
-  if (delta > -2.5) return 'You rated this lower than the average fan';
-  return 'You rated this much lower than the average fan';
 }
 
 export default function RatingRevealModal({
   visible,
   onClose,
+  fight,
   distribution,
   totalRatings,
-  averageRating,
   userRating,
-  dnaLine,
-  dnaLoading,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
+  // Ref on the branded card — the future capture step (react-native-view-shot)
+  // will snapshot exactly this view to a PNG for the native share sheet.
+  const cardRef = useRef<View>(null);
+
   const chartFadeAnim = useRef(new Animated.Value(0)).current;
   const overlayFadeAnim = useRef(new Animated.Value(0)).current;
-  const dnaFadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Open animation — overlay + chart. dnaLine is NOT a dep: if the line
-  // arrives after the modal opens (mutation hadn't resolved yet), we don't
-  // want everything to fade in a second time. That looked like the modal
-  // was opening twice.
+  // Open animation — overlay + chart. Runs exactly once per visible→true.
   useEffect(() => {
     if (visible) {
       chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
-      dnaFadeAnim.setValue(0);
       Animated.parallel([
         Animated.timing(overlayFadeAnim, {
           toValue: 1,
@@ -85,20 +63,18 @@ export default function RatingRevealModal({
         }),
       ]).start();
     }
-  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim]);
+  }, [visible, chartFadeAnim, overlayFadeAnim]);
 
-  // DNA fade-in — independent of the open animation. Fires whenever the line
-  // arrives (prefetched inline, or async after a fire-and-forget mutation).
-  useEffect(() => {
-    if (visible && dnaLine) {
-      Animated.timing(dnaFadeAnim, {
-        toValue: 1,
-        duration: 420,
-        delay: 280,
-        useNativeDriver: true,
-      }).start();
+  const [sharing, setSharing] = useState(false);
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      await shareFightLink({ fight, variant: 'rating', value: userRating });
+    } finally {
+      setSharing(false);
     }
-  }, [visible, dnaLine, dnaFadeAnim]);
+  };
 
   if (!visible) return null;
 
@@ -112,39 +88,31 @@ export default function RatingRevealModal({
           onPress={() => {}}
         >
           <View style={styles.scrollContent}>
-            <Text style={[styles.header, { color: colors.text }]}>Rating submitted!</Text>
+            {/* Branded, shareable card — the hero of the reveal */}
+            <ShareableFightCard ref={cardRef} variant="rating" fight={fight} value={userRating} />
 
-            <RatingDistributionChart
-              distribution={distribution}
-              totalRatings={totalRatings}
-              userRating={userRating}
-              fadeAnim={chartFadeAnim}
-            />
-
-            <Text style={[styles.comparison, { color: colors.text }]}>
-              {getComparisonText(userRating, averageRating, totalRatings)}
-            </Text>
-
-            {dnaLine ? (
-              <Animated.Text
-                style={[styles.dnaLine, { color: colors.textSecondary, opacity: dnaFadeAnim }]}
-              >
-                {dnaLine}
-              </Animated.Text>
-            ) : dnaLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.textSecondary}
-                style={styles.dnaLoading}
+            {/* Community distribution — in-app context, not part of the shared card */}
+            <View style={styles.chartWrap}>
+              <RatingDistributionChart
+                distribution={distribution}
+                totalRatings={totalRatings}
+                userRating={userRating}
+                fadeAnim={chartFadeAnim}
               />
-            ) : null}
+            </View>
 
             <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: colors.primary }]}
-              onPress={onClose}
+              style={[styles.shareButton, { backgroundColor: colors.primary }]}
+              onPress={handleShare}
               activeOpacity={0.85}
+              disabled={sharing}
             >
-              <Text style={styles.closeText}>Close</Text>
+              <FontAwesome name="share" size={15} color="#000" style={styles.shareIcon} />
+              <Text style={styles.shareText}>Share</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7}>
+              <Text style={[styles.closeText, { color: colors.textSecondary }]}>Close</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -172,59 +140,39 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 28,
+    paddingTop: 20,
     paddingBottom: 16,
     alignItems: 'center',
   },
-  header: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    opacity: 0.7,
-    marginBottom: 20,
+  chartWrap: {
+    width: '100%',
+    marginTop: 22,
   },
-  comparison: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 18,
-    textAlign: 'center',
-    letterSpacing: 0.2,
-    opacity: 0.7,
-  },
-  // Fan DNA third beat — italic + textSecondary grey. The animated opacity
-  // overrides any opacity here while the fade plays, so use color (not
-  // opacity) to convey "greyness."
-  dnaLine: {
-    fontSize: 13.5,
-    fontStyle: 'italic',
-    fontWeight: '500',
-    marginTop: 12,
-    paddingHorizontal: 8,
-    textAlign: 'center',
-    letterSpacing: 0.15,
-    lineHeight: 19,
-  },
-  // Spinner placeholder occupies roughly one line of dnaLine height so the
-  // modal doesn't reflow when the line lands.
-  dnaLoading: {
-    marginTop: 14,
-    height: 19,
-  },
-  // Matches Done button width on the rating modal: bottomRow has 8pt padding
-  // each side, so marginHorizontal: (8) here. There's no notify bell on the
-  // rating modal, so we don't subtract for one.
-  closeButton: {
+  shareButton: {
+    flexDirection: 'row',
     marginTop: 24,
-    marginHorizontal: 8,
     paddingVertical: 13,
     borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+  },
+  shareIcon: {
+    marginRight: 8,
+  },
+  shareText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+  },
+  closeButton: {
+    marginTop: 10,
+    paddingVertical: 10,
     alignItems: 'center',
     alignSelf: 'stretch',
   },
   closeText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
+    fontSize: 15,
+    fontWeight: '600',
   },
 });

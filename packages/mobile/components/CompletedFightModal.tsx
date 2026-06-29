@@ -661,14 +661,10 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
         <RatingRevealModal
           visible={revealVisible}
           onClose={handleRevealClose}
+          fight={fight}
           distribution={revealDistribution}
           totalRatings={revealTotal}
-          averageRating={revealAvgRating}
           userRating={sessionLastRatingRef.current ?? 0}
-          dnaLine={revealDnaLine}
-          // Spinner only when peek hadn't returned and the mutation is still
-          // in flight. With peek loaded this is always false.
-          dnaLoading={ratingMutation.isPending && !revealDnaLine && !peekedDna}
         />
       </View>
     </Modal>
