@@ -141,9 +141,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
   },
+  // Fixed box + resizeMode 'contain' (set on the Image) — the logo is fit
+  // INSIDE this width×height box and centered, so it can never overflow. The
+  // box is full card width, height tuned so the logo lands near-full-width on
+  // phones. (Percentage width + aspectRatio on an <Image> is unreliable — it
+  // can blow up to the asset's native pixel width.)
   logo: {
-    width: '96%',
-    aspectRatio: 2939 / 775,
+    width: '100%',
+    height: 76,
     marginBottom: 6,
   },
   eventLine: {
