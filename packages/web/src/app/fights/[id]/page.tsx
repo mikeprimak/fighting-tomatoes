@@ -20,10 +20,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: title,
       description: desc,
+      // og:image / twitter:image are supplied by opengraph-image.tsx (the
+      // branded dynamic fight card). Don't set a raw fighter photo here or two
+      // conflicting og:image tags get emitted.
       openGraph: {
         title,
         description: desc,
-        ...(fight.fighter1.profileImage ? { images: [fight.fighter1.profileImage] } : {}),
+        type: 'website',
+        url: `https://goodfights.app/fights/${id}`,
+      },
+      twitter: {
+        card: 'summary_large_image',
+        title,
+        description: desc,
       },
     };
   } catch {
