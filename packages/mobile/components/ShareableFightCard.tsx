@@ -22,12 +22,14 @@ export interface ShareCardFight {
 }
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
+// High-res (2799×738) brand logo — comfortably oversized for the header, so it
+// stays crisp when this view is later rasterized to a PNG for the share sheet.
+const LOGO = require('../assets/GOOD-FIGHTS-LONG-LOGO.png');
 
 // Branded, self-contained card shown after a user hypes or rates a fight.
 // It is ALWAYS dark-themed (hardcoded palette, not the device color scheme) so
 // every shared image looks identical and on-brand regardless of the viewer's
-// settings. The "GOOD FIGHTS" wordmark is text, not an image, so it stays crisp
-// when this view is later rasterized to a PNG for the share sheet.
+// settings.
 //
 // forwardRef exposes the outer card View so a future capture step
 // (react-native-view-shot) can snapshot exactly these pixels.
@@ -83,10 +85,8 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
 
     return (
       <View ref={ref} style={styles.card} collapsable={false}>
-        {/* Brand wordmark */}
-        <Text style={styles.wordmark}>
-          GOOD <Text style={styles.wordmarkAccent}>FIGHTS</Text>
-        </Text>
+        {/* Brand logo */}
+        <Image source={LOGO} style={styles.logo} resizeMode="contain" />
 
         {/* Event line */}
         {!!fight.event?.name && (
@@ -141,14 +141,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: 'center',
   },
-  wordmark: {
-    color: CARD.text,
-    fontSize: 20,
-    fontWeight: '900',
-    letterSpacing: 3,
-  },
-  wordmarkAccent: {
-    color: CARD.brand,
+  logo: {
+    height: 28,
+    aspectRatio: 2799 / 738,
+    marginBottom: 2,
   },
   eventLine: {
     color: CARD.textSecondary,
