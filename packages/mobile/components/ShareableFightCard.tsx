@@ -118,11 +118,6 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
             <Text style={styles.valueDenominator}>/10</Text>
           </View>
         </View>
-
-        {/* CTA / watermark */}
-        <Text style={styles.cta}>
-          Rate this fight on <Text style={styles.ctaUrl}>goodfights.app</Text>
-        </Text>
       </View>
     );
   }
@@ -149,14 +144,14 @@ const styles = StyleSheet.create({
   logo: {
     width: '100%',
     height: 76,
-    marginBottom: 6,
+    marginBottom: 0,
   },
   eventLine: {
     color: CARD.textSecondary,
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.3,
-    marginTop: 6,
+    marginTop: -6, // pull up into the logo box's lower whitespace, toward the glyph
     marginBottom: 18,
     textAlign: 'center',
   },
@@ -233,16 +228,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginLeft: 2,
     marginTop: 14,
-  },
-  cta: {
-    color: CARD.textSecondary,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 20,
-    textAlign: 'center',
-  },
-  ctaUrl: {
-    color: CARD.brand,
-    fontWeight: '800',
   },
 });
