@@ -11,6 +11,7 @@ import {
 import { Colors } from '../constants/Colors';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
 import { shareFightLink } from '../utils/shareFightCard';
+import { captureAndShareCard } from '../utils/captureFightCard';
 
 const SHARE_ICON = require('../assets/share.png');
 
@@ -66,7 +67,9 @@ export default function HypeRevealModal({
     if (sharing) return;
     setSharing(true);
     try {
-      await shareFightLink({ fight, variant: 'hype', value: userHype });
+      // Try the captured branded image first; fall back to a link-only share.
+      const ok = await captureAndShareCard(cardRef, { fight, variant: 'hype', value: userHype });
+      if (!ok) await shareFightLink({ fight, variant: 'hype', value: userHype });
     } finally {
       setSharing(false);
     }

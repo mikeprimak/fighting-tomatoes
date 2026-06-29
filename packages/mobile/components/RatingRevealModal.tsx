@@ -11,6 +11,7 @@ import {
 import { Colors } from '../constants/Colors';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
 import { shareFightLink } from '../utils/shareFightCard';
+import { captureAndShareCard } from '../utils/captureFightCard';
 
 const SHARE_ICON = require('../assets/share.png');
 
@@ -65,7 +66,9 @@ export default function RatingRevealModal({
     if (sharing) return;
     setSharing(true);
     try {
-      await shareFightLink({ fight, variant: 'rating', value: userRating });
+      // Try the captured branded image first; fall back to a link-only share.
+      const ok = await captureAndShareCard(cardRef, { fight, variant: 'rating', value: userRating });
+      if (!ok) await shareFightLink({ fight, variant: 'rating', value: userRating });
     } finally {
       setSharing(false);
     }
