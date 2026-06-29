@@ -23,6 +23,9 @@ interface RatingRevealOverlayProps {
   onClose: () => void;
   fight: ShareCardFight;
   userRating: number;
+  distribution: Record<number, number>;
+  totalRatings: number;
+  averageRating: number;
 }
 
 export default function RatingRevealModal({
@@ -30,6 +33,9 @@ export default function RatingRevealModal({
   onClose,
   fight,
   userRating,
+  distribution,
+  totalRatings,
+  averageRating,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -76,7 +82,15 @@ export default function RatingRevealModal({
         >
           <View style={styles.scrollContent}>
             {/* Branded, shareable card — the hero of the reveal */}
-            <ShareableFightCard ref={cardRef} variant="rating" fight={fight} value={userRating} />
+            <ShareableFightCard
+              ref={cardRef}
+              variant="rating"
+              fight={fight}
+              value={userRating}
+              average={averageRating}
+              distribution={distribution}
+              total={totalRatings}
+            />
 
             {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
             <View style={styles.bottomRow}>

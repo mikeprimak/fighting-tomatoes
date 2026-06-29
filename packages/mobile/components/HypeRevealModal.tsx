@@ -24,6 +24,9 @@ interface HypeRevealOverlayProps {
   onClose: () => void;
   fight: ShareCardFight;
   userHype: number;
+  distribution: Record<number, number>;
+  totalPredictions: number;
+  averageHype: number;
 }
 
 export default function HypeRevealModal({
@@ -31,6 +34,9 @@ export default function HypeRevealModal({
   onClose,
   fight,
   userHype,
+  distribution,
+  totalPredictions,
+  averageHype,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -77,7 +83,15 @@ export default function HypeRevealModal({
         >
           <View style={styles.scrollContent}>
             {/* Branded, shareable card — the hero of the reveal */}
-            <ShareableFightCard ref={cardRef} variant="hype" fight={fight} value={userHype} />
+            <ShareableFightCard
+              ref={cardRef}
+              variant="hype"
+              fight={fight}
+              value={userHype}
+              average={averageHype}
+              distribution={distribution}
+              total={totalPredictions}
+            />
 
             {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
             <View style={styles.bottomRow}>
