@@ -22,9 +22,9 @@ export interface ShareCardFight {
 }
 
 const DEFAULT_FIGHTER_IMAGE = require('../assets/fighters/fighter-default-alpha.png');
-// High-res (2799×738) brand logo — comfortably oversized for the header, so it
+// High-res (2939×775) brand logo — comfortably oversized for the header, so it
 // stays crisp when this view is later rasterized to a PNG for the share sheet.
-const LOGO = require('../assets/GOOD-FIGHTS-LONG-LOGO.png');
+const LOGO = require('../assets/GOOD-FIGHTS-LOGO-crisp.png');
 
 // Branded, self-contained card shown after a user hypes or rates a fight.
 // It is ALWAYS dark-themed (hardcoded palette, not the device color scheme) so
@@ -142,9 +142,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    height: 28,
-    aspectRatio: 2799 / 738,
-    marginBottom: 2,
+    width: '96%',
+    aspectRatio: 2939 / 775,
+    marginBottom: 6,
   },
   eventLine: {
     color: CARD.textSecondary,
