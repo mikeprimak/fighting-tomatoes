@@ -57,6 +57,7 @@ interface ShareableFightCardProps {
   average?: number; // community aggregate (averageHype / averageRating)
   distribution?: Record<number, number>; // community vote counts, keyed 1-10
   total?: number; // total community votes (incl. the user's)
+  comment?: string; // the user's own comment/review text, if any
   style?: ViewStyle;
 }
 
@@ -87,7 +88,7 @@ function FighterColumn({ fighter }: { fighter: ShareCardFighter }) {
 }
 
 const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
-  ({ variant, fight, value, average = 0, distribution = {}, total = 0 }, ref) => {
+  ({ variant, fight, value, average = 0, distribution = {}, total = 0, comment }, ref) => {
     const isHype = variant === 'hype';
     const myAccent = getHypeHeatmapColor(value);
     const myDisplay = Number.isInteger(value) ? `${value}` : value.toFixed(1);
@@ -98,6 +99,7 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
     const commDisplay = hasCommunity ? average.toFixed(1) : '—';
 
     const hasDistribution = total > 0 && Object.keys(distribution).length > 0;
+    const commentText = comment?.trim() || '';
 
     // Static fade value — the chart components animate via this; on the card we
     // just want the bars shown (the modal handles the open animation).
@@ -143,6 +145,8 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
               {renderIcon(myAccent, 22)}
               <Text style={[styles.scoreNumber, { color: myAccent }]}>{myDisplay}</Text>
             </View>
+            {/* Blank line reserving the count's height so both scores stay level. */}
+            {hasCommunity && <Text style={styles.scoreCount}> </Text>}
           </View>
           <View style={styles.scoreDivider} />
           <View style={styles.scoreCell}>
@@ -154,6 +158,13 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
             {hasCommunity && <Text style={styles.scoreCount}>({total})</Text>}
           </View>
         </View>
+
+        {/* The user's own comment/review (truncated) */}
+        {!!commentText && (
+          <Text style={styles.comment} numberOfLines={3} ellipsizeMode="tail">
+            “{commentText}”
+          </Text>
+        )}
 
         {/* Community distribution with my vote marked */}
         {hasDistribution && (
@@ -301,6 +312,15 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginTop: 2,
+  },
+  comment: {
+    color: CARD.text,
+    fontSize: 13.5,
+    fontStyle: 'italic',
+    lineHeight: 19,
+    marginTop: 16,
+    paddingHorizontal: 6,
+    textAlign: 'center',
   },
   chartWrap: {
     width: '100%',

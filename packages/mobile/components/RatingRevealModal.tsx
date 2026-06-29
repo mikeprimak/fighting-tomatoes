@@ -26,6 +26,7 @@ interface RatingRevealOverlayProps {
   distribution: Record<number, number>;
   totalRatings: number;
   averageRating: number;
+  comment?: string;
 }
 
 export default function RatingRevealModal({
@@ -36,6 +37,7 @@ export default function RatingRevealModal({
   distribution,
   totalRatings,
   averageRating,
+  comment,
 }: RatingRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -90,6 +92,7 @@ export default function RatingRevealModal({
               average={averageRating}
               distribution={distribution}
               total={totalRatings}
+              comment={comment}
             />
 
             {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}

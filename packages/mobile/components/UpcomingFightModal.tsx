@@ -814,6 +814,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           distribution={revealDistribution}
           totalPredictions={revealTotal}
           averageHype={revealAvgHype}
+          comment={preFightComment}
         />
       </View>
     </Modal>
