@@ -103,7 +103,7 @@ function HeadshotCircle({ src }: { src: string | null }) {
 export default async function Image({ params }: Props) {
   const { id } = await params;
 
-  const logoData = await readFile(join(process.cwd(), 'public/brand/good-fights-long-logo.png'));
+  const logoData = await readFile(join(process.cwd(), 'public/brand/good-fights-logo-crisp.png'));
   const logoSrc = `data:image/png;base64,${logoData.toString('base64')}`;
 
   let fight: any = null;
