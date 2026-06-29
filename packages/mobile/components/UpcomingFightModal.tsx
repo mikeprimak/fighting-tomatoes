@@ -809,14 +809,10 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
         <HypeRevealModal
           visible={revealVisible}
           onClose={handleRevealClose}
+          fight={fight}
           distribution={revealDistribution}
           totalPredictions={revealTotal}
-          averageHype={revealAvgHype}
           userHype={sessionLastHypeRef.current ?? 0}
-          dnaLine={revealDnaLine}
-          // Spinner only when we couldn't pre-peek (no peek data yet) and the
-          // mutation is still in flight. With peek loaded this is always false.
-          dnaLoading={hypeMutation.isPending && !revealDnaLine && !peekedDna}
         />
       </View>
     </Modal>
