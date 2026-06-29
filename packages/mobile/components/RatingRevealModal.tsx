@@ -2,15 +2,17 @@ import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Animated,
   useColorScheme,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
 import { shareFightLink } from '../utils/shareFightCard';
+
+const SHARE_ICON = require('../assets/share.png');
 
 // Rendered INSIDE CompletedFightModal's <Modal> tree (not as its own <Modal>)
 // so the reveal container shares the same parent overlay View — `width: '88%'`
@@ -76,24 +78,24 @@ export default function RatingRevealModal({
             {/* Branded, shareable card — the hero of the reveal */}
             <ShareableFightCard ref={cardRef} variant="rating" fight={fight} value={userRating} />
 
-            {/* Bottom row mirrors the hype modal's notify-bell + Done layout:
-                a small bordered share-icon button + a large yellow Close. */}
+            {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
             <View style={styles.bottomRow}>
               <TouchableOpacity
-                style={[styles.shareIconButton, { borderColor: colors.border }]}
+                style={[styles.shareButton, { backgroundColor: colors.primary }]}
                 onPress={handleShare}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
                 disabled={sharing}
               >
-                <FontAwesome name="share" size={18} color={colors.textSecondary} />
+                <Image source={SHARE_ICON} style={styles.shareIcon} />
+                <Text style={styles.shareButtonText}>Share</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.closeButton, { backgroundColor: colors.primary }]}
+                style={[styles.closeButton, { borderColor: colors.border }]}
                 onPress={onClose}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
               >
-                <Text style={styles.closeButtonText}>Close</Text>
+                <Text style={[styles.closeButtonText, { color: colors.text }]}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -128,25 +130,37 @@ const styles = StyleSheet.create({
   },
   bottomRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'stretch',
     gap: 10,
     marginTop: 24,
     paddingHorizontal: 8,
     width: '100%',
   },
-  shareIconButton: {
-    width: 46,
-    height: 46,
+  shareButton: {
+    flex: 1,
+    flexDirection: 'row',
+    paddingVertical: 13,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shareIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 8,
+  },
+  shareButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
   },
   closeButton: {
     flex: 1,
     paddingVertical: 13,
     borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 16,
