@@ -1449,6 +1449,8 @@ class ApiService {
       nextFight: any | null;
       mostRecentFight: any | null;
     } | null;
+    // Lightweight rail of a few featurable fighters (mobile home horizontal scroll).
+    fighters?: any[];
   }> {
     return this.makeRequest('/community/highlighted-fighter');
   }

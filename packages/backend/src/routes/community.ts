@@ -981,7 +981,13 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         ? { ...mostRecentRaw, userRating: null }
         : null;
 
-      return reply.send({ data: { fighter: chosen, topFight, nextFight, mostRecentFight } });
+      // A lightweight rail of the top featurable fighters (already engagement-
+      // ranked + day-rotated in `rotated`), so the mobile home can show a few in
+      // a horizontal scroll. No extra queries — just a slice of the existing pool.
+      // `data` is left intact for the web single-fighter card.
+      const fighters = rotated.slice(0, 12);
+
+      return reply.send({ data: { fighter: chosen, topFight, nextFight, mostRecentFight }, fighters });
     } catch (error) {
       console.error('Error fetching highlighted fighter:', error);
       return reply.status(500).send({

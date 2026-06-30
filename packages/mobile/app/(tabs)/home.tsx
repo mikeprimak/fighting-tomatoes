@@ -504,6 +504,50 @@ function FollowedFighterChip({
   );
 }
 
+/**
+ * Compact portrait card for the Highlighted Fighters horizontal rail. Smaller
+ * than the old single big card — a few scroll side-to-side. Shows the action/
+ * portrait image, name, and record · weight class; taps through to the profile.
+ */
+function FeaturedFighterCard({
+  fighter,
+  styles,
+  onPress,
+}: {
+  fighter: any;
+  styles: ReturnType<typeof makeStyles>;
+  onPress: () => void;
+}) {
+  const record = (() => {
+    const w = fighter.wins ?? 0, l = fighter.losses ?? 0, d = fighter.draws ?? 0;
+    if (w + l + d === 0) return '';
+    return d > 0 ? `${w}-${l}-${d}` : `${w}-${l}`;
+  })();
+  const meta = [record, formatWeightClass(fighter.weightClass)].filter(Boolean).join(' · ');
+  const summary = fighter.aiProfile?.tldr || fighter.aiProfileSummary || '';
+
+  return (
+    <TouchableOpacity style={styles.featuredCard} activeOpacity={0.9} onPress={onPress}>
+      <Image
+        source={getFighterImage({
+          ...fighter,
+          profileImage: fighter.actionImage || fighter.profileImage,
+        })}
+        style={styles.featuredImage}
+        resizeMode="cover"
+      />
+      <View style={styles.featuredBody}>
+        {fighter.nickname ? (
+          <Text style={styles.featuredNickname} numberOfLines={1}>&ldquo;{fighter.nickname}&rdquo;</Text>
+        ) : null}
+        <Text style={styles.featuredName} numberOfLines={1}>{getFighterDisplayName(fighter)}</Text>
+        {meta ? <Text style={styles.featuredMeta} numberOfLines={1}>{meta}</Text> : null}
+        {summary ? <Text style={styles.featuredSummary} numberOfLines={3}>{summary}</Text> : null}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // Rotating "here's what Good Fights can do for you" education cards shown at the
 // bottom of Home. Cycles once a minute so a returning user keeps discovering
 // features. Each card optionally deep-links to the relevant screen.
@@ -514,6 +558,7 @@ const FEATURE_SPOTLIGHTS: {
   body: string;
   route?: string;
   hint?: string;
+  image?: any;
 }[] = [
   {
     icon: 'fire-flame-curved',
@@ -530,6 +575,7 @@ const FEATURE_SPOTLIGHTS: {
     body: 'Community ratings show you which fights actually delivered, so you can find a great one to watch tonight.',
     route: '/(tabs)/top-fights',
     hint: 'See top-rated fights',
+    image: require('../../assets/spotlights/puncher.png'),
   },
   {
     icon: 'clock-rotate-left',
@@ -554,6 +600,7 @@ const FEATURE_SPOTLIGHTS: {
     body: "Follow fighters and get notified the moment they're booked, the morning of, and when they walk out.",
     route: '/followed-fighters',
     hint: 'Manage your fighters',
+    image: require('../../assets/spotlights/fan-cheering-tv.png'),
   },
   {
     icon: 'comments',
@@ -603,13 +650,17 @@ function FeatureSpotlight({
       onPress={() => feature.route && onNavigate(feature.route)}
     >
       <Animated.View style={[styles.spotlightInner, { opacity }]}>
-        <View style={styles.spotlightIconWrap}>
-          {feature.iconLib === 'fa6' ? (
-            <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
-          ) : (
-            <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
-          )}
-        </View>
+        {feature.image ? (
+          <Image source={feature.image} style={styles.spotlightImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.spotlightIconWrap}>
+            {feature.iconLib === 'fa6' ? (
+              <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
+            ) : (
+              <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
+            )}
+          </View>
+        )}
         <Text style={styles.spotlightTitle}>{feature.title}</Text>
         <Text style={styles.spotlightBody}>{feature.body}</Text>
         {feature.route ? (
@@ -814,32 +865,16 @@ export default function HomeScreen() {
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
 
-  // Highlighted fighter — portrait prefers the action shot, bio prefers the
-  // structured tldr, then falls back to the summary string.
+  // Highlighted fighters — a few featurable fighters for the horizontal rail.
+  // Falls back to the single chosen fighter if the backend hasn't shipped the
+  // `fighters` array yet (older deploy). Each card derives its own bio/record.
   const highlight = highlightedFighterData?.data || null;
-  const highlightFighter = highlight?.fighter || null;
-  const highlightTopFight = highlight?.topFight || null;
-  const highlightNextFight = highlight?.nextFight || null;
-  const highlightMostRecentFight = highlight?.mostRecentFight || null;
-  // When the fighter has nothing booked, surface their most recent bout above
-  // the top-rated one. If that bout *is* the top-rated one, don't show it twice —
-  // just relabel the single line "Most Recent Fight" (task 1).
-  const highlightHasUpcoming = !!highlightNextFight;
-  const highlightSameRecentTop =
-    !!highlightMostRecentFight && !!highlightTopFight && highlightMostRecentFight.id === highlightTopFight.id;
-  const highlightShowMostRecent =
-    !highlightHasUpcoming && !!highlightMostRecentFight && !highlightSameRecentTop;
-  const highlightTopFightLabel =
-    !highlightHasUpcoming && highlightSameRecentTop ? 'Most Recent Fight' : 'Top-rated fight';
-  const highlightSummary = highlightFighter
-    ? highlightFighter.aiProfile?.tldr || highlightFighter.aiProfileSummary || ''
-    : '';
-  const highlightRecord = (() => {
-    if (!highlightFighter) return '';
-    const w = highlightFighter.wins ?? 0, l = highlightFighter.losses ?? 0, d = highlightFighter.draws ?? 0;
-    if (w + l + d === 0) return '';
-    return d > 0 ? `${w}-${l}-${d}` : `${w}-${l}`;
-  })();
+  const highlightFighters: any[] =
+    highlightedFighterData?.fighters && highlightedFighterData.fighters.length > 0
+      ? highlightedFighterData.fighters
+      : highlight?.fighter
+        ? [highlight.fighter]
+        : [];
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -1045,84 +1080,39 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Highlighted Fighter — daily-rotating AI-enriched fighter ------------*/}
-      {highlightFighter && (
-        <Section colors={colors} styles={styles} title="Highlighted Fighter" icon="user-circle" iconLib="fa6">
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.highlightCard}
-            onPress={() => router.push(`/fighter/${highlightFighter.id}` as any)}
-          >
-            <Image
-              source={getFighterImage({
-                ...highlightFighter,
-                profileImage: highlightFighter.actionImage || highlightFighter.profileImage,
-              })}
-              style={styles.highlightImage}
-              resizeMode="cover"
-            />
-            <View style={styles.highlightBody}>
-              {highlightFighter.nickname ? (
-                <Text style={styles.highlightNickname}>&ldquo;{highlightFighter.nickname}&rdquo;</Text>
-              ) : null}
-              <Text style={styles.highlightName}>{getFighterDisplayName(highlightFighter)}</Text>
-              {(highlightRecord || highlightFighter.weightClass) ? (
-                <Text style={styles.highlightMeta}>
-                  {[highlightRecord, highlightFighter.weightClass].filter(Boolean).join(' · ')}
-                </Text>
-              ) : null}
-              {highlightSummary ? (
-                <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
-              ) : null}
-              {/* Most recent bout (only when nothing is booked and it differs
-                  from the top-rated fight), shown above the top-rated line. */}
-              {highlightShowMostRecent ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Most Recent Fight</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightMostRecentFight.fighter1)} vs {getFighterPrimaryName(highlightMostRecentFight.fighter2)}
-                    {highlightMostRecentFight.averageRating > 0
-                      ? `  ★ ${highlightMostRecentFight.averageRating === 10 ? '10' : Number(highlightMostRecentFight.averageRating).toFixed(1)}`
-                      : ''}
-                  </Text>
-                </View>
-              ) : null}
-              {/* Top-rated fight + next scheduled bout, inline inside the card's
-                  border (replaces the separate full fight card). */}
-              {highlightTopFight ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>{highlightTopFightLabel}</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
-                    {highlightTopFight.averageRating > 0
-                      ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : Number(highlightTopFight.averageRating).toFixed(1)}`
-                      : ''}
-                  </Text>
-                </View>
-              ) : null}
-              {highlightNextFight ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Next scheduled fight</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightNextFight.fighter1)} vs {getFighterPrimaryName(highlightNextFight.fighter2)}
-                    {(() => {
-                      const w = eventRelativePhrase(highlightNextFight.event?.mainStartTime ?? highlightNextFight.event?.date);
-                      return w ? `  ·  ${w}` : '';
-                    })()}
-                  </Text>
-                </View>
-              ) : null}
-              <Text style={styles.highlightLink}>Full profile ›</Text>
-            </View>
-          </TouchableOpacity>
-        </Section>
-      )}
-
-      {/* The Latest / Editorial blog (moved below Highlighted Fighter) ------*/}
+      {/* Top Community Comments — just below Recent Good Fights -------------*/}
       <Section
         colors={colors}
         styles={styles}
-        title="The Latest"
+        title="Comments on recent fights"
+        icon="comments"
+      >
+        {isCommentsLoading ? (
+          <Loading colors={colors} styles={styles} />
+        ) : comments.length > 0 ? (
+          comments.map((comment: any) => (
+            <CommentCard
+              key={comment.id}
+              comment={comment}
+              onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
+              onUpvote={() =>
+                comment.fight &&
+                upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
+              }
+              isUpvoting={upvotingCommentId === comment.id}
+              isAuthenticated={isAuthenticated}
+            />
+          ))
+        ) : (
+          <Empty styles={styles} text="No comments yet" />
+        )}
+      </Section>
+
+      {/* Read About / Editorial blog ---------------------------------------*/}
+      <Section
+        colors={colors}
+        styles={styles}
+        title="Read About"
         icon="newspaper-o"
         onSeeAll={() => router.push('/blog' as any)}
       >
@@ -1173,32 +1163,7 @@ export default function HomeScreen() {
 
       {/* Hot Fighters — hidden from the home UI (removed per product). */}
 
-      {/* Recently Booked Fighters ------------------------------------------*/}
-      {(isBookedLoading || recentlyBooked.length > 0) && (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="Recently Booked"
-          icon="calendar-plus"
-          iconLib="fa6"
-        >
-          {isBookedLoading ? (
-            <Loading colors={colors} styles={styles} />
-          ) : (
-            recentlyBooked.map((b: any) => (
-              <FighterCard
-                key={b.fighter.id}
-                fighter={b.fighter}
-                inlineOpponent={`vs ${b.opponentName}`}
-                subtitle={`${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
-                onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
-              />
-            ))
-          )}
-        </Section>
-      )}
-
-      {/* Most Followed Fighters (horizontal rail) --------------------------*/}
+      {/* Most Followed Fighters (horizontal rail) — above Recently Booked --*/}
       <Section
         colors={colors}
         styles={styles}
@@ -1231,36 +1196,55 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Top Community Comments --------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="Comments on recent fights"
-        icon="comments"
-      >
-        {isCommentsLoading ? (
-          <Loading colors={colors} styles={styles} />
-        ) : comments.length > 0 ? (
-          comments.map((comment: any) => (
-            <CommentCard
-              key={comment.id}
-              comment={comment}
-              onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
-              onUpvote={() =>
-                comment.fight &&
-                upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
-              }
-              isUpvoting={upvotingCommentId === comment.id}
-              isAuthenticated={isAuthenticated}
-            />
-          ))
-        ) : (
-          <Empty styles={styles} text="No comments yet" />
-        )}
-      </Section>
+      {/* Recently Booked Fighters ------------------------------------------*/}
+      {(isBookedLoading || recentlyBooked.length > 0) && (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Recently Booked"
+          icon="calendar-plus"
+          iconLib="fa6"
+        >
+          {isBookedLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            recentlyBooked.map((b: any) => (
+              <FighterCard
+                key={b.fighter.id}
+                fighter={b.fighter}
+                inlineOpponent={`vs ${b.opponentName}`}
+                subtitle={`${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
+                onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
+              />
+            ))
+          )}
+        </Section>
+      )}
 
-      {/* Classics to Watch (historic highly-rated, unrated by user) --------*/}
-      {(isClassicsLoading || classics.length > 0) && (
+      {/* Highlighted Fighters — a few AI-enriched fighters in a side-scroll
+          rail, below Recently Booked --------------------------------------*/}
+      {highlightFighters.length > 0 && (
+        <Section colors={colors} styles={styles} title="Highlighted Fighters" icon="user-circle" iconLib="fa6">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {highlightFighters.map((f: any) => (
+              <FeaturedFighterCard
+                key={f.id}
+                fighter={f}
+                styles={styles}
+                onPress={() => router.push(`/fighter/${f.id}` as any)}
+              />
+            ))}
+          </ScrollView>
+        </Section>
+      )}
+
+      {/* Classics to Watch (historic highly-rated, unrated by user) — with a
+          classic throwback comment shown within these old fights -----------*/}
+      {(isClassicsLoading || classics.length > 0 || throwbackComment) && (
         <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
           {isClassicsLoading ? (
             <Loading colors={colors} styles={styles} />
@@ -1275,34 +1259,26 @@ export default function HomeScreen() {
               />
             ))
           )}
-        </Section>
-      )}
-
-      {/* Classic Throwback -------------------------------------------------*/}
-      {throwbackComment && (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="Classic Throwback"
-          icon="clock-rotate-left"
-          iconLib="fa6"
-        >
-          <CommentCard
-            comment={throwbackComment}
-            onPress={() =>
-              throwbackComment.fight &&
-              router.push(`/fight/${throwbackComment.fight.id}` as any)
-            }
-            onUpvote={() =>
-              throwbackComment.fight &&
-              upvoteMutation.mutate({
-                fightId: throwbackComment.fight.id,
-                reviewId: throwbackComment.id,
-              })
-            }
-            isUpvoting={upvotingCommentId === throwbackComment.id}
-            isAuthenticated={isAuthenticated}
-          />
+          {/* A standout comment from a classic fight, embedded here instead of
+              the old standalone "Classic Throwback" section. */}
+          {throwbackComment ? (
+            <CommentCard
+              comment={throwbackComment}
+              onPress={() =>
+                throwbackComment.fight &&
+                router.push(`/fight/${throwbackComment.fight.id}` as any)
+              }
+              onUpvote={() =>
+                throwbackComment.fight &&
+                upvoteMutation.mutate({
+                  fightId: throwbackComment.fight.id,
+                  reviewId: throwbackComment.id,
+                })
+              }
+              isUpvoting={upvotingCommentId === throwbackComment.id}
+              isAuthenticated={isAuthenticated}
+            />
+          ) : null}
         </Section>
       )}
 
@@ -1769,6 +1745,45 @@ function makeStyles(colors: ThemeColors) {
       color: colors.primary,
       marginTop: 12,
     },
+    // Highlighted Fighters horizontal rail (a few smaller portrait cards)
+    featuredCard: {
+      width: 168,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    featuredImage: {
+      width: '100%',
+      height: 168,
+      backgroundColor: colors.border,
+    },
+    featuredBody: {
+      padding: 10,
+    },
+    featuredNickname: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginBottom: 1,
+    },
+    featuredName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    featuredMeta: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    featuredSummary: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
     // Feature spotlight card
     spotlightCard: {
       backgroundColor: colors.card,
@@ -1792,6 +1807,17 @@ function makeStyles(colors: ThemeColors) {
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 12,
+    },
+    // Illustration for spotlight cards that ship with an image instead of the
+    // icon circle (e.g. "Know What's Worth Watching", "Follow Your Favorites").
+    // The source art is square, so render a centered square to avoid cropping.
+    spotlightImage: {
+      width: 200,
+      height: 200,
+      alignSelf: 'center',
+      borderRadius: 12,
+      marginBottom: 14,
+      backgroundColor: colors.background,
     },
     spotlightTitle: {
       fontSize: 17,
