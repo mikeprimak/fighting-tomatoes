@@ -46,7 +46,8 @@ export default async function BlogPostPage({
   if (!post) notFound();
 
   const postUrl = `${SITE_URL}/blog/${post.slug}`;
-  const imageUrl = `${SITE_URL}${post.image || DEFAULT_POST_IMAGE}`;
+  const postImage = post.image || DEFAULT_POST_IMAGE;
+  const imageUrl = postImage.startsWith('http') ? postImage : `${SITE_URL}${postImage}`;
 
   const articleLd = {
     '@context': 'https://schema.org',

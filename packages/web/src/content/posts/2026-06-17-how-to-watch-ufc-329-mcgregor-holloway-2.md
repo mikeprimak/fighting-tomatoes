@@ -5,7 +5,7 @@ date: "2026-06-17"
 author: "Good Fights"
 excerpt: "Conor McGregor vs Max Holloway 2 streams on Paramount+ in the US, with no separate pay-per-view fee. Here is exactly how to watch UFC 329: which Paramount+ plan you need, what it costs, whether there is a free way, start times, devices, and how to watch in Canada, the UK, Ireland, Australia, and Europe."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "how-to-watch", "paramount-plus", "ufc"]
-image: "/blog/mcgregor-holloway-banner.png"
+image: "https://pbs.twimg.com/media/HIfMYubX0AAkqu8.jpg"
 draft: false
 featured: false
 event:
