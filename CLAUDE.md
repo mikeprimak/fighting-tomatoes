@@ -13,6 +13,8 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**⏳ PENDING OTA — `docs/HANDOFF-home-reorder-ota-pending-2026-06-29.md`:** Home-screen reorder is committed to `main` (`d4095d05`) but its production OTA is **deliberately HELD** — new builds are in review at both stores. Publish the OTA only after those store builds are reviewed + accepted, and re-check the live runtimes first. Backend half already auto-deployed (additive, safe).
+
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
 **TODO next session — web analytics follow-ups (2026-06-06):** GA4 (`G-WV5RKCMJSB`) + PostHog now live on goodfights.app (see `docs/daily/2026-06-06.md`). Still to do: (1) link GA4 → Search Console, (2) import GA4 conversions into Google Ads, (3) define conversion events (rating submitted, app-download click) in PostHog and/or GA. Web `identify()` on login not yet wired (pageviews only).
