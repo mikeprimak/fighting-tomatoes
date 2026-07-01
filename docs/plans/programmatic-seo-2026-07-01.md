@@ -1,6 +1,7 @@
 # Programmatic SEO — Fighter / Event / Fight Pages
 
-**Created:** 2026-07-01. **Status:** planned, not started.
+**Created:** 2026-07-01. **Status:** step 1 (slugs + redirects) SHIPPED on branch
+`feat/seo-slugs` (commit 4be31854, not yet pushed/deployed). Steps 2–7 pending.
 
 > **Why this is a workstream, not a task.** At ~200 active users, direct app
 > monetization is dead on arrival (ads/subs/affiliate all need traffic we don't
@@ -127,7 +128,13 @@ a fan-rated recap is not.
 
 ## Build order (impact per effort)
 
-1. **Slugs + 301s** — unblocks everything.
+1. ✅ **Slugs + 301s** — unblocks everything. SHIPPED 2026-07-01 (branch
+   `feat/seo-slugs`): nullable `@unique slug` on all three models (migration
+   deployed to prod + all rows backfilled, 0 null); `slug` middleware
+   (`src/lib/slugHooks.ts`) auto-fills on create/upsert; detail endpoints resolve
+   id-or-slug and return `slug`; web pages 308-redirect UUID→slug + canonical +
+   pass real UUID to clients. NOT pushed/deployed yet — web behavior unchanged
+   until deploy.
 2. **Completed-fight template SSR + JSON-LD `AggregateRating`** — content most
    complete here; rich snippets are the fastest ranking win.
 3. **Scalable sitemap + `shouldIndex` gate** — safe corpus-wide indexing.
