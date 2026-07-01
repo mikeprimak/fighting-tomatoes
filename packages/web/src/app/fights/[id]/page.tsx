@@ -1,5 +1,7 @@
 import { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { FightDetailClient } from './FightDetailClient';
+import { SITE_URL } from '@/lib/site';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
@@ -17,9 +19,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const desc = fight.fightStatus === 'COMPLETED'
       ? `${title} — Rated ${fight.averageRating?.toFixed(1) || 'N/A'}/10 by the community. ${fight.event?.name || ''}`
       : `${title} — ${fight.event?.name || ''} upcoming fight. See hype scores and community predictions.`;
+    const canonical = `${SITE_URL}/fights/${fight.slug || id}`;
     return {
       title: title,
       description: desc,
+      alternates: { canonical },
       // og:image / twitter:image are supplied by opengraph-image.tsx (the
       // branded dynamic fight card). Don't set a raw fighter photo here or two
       // conflicting og:image tags get emitted.
@@ -27,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         title,
         description: desc,
         type: 'website',
-        url: `https://goodfights.app/fights/${id}`,
+        url: canonical,
       },
       twitter: {
         card: 'summary_large_image',
@@ -51,5 +55,13 @@ export default async function FightDetailPage({ params }: Props) {
     // Will load on client
   }
 
-  return <FightDetailClient fightId={id} initialFight={initialFight} />;
+  // Canonicalize to the slug URL (see fighter page for rationale). Outside the
+  // try/catch — permanentRedirect throws NEXT_REDIRECT.
+  if (initialFight?.slug && initialFight.slug !== id) {
+    permanentRedirect(`/fights/${initialFight.slug}`);
+  }
+
+  // Client data calls (rate, aggregate-stats, etc.) run on the real UUID — the
+  // slug is a URL/SEO concern only, so client behavior is unchanged.
+  return <FightDetailClient fightId={initialFight?.id ?? id} initialFight={initialFight} />;
 }

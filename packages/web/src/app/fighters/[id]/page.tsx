@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
+import { permanentRedirect } from 'next/navigation';
 import { FighterDetailClient } from './FighterDetailClient';
 import { formatRecord } from '@/lib/record';
+import { SITE_URL } from '@/lib/site';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
@@ -24,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title: name,
       description,
+      alternates: { canonical: `${SITE_URL}/fighters/${fighter.slug || id}` },
       openGraph: {
         title: name,
         description: tldr || `${fighter.weightClass || ''}${record ? ` — ${record}` : ''}`.trim(),
@@ -46,5 +49,15 @@ export default async function FighterDetailPage({ params }: Props) {
     // Client will load
   }
 
-  return <FighterDetailClient fighterId={id} initialFighter={initialFighter} />;
+  // Canonicalize to the slug URL: if reached by legacy UUID (or any non-canonical
+  // param) and the fighter has a slug, 308-redirect so all link equity consolidates
+  // on /fighters/<slug>. permanentRedirect throws NEXT_REDIRECT, so it must be
+  // outside the try/catch above.
+  if (initialFighter?.slug && initialFighter.slug !== id) {
+    permanentRedirect(`/fighters/${initialFighter.slug}`);
+  }
+
+  // Client data calls (follow, re-fetch) run on the real UUID — the slug is a
+  // URL/SEO concern only, so client behavior is unchanged.
+  return <FighterDetailClient fighterId={initialFighter?.id ?? id} initialFighter={initialFighter} />;
 }

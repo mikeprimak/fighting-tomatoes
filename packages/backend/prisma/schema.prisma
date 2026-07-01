@@ -143,6 +143,12 @@ model Fighter {
   lastName        String
   nickname        String?
 
+  // SEO slug (e.g. "islam-makhachev"). Human, keyword-bearing URL segment for
+  // goodfights.app fighter pages. Nullable (backfilled by scripts/backfillSlugs.ts;
+  // new rows get one at write time). Multiple nulls allowed under @unique on Postgres.
+  // Distinct from ufcAthleteSlug (UFC-only external id); this is our own canonical slug.
+  slug            String?   @unique
+
   // External identifier (UFC athlete URL slug, e.g. "justin-gaethje").
   // Used as the primary upsert key in importFighters so a UFC display-name
   // correction updates the existing row instead of forking a new fighter.
@@ -282,6 +288,9 @@ enum EventStatus {
 // ============== EVENTS ==============
 model Event {
   id                String    @id @default(uuid())
+  // SEO slug (e.g. "ufc-329-makhachev-vs-tsarukyan"). Canonical URL segment for
+  // goodfights.app event pages. Nullable; backfilled + set at write time.
+  slug              String?   @unique
   name              String
   promotion         String    // UFC, Bellator, etc.
   date              DateTime
@@ -563,7 +572,11 @@ enum BroadcastReportStatus {
 // ============== FIGHTS ==============
 model Fight {
   id              String    @id @default(uuid())
-  
+
+  // SEO slug (e.g. "islam-makhachev-vs-arman-tsarukyan"). Canonical URL segment
+  // for goodfights.app fight pages. Nullable; backfilled + set at write time.
+  slug            String?   @unique
+
   // Event relationship
   eventId         String
   event           Event     @relation(fields: [eventId], references: [id])
