@@ -786,6 +786,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'string' },
+                slug: { type: ['string', 'null'] },
                 name: { type: 'string' },
                 promotion: { type: 'string' },
                 date: { type: 'string' },
@@ -827,7 +828,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
     try {
       const event = await fastify.prisma.event.findFirst({
         where: {
-          id,
+          // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+          OR: [{ id }, { slug: id }],
           isVisible: true,
           NOT: getHiddenPromotions().map(p => ({
             promotion: { contains: p, mode: 'insensitive' },
@@ -835,6 +837,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
         select: {
           id: true,
+          slug: true,
           name: true,
           promotion: true,
           date: true,
@@ -1381,6 +1384,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'string' },
+                slug: { type: ['string', 'null'] },
                 firstName: { type: 'string' },
                 lastName: { type: 'string' },
                 nickname: { type: 'string' },
@@ -1432,10 +1436,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     try {
-      const fighter = await fastify.prisma.fighter.findUnique({
-        where: { id },
+      const fighter = await fastify.prisma.fighter.findFirst({
+        // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+        where: { OR: [{ id }, { slug: id }] },
         select: {
           id: true,
+          slug: true,
           firstName: true,
           lastName: true,
           nickname: true,
@@ -1466,7 +1472,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Total followers — powers the "X fans follow" social proof on fighter pages.
       // Matches the row-count semantics used by community top-followed (unfollow hard-deletes).
       const followerCount = await fastify.prisma.userFighterFollow.count({
-        where: { fighterId: id },
+        where: { fighterId: fighter.id },
       });
 
       // Check if user is following this fighter (if authenticated)
@@ -1477,7 +1483,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
           where: {
             userId_fighterId: {
               userId: user.id,
-              fighterId: id,
+              fighterId: fighter.id,
             },
           },
         });

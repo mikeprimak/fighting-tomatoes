@@ -467,8 +467,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       console.log('Getting single fight with ID:', id, 'User ID:', currentUserId);
 
-      const fight = await fastify.prisma.fight.findUnique({
-        where: { id },
+      const fight = await fastify.prisma.fight.findFirst({
+        // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+        where: { OR: [{ id }, { slug: id }] },
         include: {
           event: true,
           fighter1: true,
@@ -681,7 +682,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Get comprehensive notification reasons using the unified rule engine
         const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
           currentUserId,
-          id
+          fight.id
         );
         transformedFight.notificationReasons = notificationReasons;
         console.log('Notification reasons:', notificationReasons);
