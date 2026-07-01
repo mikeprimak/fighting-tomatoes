@@ -12,6 +12,7 @@ import {
   recordCommittedDNALine,
 } from '../services/fanDNA/engine';
 import type { FanDNAAction, FanDNASurface } from '../services/fanDNA/types';
+import { isIndexable } from '../lib/seoIndex';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -708,6 +709,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hasUserTags: !!transformedFight.userTags,
         hasUserPrediction: !!transformedFight.userHypePrediction
       });
+
+      // SEO index gate (drives robots noindex on the web page + sitemap whitelist).
+      transformedFight.shouldIndex = await isIndexable(fastify.prisma, 'fight', fight.id);
 
       return reply.code(200).send({ fight: transformedFight });
     } catch (error) {

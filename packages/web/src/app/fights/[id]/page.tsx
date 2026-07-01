@@ -24,6 +24,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: title,
       description: desc,
       alternates: { canonical },
+      // SEO index gate: keep pages that fail the backend `shouldIndex` predicate out
+      // of Google's index (and the sitemap) while still rendering for users.
+      ...(fight.shouldIndex === false ? { robots: { index: false, follow: true } } : {}),
       // og:image / twitter:image are supplied by opengraph-image.tsx (the
       // branded dynamic fight card). Don't set a raw fighter photo here or two
       // conflicting og:image tags get emitted.
