@@ -135,8 +135,15 @@ a fan-rated recap is not.
    id-or-slug and return `slug`; web pages 308-redirect UUID→slug + canonical +
    pass real UUID to clients. NOT pushed/deployed yet — web behavior unchanged
    until deploy.
-2. **Completed-fight template SSR + JSON-LD `AggregateRating`** — content most
-   complete here; rich snippets are the fastest ranking win.
+2. ✅ **Completed-fight template SSR + JSON-LD `AggregateRating`** — SHIPPED
+   2026-07-01. Fight page (`packages/web/src/app/fights/[id]/page.tsx`) now
+   server-renders a single semantic `<h1>` (matchup) + `SportsEvent` JSON-LD with
+   `AggregateRating` (our fan rating — emitted only when totalRatings>0; the
+   rich-snippet-eligible field) + `competitor` Person entries. The recap /
+   story / stakes already SSR via the client component's initial render (spoiler-
+   free + auth default off server-side). Note: the client's rating *widget* is
+   `stats`-gated (client-only) so the numeric rating isn't in SSR HTML, but the
+   JSON-LD carries it for Google.
 3. **Scalable sitemap + `shouldIndex` gate** — safe corpus-wide indexing.
 4. **Fighter template SSR + `/fighters` hub + division hubs** — evergreen backbone.
 5. **Event lifecycle template** (preview→results swap on one URL).
