@@ -144,7 +144,22 @@ a fan-rated recap is not.
    free + auth default off server-side). Note: the client's rating *widget* is
    `stats`-gated (client-only) so the numeric rating isn't in SSR HTML, but the
    JSON-LD carries it for Google.
-3. **Scalable sitemap + `shouldIndex` gate** — safe corpus-wide indexing.
+3. ✅ **Scalable sitemap + `shouldIndex` gate** — BUILT + locally verified
+   2026-07-01 (not yet deployed). Single source of truth: `packages/backend/src/lib/seoIndex.ts`
+   (`fighterIndexWhere`/`eventIndexWhere`/`fightIndexWhere` + `isIndexable`).
+   Backend `/api/sitemap/:type` returns the gated whitelist (slug + best
+   `lastModified`); the three detail endpoints now return `shouldIndex`. Web:
+   `robots.ts` lists 4 sitemaps; root `sitemap.ts` trimmed to static+hubs+blog;
+   new `app/{fighters,events,fights}/sitemap.ts` each fetch their type; detail
+   pages emit `robots: {index:false, follow:true}` when `shouldIndex===false`.
+   **Live corpus (gated):** 947 fighters + 618 events + 3,879 fights ≈ 5,472
+   deep pages, all under Google's 50k/file ceiling (one child sitemap per type).
+   **Gate change from the original spec:** `Event.totalRatings` is a DEAD field
+   (always 0 — `lesson_dataset_aggregates_dishonest`), so the event gate can't
+   use it. Instead an event indexes iff it has ≥1 *indexable fight* (Prisma-
+   expressible, self-consistent) OR aiEventSummary OR active broadcasts OR is
+   upcoming/live. That lifted indexable events from 28 (strict aiEventSummary-only)
+   to ~640 without indexing thin/junk legacy cards.
 4. **Fighter template SSR + `/fighters` hub + division hubs** — evergreen backbone.
 5. **Event lifecycle template** (preview→results swap on one URL).
 6. **`fights/best/[year]` + internal linking** hubs↔deep pages.

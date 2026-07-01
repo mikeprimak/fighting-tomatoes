@@ -17,6 +17,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: event.name,
       description: `${event.promotion} event on ${new Date(event.date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}. Rate and review fights on Good Fights.`,
       alternates: { canonical: `${SITE_URL}/events/${event.slug || id}` },
+      // SEO index gate: keep pages that fail the backend `shouldIndex` predicate out
+      // of Google's index (and the sitemap) while still rendering for users.
+      ...(event.shouldIndex === false ? { robots: { index: false, follow: true } } : {}),
       openGraph: {
         title: event.name,
         description: `${event.promotion} — ${event.venue || ''} ${event.location || ''}`.trim(),

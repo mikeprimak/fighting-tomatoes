@@ -20,6 +20,8 @@ import broadcastsRoutes from './broadcasts';
 import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
+import sitemapRoutes from './sitemap';
+import { isIndexable } from '../lib/seoIndex';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -802,6 +804,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 mainStartTime: { type: ['string', 'null'] },
                 notificationsAllowed: { type: 'boolean' },
                 hasLiveTracking: { type: 'boolean' },
+                shouldIndex: { type: 'boolean' },
               },
             },
           },
@@ -866,10 +869,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // screen get the notify bell + live-tracking-aware toast.
       const notifyPromotions = await getNotifyPromotions(fastify.prisma);
       const notifyPromotionsUpper = notifyPromotions.map(p => p.toUpperCase());
+      const shouldIndex = await isIndexable(fastify.prisma, 'event', event.id);
       const eventWithFlags = {
         ...event,
         notificationsAllowed: notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
         hasLiveTracking: hasReliableLiveTracker(event.scraperType, event.promotion),
+        shouldIndex,
       };
 
       return reply.code(200).send({ event: eventWithFlags });
@@ -1403,6 +1408,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 actionImage: { type: 'string' },
                 isFollowing: { type: 'boolean' },
                 followerCount: { type: 'integer' },
+                shouldIndex: { type: 'boolean' },
                 // AI profile enrichment (Phase 5). Floor-gated at write time
                 // (confidence >= 0.5). aiProfile is a free-form JSON object, so
                 // additionalProperties must be true or fast-json-stringify drops it.
@@ -1490,11 +1496,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
         isFollowing = !!follow;
       }
 
+      // SEO index gate (drives robots noindex on the web page + sitemap whitelist).
+      const shouldIndex = await isIndexable(fastify.prisma, 'fighter', fighter.id);
+
       return reply.code(200).send({
         fighter: {
           ...fighter,
           isFollowing,
           followerCount,
+          shouldIndex,
         },
       });
     } catch (error: any) {
@@ -2152,6 +2162,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register Fan DNA routes under /api/fan-dna prefix
   await fastify.register(fanDNARoutes, { prefix: '/api/fan-dna' });
+
+  // Bulk sitemap data for goodfights.app (paths carry their own /api prefix)
+  await fastify.register(sitemapRoutes);
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

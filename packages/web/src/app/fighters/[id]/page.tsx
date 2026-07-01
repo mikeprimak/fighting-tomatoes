@@ -27,6 +27,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: name,
       description,
       alternates: { canonical: `${SITE_URL}/fighters/${fighter.slug || id}` },
+      // SEO index gate: pages that fail the backend `shouldIndex` predicate render
+      // for users but are kept out of Google's index (and the sitemap). follow:true
+      // so link equity still flows through to indexable pages. See the programmatic-SEO plan.
+      ...(fighter.shouldIndex === false ? { robots: { index: false, follow: true } } : {}),
       openGraph: {
         title: name,
         description: tldr || `${fighter.weightClass || ''}${record ? ` — ${record}` : ''}`.trim(),
