@@ -59,13 +59,13 @@ The fighters the UFC books highest on its numbered cards, across every division:
 <div style="font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;font-weight:700;margin-bottom:16px;">Men</div>
 <div style="display:flex;align-items:flex-end;gap:8px;height:180px;border-bottom:2px solid #2b2b2b;">
 <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">5</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:17%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">10</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:33%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">13</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:43%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">27</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:90%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">12</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:40%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">18</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:60%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">12</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:40%;"></span></div>
-<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">10</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:33%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">10</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:35%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">13</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:45%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">26</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:90%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">12</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:42%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">18</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:62%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">12</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:42%;"></span></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;"><span style="font-size:12px;font-weight:700;color:#9aa0a6;margin-bottom:5px;">10</span><span style="width:100%;background:#F5C518;border-radius:3px 3px 0 0;height:35%;"></span></div>
 </div>
 <div style="display:flex;gap:8px;margin-top:7px;">
 <span style="flex:1;text-align:center;font-size:11px;color:#cbd2d9;">FLY</span>
@@ -213,8 +213,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Iwo Baraniewski: <strong>5.3</strong></li>
 <li>Modestas Bukauskas: <strong>5.3</strong></li>
 <li>Brendson Ribeiro: <strong>5.7</strong></li>
+<li>Abdul Rakhman Yakhyaev: <strong>6</strong></li>
 <li>Oumar Sy: <strong>6</strong></li>
-<li>Julius Walker: <strong>6</strong></li>
 </ol>
 </div>
 </div>
@@ -230,17 +230,17 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Khamzat Chimaev: <strong>1.3</strong></li>
 <li>Joe Pyfer: <strong>3</strong></li>
 <li>Kelvin Gastelum: <strong>6</strong></li>
-<li>Marvin Vettori: <strong>6</strong></li>
 <li>Armen Petrosyan: <strong>6</strong></li>
 <li>Vicente Luque: <strong>6.3</strong></li>
 <li>Gregory Rodrigues: <strong>6.3</strong></li>
+<li>Marvin Vettori: <strong>6.7</strong></li>
 <li>Roman Kopylov: <strong>6.7</strong></li>
 <li>Abusupiyan Magomedov: <strong>7</strong></li>
+<li>Brunno Ferreira: <strong>7.3</strong></li>
 <li>Ateba Abega Gautier: <strong>7.3</strong></li>
 <li>Donte Johnson: <strong>8.3</strong></li>
 <li>Gerald Meerschaert: <strong>9</strong></li>
 <li>Cody Brundage: <strong>9.3</strong></li>
-<li>Marco Tulio: <strong>9.3</strong></li>
 </ol>
 </div>
 <div class="division-col">
@@ -261,8 +261,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Dustin Stoltzfus: <strong>4</strong></li>
 <li>Abdul Razak Alhassan: <strong>4</strong></li>
 <li>Bo Nickal: <strong>4.7</strong></li>
-<li>Ikram Aliskerov: <strong>4.7</strong></li>
 <li>Edmen Shahbazyan: <strong>5.3</strong></li>
+<li>Christian Leroy Duncan: <strong>5.3</strong></li>
 </ol>
 </div>
 </div>
@@ -323,7 +323,6 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Justin Gaethje: <strong>1.3</strong></li>
 <li>Dan Hooker: <strong>2</strong></li>
 <li>Paddy Pimblett: <strong>2</strong></li>
-<li>Rafael Fiziev: <strong>2.3</strong></li>
 <li>Renato Moicano: <strong>2.7</strong></li>
 <li>Brian Ortega: <strong>2.7</strong></li>
 <li>Michael Chandler: <strong>3</strong></li>
@@ -333,12 +332,15 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Quillan Salkilld: <strong>4.3</strong></li>
 <li>Bobby Green: <strong>4.7</strong></li>
 <li>Michael Johnson: <strong>5.7</strong></li>
+<li>Mateusz Rebecki: <strong>6.3</strong></li>
 </ol>
 </div>
 <div class="division-col">
 <h3>Fight Night Fighters</h3>
-<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/mauricio-ruffy-427a3185.png" alt="Mauricio Ruffy" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Mauricio Ruffy</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 3.3</div></div></div>
+<div style="display:flex;align-items:center;gap:14px;margin:14px 0 22px;padding:14px 16px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);"><img src="https://pub-7bef67fde2894e1eb3061dee36bde224.r2.dev/fighters/rafael-fiziev-a6b511e2.png" alt="Rafael Fiziev" width="72" height="72" loading="lazy" style="width:72px;height:72px;border-radius:12px;object-fit:cover;background:#262626;flex:none;" /><div style="min-width:0;"><div style="font-size:18px;font-weight:700;color:#fff;line-height:1.25;">Rafael Fiziev</div><div style="font-size:13px;color:#9aa0a6;">Avg. card placement 2.0</div></div></div>
 <ol>
+<li>Rafael Fiziev: <strong>2</strong></li>
+<li>Manuel Torres: <strong>3.3</strong></li>
 <li>Mauricio Ruffy: <strong>3.3</strong></li>
 <li>Mateusz Gamrot: <strong>3.3</strong></li>
 <li>Chris Duncan: <strong>3.3</strong></li>
@@ -351,10 +353,8 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Tom Nolan: <strong>5</strong></li>
 <li>Kyle Nelson: <strong>5</strong></li>
 <li>Nasrat Haqparast: <strong>5</strong></li>
-<li>Manuel Torres: <strong>5</strong></li>
 <li>Myktybek Orolbai Uulu: <strong>5.3</strong></li>
 <li>Matt Frevola: <strong>5.3</strong></li>
-<li>Fares Ziam: <strong>5.7</strong></li>
 </ol>
 </div>
 </div>
@@ -437,11 +437,11 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Kai Asakura: <strong>3.3</strong></li>
 <li>Kyler Phillips: <strong>3.3</strong></li>
 <li>Montel Jackson: <strong>4.3</strong></li>
-<li>Jean Matsumoto: <strong>4.3</strong></li>
 <li>Bryce Mitchell: <strong>4.7</strong></li>
 <li>Davey Grant: <strong>5</strong></li>
 <li>Charles Jourdain: <strong>5</strong></li>
 <li>Said Nurmagomedov: <strong>5</strong></li>
+<li>Santiago Luna: <strong>5.3</strong></li>
 </ol>
 </div>
 </div>
@@ -471,9 +471,9 @@ Each division is split the same way, Big Events fighters first, then Fight Night
 <li>Kyoji Horiguchi: <strong>3</strong></li>
 <li>Tim Elliott: <strong>4</strong></li>
 <li>Ode Osbourne: <strong>4</strong></li>
-<li>Asu Almabayev: <strong>4.7</strong></li>
 <li>Kevin Borjas: <strong>5.3</strong></li>
 <li>Ronaldo Rodriguez: <strong>5.5</strong></li>
+<li>Asu Almabayev: <strong>6</strong></li>
 <li>Matt Schnell: <strong>6</strong></li>
 <li>Bruno Gustavo da Silva: <strong>6</strong></li>
 <li>Su Mudaerji: <strong>6</strong></li>
@@ -604,13 +604,13 @@ These are the fighters with the most UFC main events ever:
 
 <!-- AUTO:alltime-mains:start (generated by scripts/card-placement; edits overwritten) -->
 
-1. Anderson Silva: 18
+1. Anderson Silva: 19
 2. Jon Jones: 17 (every one a numbered card)
 3. Israel Adesanya: 15
-4. Max Holloway: 15
+4. Max Holloway: 14
 5. Stipe Miocic: 13
-6. Derrick Lewis: 13
-7. Dustin Poirier: 13
+6. Lyoto Machida: 13
+7. Frankie Edgar: 13
 
 <!-- AUTO:alltime-mains:end -->
 

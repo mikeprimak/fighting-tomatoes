@@ -7,17 +7,17 @@ These are NOT auto-applied — legacy event-order recovery can produce false pos
 3. Israel Adesanya: **1.7**
 4. Justin Gaethje: **1.7**
 5. Alex Pereira: **1.8**
-6. Holly Holm: **2.0**
-7. Mark Hunt: **2.0**
-8. Jose Aldo: **2.0**
-9. Glover Teixeira: **2.1**
+6. Anderson Silva: **1.8**
+7. Holly Holm: **2.0**
+8. Demetrious Johnson: **2.0**
+9. Jose Aldo: **2.0**
 
 ## Steepest career climbs (first third → last third)
 - Mario Bautista: 11.5 to 2.8
 - Sean Brady: 10.8 to 2.3
 - Colby Covington: 9.0 to 1.0
 - Merab Dvalishvili: 9.0 to 1.4
-- Cory Sandhagen: 8.4 to 1.2
+- Sean Strickland: 8.4 to 1.1
 
 ## Historical Card Headliners (numbered cards only, count = events headlined that year)
 
@@ -71,11 +71,11 @@ These are NOT auto-applied — legacy event-order recovery can produce false pos
 
 **2020**  ⚠ verify (legacy order)
 
-1. Israel Adesanya — 2
-2. Justin Gaethje — 2
-3. Amanda Nunes — 1
-4. Brandon Moreno — 1
-5. Conor McGregor — 1
+1. Deiveson Figueiredo — 2
+2. Israel Adesanya — 2
+3. Justin Gaethje — 2
+4. Alex Perez — 1
+5. Amanda Nunes — 1
 
 **2019**  ⚠ verify (legacy order)
 
@@ -105,16 +105,16 @@ These are NOT auto-applied — legacy event-order recovery can produce false pos
 
 1. Conor McGregor — 3
 2. Amanda Nunes — 2
-3. Nate Diaz — 2
-4. Robbie Lawler — 2
-5. Stipe Miocic — 2
+3. Michael Bisping — 2
+4. Nate Diaz — 2
+5. Robbie Lawler — 2
 
 **2015**  ⚠ verify (legacy order)
 
 1. Daniel Cormier — 3
 2. Ronda Rousey — 3
 3. Conor McGregor — 2
-4. Aisling Daly — 1
+4. Demetrious Johnson — 2
 5. Alexander Gustafsson — 1
 
 **2014**  ⚠ verify (legacy order)
@@ -136,42 +136,42 @@ These are NOT auto-applied — legacy event-order recovery can produce false pos
 **2012**  ⚠ verify (legacy order)
 
 1. Anderson Silva — 2
-2. Carlos Condit — 2
-3. Jon Jones — 2
-4. Benson Henderson — 1
-5. Chad Mendes — 1
+2. Benson Henderson — 2
+3. Carlos Condit — 2
+4. Frankie Edgar — 2
+5. Jon Jones — 2
 
 **2011**  ⚠ verify (legacy order)
 
 1. Jon Jones — 3
 2. Anderson Silva — 2
-3. Frankie Edgar — 2
-4. Gray Maynard — 2
-5. Mauricio Rua — 2
+3. BJ Penn — 2
+4. Frankie Edgar — 2
+5. Gray Maynard — 2
 
 **2010**  ⚠ verify (legacy order)
 
 1. Anderson Silva — 2
 2. Brock Lesnar — 2
-3. Amilcar Alves — 1
-4. Cain Velasquez — 1
-5. Carlos Eduardo Rocha — 1
+3. Cain Velasquez — 2
+4. Georges St-Pierre — 2
+5. Lyoto Machida — 2
 
 **2009**  ⚠ verify (legacy order)
 
-1. BJ Penn — 2
-2. Aaron Riley — 1
-3. Anderson Silva — 1
-4. Andre Winner — 1
-5. Brock Lesnar — 1
+1. BJ Penn — 3
+2. Diego Sanchez — 2
+3. Lyoto Machida — 2
+4. Randy Couture — 2
+5. Rich Franklin — 2
 
 **2008**  ⚠ verify (legacy order)
 
-1. Antoni Hardonk — 2
-2. Anderson Silva — 1
-3. Chistian Wellisch — 1
-4. Colin Robinson — 1
-5. Corey Hill — 1
+1. Anderson Silva — 2
+2. Antoni Hardonk — 2
+3. Georges St-Pierre — 2
+4. Brock Lesnar — 1
+5. Chistian Wellisch — 1
 
 **2007**  ⚠ verify (legacy order)
 
@@ -183,11 +183,11 @@ These are NOT auto-applied — legacy event-order recovery can produce false pos
 
 **2006**  ⚠ verify (legacy order)
 
-1. Alan Belcher — 1
-2. Anderson Silva — 1
-3. Andrei Arlovski — 1
-4. Anthony Perosh — 1
-5. Christian Wellisch — 1
+1. Chuck Liddell — 3
+2. Matt Hughes — 2
+3. Anderson Silva — 1
+4. Andrei Arlovski — 1
+5. BJ Penn — 1
 
 **2005**  ⚠ verify (legacy order)
 

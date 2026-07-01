@@ -1,5 +1,5 @@
 {
-  "asof": "2026-06-22",
+  "asof": "2026-07-01",
   "p4pBig": [
     {
       "name": "Ilia Topuria",
@@ -155,31 +155,31 @@
       "bigLeader": "Magomed Ankalaev",
       "nightLeader": "Carlos Ulberg",
       "big": 12,
-      "night": 29
+      "night": 30
     },
     "MIDDLEWEIGHT": {
       "bigLeader": "Sean Strickland",
       "nightLeader": "Israel Adesanya",
       "big": 18,
-      "night": 53
+      "night": 54
     },
     "WELTERWEIGHT": {
       "bigLeader": "Jack Della Maddalena",
       "nightLeader": "Gilbert Burns",
       "big": 12,
-      "night": 50
+      "night": 51
     },
     "LIGHTWEIGHT": {
       "bigLeader": "Ilia Topuria",
-      "nightLeader": "Mauricio Ruffy",
-      "big": 27,
-      "night": 51
+      "nightLeader": "Rafael Fiziev",
+      "big": 26,
+      "night": 52
     },
     "FEATHERWEIGHT": {
       "bigLeader": "Alexander Volkanovski",
       "nightLeader": "Lerone Murphy",
       "big": 13,
-      "night": 52
+      "night": 53
     },
     "BANTAMWEIGHT": {
       "bigLeader": "Merab Dvalishvili",
@@ -227,7 +227,7 @@
     },
     {
       "short": "LW",
-      "count": 27
+      "count": 26
     },
     {
       "short": "WW",
@@ -263,7 +263,7 @@
   "alltimeMains": [
     {
       "name": "Anderson Silva",
-      "mains": 18
+      "mains": 19
     },
     {
       "name": "Jon Jones",
@@ -275,18 +275,18 @@
     },
     {
       "name": "Max Holloway",
-      "mains": 15
+      "mains": 14
     },
     {
       "name": "Stipe Miocic",
       "mains": 13
     },
     {
-      "name": "Derrick Lewis",
+      "name": "Lyoto Machida",
       "mains": 13
     },
     {
-      "name": "Dustin Poirier",
+      "name": "Frankie Edgar",
       "mains": 13
     }
   ],
@@ -312,20 +312,20 @@
       "avg": 1.75
     },
     {
+      "name": "Anderson Silva",
+      "avg": 1.84
+    },
+    {
       "name": "Holly Holm",
       "avg": 2
     },
     {
-      "name": "Mark Hunt",
+      "name": "Demetrious Johnson",
       "avg": 2
     },
     {
       "name": "Jose Aldo",
       "avg": 2.0434782608695654
-    },
-    {
-      "name": "Glover Teixeira",
-      "avg": 2.0869565217391304
     }
   ],
   "climbs": [
@@ -350,9 +350,9 @@
       "to": 1.4
     },
     {
-      "name": "Cory Sandhagen",
-      "from": 8.4,
-      "to": 1.2
+      "name": "Sean Strickland",
+      "from": 8.375,
+      "to": 1.125
     }
   ],
   "headliners": [
@@ -510,6 +510,10 @@
       "year": 2020,
       "fighters": [
         {
+          "name": "Deiveson Figueiredo",
+          "count": 2
+        },
+        {
           "name": "Israel Adesanya",
           "count": 2
         },
@@ -518,15 +522,11 @@
           "count": 2
         },
         {
+          "name": "Alex Perez",
+          "count": 1
+        },
+        {
           "name": "Amanda Nunes",
-          "count": 1
-        },
-        {
-          "name": "Brandon Moreno",
-          "count": 1
-        },
-        {
-          "name": "Conor McGregor",
           "count": 1
         }
       ]
@@ -618,15 +618,15 @@
           "count": 2
         },
         {
+          "name": "Michael Bisping",
+          "count": 2
+        },
+        {
           "name": "Nate Diaz",
           "count": 2
         },
         {
           "name": "Robbie Lawler",
-          "count": 2
-        },
-        {
-          "name": "Stipe Miocic",
           "count": 2
         }
       ]
@@ -647,8 +647,8 @@
           "count": 2
         },
         {
-          "name": "Aisling Daly",
-          "count": 1
+          "name": "Demetrious Johnson",
+          "count": 2
         },
         {
           "name": "Alexander Gustafsson",
@@ -714,20 +714,20 @@
           "count": 2
         },
         {
+          "name": "Benson Henderson",
+          "count": 2
+        },
+        {
           "name": "Carlos Condit",
+          "count": 2
+        },
+        {
+          "name": "Frankie Edgar",
           "count": 2
         },
         {
           "name": "Jon Jones",
           "count": 2
-        },
-        {
-          "name": "Benson Henderson",
-          "count": 1
-        },
-        {
-          "name": "Chad Mendes",
-          "count": 1
         }
       ]
     },
@@ -743,15 +743,15 @@
           "count": 2
         },
         {
+          "name": "BJ Penn",
+          "count": 2
+        },
+        {
           "name": "Frankie Edgar",
           "count": 2
         },
         {
           "name": "Gray Maynard",
-          "count": 2
-        },
-        {
-          "name": "Mauricio Rua",
           "count": 2
         }
       ]
@@ -768,16 +768,16 @@
           "count": 2
         },
         {
-          "name": "Amilcar Alves",
-          "count": 1
-        },
-        {
           "name": "Cain Velasquez",
-          "count": 1
+          "count": 2
         },
         {
-          "name": "Carlos Eduardo Rocha",
-          "count": 1
+          "name": "Georges St-Pierre",
+          "count": 2
+        },
+        {
+          "name": "Lyoto Machida",
+          "count": 2
         }
       ]
     },
@@ -786,23 +786,23 @@
       "fighters": [
         {
           "name": "BJ Penn",
+          "count": 3
+        },
+        {
+          "name": "Diego Sanchez",
           "count": 2
         },
         {
-          "name": "Aaron Riley",
-          "count": 1
+          "name": "Lyoto Machida",
+          "count": 2
         },
         {
-          "name": "Anderson Silva",
-          "count": 1
+          "name": "Randy Couture",
+          "count": 2
         },
         {
-          "name": "Andre Winner",
-          "count": 1
-        },
-        {
-          "name": "Brock Lesnar",
-          "count": 1
+          "name": "Rich Franklin",
+          "count": 2
         }
       ]
     },
@@ -810,23 +810,23 @@
       "year": 2008,
       "fighters": [
         {
+          "name": "Anderson Silva",
+          "count": 2
+        },
+        {
           "name": "Antoni Hardonk",
           "count": 2
         },
         {
-          "name": "Anderson Silva",
+          "name": "Georges St-Pierre",
+          "count": 2
+        },
+        {
+          "name": "Brock Lesnar",
           "count": 1
         },
         {
           "name": "Chistian Wellisch",
-          "count": 1
-        },
-        {
-          "name": "Colin Robinson",
-          "count": 1
-        },
-        {
-          "name": "Corey Hill",
           "count": 1
         }
       ]
@@ -860,8 +860,12 @@
       "year": 2006,
       "fighters": [
         {
-          "name": "Alan Belcher",
-          "count": 1
+          "name": "Chuck Liddell",
+          "count": 3
+        },
+        {
+          "name": "Matt Hughes",
+          "count": 2
         },
         {
           "name": "Anderson Silva",
@@ -872,11 +876,7 @@
           "count": 1
         },
         {
-          "name": "Anthony Perosh",
-          "count": 1
-        },
-        {
-          "name": "Christian Wellisch",
+          "name": "BJ Penn",
           "count": 1
         }
       ]
