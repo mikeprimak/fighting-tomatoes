@@ -183,7 +183,16 @@ a fan-rated recap is not.
    confidence-gated AI summary (preview) + fan-verdict line + spoiler-safe
    collapsed full-results list (results). Details:
    `docs/daily/2026-07-01-seo-step5.md`.
-6. **`fights/best/[year]` + internal linking** hubs↔deep pages.
+6. ✅ **`fights/best/[year]` + internal linking** — SHIPPED 2026-07-01 (commit
+   `a6b6a87b`). Fight cards are real `<a>` links now (shared `FightCardLink`:
+   modal on plain click, deep page for crawlers/modifier-clicks) — un-orphans
+   the ~3.9k fight pages across every card surface; fighter pages SSR their
+   fight history (`initialData`) so fighter→fight links are in HTML; new
+   `/api/fights/best{,-years}` (calendar-year, `totalRatings≥10` floor) +
+   `/fights/best/[year]` SSR hubs (18 indexable years, ItemList JSON-LD,
+   noindex <10 fights) + `/fights/best` redirect; `/events` SSR index (the tab
+   pages SSR only spinners); events list API returns `slug`; root sitemap +
+   footer wiring. Details: `docs/daily/2026-07-01-seo-step6.md`.
 7. *(Later)* turn on long-form `aiPreview`; enrich fighter facts
    (nationality/physicals) for richer `Person` schema.
 
