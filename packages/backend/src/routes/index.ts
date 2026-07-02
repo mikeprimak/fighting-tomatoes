@@ -21,7 +21,8 @@ import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
 import sitemapRoutes from './sitemap';
-import { isIndexable } from '../lib/seoIndex';
+import { isIndexable, fighterIndexWhere } from '../lib/seoIndex';
+import { WeightClass } from '@prisma/client';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -1269,7 +1270,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Fighters endpoint
+  // Fighters endpoint. `indexable=true` filters to the SEO index gate (the same
+  // whitelist as /fighters/sitemap.xml) — used by the /fighters hub + division
+  // hub pages on the web. `sort=ratings` orders most-rated first so hubs lead
+  // with the strongest pages.
   fastify.get('/api/fighters', {
     schema: {
       description: 'Get fighters list',
@@ -1279,6 +1283,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         properties: {
           limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
           page: { type: 'integer', minimum: 1, default: 1 },
+          indexable: { type: 'boolean', default: false },
+          weightClass: { type: 'string' },
+          sort: { type: 'string', enum: ['name', 'ratings'], default: 'name' },
         },
       },
       response: {
@@ -1291,6 +1298,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'string' },
+                  slug: { type: ['string', 'null'] },
                   firstName: { type: 'string' },
                   lastName: { type: 'string' },
                   nickname: { type: 'string' },
@@ -1298,6 +1306,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   losses: { type: 'integer' },
                   draws: { type: 'integer' },
                   weightClass: { type: 'string' },
+                  isChampion: { type: 'boolean' },
+                  championshipTitle: { type: ['string', 'null'] },
+                  averageRating: { type: 'number' },
+                  totalRatings: { type: 'integer' },
                   profileImage: { type: 'string' },
                   actionImage: { type: 'string' },
                 },
@@ -1324,17 +1336,37 @@ export async function registerRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const { limit = 20, page = 1 } = request.query as any;
+    const { limit = 20, page = 1, indexable = false, weightClass, sort = 'name' } = request.query as any;
     const skip = (page - 1) * limit;
 
     try {
+      // Optional filters: SEO index gate (hub pages) + division facet. An
+      // unknown weightClass string would throw a Prisma enum error → treat as
+      // no-match instead so the hub 404s gracefully.
+      const where: any = indexable ? fighterIndexWhere() : {};
+      if (weightClass) {
+        const validWC = Object.values(WeightClass).includes(weightClass);
+        if (!validWC) {
+          return reply.code(200).send({
+            fighters: [],
+            pagination: { page, limit, total: 0, totalPages: 0 },
+          });
+        }
+        where.weightClass = weightClass;
+      }
+      const orderBy = sort === 'ratings'
+        ? [{ totalRatings: 'desc' as const }, { lastName: 'asc' as const }, { id: 'asc' as const }]
+        : [{ lastName: 'asc' as const }, { id: 'asc' as const }];
+
       const [fighters, total] = await Promise.all([
         fastify.prisma.fighter.findMany({
+          where,
           skip,
           take: limit,
-          orderBy: { lastName: 'asc' },
+          orderBy,
           select: {
             id: true,
+            slug: true,
             firstName: true,
             lastName: true,
             nickname: true,
@@ -1342,11 +1374,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
             losses: true,
             draws: true,
             weightClass: true,
+            isChampion: true,
+            championshipTitle: true,
+            averageRating: true,
+            totalRatings: true,
             profileImage: true,
             actionImage: true,
           },
         }),
-        fastify.prisma.fighter.count(),
+        fastify.prisma.fighter.count({ where }),
       ]);
 
       const totalPages = Math.ceil(total / limit);
@@ -1366,6 +1402,55 @@ export async function registerRoutes(fastify: FastifyInstance) {
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
       });
+    }
+  });
+
+  // Division facets: count of SEO-indexable fighters per weightClass. Powers the
+  // /fighters hub's division links (only non-thin divisions get linked/indexed).
+  // Static segment, so Fastify matches this before /api/fighters/:id.
+  fastify.get('/api/fighters/divisions', {
+    schema: {
+      description: 'Indexable-fighter counts per weight class (SEO hub facets)',
+      tags: ['fighters'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            divisions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  weightClass: { type: 'string' },
+                  count: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      const grouped = await fastify.prisma.fighter.groupBy({
+        by: ['weightClass'],
+        where: { ...fighterIndexWhere(), weightClass: { not: null } },
+        _count: { _all: true },
+      });
+      const divisions = grouped
+        .map((g: any) => ({ weightClass: g.weightClass as string, count: g._count._all as number }))
+        .sort((a: any, b: any) => b.count - a.count);
+      return reply.code(200).send({ divisions });
+    } catch (error: any) {
+      request.log.error(error, 'Fighter divisions fetch error:');
+      return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
     }
   });
 
