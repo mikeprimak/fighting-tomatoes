@@ -172,7 +172,17 @@ a fan-rated recap is not.
    rows — `scripts/backfillFighterRatingAggregates.ts` recomputed from per-fight
    data (applied to prod; monthly re-run in maintenance.md).
    Details: `docs/daily/2026-07-01-seo-step4.md`.
-5. **Event lifecycle template** (preview→results swap on one URL).
+5. ✅ **Event lifecycle template** (preview→results swap on one URL) — SHIPPED
+   2026-07-01 (commit `0c23c6c1`). `/api/events/:id` returns
+   `aiEventSummary`/`aiEventConfidence`; event page metadata swaps by lifecycle
+   (upcoming/live → "Fight Card & How to Watch"; completed → "Results & Fan
+   Ratings" with the derived card rating in the description); server-rendered
+   `SportsEvent` JSON-LD (organizer/location/startDate, per-fight `subEvent`s
+   with `AggregateRating`, card-level `AggregateRating` for completed cards —
+   always derived from fights, never the dead event aggregates); SSR body:
+   confidence-gated AI summary (preview) + fan-verdict line + spoiler-safe
+   collapsed full-results list (results). Details:
+   `docs/daily/2026-07-01-seo-step5.md`.
 6. **`fights/best/[year]` + internal linking** hubs↔deep pages.
 7. *(Later)* turn on long-form `aiPreview`; enrich fighter facts
    (nationality/physicals) for richer `Person` schema.
