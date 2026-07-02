@@ -5,6 +5,7 @@ import { Flame, MessageCircle, MessageSquareQuote } from 'lucide-react';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { HypeFightModal } from '@/components/HypeFightModal';
+import { FightCardLink } from '@/components/fight-cards/FightCardLink';
 
 interface Fighter {
   id: string;
@@ -20,6 +21,7 @@ interface Fighter {
 interface UpcomingFightCardProps {
   fight: {
     id: string;
+    slug?: string | null;
     fighter1: Fighter;
     fighter2: Fighter;
     weightClass?: string;
@@ -100,11 +102,7 @@ export function UpcomingFightCard({ fight, showEvent }: UpcomingFightCardProps) 
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setModalOpen(true)}
-        className="block w-full text-left"
-      >
+      <FightCardLink fight={fight} onOpen={() => setModalOpen(true)}>
       <div className="group transition-colors hover:bg-background/40">
         <div className="relative flex min-h-[72px] items-stretch overflow-visible">
         {/* Left: community hype square — matches CompletedFightCard's rating square */}
@@ -190,7 +188,7 @@ export function UpcomingFightCard({ fight, showEvent }: UpcomingFightCardProps) 
           </p>
         )}
       </div>
-      </button>
+      </FightCardLink>
       <HypeFightModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

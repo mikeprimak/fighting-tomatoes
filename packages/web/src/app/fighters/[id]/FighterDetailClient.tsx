@@ -22,9 +22,10 @@ function formatWeightClass(wc?: string | null): string | null {
 interface Props {
   fighterId: string;
   initialFighter: any;
+  initialFights?: any[];
 }
 
-export function FighterDetailClient({ fighterId, initialFighter }: Props) {
+export function FighterDetailClient({ fighterId, initialFighter, initialFights = [] }: Props) {
   const [sortBy, setSortBy] = useState<'rating' | 'date'>('date');
 
   const { data: fighterData, isLoading } = useQuery({
@@ -33,9 +34,16 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
     initialData: initialFighter ? { fighter: initialFighter } : undefined,
   });
 
+  // initialData (stamped stale via initialDataUpdatedAt: 0) makes the fight
+  // history part of the SSR HTML; the client immediately refetches for
+  // user-specific fields (includeUserData) — same pattern as the event page.
   const { data: fightsData, isLoading: fightsLoading } = useQuery({
     queryKey: ['fighterFights', fighterId],
     queryFn: () => getFights({ fighterId, limit: 50, includeUserData: true }),
+    initialData: initialFights.length > 0
+      ? { fights: initialFights, pagination: { page: 1, limit: 50, total: initialFights.length, totalPages: 1 } }
+      : undefined,
+    initialDataUpdatedAt: 0,
     enabled: !!fighterData,
   });
 

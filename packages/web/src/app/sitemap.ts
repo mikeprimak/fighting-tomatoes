@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/posts';
 import { SITE_URL } from '@/lib/site';
+import { fetchBestYears, indexableYears } from '@/lib/bestFights';
 
 /**
  * Root sitemap: static pages, hub/index pages, and blog posts only. The deep
@@ -13,6 +14,7 @@ import { SITE_URL } from '@/lib/site';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}`, changeFrequency: 'daily', priority: 1 },
+    { url: `${SITE_URL}/events`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/live`, changeFrequency: 'always', priority: 0.9 },
     { url: `${SITE_URL}/events/upcoming`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/past`, changeFrequency: 'daily', priority: 0.8 },
@@ -22,6 +24,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
+  // Best-of-year hubs — only years that clear the page-worthiness floor
+  // (same gate the year pages use for their robots tag).
+  const yearPages: MetadataRoute.Sitemap = indexableYears(await fetchBestYears()).map((y) => ({
+    url: `${SITE_URL}/fights/best/${y.year}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
   const postPages: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
     lastModified: post.date ? new Date(post.date) : undefined,
@@ -29,5 +39,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...postPages];
+  return [...staticPages, ...yearPages, ...postPages];
 }

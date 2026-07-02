@@ -6,6 +6,7 @@ import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatWeightClass } from '@/utils/weightClass';
 import { RateFightModal } from '@/components/RateFightModal';
+import { FightCardLink } from '@/components/fight-cards/FightCardLink';
 
 interface Fighter {
   id: string;
@@ -21,6 +22,7 @@ interface Fighter {
 interface LiveFightCardProps {
   fight: {
     id: string;
+    slug?: string | null;
     fighter1: Fighter;
     fighter2: Fighter;
     weightClass?: string;
@@ -92,11 +94,7 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setModalOpen(true)}
-        className="block w-full text-left"
-      >
+      <FightCardLink fight={fight} onOpen={() => setModalOpen(true)}>
       <div className="group overflow-hidden transition-colors hover:bg-background/40">
         {/* Status strip */}
         <div className="flex items-center justify-center gap-1.5 bg-[#F5C518] py-1.5">
@@ -225,7 +223,7 @@ export function LiveFightCard({ fight, isUpNext, isLiveNow }: LiveFightCardProps
           </div>
         </div>
       </div>
-      </button>
+      </FightCardLink>
       <RateFightModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
