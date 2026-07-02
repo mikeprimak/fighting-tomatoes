@@ -806,6 +806,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 notificationsAllowed: { type: 'boolean' },
                 hasLiveTracking: { type: 'boolean' },
                 shouldIndex: { type: 'boolean' },
+                aiEventSummary: { type: ['string', 'null'] },
+                aiEventConfidence: { type: ['number', 'null'] },
               },
             },
           },
@@ -856,6 +858,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
           prelimStartTime: true,
           mainStartTime: true,
           scraperType: true,
+          aiEventSummary: true,
+          aiEventConfidence: true,
         },
       });
 
