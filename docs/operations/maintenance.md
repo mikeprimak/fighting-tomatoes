@@ -34,6 +34,12 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 
 ## Monthly
 
+### Fighter rating-aggregate refresh
+- **What:** From `packages/backend`, run `npx tsx scripts/backfillFighterRatingAggregates.ts` (dry run), sanity-check the top-10 output, then re-run with `--apply`.
+- **Why:** `Fighter.totalRatings/averageRating/totalFights/greatFights` are recomputed from per-fight data by this script only — nothing updates them at rating time, so they drift as new ratings land. They power the `/fighters` SEO hub's most-rated ordering and the "N ratings" badges.
+- **Time:** ~5 min.
+- **Output:** Nothing unless the top-10 looks wrong (then daily-doc it).
+
 ### AI enrichment — cost + coverage audit
 - **What:** Check actuals against the `<$300/year` ceiling. Verify coverage on the past month's cards (how many fights got `aiPreviewShort` populated, average confidence, missing-source events).
 - **Why:** Cost can creep silently if cron mis-fires or sources change shape. Coverage gaps mean users see empty cards.

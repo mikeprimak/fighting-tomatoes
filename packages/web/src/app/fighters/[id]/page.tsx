@@ -42,6 +42,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
+/**
+ * Person structured data for a fighter. The name/record/profile content already
+ * server-renders via the client component's initial pass; this adds the machine-
+ * readable entity so fighter pages can surface as knowledge-panel-style results.
+ */
+function buildFighterJsonLd(fighter: any, url: string) {
+  const name = `${fighter.firstName} ${fighter.lastName}`;
+  const ld: any = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    url,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': url },
+  };
+  if (fighter.nickname) ld.alternateName = fighter.nickname;
+  if (fighter.profileImage) ld.image = fighter.profileImage;
+  // Confidence-gated tldr doubles as the entity description (same floor the UI uses).
+  const conf = fighter.aiProfileConfidence ?? 0;
+  if (conf >= 0.5 && fighter.aiProfile?.tldr) ld.description = fighter.aiProfile.tldr;
+  return ld;
+}
+
 export default async function FighterDetailPage({ params }: Props) {
   const { id } = await params;
 
@@ -61,7 +83,17 @@ export default async function FighterDetailPage({ params }: Props) {
     permanentRedirect(`/fighters/${initialFighter.slug}`);
   }
 
+  const canonicalUrl = `${SITE_URL}/fighters/${initialFighter?.slug ?? id}`;
+  const jsonLd = initialFighter ? buildFighterJsonLd(initialFighter, canonicalUrl) : null;
+
   // Client data calls (follow, re-fetch) run on the real UUID — the slug is a
   // URL/SEO concern only, so client behavior is unchanged.
-  return <FighterDetailClient fighterId={initialFighter?.id ?? id} initialFighter={initialFighter} />;
+  return (
+    <>
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      )}
+      <FighterDetailClient fighterId={initialFighter?.id ?? id} initialFighter={initialFighter} />
+    </>
+  );
 }
