@@ -2,6 +2,12 @@
  * Fetch the indexable-slug whitelist for one entity type from the backend
  * (`/api/sitemap/:type`), which applies the shared SEO index gate. Used by the
  * per-type child sitemaps. See docs/plans/programmatic-seo-2026-07-01.md (step 3).
+ *
+ * DEPLOY ORDERING: the backend `/api/sitemap/:type` endpoint must be live BEFORE
+ * (or in the same push as) the web build — these sitemaps are prerendered (ISR,
+ * revalidate 3600), so if the backend 404s at build time an EMPTY sitemap bakes
+ * in and stays empty for up to an hour. On the 2026-07-01 first ship the web
+ * deployed a beat before Render finished; a follow-up web rebuild repopulated it.
  */
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
