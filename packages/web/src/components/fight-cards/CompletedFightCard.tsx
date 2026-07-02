@@ -6,6 +6,7 @@ import { FighterAvatar } from '@/components/FighterAvatar';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { RateFightModal } from '@/components/RateFightModal';
+import { FightCardLink } from '@/components/fight-cards/FightCardLink';
 
 interface Fighter {
   id: string;
@@ -21,6 +22,7 @@ interface Fighter {
 interface CompletedFightCardProps {
   fight: {
     id: string;
+    slug?: string | null;
     fighter1: Fighter;
     fighter2: Fighter;
     weightClass?: string;
@@ -174,11 +176,7 @@ export function CompletedFightCard({ fight, showRank, showEvent }: CompletedFigh
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setModalOpen(true)}
-        className="block w-full text-left"
-      >
+      <FightCardLink fight={fight} onOpen={() => setModalOpen(true)}>
       <div className="group transition-colors hover:bg-background/40">
         <div className="relative flex min-h-[72px] items-stretch overflow-visible">
         {/* Left: hype square offset behind rating square */}
@@ -305,7 +303,7 @@ export function CompletedFightCard({ fight, showRank, showEvent }: CompletedFigh
           </p>
         )}
       </div>
-      </button>
+      </FightCardLink>
       <RateFightModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

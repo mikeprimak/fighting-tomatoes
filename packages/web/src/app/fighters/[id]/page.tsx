@@ -86,6 +86,20 @@ export default async function FighterDetailPage({ params }: Props) {
   const canonicalUrl = `${SITE_URL}/fighters/${initialFighter?.slug ?? id}`;
   const jsonLd = initialFighter ? buildFighterJsonLd(initialFighter, canonicalUrl) : null;
 
+  // Fight history is fetched server-side so the fighter's fights (and their
+  // /fights/<slug> links) are in the SSR HTML — without this the history was a
+  // client-only spinner and fighter pages contributed nothing to the fight-page
+  // link graph (programmatic-SEO step 6). Keyed off the real UUID like the
+  // event page (the ?fighterId= filter only matches UUIDs).
+  const realId = initialFighter?.id ?? id;
+  let initialFights: any[] = [];
+  try {
+    const fightsRes = await fetch(`${API_BASE_URL}/fights?fighterId=${realId}&limit=50`, { next: { revalidate: 60 } });
+    if (fightsRes.ok) initialFights = (await fightsRes.json()).fights || [];
+  } catch {
+    // Client will load
+  }
+
   // Client data calls (follow, re-fetch) run on the real UUID — the slug is a
   // URL/SEO concern only, so client behavior is unchanged.
   return (
@@ -93,7 +107,7 @@ export default async function FighterDetailPage({ params }: Props) {
       {jsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
-      <FighterDetailClient fighterId={initialFighter?.id ?? id} initialFighter={initialFighter} />
+      <FighterDetailClient fighterId={realId} initialFighter={initialFighter} initialFights={initialFights} />
     </>
   );
 }

@@ -5,7 +5,10 @@ export function Footer() {
     <footer className="mt-auto border-t border-border bg-background py-6">
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-xs text-text-secondary sm:flex-row sm:justify-between">
         <p>&copy; {new Date().getFullYear()} Good Fights. All rights reserved.</p>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link href="/fighters" className="hover:text-foreground">Fighters</Link>
+          <Link href="/events" className="hover:text-foreground">Events</Link>
+          <Link href="/fights/best" className="hover:text-foreground">Best Fights</Link>
           <Link href="/blog" className="hover:text-foreground">Blog</Link>
           <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
           <Link href="/feedback" className="hover:text-foreground">Feedback</Link>

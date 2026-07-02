@@ -228,6 +228,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'string' },
+                  slug: { type: ['string', 'null'] },
                   name: { type: 'string' },
                   promotion: { type: 'string' },
                   date: { type: 'string' },
@@ -374,6 +375,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Build select object
       const select: any = {
         id: true,
+        slug: true,
         name: true,
         promotion: true,
         date: true,
