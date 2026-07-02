@@ -160,7 +160,18 @@ a fan-rated recap is not.
    expressible, self-consistent) OR aiEventSummary OR active broadcasts OR is
    upcoming/live. That lifted indexable events from 28 (strict aiEventSummary-only)
    to ~640 without indexing thin/junk legacy cards.
-4. **Fighter template SSR + `/fighters` hub + division hubs** — evergreen backbone.
+4. ✅ **Fighter template SSR + `/fighters` hub + division hubs** — SHIPPED LIVE
+   2026-07-01 (commits `379c6d0b` backend + `630a86cc` web; deployed backend-first
+   to dodge the ISR race). Fighter body already SSR'd via the client component's
+   initial render, so the build was: Person JSON-LD on fighter pages; `/fighters`
+   hub (SSR, most-rated-first, 48/page, division chips ≥3 fighters);
+   `/fighters/division/[wc]` facet hubs (mechanical slug↔enum, thin → noindex);
+   navbar + root-sitemap `/fighters` entry; division URLs in fighters sitemap
+   (now 1,130 URLs). Required fixing another dead-aggregate family:
+   `Fighter.totalRatings/averageRating/totalFights/greatFights` were 0 across all
+   rows — `scripts/backfillFighterRatingAggregates.ts` recomputed from per-fight
+   data (applied to prod; monthly re-run in maintenance.md).
+   Details: `docs/daily/2026-07-01-seo-step4.md`.
 5. **Event lifecycle template** (preview→results swap on one URL).
 6. **`fights/best/[year]` + internal linking** hubs↔deep pages.
 7. *(Later)* turn on long-form `aiPreview`; enrich fighter facts
