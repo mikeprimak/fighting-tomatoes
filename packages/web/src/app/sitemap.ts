@@ -25,7 +25,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // Best-of-year hubs — only years that clear the page-worthiness floor
-  // (same gate the year pages use for their robots tag).
+  // (same gate the year pages use for their robots tag). NOTE: this fetch runs
+  // at build time too — deploy the backend first or the baked sitemap holds an
+  // empty year list until the 1h revalidate.
   const yearPages: MetadataRoute.Sitemap = indexableYears(await fetchBestYears()).map((y) => ({
     url: `${SITE_URL}/fights/best/${y.year}`,
     changeFrequency: 'weekly' as const,
