@@ -50,6 +50,7 @@ jobs:
       - name: Run Tapology Live Tracker
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SCRAPFLY_KEY: ${{ secrets.SCRAPFLY_KEY }}
           EVENT_ID: ${{ github.event.inputs.event_id }}
           TAPOLOGY_URL: ${{ github.event.inputs.tapology_url }}
           NODE_ENV: production

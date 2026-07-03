@@ -12,6 +12,8 @@ import {
   recordCommittedDNALine,
 } from '../services/fanDNA/engine';
 import type { FanDNAAction, FanDNASurface } from '../services/fanDNA/types';
+import { isIndexable } from '../lib/seoIndex';
+import { getHiddenPromotions } from '../config/hiddenPromotions';
 
 // Request/Response schemas using Zod for validation
 const CreateFightSchema = z.object({
@@ -459,6 +461,110 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
+  // ---- Best fights of a calendar year (programmatic-SEO step 6) ----------
+  // Powers the /fights/best/[year] web hubs. Calendar-year buckets (not the
+  // rolling windows of /community/top-recent-fights) so the pages are
+  // permanent URLs that accumulate authority. Floor keeps one-vote 10s out.
+  const BEST_MIN_RATINGS = 10;
+
+  // Shared where-clause for a "best of year" qualifying fight.
+  function bestFightWhere(year?: number): any {
+    return {
+      fightStatus: 'COMPLETED',
+      averageRating: { gt: 0 },
+      totalRatings: { gte: BEST_MIN_RATINGS },
+      event: {
+        isVisible: true,
+        NOT: getHiddenPromotions().map(p => ({
+          promotion: { contains: p, mode: 'insensitive' as const },
+        })),
+        ...(year
+          ? { date: { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) } }
+          : {}),
+      },
+    };
+  }
+
+  // GET /api/fights/best-years - years that have qualifying fights, with counts.
+  // The web layer uses the counts to decide which years get an indexable page.
+  fastify.get('/fights/best-years', async (request, reply) => {
+    try {
+      const qualifying = await fastify.prisma.fight.findMany({
+        where: bestFightWhere(),
+        select: { event: { select: { date: true } } },
+      });
+      const counts = new Map<number, number>();
+      for (const f of qualifying) {
+        const year = f.event.date.getUTCFullYear();
+        if (year < 1990) continue; // legacy sentinel dates (e.g. 1899) are bad data
+        counts.set(year, (counts.get(year) ?? 0) + 1);
+      }
+      const years = [...counts.entries()]
+        .map(([year, count]) => ({ year, count }))
+        .sort((a, b) => b.year - a.year);
+      return reply.code(200).send({ years });
+    } catch (error) {
+      console.error('Error in /fights/best-years route:', error);
+      return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // GET /api/fights/best?year=YYYY - top-rated fights of that calendar year.
+  fastify.get('/fights/best', async (request, reply) => {
+    try {
+      const { year: yearRaw, limit: limitRaw } = request.query as { year?: string; limit?: string };
+      const year = parseInt(yearRaw ?? '', 10);
+      const currentYear = new Date().getUTCFullYear();
+      if (!Number.isInteger(year) || year < 1990 || year > currentYear) {
+        return reply.code(400).send({ error: 'Invalid year', code: 'INVALID_YEAR' });
+      }
+      const limit = Math.min(100, Math.max(1, parseInt(limitRaw ?? '', 10) || 50));
+
+      const fights = await fastify.prisma.fight.findMany({
+        where: bestFightWhere(year),
+        orderBy: [{ averageRating: 'desc' }, { totalRatings: 'desc' }, { id: 'asc' }],
+        take: limit,
+        select: {
+          id: true,
+          slug: true,
+          weightClass: true,
+          isTitle: true,
+          titleName: true,
+          winner: true,
+          method: true,
+          round: true,
+          time: true,
+          averageRating: true,
+          totalRatings: true,
+          fightStatus: true,
+          fighter1: {
+            select: {
+              id: true, firstName: true, lastName: true, nickname: true,
+              profileImage: true, wins: true, losses: true, draws: true, sport: true,
+            },
+          },
+          fighter2: {
+            select: {
+              id: true, firstName: true, lastName: true, nickname: true,
+              profileImage: true, wins: true, losses: true, draws: true, sport: true,
+            },
+          },
+          event: {
+            select: { id: true, name: true, date: true, slug: true, promotion: true },
+          },
+          _count: { select: { reviews: true } },
+        },
+      });
+
+      // Shape for CompletedFightCard (reviewCount is a top-level field there).
+      const shaped = fights.map(({ _count, ...f }) => ({ ...f, reviewCount: _count.reviews }));
+      return reply.code(200).send({ year, fights: shaped });
+    } catch (error) {
+      console.error('Error in /fights/best route:', error);
+      return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
+    }
+  });
+
   // GET /api/fights/:id - Get single fight with full details
   fastify.get('/fights/:id', { preHandler: optionalAuth }, async (request, reply) => {
     try {
@@ -467,8 +573,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       console.log('Getting single fight with ID:', id, 'User ID:', currentUserId);
 
-      const fight = await fastify.prisma.fight.findUnique({
-        where: { id },
+      const fight = await fastify.prisma.fight.findFirst({
+        // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+        where: { OR: [{ id }, { slug: id }] },
         include: {
           event: true,
           fighter1: true,
@@ -681,7 +788,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
         // Get comprehensive notification reasons using the unified rule engine
         const notificationReasons = await notificationRuleEngine.getNotificationReasonsForFight(
           currentUserId,
-          id
+          fight.id
         );
         transformedFight.notificationReasons = notificationReasons;
         console.log('Notification reasons:', notificationReasons);
@@ -707,6 +814,9 @@ export async function fightRoutes(fastify: FastifyInstance) {
         hasUserTags: !!transformedFight.userTags,
         hasUserPrediction: !!transformedFight.userHypePrediction
       });
+
+      // SEO index gate (drives robots noindex on the web page + sitemap whitelist).
+      transformedFight.shouldIndex = await isIndexable(fastify.prisma, 'fight', fight.id);
 
       return reply.code(200).send({ fight: transformedFight });
     } catch (error) {

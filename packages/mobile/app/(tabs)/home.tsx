@@ -124,7 +124,18 @@ interface Event {
   mainStartTime?: string | null;
   aiEventSummary?: string | null;
   aiEventConfidence?: number | null;
+  fights?: any[];
 }
+
+// A fight counts as "hyped" once the community signal is real, not noise: at
+// least 3 hype predictions and a 7.5+ average. Returns the qualifying fights
+// sorted by average hype (desc) so the caller can show the count + the top few.
+const HYPE_MIN_COUNT = 3;
+const HYPE_MIN_AVG = 7.5;
+const getHypeFights = (event: Event): any[] =>
+  (event.fights || [])
+    .filter((f: any) => (f.hypeCount || 0) >= HYPE_MIN_COUNT && (f.averageHype || 0) >= HYPE_MIN_AVG)
+    .sort((a: any, b: any) => (b.averageHype || 0) - (a.averageHype || 0));
 
 // --- Presentational helpers (module scope so they don't remount on state change) ---
 
@@ -202,6 +213,7 @@ function Empty({ styles, text }: { styles: ReturnType<typeof makeStyles>; text: 
 function EventRow({
   event,
   description,
+  hypeFights,
   colors,
   styles,
   onPress,
@@ -209,6 +221,9 @@ function EventRow({
 }: {
   event: Event;
   description?: string | null;
+  // When provided (the "This Week" cards), render a "N hype fight(s)" line plus
+  // the top couple of qualifying matchups. Omitted elsewhere (e.g. Last Night).
+  hypeFights?: any[];
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
   onPress: () => void;
@@ -272,7 +287,30 @@ function EventRow({
           <Text style={styles.eventRowDate}>{dateLine}</Text>
         ) : null}
         {description ? (
-          <Text style={styles.eventRowDesc}>{description}</Text>
+          <Text style={styles.eventRowDesc} numberOfLines={2}>{description}</Text>
+        ) : null}
+        {hypeFights ? (
+          <View style={styles.eventRowHype}>
+            <View style={styles.eventRowHypeHeader}>
+              <FontAwesome6 name="fire-flame-curved" size={11} color={colors.primary} />
+              <Text style={styles.eventRowHypeCount}>
+                {hypeFights.length} hype {hypeFights.length === 1 ? 'fight' : 'fights'}
+              </Text>
+            </View>
+            {hypeFights.slice(0, 2).map((f) => {
+              const avg = f.averageHype || 0;
+              return (
+                <View key={f.id} style={styles.eventRowHypeFight}>
+                  <Text style={styles.eventRowHypeMatchup} numberOfLines={1}>
+                    {getFighterPrimaryName(f.fighter1)} vs {getFighterPrimaryName(f.fighter2)}
+                  </Text>
+                  <Text style={[styles.eventRowHypeScore, { color: getHypeHeatmapColor(avg) }]}>
+                    {avg === 10 ? '10' : avg.toFixed(1)}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
         ) : null}
       </View>
     </TouchableOpacity>
@@ -466,6 +504,50 @@ function FollowedFighterChip({
   );
 }
 
+/**
+ * Compact portrait card for the Highlighted Fighters horizontal rail. Smaller
+ * than the old single big card — a few scroll side-to-side. Shows the action/
+ * portrait image, name, and record · weight class; taps through to the profile.
+ */
+function FeaturedFighterCard({
+  fighter,
+  styles,
+  onPress,
+}: {
+  fighter: any;
+  styles: ReturnType<typeof makeStyles>;
+  onPress: () => void;
+}) {
+  const record = (() => {
+    const w = fighter.wins ?? 0, l = fighter.losses ?? 0, d = fighter.draws ?? 0;
+    if (w + l + d === 0) return '';
+    return d > 0 ? `${w}-${l}-${d}` : `${w}-${l}`;
+  })();
+  const meta = [record, formatWeightClass(fighter.weightClass)].filter(Boolean).join(' · ');
+  const summary = fighter.aiProfile?.tldr || fighter.aiProfileSummary || '';
+
+  return (
+    <TouchableOpacity style={styles.featuredCard} activeOpacity={0.9} onPress={onPress}>
+      <Image
+        source={getFighterImage({
+          ...fighter,
+          profileImage: fighter.actionImage || fighter.profileImage,
+        })}
+        style={styles.featuredImage}
+        resizeMode="cover"
+      />
+      <View style={styles.featuredBody}>
+        {fighter.nickname ? (
+          <Text style={styles.featuredNickname} numberOfLines={1}>&ldquo;{fighter.nickname}&rdquo;</Text>
+        ) : null}
+        <Text style={styles.featuredName} numberOfLines={1}>{getFighterDisplayName(fighter)}</Text>
+        {meta ? <Text style={styles.featuredMeta} numberOfLines={1}>{meta}</Text> : null}
+        {summary ? <Text style={styles.featuredSummary} numberOfLines={3}>{summary}</Text> : null}
+      </View>
+    </TouchableOpacity>
+  );
+}
+
 // Rotating "here's what Good Fights can do for you" education cards shown at the
 // bottom of Home. Cycles once a minute so a returning user keeps discovering
 // features. Each card optionally deep-links to the relevant screen.
@@ -476,6 +558,7 @@ const FEATURE_SPOTLIGHTS: {
   body: string;
   route?: string;
   hint?: string;
+  image?: any;
 }[] = [
   {
     icon: 'fire-flame-curved',
@@ -492,6 +575,7 @@ const FEATURE_SPOTLIGHTS: {
     body: 'Community ratings show you which fights actually delivered, so you can find a great one to watch tonight.',
     route: '/(tabs)/top-fights',
     hint: 'See top-rated fights',
+    image: require('../../assets/spotlights/puncher.png'),
   },
   {
     icon: 'clock-rotate-left',
@@ -516,6 +600,7 @@ const FEATURE_SPOTLIGHTS: {
     body: "Follow fighters and get notified the moment they're booked, the morning of, and when they walk out.",
     route: '/followed-fighters',
     hint: 'Manage your fighters',
+    image: require('../../assets/spotlights/fan-cheering-tv.png'),
   },
   {
     icon: 'comments',
@@ -565,13 +650,17 @@ function FeatureSpotlight({
       onPress={() => feature.route && onNavigate(feature.route)}
     >
       <Animated.View style={[styles.spotlightInner, { opacity }]}>
-        <View style={styles.spotlightIconWrap}>
-          {feature.iconLib === 'fa6' ? (
-            <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
-          ) : (
-            <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
-          )}
-        </View>
+        {feature.image ? (
+          <Image source={feature.image} style={styles.spotlightImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.spotlightIconWrap}>
+            {feature.iconLib === 'fa6' ? (
+              <FontAwesome6 name={feature.icon as any} size={22} color={colors.primary} />
+            ) : (
+              <FontAwesome name={feature.icon as any} size={22} color={colors.primary} />
+            )}
+          </View>
+        )}
         <Text style={styles.spotlightTitle}>{feature.title}</Text>
         <Text style={styles.spotlightBody}>{feature.body}</Text>
         {feature.route ? (
@@ -611,11 +700,20 @@ export default function HomeScreen() {
 
   const { data: eventsData, isLoading: isEventsLoading } = useQuery({
     queryKey: ['events', 'upcoming', 'withFights'],
-    // Home event cards show only the event + its AI "why care" summary (no fight
-    // list), so don't pull fight cards here — includeFights makes the backend
-    // aggregate hype/counts for every fight on every event (slow + heavy). The
-    // events SCREENS still use includeFights; the home doesn't need it.
-    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: false }),
+    // Home "This Week" cards show the event's AI "why care" summary PLUS a count
+    // of its genuinely-hyped fights (>= 3 predictions, >= 7.5 avg) and the top
+    // couple — so we need includeFights here for the per-fight hype aggregates
+    // (averageHype/hypeCount). This mirrors the work the events SCREENS already do.
+    queryFn: () => apiService.getEvents({ type: 'upcoming', includeFights: true }),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Past events, used only to surface "Event Last Night" — the most recent UFC
+  // card that ran in the last day (UFC only, by design). Past events come back
+  // most-recent-first, so a small page covers the window.
+  const { data: pastEventsData } = useQuery({
+    queryKey: ['events', 'past', 'lastNightUFC'],
+    queryFn: () => apiService.getEvents({ type: 'past', includeFights: false, limit: 8 }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -693,26 +791,27 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
-  // "This weekend" = every event from today up to (but not including) the Monday
-  // that starts next week — i.e. the rest of the current Mon–Sun week. On Sat/Sun
-  // that's the remaining weekend; the instant Monday arrives the window rolls to
-  // the whole next week (Mon–Sun), so mid-week cards (Wed/Thu/Fri) are included.
-  // Compared as UTC day keys to line up with eventDayKey (Event.date is a
-  // UTC-hour placeholder); anchored on the user's local calendar date.
+  // "This week" = the upcoming weekend chunk, from today through the coming Monday
+  // (inclusive). Fights cluster Fri–Sun, so this keeps the band focused on the
+  // immediate weekend instead of bleeding a full 7 days ahead (which surfaced
+  // events a week out, e.g. "next Friday"). The chunk always ends Monday so a
+  // Sunday-night card that rolls into Monday still shows. On Monday itself we
+  // reach the *next* Monday so the band doesn't collapse to a single day (the old
+  // failure mode the rolling-7 window was patching). Compared as UTC day keys to
+  // line up with eventDayKey (Event.date is a UTC-hour placeholder); anchored on
+  // the user's local calendar date.
   const DAY_MS = 86_400_000;
   const nowLocal = new Date();
   const todayKey = Date.UTC(nowLocal.getFullYear(), nowLocal.getMonth(), nowLocal.getDate());
-  const localDow = nowLocal.getDay(); // 0=Sun … 6=Sat
-  let daysUntilNextMonday = (1 - localDow + 7) % 7; // 0 when today is Monday
-  if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
-  const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
+  const daysUntilMonday = ((1 - nowLocal.getDay() + 7) % 7) || 7; // Mon → next Mon (7)
+  const windowEndKey = todayKey + (daysUntilMonday + 1) * DAY_MS; // through Monday, exclusive bound
   const upcomingEvents: Event[] = (eventsData?.events || [])
     // Keep LIVE events in the list (badged "LIVE" on the card) alongside the
     // UPCOMING ones — a card that just went live shouldn't vanish from the day.
     .filter((e: Event) => e.eventStatus === 'UPCOMING' || e.eventStatus === 'LIVE')
     .filter((e: Event) => {
       const k = eventDayKey(e.date);
-      return k >= todayKey && k < nextMondayKey;
+      return k >= todayKey && k < windowEndKey;
     })
     .sort((a: Event, b: Event) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
@@ -754,6 +853,14 @@ export default function HomeScreen() {
     return daysSince >= 0 && daysSince <= 1;
   });
 
+  // Title reflects when the freshest card actually ran: a card whose day is today
+  // ran "earlier today", not "last night". lastNightUFC is most-recent-first.
+  const lastNightTitle =
+    lastNightUFC.length > 0 &&
+    Math.round((todayKey - eventDayKey(lastNightUFC[0].date)) / DAY_MS) <= 0
+      ? 'Event Earlier Today'
+      : 'Event Last Night';
+
   const upcomingFights = (topUpcomingFights?.data || []).slice(0, 5);
   // Already capped + ordered server-side; group by event for the event-card UI.
   const recentGoodGroups = groupByEvent(recentGoodFights?.data || []);
@@ -767,32 +874,16 @@ export default function HomeScreen() {
   const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
 
-  // Highlighted fighter — portrait prefers the action shot, bio prefers the
-  // structured tldr, then falls back to the summary string.
+  // Highlighted fighters — a few featurable fighters for the horizontal rail.
+  // Falls back to the single chosen fighter if the backend hasn't shipped the
+  // `fighters` array yet (older deploy). Each card derives its own bio/record.
   const highlight = highlightedFighterData?.data || null;
-  const highlightFighter = highlight?.fighter || null;
-  const highlightTopFight = highlight?.topFight || null;
-  const highlightNextFight = highlight?.nextFight || null;
-  const highlightMostRecentFight = highlight?.mostRecentFight || null;
-  // When the fighter has nothing booked, surface their most recent bout above
-  // the top-rated one. If that bout *is* the top-rated one, don't show it twice —
-  // just relabel the single line "Most Recent Fight" (task 1).
-  const highlightHasUpcoming = !!highlightNextFight;
-  const highlightSameRecentTop =
-    !!highlightMostRecentFight && !!highlightTopFight && highlightMostRecentFight.id === highlightTopFight.id;
-  const highlightShowMostRecent =
-    !highlightHasUpcoming && !!highlightMostRecentFight && !highlightSameRecentTop;
-  const highlightTopFightLabel =
-    !highlightHasUpcoming && highlightSameRecentTop ? 'Most Recent Fight' : 'Top-rated fight';
-  const highlightSummary = highlightFighter
-    ? highlightFighter.aiProfile?.tldr || highlightFighter.aiProfileSummary || ''
-    : '';
-  const highlightRecord = (() => {
-    if (!highlightFighter) return '';
-    const w = highlightFighter.wins ?? 0, l = highlightFighter.losses ?? 0, d = highlightFighter.draws ?? 0;
-    if (w + l + d === 0) return '';
-    return d > 0 ? `${w}-${l}-${d}` : `${w}-${l}`;
-  })();
+  const highlightFighters: any[] =
+    highlightedFighterData?.fighters && highlightedFighterData.fighters.length > 0
+      ? highlightedFighterData.fighters
+      : highlight?.fighter
+        ? [highlight.fighter]
+        : [];
 
   // --- Comment upvote (optimistic, shares cache with Community) ------------
   const upvoteMutation = useMutation({
@@ -851,12 +942,12 @@ export default function HomeScreen() {
       }
     >
         <View>
-      {/* Event Last Night — UFC only, the day(s) after a UFC card ran --------*/}
+      {/* Event Last Night / Earlier Today — UFC only, the day(s) after a card ran */}
       {lastNightUFC.length > 0 ? (
         <Section
           colors={colors}
           styles={styles}
-          title="Event Last Night"
+          title={lastNightTitle}
           subtitle={lastNightUFC.length === 1 ? formatEventDate(lastNightUFC[0].date) : undefined}
           icon="calendar"
         >
@@ -887,7 +978,7 @@ export default function HomeScreen() {
         <Section
           colors={colors}
           styles={styles}
-          title="This Weekend"
+          title="This Week"
           icon="fire-flame-curved"
           iconLib="fa6"
         >
@@ -918,6 +1009,7 @@ export default function HomeScreen() {
                     key={event.id}
                     event={event}
                     description={description}
+                    hypeFights={getHypeFights(event)}
                     colors={colors}
                     styles={styles}
                     onPress={() => router.push(`/event/${event.id}` as any)}
@@ -931,11 +1023,11 @@ export default function HomeScreen() {
         <Section
           colors={colors}
           styles={styles}
-          title="This Weekend"
+          title="This Week"
           icon="fire-flame-curved"
           iconLib="fa6"
         >
-          <Empty styles={styles} text="No events this weekend" />
+          <Empty styles={styles} text="No events in the next 7 days" />
         </Section>
       )}
 
@@ -997,84 +1089,39 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Highlighted Fighter — daily-rotating AI-enriched fighter ------------*/}
-      {highlightFighter && (
-        <Section colors={colors} styles={styles} title="Highlighted Fighter" icon="user-circle" iconLib="fa6">
-          <TouchableOpacity
-            activeOpacity={0.9}
-            style={styles.highlightCard}
-            onPress={() => router.push(`/fighter/${highlightFighter.id}` as any)}
-          >
-            <Image
-              source={getFighterImage({
-                ...highlightFighter,
-                profileImage: highlightFighter.actionImage || highlightFighter.profileImage,
-              })}
-              style={styles.highlightImage}
-              resizeMode="cover"
-            />
-            <View style={styles.highlightBody}>
-              {highlightFighter.nickname ? (
-                <Text style={styles.highlightNickname}>&ldquo;{highlightFighter.nickname}&rdquo;</Text>
-              ) : null}
-              <Text style={styles.highlightName}>{getFighterDisplayName(highlightFighter)}</Text>
-              {(highlightRecord || highlightFighter.weightClass) ? (
-                <Text style={styles.highlightMeta}>
-                  {[highlightRecord, highlightFighter.weightClass].filter(Boolean).join(' · ')}
-                </Text>
-              ) : null}
-              {highlightSummary ? (
-                <Text style={styles.highlightSummary} numberOfLines={5}>{highlightSummary}</Text>
-              ) : null}
-              {/* Most recent bout (only when nothing is booked and it differs
-                  from the top-rated fight), shown above the top-rated line. */}
-              {highlightShowMostRecent ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Most Recent Fight</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightMostRecentFight.fighter1)} vs {getFighterPrimaryName(highlightMostRecentFight.fighter2)}
-                    {highlightMostRecentFight.averageRating > 0
-                      ? `  ★ ${highlightMostRecentFight.averageRating === 10 ? '10' : Number(highlightMostRecentFight.averageRating).toFixed(1)}`
-                      : ''}
-                  </Text>
-                </View>
-              ) : null}
-              {/* Top-rated fight + next scheduled bout, inline inside the card's
-                  border (replaces the separate full fight card). */}
-              {highlightTopFight ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>{highlightTopFightLabel}</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightTopFight.fighter1)} vs {getFighterPrimaryName(highlightTopFight.fighter2)}
-                    {highlightTopFight.averageRating > 0
-                      ? `  ★ ${highlightTopFight.averageRating === 10 ? '10' : Number(highlightTopFight.averageRating).toFixed(1)}`
-                      : ''}
-                  </Text>
-                </View>
-              ) : null}
-              {highlightNextFight ? (
-                <View style={styles.highlightFightLine}>
-                  <Text style={styles.highlightFightLabel}>Next scheduled fight</Text>
-                  <Text style={styles.highlightFightMatchup}>
-                    {getFighterPrimaryName(highlightNextFight.fighter1)} vs {getFighterPrimaryName(highlightNextFight.fighter2)}
-                    {(() => {
-                      const w = eventRelativePhrase(highlightNextFight.event?.mainStartTime ?? highlightNextFight.event?.date);
-                      return w ? `  ·  ${w}` : '';
-                    })()}
-                  </Text>
-                </View>
-              ) : null}
-              <Text style={styles.highlightLink}>Full profile ›</Text>
-            </View>
-          </TouchableOpacity>
-        </Section>
-      )}
-
-      {/* The Latest / Editorial blog (moved below Highlighted Fighter) ------*/}
+      {/* Top Community Comments — just below Recent Good Fights -------------*/}
       <Section
         colors={colors}
         styles={styles}
-        title="The Latest"
+        title="Comments on recent fights"
+        icon="comments"
+      >
+        {isCommentsLoading ? (
+          <Loading colors={colors} styles={styles} />
+        ) : comments.length > 0 ? (
+          comments.map((comment: any) => (
+            <CommentCard
+              key={comment.id}
+              comment={comment}
+              onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
+              onUpvote={() =>
+                comment.fight &&
+                upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
+              }
+              isUpvoting={upvotingCommentId === comment.id}
+              isAuthenticated={isAuthenticated}
+            />
+          ))
+        ) : (
+          <Empty styles={styles} text="No comments yet" />
+        )}
+      </Section>
+
+      {/* Read About / Editorial blog ---------------------------------------*/}
+      <Section
+        colors={colors}
+        styles={styles}
+        title="Read About"
         icon="newspaper-o"
         onSeeAll={() => router.push('/blog' as any)}
       >
@@ -1125,36 +1172,12 @@ export default function HomeScreen() {
 
       {/* Hot Fighters — hidden from the home UI (removed per product). */}
 
-      {/* Recently Booked Fighters ------------------------------------------*/}
-      {(isBookedLoading || recentlyBooked.length > 0) && (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="Recently Booked"
-          icon="calendar-plus"
-          iconLib="fa6"
-        >
-          {isBookedLoading ? (
-            <Loading colors={colors} styles={styles} />
-          ) : (
-            recentlyBooked.map((b: any) => (
-              <FighterCard
-                key={b.fighter.id}
-                fighter={b.fighter}
-                inlineOpponent={`vs ${b.opponentName}`}
-                subtitle={`${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
-                onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
-              />
-            ))
-          )}
-        </Section>
-      )}
-
-      {/* Most Followed Fighters (horizontal rail) --------------------------*/}
+      {/* Most Followed Fighters (horizontal rail) — above Recently Booked --*/}
       <Section
         colors={colors}
         styles={styles}
         title="Most Followed"
+        subtitle="You'll get notified when they're booked and on days they fight."
         icon="users"
         iconLib="fa6"
         onSeeAll={isAuthenticated ? () => router.push('/followed-fighters' as any) : undefined}
@@ -1182,36 +1205,55 @@ export default function HomeScreen() {
         )}
       </Section>
 
-      {/* Top Community Comments --------------------------------------------*/}
-      <Section
-        colors={colors}
-        styles={styles}
-        title="Top Comments"
-        icon="comments"
-      >
-        {isCommentsLoading ? (
-          <Loading colors={colors} styles={styles} />
-        ) : comments.length > 0 ? (
-          comments.map((comment: any) => (
-            <CommentCard
-              key={comment.id}
-              comment={comment}
-              onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
-              onUpvote={() =>
-                comment.fight &&
-                upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
-              }
-              isUpvoting={upvotingCommentId === comment.id}
-              isAuthenticated={isAuthenticated}
-            />
-          ))
-        ) : (
-          <Empty styles={styles} text="No comments yet" />
-        )}
-      </Section>
+      {/* Recently Booked Fighters ------------------------------------------*/}
+      {(isBookedLoading || recentlyBooked.length > 0) && (
+        <Section
+          colors={colors}
+          styles={styles}
+          title="Recently Booked"
+          icon="calendar-plus"
+          iconLib="fa6"
+        >
+          {isBookedLoading ? (
+            <Loading colors={colors} styles={styles} />
+          ) : (
+            recentlyBooked.map((b: any) => (
+              <FighterCard
+                key={b.fighter.id}
+                fighter={b.fighter}
+                inlineOpponent={`vs ${b.opponentName}`}
+                subtitle={`${b.event.name} ${relUntilPhrase(b.nextFightDate)}`}
+                onPress={() => router.push(`/fighter/${b.fighter.id}` as any)}
+              />
+            ))
+          )}
+        </Section>
+      )}
 
-      {/* Classics to Watch (historic highly-rated, unrated by user) --------*/}
-      {(isClassicsLoading || classics.length > 0) && (
+      {/* Highlighted Fighters — a few AI-enriched fighters in a side-scroll
+          rail, below Recently Booked --------------------------------------*/}
+      {highlightFighters.length > 0 && (
+        <Section colors={colors} styles={styles} title="Highlighted Fighters" icon="user-circle" iconLib="fa6">
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}
+          >
+            {highlightFighters.map((f: any) => (
+              <FeaturedFighterCard
+                key={f.id}
+                fighter={f}
+                styles={styles}
+                onPress={() => router.push(`/fighter/${f.id}` as any)}
+              />
+            ))}
+          </ScrollView>
+        </Section>
+      )}
+
+      {/* Classics to Watch (historic highly-rated, unrated by user) — with a
+          classic throwback comment shown within these old fights -----------*/}
+      {(isClassicsLoading || classics.length > 0 || throwbackComment) && (
         <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
           {isClassicsLoading ? (
             <Loading colors={colors} styles={styles} />
@@ -1226,34 +1268,26 @@ export default function HomeScreen() {
               />
             ))
           )}
-        </Section>
-      )}
-
-      {/* Classic Throwback -------------------------------------------------*/}
-      {throwbackComment && (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="Classic Throwback"
-          icon="clock-rotate-left"
-          iconLib="fa6"
-        >
-          <CommentCard
-            comment={throwbackComment}
-            onPress={() =>
-              throwbackComment.fight &&
-              router.push(`/fight/${throwbackComment.fight.id}` as any)
-            }
-            onUpvote={() =>
-              throwbackComment.fight &&
-              upvoteMutation.mutate({
-                fightId: throwbackComment.fight.id,
-                reviewId: throwbackComment.id,
-              })
-            }
-            isUpvoting={upvotingCommentId === throwbackComment.id}
-            isAuthenticated={isAuthenticated}
-          />
+          {/* A standout comment from a classic fight, embedded here instead of
+              the old standalone "Classic Throwback" section. */}
+          {throwbackComment ? (
+            <CommentCard
+              comment={throwbackComment}
+              onPress={() =>
+                throwbackComment.fight &&
+                router.push(`/fight/${throwbackComment.fight.id}` as any)
+              }
+              onUpvote={() =>
+                throwbackComment.fight &&
+                upvoteMutation.mutate({
+                  fightId: throwbackComment.fight.id,
+                  reviewId: throwbackComment.id,
+                })
+              }
+              isUpvoting={upvotingCommentId === throwbackComment.id}
+              isAuthenticated={isAuthenticated}
+            />
+          ) : null}
         </Section>
       )}
 
@@ -1432,6 +1466,40 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 11,
       lineHeight: 15,
       color: colors.textSecondary,
+    },
+    // "N hype fights" + the top couple of qualifying matchups, under the blurb.
+    eventRowHype: {
+      marginTop: 8,
+    },
+    eventRowHypeHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      marginBottom: 4,
+    },
+    eventRowHypeCount: {
+      fontSize: 11,
+      fontWeight: '700',
+      color: colors.text,
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
+    },
+    eventRowHypeFight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+      marginTop: 1,
+    },
+    eventRowHypeMatchup: {
+      flex: 1,
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    eventRowHypeScore: {
+      fontSize: 12,
+      fontWeight: '800',
     },
     // --- Hyped Upcoming Fights: event-grouped cards ----------------------
     hypedCard: {
@@ -1686,6 +1754,45 @@ function makeStyles(colors: ThemeColors) {
       color: colors.primary,
       marginTop: 12,
     },
+    // Highlighted Fighters horizontal rail (a few smaller portrait cards)
+    featuredCard: {
+      width: 168,
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+    },
+    featuredImage: {
+      width: '100%',
+      height: 168,
+      backgroundColor: colors.border,
+    },
+    featuredBody: {
+      padding: 10,
+    },
+    featuredNickname: {
+      fontSize: 11,
+      fontWeight: '500',
+      color: colors.textSecondary,
+      marginBottom: 1,
+    },
+    featuredName: {
+      fontSize: 15,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    featuredMeta: {
+      fontSize: 11,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    featuredSummary: {
+      fontSize: 12,
+      lineHeight: 16,
+      color: colors.textSecondary,
+      marginTop: 6,
+    },
     // Feature spotlight card
     spotlightCard: {
       backgroundColor: colors.card,
@@ -1709,6 +1816,17 @@ function makeStyles(colors: ThemeColors) {
       justifyContent: 'center',
       alignItems: 'center',
       marginBottom: 12,
+    },
+    // Illustration for spotlight cards that ship with an image instead of the
+    // icon circle (e.g. "Know What's Worth Watching", "Follow Your Favorites").
+    // The source art is square, so render a centered square to avoid cropping.
+    spotlightImage: {
+      width: 200,
+      height: 200,
+      alignSelf: 'center',
+      borderRadius: 12,
+      marginBottom: 14,
+      backgroundColor: colors.background,
     },
     spotlightTitle: {
       fontSize: 17,

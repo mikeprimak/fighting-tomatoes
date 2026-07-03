@@ -607,6 +607,11 @@ async function importOneFCEvents(
             cardType: fightData.cardType,
             fightStatus: 'UPCOMING',
           },
+          // ONE FC reports the same Thai fighter under drifting name forms
+          // (canonical "Hern Looksuan" vs camp-token "Hern NF Looksuan"), which
+          // would otherwise create a duplicate bout the live tracker has already
+          // advanced. Collapse onto the existing fight instead. See fightUpsert.ts.
+          { sameEventNameDedup: true },
         );
 
         await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
@@ -863,7 +868,21 @@ export async function importOneFCData(options: {
 
   try {
     // Read JSON files
-    const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    // ONE FC runs year-round at high frequency and should never legitimately have an empty
+    // upcoming slate. A missing events file almost always means the SCRAPE failed
+    // (Cloudflare block, selector drift), not a genuinely empty page — so throw a clear,
+    // actionable error rather than skipping. This fails the run and pages the admin
+    // (intended). Small/intermittent promos skip gracefully instead (see karateCombat/raf).
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch {
+      throw new Error(
+        `ONE FC import: events file not found at ${eventsFilePath} — the scraper wrote no ` +
+        `events. For a high-frequency promotion this almost always means the scrape FAILED, ` +
+        `not an empty slate. Investigate the scraper run before assuming there are no events.`,
+      );
+    }
     const athletesJson = await fs.readFile(athletesFilePath, 'utf-8');
 
     const eventsData: ScrapedOneFCEventsData = JSON.parse(eventsJson);

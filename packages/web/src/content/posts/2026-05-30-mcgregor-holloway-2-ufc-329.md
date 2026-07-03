@@ -2,7 +2,7 @@
 title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-06-13"
+updated: "2026-07-02"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
@@ -67,20 +67,21 @@ Paramount+ is the UFC's home in the United States, but the rest of the world is 
 
 ## What is the full UFC 329 fight card?
 
-UFC 329 is a stacked 12-fight card. The announced lineup includes:
+UFC 329 is a stacked card. The confirmed main card lineup:
 
 - Conor McGregor vs Max Holloway 2 (Welterweight, main event)
 - Benoit Saint-Denis vs Paddy Pimblett (Lightweight, co-main)
 - Cory Sandhagen vs Mario Bautista 2 (Bantamweight)
-- Robert Whittaker vs Nikita Krylov (Light Heavyweight)
 - Brandon Royval vs Lone'er Kavanagh (Flyweight)
-- Gable Steveson vs Elisha Ellison (Heavyweight)
+- Robert Whittaker vs Nikita Krylov (Light Heavyweight)
 - Cody Garbrandt vs Adrian Yanez (Bantamweight)
-- Tracy Cortez vs Wang Cong (Flyweight)
-- King Green vs Terrance McKinney (Lightweight)
-- Plus several more bouts across the prelims
+- Luke Riley vs Kai Kamaka III (Featherweight)
+- Tracy Cortez vs Wang Cong (Women's Flyweight)
+- Damian Pinas vs Cesar Almeida (Middleweight)
+- Ryan Gandra vs Zachary Reese (Middleweight)
+- Bobby Green vs Terrance McKinney (Lightweight)
 
-Card placement and matchups can change in the weeks before the event, so treat the undercard order as provisional until fight week.
+Two changes from the original card: Gable Steveson vs Elisha Ellison has been moved to the prelims, and the flyweight opener between Ode' Osbourne and Cody Durden was canceled after Osbourne withdrew. Bobby Green vs Terrance McKinney stepped in to open the main card.
 
 ## Who is on the UFC 329 co-main event?
 
@@ -139,9 +140,15 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 
 ## What are the betting odds for McGregor vs Holloway 2?
 
-The opening odds tell the whole story of how the fight is viewed. **Max Holloway is a heavy favorite**. As of early June, lines vary meaningfully by book: DraftKings has Holloway at around -310 (McGregor +250), FanDuel sits near -410 (McGregor +290), and BetMGM is still in the -550 range (McGregor +350). **McGregor is an underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. The implied probability across markets puts Holloway's win chance somewhere between 75 and 85 percent. Lines will continue to move as fight week approaches and money comes in, so check current odds before placing anything.
+The odds tell the whole story of how the fight is viewed. **Max Holloway is the favorite and Conor McGregor the underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. One telling pattern in the betting: the public is piling onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large wagers are overwhelmingly on Holloway. That sharp-versus-public split has kept the line from swinging hard, though McGregor has slowly gained ground since it opened. Lines will keep shifting as fight week approaches, so check current prices before placing anything.
 
-![UFC 329 betting odds: Max Holloway favorite, Conor McGregor underdog, lines ranging from -310 to -550 depending on the sportsbook](/blog/ufc-329-betting-odds.png)
+<!--ODDS-SNAPSHOT-->
+As of July 2, 2026, Max Holloway is the favorite at around -235, roughly a 70% implied chance, and Conor McGregor is the underdog at about +195, roughly 34%. McGregor has gained ground since the line opened in May.
+<!--/ODDS-SNAPSHOT-->
+
+![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
+
+*We update this chart daily as the lines move. The percentage next to each fighter is their latest implied win probability, with the moneyline in parentheses.*
 
 ## Why is McGregor such a big underdog?
 
@@ -173,7 +180,7 @@ For Holloway, this is the rare chance to settle an old score and cash the bigges
 
 ## Is this Conor McGregor's last fight?
 
-Nobody knows, and McGregor himself has gone back and forth on retirement for years. What is clear is that, at 37 going on 38 and five years removed from his last bout, the result of this fight will heavily shape whatever comes next. A loss could push him toward legacy and exhibition-style fights. A win would likely keep him fighting at the top for at least another bout or two. Treat any "final fight" talk as speculation until he says so himself.
+In one sense, definitely not: McGregor revealed in June that he has a second fight already booked for **April 2027**, making UFC 329 the first of two fights remaining on his current UFC contract. No opponent has been named for that date. So the "final fight" framing is off the table officially. But the result still shapes everything about what that April slot becomes: a loss would almost certainly turn it into a legacy or spectacle booking rather than a serious title-track fight. A win keeps the championship storyline alive and makes April 2027 a genuinely big fight.
 
 ## How much are UFC 329 tickets?
 
@@ -208,7 +215,7 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
 - **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
-- **Favorite:** Max Holloway (lines range from roughly -310 to -550 across major books; McGregor +250 to +350)
+- **Favorite:** Max Holloway (around -240 to -260; McGregor the underdog near +190 to +215, trending his way - see the live chart above)
 - **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 

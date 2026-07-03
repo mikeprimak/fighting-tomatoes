@@ -46,6 +46,9 @@ export async function persistEnrichment(
         data: {
           aiTags: buildAiTags(rec, cardItem),
           aiPreviewShort: rec.whyCare || null,
+          // Long-form preview is keep-if-absent: a later pass (T-2) with thinner
+          // sources shouldn't wipe a preview an earlier pass (T-10/T-5) grounded.
+          ...(rec.preview ? { aiPreview: rec.preview } : {}),
           aiSourceUrls: sourceUrls,
           aiConfidence: rec.confidence,
           aiEnrichedAt: new Date(),

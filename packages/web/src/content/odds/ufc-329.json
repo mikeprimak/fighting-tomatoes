@@ -1,0 +1,135 @@
+{
+  "event": "UFC 329",
+  "eventSlug": "ufc-329",
+  "postSlug": "ufc-329-full-card-odds-predictions",
+  "postSlugs": [
+    "ufc-329-full-card-odds-predictions",
+    "mcgregor-holloway-2-ufc-329"
+  ],
+  "eventDate": "2026-07-11",
+  "mainEvent": {
+    "fighterA": {
+      "name": "Conor McGregor",
+      "shortName": "McGregor",
+      "key": "mcgregor",
+      "color": "#f97316"
+    },
+    "fighterB": {
+      "name": "Max Holloway",
+      "shortName": "Holloway",
+      "key": "holloway",
+      "color": "#60a5fa"
+    }
+  },
+  "note": "American moneyline per fighter, one representative snapshot per date. Early points are real reported sportsbook lines; daily points come from The Odds API consensus. The graph plots implied win probability. Source of truth for the daily updater and the odds graph SVG.",
+  "snapshots": [
+    {
+      "date": "2026-05-16",
+      "mcgregor": 250,
+      "holloway": -310,
+      "source": "DraftKings opening line"
+    },
+    {
+      "date": "2026-05-20",
+      "mcgregor": 245,
+      "holloway": -270,
+      "source": "Kalshi"
+    },
+    {
+      "date": "2026-06-17",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 230,
+      "holloway": -289
+    },
+    {
+      "date": "2026-06-18",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 232,
+      "holloway": -292
+    },
+    {
+      "date": "2026-06-19",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 225,
+      "holloway": -283
+    },
+    {
+      "date": "2026-06-20",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 220,
+      "holloway": -278
+    },
+    {
+      "date": "2026-06-21",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 203,
+      "holloway": -255
+    },
+    {
+      "date": "2026-06-22",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 202,
+      "holloway": -252
+    },
+    {
+      "date": "2026-06-23",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 202,
+      "holloway": -252
+    },
+    {
+      "date": "2026-06-24",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 202,
+      "holloway": -252
+    },
+    {
+      "date": "2026-06-25",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 207,
+      "holloway": -260
+    },
+    {
+      "date": "2026-06-26",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 200,
+      "holloway": -249
+    },
+    {
+      "date": "2026-06-27",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 200,
+      "holloway": -249
+    },
+    {
+      "date": "2026-06-28",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 190,
+      "holloway": -230
+    },
+    {
+      "date": "2026-06-29",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 190,
+      "holloway": -240
+    },
+    {
+      "date": "2026-06-30",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 193,
+      "holloway": -237
+    },
+    {
+      "date": "2026-07-01",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 187,
+      "holloway": -225
+    },
+    {
+      "date": "2026-07-02",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 195,
+      "holloway": -235
+    }
+  ]
+}

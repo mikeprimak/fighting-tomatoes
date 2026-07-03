@@ -13,7 +13,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import type { FighterProfileRecord } from './extractFighterProfile';
+import type { FighterProfileRecord, FighterFacts } from './extractFighterProfile';
 
 export const FIGHTER_PROFILE_CONFIDENCE_FLOOR = 0.5;
 
@@ -32,6 +32,42 @@ export interface PersistFighterProfileOptions {
 export type PersistFighterProfileOutcome =
   | { wrote: true }
   | { wrote: false; reason: 'low_confidence' | 'empty' };
+
+/**
+ * Fill-only write of grounded biographical facts (nationality / dateOfBirth /
+ * height / reach / stance — SEO step 7). Independent of the profile confidence
+ * floor: facts are verbatim extractions, not narrative, so a thin profile can
+ * still contribute them. A column that already holds a value is NEVER
+ * overwritten — the ufcstats backfill (exact scrape) always wins over the LLM.
+ * Returns the list of column names written.
+ */
+export async function persistFighterFacts(
+  prisma: PrismaClient,
+  fighterId: string,
+  facts: FighterFacts,
+  opts: { dryRun?: boolean } = {},
+): Promise<string[]> {
+  const current = await prisma.fighter.findUnique({
+    where: { id: fighterId },
+    select: { nationality: true, dateOfBirth: true, height: true, reach: true, stance: true },
+  });
+  if (!current) return [];
+
+  const data: Record<string, any> = {};
+  if (current.nationality == null && facts.nationality) data.nationality = facts.nationality;
+  if (current.dateOfBirth == null && facts.dateOfBirth) data.dateOfBirth = new Date(`${facts.dateOfBirth}T00:00:00.000Z`);
+  if (current.height == null && facts.height) data.height = facts.height;
+  if (current.reach == null && facts.reach) data.reach = facts.reach;
+  if (current.stance == null && facts.stance) data.stance = facts.stance;
+
+  const written = Object.keys(data);
+  if (written.length === 0) return [];
+
+  if (!opts.dryRun) {
+    await prisma.fighter.update({ where: { id: fighterId }, data });
+  }
+  return written;
+}
 
 function hasContent(rec: FighterProfileRecord): boolean {
   const p = rec.profile;

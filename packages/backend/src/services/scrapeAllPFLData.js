@@ -481,8 +481,18 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
       const prelimPageText = document.body.innerText || '';
       if (!prelimStartTime) {
         const prelimPatterns = [
+          // Pipe-delimited variants (older page layout).
           /(?:^|[^Y])\bPRELIM(?:S|INARY)?\s*(?:CARD)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
           /\bEARLY\s*CARD\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+          // No-pipe fallback: pflmma.com now renders "Early Card: 8:00 PM ET" /
+          // "Early Card 8:00 PM" with no pipe delimiter, so the pipe-only patterns
+          // above missed the early-card time entirely (PFL San Diego 2026-06-27 →
+          // prelimStartTime stayed null → the event never flipped LIVE on the early
+          // card). Bounded to the same line within ~40 chars so we don't grab the
+          // main-card time. "Early Card" (== PFL prelims) checked before the
+          // generic prelim label.
+          /\bEARLY\s*CARD\b[^\n]{0,40}?(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+          /\bPRELIM(?:S|INARY)?\b[^\n]{0,40}?(\d{1,2}:\d{2}\s*(?:am|pm))/i,
         ];
         for (const pattern of prelimPatterns) {
           const match = prelimPageText.match(pattern);
@@ -493,9 +503,17 @@ async function scrapeEventPage(browser, eventUrl, eventSlug) {
         }
       }
       if (!earlyPrelimStartTime) {
-        const earlyPattern = /\bEARLY\s*PRELIM(?:S|INARY)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i;
-        const match = prelimPageText.match(earlyPattern);
-        if (match) earlyPrelimStartTime = match[1].trim().toUpperCase();
+        const earlyPatterns = [
+          /\bEARLY\s*PRELIM(?:S|INARY)?\s*[^|\n]*\|\s*(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+          /\bEARLY\s*PRELIM(?:S|INARY)?\b[^\n]{0,40}?(\d{1,2}:\d{2}\s*(?:am|pm))/i,
+        ];
+        for (const pattern of earlyPatterns) {
+          const match = prelimPageText.match(pattern);
+          if (match) {
+            earlyPrelimStartTime = match[1].trim().toUpperCase();
+            break;
+          }
+        }
       }
 
       // If we got a main-card time directly from a header, prefer it over

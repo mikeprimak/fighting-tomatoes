@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Home, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone } from 'lucide-react';
+import { Search, User, Menu, X, Home, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone, Users } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth, useHasApp } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
@@ -14,6 +14,7 @@ const navLinks = [
   { href: '/events/upcoming', label: 'Upcoming', icon: Flame },
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },
+  { href: '/fighters', label: 'Fighters', icon: Users },
 ];
 
 const GET_APP_URL = '/download?utm_source=web&utm_medium=navbar&utm_campaign=get-the-app';

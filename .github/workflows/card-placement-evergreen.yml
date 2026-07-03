@@ -1,0 +1,117 @@
+name: Card Placement Evergreen
+
+# Keeps the card-placement rankings article fresh. Monthly, this regenerates the
+# data-driven blocks (P4P boards, division boards + banners, charts, all-time main
+# events) from the live DB, rebuilds the social banner if the top-5 changed, and
+# opens a PR for a human to review + merge. The prose stays human-owned; the change
+# report (CHANGES.md) flags any sentence whose underlying numbers moved, and the
+# fragile historical blocks (career avg / climbs / per-year headliners) are written
+# to suggested.md only — never auto-applied.
+#
+# See packages/backend/scripts/card-placement/README.md.
+
+on:
+  schedule:
+    - cron: "0 15 1 * *" # 15:00 UTC on the 1st of each month
+  workflow_dispatch:
+    inputs:
+      asof:
+        description: "Compute as of this date (YYYY-MM-DD). Blank = today."
+        required: false
+        default: ""
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Pillow + a metric-compatible font
+        run: |
+          python -m pip install --quiet pillow
+          sudo apt-get update -qq && sudo apt-get install -y -qq fonts-liberation fonts-dejavu-core
+
+      - name: Install backend deps
+        run: |
+          cd packages/backend
+          pnpm install
+          npx prisma generate
+
+      - name: Regenerate article
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd packages/backend
+          ASOF="${{ github.event.inputs.asof }}"
+          if [ -n "$ASOF" ]; then
+            pnpm card-placement:generate --asof "$ASOF"
+          else
+            pnpm card-placement:generate
+          fi
+
+      - name: Open / update PR (built-in gh CLI)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BRANCH=bot/card-placement-evergreen
+          BODY=packages/backend/scripts/card-placement/CHANGES.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # "Worthy" signal: only PR when something a human actually reviews changed —
+          # the article itself, the banner, or the REVIEW sidecar (career/climbs/
+          # headliners). The snapshot.json / CHANGES.md carry a run-date stamp that
+          # churns every month, so they must NOT trigger a PR on their own.
+          git add \
+            packages/web/src/content/posts/2026-06-24-ufc-card-placement-rankings.md \
+            packages/web/public/blog/card-placement-thumb.png \
+            packages/backend/scripts/card-placement/suggested.md
+
+          if git diff --cached --quiet; then
+            echo "No substantive change this run — skipping PR (date-only churn ignored)."
+            exit 0
+          fi
+
+          # Fold in the bookkeeping files now that we know the run is PR-worthy.
+          git add \
+            packages/backend/scripts/card-placement/snapshot.json \
+            packages/backend/scripts/card-placement/CHANGES.md
+
+          git checkout -B "$BRANCH"
+          git commit -m "content(blog): monthly card-placement evergreen refresh"
+          git push -f origin "$BRANCH"
+
+          # Labels are optional; create them if missing so --label never fails the run.
+          gh label create content   --color C2E0C6 --description "Editorial / blog content" 2>/dev/null || true
+          gh label create automated --color FBCA04 --description "Opened by a scheduled job"  2>/dev/null || true
+
+          if gh pr view "$BRANCH" --json number >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --body-file "$BODY"
+            echo "Updated existing PR for $BRANCH."
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "Card-placement evergreen refresh" \
+              --body-file "$BODY" \
+              --label content --label automated
+          fi
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=card-placement&org=fights" || true

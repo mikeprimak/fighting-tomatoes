@@ -335,4 +335,57 @@ export class EmailService {
 
     await transporter.sendMail(mailOptions)
   }
+
+  /**
+   * Monthly web-traffic report — real organic-search visitors per month.
+   * Plain internal email to the operator; not customer-facing.
+   */
+  static async sendWebTrafficReport(
+    to: string,
+    rows: { month: string; sessions: number; activeUsers: number; engagedSessions: number }[],
+  ) {
+    const last = rows[rows.length - 1];
+    const prev = rows.length > 1 ? rows[rows.length - 2] : null;
+    const mom = prev && prev.sessions > 0
+      ? Math.round(((last.sessions - prev.sessions) / prev.sessions) * 100)
+      : null;
+    const momLabel = mom === null ? '—' : `${mom >= 0 ? '+' : ''}${mom}% vs last month`;
+
+    const tableRows = rows.slice().reverse().map((r) => `
+      <tr>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee;">${r.month}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;">${r.sessions}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;">${r.activeUsers}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #eee;text-align:right;">${r.engagedSessions}</td>
+      </tr>`).join('');
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || 'noreply@fightcrewapp.com',
+      to,
+      subject: `Good Fights — web traffic: ${last.sessions} organic visitors (${last.month})`,
+      html: `
+        <div style="max-width:600px;margin:0 auto;font-family:Arial,sans-serif;color:#111;padding:24px;">
+          <h2 style="margin:0 0 4px;">Monthly web traffic</h2>
+          <p style="color:#555;margin:0 0 20px;">Real visitors who found goodfights.app via Google search (bots/redirects excluded — the buyer-credible number).</p>
+          <div style="font-size:40px;font-weight:bold;color:#16a34a;">${last.sessions}</div>
+          <div style="color:#555;margin-bottom:4px;">organic visitors this month (${last.month})</div>
+          <div style="color:#555;margin-bottom:24px;">${momLabel}</div>
+          <table style="border-collapse:collapse;width:100%;font-size:14px;">
+            <thead>
+              <tr style="text-align:left;color:#555;">
+                <th style="padding:6px 12px;border-bottom:2px solid #ddd;">Month</th>
+                <th style="padding:6px 12px;border-bottom:2px solid #ddd;text-align:right;">Visitors</th>
+                <th style="padding:6px 12px;border-bottom:2px solid #ddd;text-align:right;">People</th>
+                <th style="padding:6px 12px;border-bottom:2px solid #ddd;text-align:right;">Engaged</th>
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+          <p style="color:#888;font-size:12px;margin-top:24px;">Automated monthly report from the Good Fights backend. Full breakdown in the admin panel → Acquisition tab.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  }
 }

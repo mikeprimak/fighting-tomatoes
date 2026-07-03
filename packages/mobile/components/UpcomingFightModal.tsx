@@ -63,13 +63,16 @@ interface UpcomingFightModalProps {
   fight: Fight | null;
   onClose: () => void;
   showNotificationBell?: boolean;
+  // Hide the "See Comments" link when opened from the fight-detail screen
+  // (the user is already there, so the link would just stack another screen).
+  hideSeeComments?: boolean;
 }
 
 // Wheel constants (same as UpcomingFightDetailScreen)
 const FLAME_SLOT_HEIGHT = 115;
 const BLANK_POSITION = 1150; // 10 slots * 115
 
-export default function UpcomingFightModal({ visible, fight, onClose, showNotificationBell = false }: UpcomingFightModalProps) {
+export default function UpcomingFightModal({ visible, fight, onClose, showNotificationBell = false, hideSeeComments = false }: UpcomingFightModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -740,21 +743,23 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                   onChangeText={handleCommentChange}
                 />
               </View>
-              <TouchableOpacity
-                style={styles.seeCommentsLink}
-                onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}` as any); }}
-              >
-                <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
-                  {(() => {
-                    const totalComments = (preFightCommentsData?.comments?.reduce(
-                      (acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0
-                    ) || 0);
-                    return totalComments > 0
-                      ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
-                      : 'See Comments >';
-                  })()}
-                </Text>
-              </TouchableOpacity>
+              {!hideSeeComments && (
+                <TouchableOpacity
+                  style={styles.seeCommentsLink}
+                  onPress={async () => { const fightId = fight.id; await handleDone({ skipReveal: true }); router.push(`/fight/${fightId}` as any); }}
+                >
+                  <Text style={[styles.seeCommentsText, { color: colors.textSecondary }]}>
+                    {(() => {
+                      const totalComments = (preFightCommentsData?.comments?.reduce(
+                        (acc: number, c: any) => acc + 1 + (c.replies?.length || 0), 0
+                      ) || 0);
+                      return totalComments > 0
+                        ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
+                        : 'See Comments >';
+                    })()}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -810,14 +815,12 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
         <HypeRevealModal
           visible={revealVisible}
           onClose={handleRevealClose}
+          fight={fight}
+          userHype={sessionLastHypeRef.current ?? 0}
           distribution={revealDistribution}
           totalPredictions={revealTotal}
           averageHype={revealAvgHype}
-          userHype={sessionLastHypeRef.current ?? 0}
-          dnaLine={revealDnaLine}
-          // Spinner only when we couldn't pre-peek (no peek data yet) and the
-          // mutation is still in flight. With peek loaded this is always false.
-          dnaLoading={hypeMutation.isPending && !revealDnaLine && !peekedDna}
+          comment={preFightComment}
         />
       </View>
     </Modal>

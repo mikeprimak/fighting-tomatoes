@@ -2069,6 +2069,51 @@
   <!-- Broadcasts Tab -->
   <div id="broadcastsTab" class="tab-content">
     <div class="ops-container">
+      <!-- 💰 Affiliate / Monetization reference (always-available operator docs) -->
+      <div class="ops-section" style="border: 1px solid #f59e0b55; background: #f59e0b0d;">
+        <details>
+          <summary style="cursor: pointer; font-weight: 700; font-size: 0.95rem; list-style: none;">
+            💰 How "How to Watch" monetization works — affiliate setup &amp; programs (click to expand)
+          </summary>
+          <div style="font-size: 0.84rem; line-height: 1.55; color: var(--text-primary); margin-top: 12px;">
+
+            <p style="margin: 0 0 10px;"><strong>The lever:</strong> every broadcaster link in the app routes through our click tracker (<code>/api/r/b</code>) and out to whatever URL is on that channel. Set a channel's <strong>Affiliate URL</strong> (Broadcast Channels → Edit, below) and every tap for that channel earns. Blank affiliate URL = falls back to the homepage link (still tracked, but un-monetized — shown as "Homepage (lost)" in the revenue panel).</p>
+
+            <p style="margin: 0 0 10px;"><strong>Link precedence at click time:</strong> event-specific deep link → channel <strong>Affiliate URL</strong> → channel Homepage URL. The destination is re-resolved server-side on every click, so updating an affiliate URL here takes effect immediately for everyone — no app update needed.</p>
+
+            <p style="margin: 12px 0 6px; color: #f59e0b;"><strong>🚨 UFC moved to Paramount+ (Jan 1, 2026).</strong> A $7.7B deal made <strong>Paramount+ the exclusive US home of ALL UFC</strong> (numbered events, Fight Nights, White House card; marquee cards simulcast on CBS) and <strong>ended UFC US PPV</strong> — every event is now in a standard Paramount+ sub. UFC-US channel to monetize is now <strong>Paramount+ (Impact, ~$9/sub)</strong>, NOT ESPN+. Heads-up: UFC US broadcast rows still showing ESPN+/PPV are now stale data.</p>
+
+            <p style="margin: 12px 0 6px; font-weight: 700;">▶ Do this, in order:</p>
+            <ol style="margin: 0 0 10px; padding-left: 20px;">
+              <li>Join <a href="https://impact.com/" target="_blank">Impact.com</a> first — now hosts both <strong>Paramount+ (new UFC US home, ~$9/sub)</strong> and <strong>Fubo (~$30/sub)</strong>, the two highest-value US channels, plus Kayo (AU) &amp; many US streamers. One account.</li>
+              <li>Apply to <a href="https://affiliate.dazn.com/" target="_blank">DAZN direct</a> (or via <a href="https://dazn.partnerize.com/signup/en" target="_blank">Partnerize</a>) — highest-value combat-sports channel globally; ~$24/sale US, 30-day cookie.</li>
+              <li>Join <a href="https://www.awin.com/" target="_blank">Awin</a> — Sky (UK) + European broadcasters (also owns Commission Factory AU).</li>
+              <li>Join <a href="https://www.cj.com/" target="_blank">CJ</a> for <a href="https://www.trillertv.com/affiliate" target="_blank">TrillerTV/FITE</a> — free; covers BKFC, Showtime Boxing, Top Rank/ESPN PPVs, kickboxing, Muay Thai. Best fit for our long-tail orgs.</li>
+              <li><a href="https://affiliate-program.amazon.com/" target="_blank">Amazon Associates</a> — for Prime Video events (e.g. PFL). Instant-ish, low rate, 24h cookie.</li>
+              <li>Paste each approved affiliate URL into the matching channel below as approvals land. Prioritize the channels the revenue panel shows getting the most taps.</li>
+            </ol>
+
+            <p style="margin: 12px 0 6px; font-weight: 700;">Programs by region (verify terms at signup — researched 2026-06-26):</p>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8rem;">
+              <thead><tr style="border-bottom: 1px solid var(--border-color); text-align: left; color: var(--text-secondary);">
+                <th style="padding: 4px 6px;">Region</th><th style="padding: 4px 6px;">Best channels to monetize</th><th style="padding: 4px 6px;">Network</th>
+              </tr></thead>
+              <tbody style="vertical-align: top;">
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇺🇸 US</td><td style="padding: 4px 6px;">DAZN, Fubo, Sling, DirecTV Stream, Prime Video, TrillerTV/FITE, Paramount+</td><td style="padding: 4px 6px;">Impact, DAZN direct, Amazon</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇬🇧 UK</td><td style="padding: 4px 6px;">DAZN, Sky Sports</td><td style="padding: 4px 6px;">DAZN direct, Awin</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇨🇦 CA</td><td style="padding: 4px 6px;">DAZN Canada</td><td style="padding: 4px 6px;">DAZN direct / Partnerize</td></tr>
+                <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 4px 6px;">🇦🇺 AU / 🇳🇿 NZ</td><td style="padding: 4px 6px;">Kayo Sports, Main Event, DAZN AU</td><td style="padding: 4px 6px;">Impact (~10%), DAZN</td></tr>
+                <tr><td style="padding: 4px 6px;">🇪🇺 EU</td><td style="padding: 4px 6px;">DAZN (DE/IT/ES), country nets</td><td style="padding: 4px 6px;">DAZN direct, Awin</td></tr>
+              </tbody>
+            </table>
+
+            <p style="margin: 12px 0 6px; color: #f59e0b;"><strong>⚠ Reality check (re-researched 2026-06-26):</strong> earlier "no marquee programs" was wrong. <strong>ESPN+</strong> DOES have an active program (FlexOffers / affiliate.disney.espn.co, ~$8–24/sub) but <strong>lost UFC in 2026</strong> — its value to us is now boxing (Top Rank), not UFC. <strong>UFC Fight Pass / Fight Club</strong> has an official program (apply direct at ufcfightclub.com/affiliate; Fight Pass-sub scope unconfirmed). <strong>TNT Sports (UK)</strong> moved to HBO Max (Mar 2026); still no program found. The four to chase: <strong>Paramount+, DAZN, Fubo, TrillerTV</strong>. Still supplemental revenue at current scale.</p>
+
+            <p style="margin: 10px 0 0; color: var(--text-secondary);"><strong>Compliance:</strong> affiliate links must be disclosed (FTC/ASA). ✅ Done — a "we may earn a commission" line now shows on How-to-Watch cards (web + mobile). · Full doc: <code>docs/marketing/affiliate-programs-by-region.md</code> in the repo.</p>
+          </div>
+        </details>
+      </div>
+
       <!-- Discovery Inbox -->
       <div class="ops-section">
         <div class="ops-section-header">
@@ -2122,6 +2167,25 @@
           The streaming/cable/PPV channels that broadcasters use. Keep slugs stable — defaults reference them.
         </p>
         <div id="channelsList"><div class="empty-state"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- Affiliate click stats -->
+      <div class="ops-section">
+        <div class="ops-section-header">
+          <span class="ops-section-title">💰 How-to-Watch Click Revenue</span>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="clickStatsDays" class="form-select" style="width: 130px;" onchange="loadBroadcastClickStats()">
+              <option value="7">Last 7 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+            <button class="btn btn-sm" onclick="loadBroadcastClickStats()">↻</button>
+          </div>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem 0;">
+          Outbound clicks on broadcaster links. "Affiliate" = clicks that hit a monetized link; "Homepage" = un-monetized fallback (add an affiliate URL to that channel to capture them).
+        </p>
+        <div id="broadcastClickStats"><div class="empty-state"><div class="empty-state-text">Click ↻ to load click stats.</div></div></div>
       </div>
     </div>
   </div>
@@ -2242,8 +2306,13 @@
           <input type="text" id="channelEditName" class="form-input" placeholder="e.g. Paramount+">
         </div>
         <div class="form-group">
-          <label>Homepage URL</label>
+          <label>Homepage URL (fallback when no affiliate link)</label>
           <input type="text" id="channelEditHomepage" class="form-input" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label>💰 Affiliate URL (monetized — used instead of homepage when set)</label>
+          <input type="text" id="channelEditAffiliate" class="form-input" placeholder="https://affiliate-network.com/...?aff=YOURID">
+          <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 4px;">Paste your tracked affiliate/referral link. All How-to-Watch taps for this channel route through the click tracker and out to this URL. Leave blank to fall back to the homepage.</div>
         </div>
         <div class="form-group">
           <label>Logo URL (optional)</label>
@@ -2340,6 +2409,22 @@
 
       <div class="ops-section">
         <div class="ops-section-header">
+          <span class="ops-section-title">Web property (organic search)</span>
+          <button class="btn btn-secondary btn-sm" onclick="sendWebReportTest()">Send test email</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 0.75rem;">
+          Real visitors who found goodfights.app via Google — the buyer-credible web number.
+          Bot/redirect junk is excluded automatically. This is the line to watch grow month over month.
+        </p>
+        <div id="acqWeb" class="acq-grid">
+          <div class="empty-state">
+            <div class="spinner"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
           <span class="ops-section-title">Live events (last completed card)</span>
         </div>
         <div id="acqLiveEvents" class="acq-grid">
@@ -2368,6 +2453,17 @@
     <div class="ops-container">
       <div class="ops-section">
         <div class="ops-section-header">
+          <span class="ops-section-title">Drafts — review before publishing</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadDrafts()">Refresh</button>
+        </div>
+        <p style="color: var(--text-secondary); font-size: 0.8rem; margin: 0 0 1rem;">
+          Unpublished posts (<code>draft: true</code>). They&rsquo;re hidden from the live site and the app &mdash; this is the only place to read them. <strong>Preview</strong> reads the full article; <strong>Publish</strong> commits <code>draft: false</code> to <code>main</code> for you (web blog goes live after the Vercel deploy, ~2-3 min; the app feed updates immediately).
+        </p>
+        <div id="blogDraftsList"></div>
+      </div>
+
+      <div class="ops-section">
+        <div class="ops-section-header">
           <span class="ops-section-title">Blog Highlights — what's pinned to the top</span>
           <div style="display: flex; align-items: center; gap: 0.75rem;">
             <button class="btn btn-secondary btn-sm" onclick="loadBlogHighlights()">Refresh</button>
@@ -2389,6 +2485,17 @@
         </div>
         <div id="blogAllPostsList"></div>
       </div>
+    </div>
+  </div>
+
+  <!-- Draft Preview Modal -->
+  <div id="draftPreviewModal" class="modal-overlay" onclick="closeModal(event, 'draftPreviewModal')">
+    <div class="modal" onclick="event.stopPropagation()" style="max-width: 820px;">
+      <div class="modal-header">
+        <h2 class="modal-title" id="draftPreviewTitle">Draft preview</h2>
+        <button class="modal-close" onclick="document.getElementById('draftPreviewModal').classList.remove('active')">&times;</button>
+      </div>
+      <div id="draftPreviewBody" style="max-height: 72vh; overflow-y: auto; background:#fff; color:#111; padding: 20px 24px; border-radius: 8px; line-height: 1.65;"></div>
     </div>
   </div>
 
@@ -4562,7 +4669,62 @@
       } else if (tabName === 'acquisition') {
         loadAcquisitionData();
       } else if (tabName === 'blog') {
+        loadDrafts();
         loadBlogHighlights();
+      }
+    }
+
+    // ============================================
+    // BLOG DRAFTS (review before publishing)
+    // ============================================
+    async function loadDrafts() {
+      const el = document.getElementById('blogDraftsList');
+      el.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/drafts`);
+        const data = await res.json();
+        const drafts = data.drafts || [];
+        if (drafts.length === 0) {
+          el.innerHTML = `<div class="empty-state">No drafts right now. Unpublished posts appear here.</div>`;
+          return;
+        }
+        el.innerHTML = drafts.map(d => blogRow(`
+          <span style="flex:1;min-width:0;">
+            <span style="font-weight:600;">${escapeHtml(d.title)}</span>
+            <span style="display:block;font-size:0.72rem;color:var(--text-muted);">${escapeHtml(d.slug)}</span>
+          </span>
+          <span style="font-size:0.75rem;color:var(--text-muted);">${fmtDate(d.date)}</span>
+          <button class="btn btn-secondary btn-sm" onclick="previewDraft('${d.slug.replace(/'/g, "\\'")}')">Preview</button>
+          <button class="btn btn-primary btn-sm" onclick="publishDraft('${d.slug.replace(/'/g, "\\'")}')">Publish</button>
+        `)).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty-state">Failed to load drafts: ${e.message}</div>`;
+      }
+    }
+
+    // Open the draft in a new tab, rendered by the REAL web app (same theme,
+    // real React — so embedded fight cards and other components hydrate exactly
+    // like the live article). The /blog-preview route renders drafts and is
+    // noindexed. NOTE: it shows the *deployed* web app, so push to main (Vercel
+    // auto-deploys) before previewing brand-new edits.
+    function previewDraft(slug) {
+      window.open(`https://goodfights.app/blog-preview/${encodeURIComponent(slug)}`, '_blank', 'noopener');
+    }
+
+    // Publish a draft: the backend flips draft:false and commits to main via the
+    // GitHub API (web blog auto-deploys via Vercel ~2-3 min) + flips the backend's
+    // local copy so the mobile feed updates immediately. See routes/adminBlog.ts.
+    async function publishDraft(slug) {
+      if (!confirm(`Publish this post live?\n\n"${slug}"\n\nThis commits draft:false to main. The web blog goes live after the Vercel deploy (~2-3 min); the app feed updates right away. You can unpublish only by editing the file + pushing.`)) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/drafts/${encodeURIComponent(slug)}/publish`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        alert(data.message || 'Published.');
+        loadDrafts();
+        if (typeof loadBlogHighlights === 'function') loadBlogHighlights();
+      } catch (e) {
+        alert(`Publish failed: ${e.message}`);
       }
     }
 
@@ -4716,7 +4878,7 @@
     }
 
     async function loadAcquisitionData() {
-      const containers = ['acqAudience', 'acqDataset', 'acqEngagement', 'acqLiveEvents', 'acqOperational'];
+      const containers = ['acqAudience', 'acqDataset', 'acqEngagement', 'acqWeb', 'acqLiveEvents', 'acqOperational'];
       containers.forEach(id => {
         document.getElementById(id).innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
       });
@@ -4766,6 +4928,24 @@
           acqCard('Avg followed fighters / active user', e.avgFollowedFightersPerActiveUser),
         ].join('');
 
+        // Web property (organic search)
+        const w = data.web || { configured: false, byMonth: [] };
+        if (!w.configured) {
+          document.getElementById('acqWeb').innerHTML =
+            acqMutedCard('Organic search visitors', 'GA not configured on backend — set GA_SERVICE_ACCOUNT_JSON + GA4_PROPERTY_ID on Render');
+        } else if (!w.byMonth || !w.byMonth.length) {
+          document.getElementById('acqWeb').innerHTML =
+            acqMutedCard('Organic search visitors', 'No organic-search data yet');
+        } else {
+          document.getElementById('acqWeb').innerHTML = [
+            acqCard('Organic visitors (this month)', fmtNum(w.thisMonthOrganicSessions), 'Sessions from Google search, current month so far'),
+            acqCard('Organic users (this month)', fmtNum(w.thisMonthOrganicUsers), 'Distinct people'),
+            acqCard('Organic visitors (last month)', w.prevMonthOrganicSessions === null ? '—' : fmtNum(w.prevMonthOrganicSessions)),
+            acqCard('Month-over-month', w.organicMoMGrowth === null ? '—' : fmtPct(w.organicMoMGrowth), 'Growth vs last month'),
+            acqCard('Months of history', fmtNum(w.byMonth.length), w.byMonth[0] ? 'Since ' + w.byMonth[0].month : ''),
+          ].join('');
+        }
+
         // Live events
         const le = data.liveEvents;
         document.getElementById('acqLiveEvents').innerHTML = [
@@ -4793,6 +4973,18 @@
         containers.forEach(id => {
           document.getElementById(id).innerHTML = errMsg;
         });
+      }
+    }
+
+    async function sendWebReportTest() {
+      if (!confirm('Send the web-traffic report email now?')) return;
+      try {
+        const res = await authFetch(`${API_BASE}/admin/metrics/web-report/test`, { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+        alert(`Sent to ${data.to}\n${data.thisMonth.sessions} organic visitors (${data.thisMonth.month}).`);
+      } catch (err) {
+        alert('Failed to send: ' + err.message);
       }
     }
 
@@ -5688,17 +5880,61 @@
           <td style="padding: 8px;"><code style="background: var(--bg-input); padding: 2px 6px; border-radius: 3px;">${escapeHtml(c.slug)}</code></td>
           <td style="padding: 8px;">${escapeHtml(c.name)}</td>
           <td style="padding: 8px;">${c.homepageUrl ? `<a href="${escapeHtml(c.homepageUrl)}" target="_blank" style="color: var(--accent-blue); font-size: 0.8rem;">${escapeHtml(c.homepageUrl.replace(/^https?:\/\//, '').slice(0, 32))}…</a>` : '—'}</td>
+          <td style="padding: 8px; text-align: center;">${c.affiliateUrl ? '<span title="Affiliate link set — clicks are monetized" style="color: #f59e0b; font-weight: 700;">💰 Yes</span>' : '<span style="color: #6b7280;">No</span>'}</td>
           <td style="padding: 8px; color: ${c.isActive ? '#10b981' : '#6b7280'};">${c.isActive ? 'Active' : 'Inactive'}</td>
           <td style="padding: 8px; text-align: right;"><button class="btn btn-sm" onclick="editChannel('${escapeHtml(c.slug)}')">Edit</button></td>
         </tr>
       `).join('');
+      const withAff = broadcastChannelsCache.filter(c => c.affiliateUrl).length;
       container.innerHTML = `
         <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
           <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
-            <th style="padding: 8px;">Slug</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Homepage</th><th style="padding: 8px;">Status</th><th></th>
+            <th style="padding: 8px;">Slug</th><th style="padding: 8px;">Name</th><th style="padding: 8px;">Homepage</th><th style="padding: 8px; text-align: center;">Affiliate</th><th style="padding: 8px;">Status</th><th></th>
           </tr></thead>
           <tbody>${rows}</tbody>
-        </table>`;
+        </table>
+        <div style="margin-top: 8px; font-size: 0.78rem; color: var(--text-secondary);">${withAff} of ${broadcastChannelsCache.length} channels monetized with an affiliate link.</div>`;
+    }
+
+    async function loadBroadcastClickStats() {
+      const container = document.getElementById('broadcastClickStats');
+      const days = document.getElementById('clickStatsDays').value || '30';
+      container.innerHTML = '<div class="empty-state"><div class="spinner"></div></div>';
+      try {
+        const res = await authFetch(`${API_BASE}/admin/broadcast-clicks/stats?days=${days}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const s = await res.json();
+        if (s.total === 0) {
+          container.innerHTML = `<div class="empty-state"><div class="empty-state-text">No clicks in the last ${s.windowDays} days yet.</div></div>`;
+          return;
+        }
+        const affPct = s.total ? Math.round((s.affiliate / s.total) * 100) : 0;
+        const channelRows = s.byChannel.map(c => `
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 6px 8px;">${escapeHtml(c.name)}</td>
+            <td style="padding: 6px 8px; text-align: center;">${c.hasAffiliate ? '<span style="color:#f59e0b;">💰</span>' : '<span style="color:#6b7280;" title="No affiliate URL — these clicks are not monetized">—</span>'}</td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 600;">${c.clicks}</td>
+            <td style="padding: 6px 8px; text-align: right;">${c.slug && !c.hasAffiliate ? `<button class="btn btn-sm" onclick="editChannel('${escapeHtml(c.slug)}')">Add link</button>` : ''}</td>
+          </tr>`).join('');
+        const regionPills = s.byRegion.map(r => `<span style="display:inline-block; background: var(--bg-input); padding: 2px 8px; border-radius: 999px; margin: 2px; font-size: 0.78rem;">${escapeHtml(r.region)}: <strong>${r.clicks}</strong></span>`).join('');
+        const placePills = s.byPlacement.map(p => `<span style="display:inline-block; background: var(--bg-input); padding: 2px 8px; border-radius: 999px; margin: 2px; font-size: 0.78rem;">${escapeHtml(p.placement)}: <strong>${p.clicks}</strong></span>`).join('');
+        container.innerHTML = `
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px;">
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Total clicks</div><div style="font-size: 1.4rem; font-weight: 700;">${s.total}</div></div>
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Monetized</div><div style="font-size: 1.4rem; font-weight: 700; color: #f59e0b;">${s.affiliate} <span style="font-size: 0.8rem; color: var(--text-secondary);">(${affPct}%)</span></div></div>
+            <div style="flex: 1; min-width: 120px; background: var(--bg-input); padding: 10px 14px; border-radius: 8px;"><div style="font-size: 0.72rem; color: var(--text-secondary);">Homepage (lost)</div><div style="font-size: 1.4rem; font-weight: 700; color: #6b7280;">${s.homepage}</div></div>
+          </div>
+          <div style="margin-bottom: 10px;"><span style="font-size: 0.75rem; color: var(--text-secondary);">By region:</span> ${regionPills}</div>
+          <div style="margin-bottom: 12px;"><span style="font-size: 0.75rem; color: var(--text-secondary);">By platform:</span> ${placePills}</div>
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead><tr style="border-bottom: 2px solid var(--border-color); text-align: left; color: var(--text-secondary); font-size: 0.75rem;">
+              <th style="padding: 6px 8px;">Channel</th><th style="padding: 6px 8px; text-align: center;">Aff</th><th style="padding: 6px 8px; text-align: right;">Clicks</th><th></th>
+            </tr></thead>
+            <tbody>${channelRows}</tbody>
+          </table>`;
+      } catch (err) {
+        container.innerHTML = `<div class="empty-state"><div class="empty-state-text">Failed to load click stats: ${escapeHtml(err.message)}</div></div>`;
+      }
     }
 
     function openChannelModal() {
@@ -5708,6 +5944,7 @@
       document.getElementById('channelEditSlug').disabled = false;
       document.getElementById('channelEditName').value = '';
       document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditAffiliate').value = '';
       document.getElementById('channelEditLogo').value = '';
       document.getElementById('channelEditActive').checked = true;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5733,6 +5970,7 @@
       document.getElementById('channelEditSlug').disabled = false;
       document.getElementById('channelEditName').value = row.channelNameRaw || '';
       document.getElementById('channelEditHomepage').value = '';
+      document.getElementById('channelEditAffiliate').value = '';
       document.getElementById('channelEditLogo').value = '';
       document.getElementById('channelEditActive').checked = true;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5747,6 +5985,7 @@
       document.getElementById('channelEditSlug').disabled = true;
       document.getElementById('channelEditName').value = c.name;
       document.getElementById('channelEditHomepage').value = c.homepageUrl || '';
+      document.getElementById('channelEditAffiliate').value = c.affiliateUrl || '';
       document.getElementById('channelEditLogo').value = c.logoUrl || '';
       document.getElementById('channelEditActive').checked = c.isActive;
       document.getElementById('channelEditModal').classList.add('active');
@@ -5761,6 +6000,7 @@
       const body = {
         name: document.getElementById('channelEditName').value.trim(),
         homepageUrl: document.getElementById('channelEditHomepage').value.trim() || null,
+        affiliateUrl: document.getElementById('channelEditAffiliate').value.trim() || null,
         logoUrl: document.getElementById('channelEditLogo').value.trim() || null,
         isActive: document.getElementById('channelEditActive').checked,
       };

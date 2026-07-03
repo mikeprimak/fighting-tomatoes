@@ -55,6 +55,7 @@ jobs:
       - name: Run Tapology Results Backfill
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SCRAPFLY_KEY: ${{ secrets.SCRAPFLY_KEY }}
           BACKFILL_WINDOW_DAYS: ${{ github.event.inputs.window_days || '7' }}
           NODE_ENV: production
         run: |

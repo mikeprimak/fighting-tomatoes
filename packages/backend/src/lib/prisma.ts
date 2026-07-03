@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { attachSlugMiddleware } from './slugHooks';
 
 /**
  * Shared PrismaClient singleton.
@@ -38,8 +39,17 @@ const url = buildUrl();
 // being resolved via two paths) creating more than one pool per process.
 const globalForPrisma = globalThis as unknown as { __prisma?: PrismaClient };
 
+const isNewClient = !globalForPrisma.__prisma;
+
 export const prisma: PrismaClient =
   globalForPrisma.__prisma ??
   new PrismaClient(url ? { datasources: { db: { url } } } : undefined);
 
 globalForPrisma.__prisma = prisma;
+
+// Auto-fill SEO slugs on Fighter/Event/Fight creation. Registered once per
+// client (the global guard prevents double-registration on hot-reload).
+// See src/lib/slugHooks.ts and docs/plans/programmatic-seo-2026-07-01.md.
+if (isNewClient) {
+  attachSlugMiddleware(prisma);
+}

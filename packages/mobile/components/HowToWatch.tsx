@@ -90,6 +90,15 @@ export default function HowToWatch({ eventId, section, label, time }: Props) {
         </TouchableOpacity>
       )}
 
+      {/* Affiliate disclosure: only on the whole-event (top) card per screen
+          (not the per-section cards), and only once at least one shown channel
+          actually has an affiliate URL set — stays hidden until we've signed up. */}
+      {!section && matching.some(e => e.channel.affiliateUrl) && (
+        <Text style={[styles.disclosure, { color: colors.textSecondary, borderTopColor: colors.border }]}>
+          Some &ldquo;How To Watch&rdquo; links earn us an affiliate commission.
+        </Text>
+      )}
+
       <RegionPickerSheet
         visible={pickerOpen}
         currentRegion={region}
@@ -250,6 +259,15 @@ const styles = StyleSheet.create({
   moreText: {
     fontSize: 11,
     fontStyle: 'italic',
+  },
+  disclosure: {
+    fontSize: 10,
+    fontStyle: 'italic',
+    lineHeight: 13,
+    opacity: 0.7,
+    marginTop: 4,
+    paddingTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
 });
 

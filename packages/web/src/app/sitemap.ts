@@ -1,18 +1,38 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/posts';
 import { SITE_URL } from '@/lib/site';
+import { fetchBestYears, indexableYears } from '@/lib/bestFights';
 
-const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
-
+/**
+ * Root sitemap: static pages, hub/index pages, and blog posts only. The deep
+ * programmatic-SEO corpus (fighters / events / fights) lives in per-type child
+ * sitemaps (`/{type}/sitemap.xml`), all enumerated in robots.ts — that's how the
+ * ~5.5k gated entity pages get discovered. The old capped `?limit=50` events
+ * fetch here is retired (events/sitemap.ts covers every indexable event now).
+ * See docs/plans/programmatic-seo-2026-07-01.md (step 3).
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}`, changeFrequency: 'daily', priority: 1 },
+    { url: `${SITE_URL}/events`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/live`, changeFrequency: 'always', priority: 0.9 },
+    { url: `${SITE_URL}/events/upcoming`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/past`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/fights/top`, changeFrequency: 'daily', priority: 0.8 },
+    { url: `${SITE_URL}/fighters`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/blog`, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
   ];
+
+  // Best-of-year hubs — only years that clear the page-worthiness floor
+  // (same gate the year pages use for their robots tag). NOTE: this fetch runs
+  // at build time too — deploy the backend first or the baked sitemap holds an
+  // empty year list until the 1h revalidate.
+  const yearPages: MetadataRoute.Sitemap = indexableYears(await fetchBestYears()).map((y) => ({
+    url: `${SITE_URL}/fights/best/${y.year}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
 
   const postPages: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
@@ -20,24 +40,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     changeFrequency: 'monthly' as const,
     priority: 0.5,
   }));
-  staticPages.push(...postPages);
 
-  // Fetch recent events for dynamic URLs
-  try {
-    const eventsRes = await fetch(`${API_BASE_URL}/events?limit=50&type=all`, { next: { revalidate: 3600 } });
-    if (eventsRes.ok) {
-      const { events } = await eventsRes.json();
-      const eventUrls = events.map((e: any) => ({
-        url: `${SITE_URL}/events/${e.id}`,
-        lastModified: new Date(e.updatedAt || e.date),
-        changeFrequency: 'daily' as const,
-        priority: 0.7,
-      }));
-      return [...staticPages, ...eventUrls];
-    }
-  } catch {
-    // Return static pages only
-  }
-
-  return staticPages;
+  return [...staticPages, ...yearPages, ...postPages];
 }

@@ -1,118 +1,85 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Animated,
-  ActivityIndicator,
   useColorScheme,
 } from 'react-native';
 import { Colors } from '../constants/Colors';
-import HypeDistributionChart from './HypeDistributionChart';
+import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
+import { shareFightLink } from '../utils/shareFightCard';
+import { captureAndShareCard } from '../utils/captureFightCard';
+
+const SHARE_ICON = require('../assets/share.png');
 
 // NOTE: this component is rendered INSIDE UpcomingFightModal's <Modal> tree,
-// not as its own <Modal>. That guarantees both the hype container and the
-// reveal container share the exact same parent View (flex:1 overlay), so
-// `width: '88%'` resolves to identical pixels for both. Two stacked native
-// Modals were producing slightly different computed widths.
+// not as its own <Modal>. That guarantees the reveal container shares the exact
+// same parent View (flex:1 overlay) as the hype content, so `width: '88%'`
+// resolves to identical pixels for both.
 
 interface HypeRevealOverlayProps {
   visible: boolean;
   onClose: () => void;
+  fight: ShareCardFight;
+  userHype: number;
   distribution: Record<number, number>;
   totalPredictions: number;
   averageHype: number;
-  userHype: number;
-  // Prefetched Fan DNA beat — the rate/hype mutation endpoint includes the
-  // evaluated line in its response (same roundtrip as the commit), so by the
-  // time the modal opens this is usually in state. Null = engine had nothing
-  // to say.
-  dnaLine?: string | null;
-  // True iff the mutation that produces dnaLine is still in flight. When set
-  // we render a spinner placeholder in the dna slot so the modal opens fully
-  // composed instead of fading a new line in mid-conversation.
-  dnaLoading?: boolean;
-}
-
-function getComparisonText(userHype: number, avgHype: number, totalPredictions: number): string {
-  // First hyper (or only hyper): no community baseline — comparing them to an
-  // imaginary "average fan" is misleading. Trailblazer language only.
-  if (totalPredictions <= 1 || !avgHype) {
-    return 'First to hype this fight';
-  }
-  const delta = userHype - avgHype;
-  if (delta >= 2.5) return "You're much more hyped than the average fan";
-  if (delta >= 1) return "You're more hyped than the average fan";
-  if (delta > -1) return "You're as hyped as the average fan";
-  if (delta > -2.5) return "You're less hyped than the average fan";
-  return "You're much less hyped than the average fan";
+  comment?: string;
 }
 
 export default function HypeRevealModal({
   visible,
   onClose,
+  fight,
+  userHype,
   distribution,
   totalPredictions,
   averageHype,
-  userHype,
-  dnaLine,
-  dnaLoading,
+  comment,
 }: HypeRevealOverlayProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
 
-  const chartFadeAnim = useRef(new Animated.Value(0)).current;
-  const overlayFadeAnim = useRef(new Animated.Value(0)).current;
-  const dnaFadeAnim = useRef(new Animated.Value(0)).current;
+  // Ref on the branded card — the future capture step (react-native-view-shot)
+  // will snapshot exactly this view to a PNG for the native share sheet.
+  const cardRef = useRef<View>(null);
 
-  // Open animation — overlay + chart. Runs exactly once per visible→true
-  // transition. Critically, dnaLine is NOT a dep here: if the hype mutation
-  // resolves after the modal opens (fire-and-forget tap path), we don't want
-  // the whole modal to re-animate when the line arrives. That looked like the
-  // reveal modal was opening twice.
+  const overlayFadeAnim = useRef(new Animated.Value(0)).current;
+
+  // Open animation — fade the whole overlay in once per visible→true transition.
   useEffect(() => {
     if (visible) {
-      chartFadeAnim.setValue(0);
       overlayFadeAnim.setValue(0);
-      dnaFadeAnim.setValue(0);
-      Animated.parallel([
-        Animated.timing(overlayFadeAnim, {
-          toValue: 1,
-          duration: 220,
-          useNativeDriver: true,
-        }),
-        Animated.timing(chartFadeAnim, {
-          toValue: 1,
-          duration: 380,
-          delay: 120,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [visible, chartFadeAnim, overlayFadeAnim, dnaFadeAnim]);
-
-  // DNA fade-in — separate effect so it can fire whenever the line arrives,
-  // whether that's at open-time (inline response) or a moment later
-  // (mutation-not-yet-settled).
-  useEffect(() => {
-    if (visible && dnaLine) {
-      Animated.timing(dnaFadeAnim, {
+      Animated.timing(overlayFadeAnim, {
         toValue: 1,
-        duration: 420,
-        delay: 280,
+        duration: 220,
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, dnaLine, dnaFadeAnim]);
+  }, [visible, overlayFadeAnim]);
+
+  const [sharing, setSharing] = useState(false);
+  const handleShare = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      // Try the captured branded image first; fall back to a link-only share.
+      const ok = await captureAndShareCard(cardRef, { fight, variant: 'hype', value: userHype });
+      if (!ok) await shareFightLink({ fight, variant: 'hype', value: userHype });
+    } finally {
+      setSharing(false);
+    }
+  };
 
   if (!visible) return null;
 
   return (
     <Animated.View style={[StyleSheet.absoluteFill, styles.overlay, { opacity: overlayFadeAnim }]} pointerEvents="auto">
       <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
-      {/* Same KAV + modalContainer + scrollContent primitives as the hype
-          modal so the two stacks compute identical widths. */}
       <View style={styles.kavContainer} pointerEvents="box-none">
         <TouchableOpacity
           style={[styles.modalContainer, { backgroundColor: colors.background }]}
@@ -120,41 +87,38 @@ export default function HypeRevealModal({
           onPress={() => {}}
         >
           <View style={styles.scrollContent}>
-            <Text style={[styles.header, { color: colors.text }]}>Hype submitted!</Text>
-
-            <HypeDistributionChart
+            {/* Branded, shareable card — the hero of the reveal */}
+            <ShareableFightCard
+              ref={cardRef}
+              variant="hype"
+              fight={fight}
+              value={userHype}
+              average={averageHype}
               distribution={distribution}
-              totalPredictions={totalPredictions}
-              hasRevealedHype={true}
-              fadeAnim={chartFadeAnim}
-              userHype={userHype}
+              total={totalPredictions}
+              comment={comment}
             />
 
-            <Text style={[styles.comparison, { color: colors.text }]}>
-              {getComparisonText(userHype, averageHype, totalPredictions)}
-            </Text>
-
-            {dnaLine ? (
-              <Animated.Text
-                style={[styles.dnaLine, { color: colors.textSecondary, opacity: dnaFadeAnim }]}
+            {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
+            <View style={styles.bottomRow}>
+              <TouchableOpacity
+                style={[styles.shareButton, { backgroundColor: colors.primary }]}
+                onPress={handleShare}
+                activeOpacity={0.85}
+                disabled={sharing}
               >
-                {dnaLine}
-              </Animated.Text>
-            ) : dnaLoading ? (
-              <ActivityIndicator
-                size="small"
-                color={colors.textSecondary}
-                style={styles.dnaLoading}
-              />
-            ) : null}
+                <Image source={SHARE_ICON} style={styles.shareIcon} />
+                <Text style={styles.shareButtonText}>Share</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.closeButton, { backgroundColor: colors.primary }]}
-              onPress={onClose}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.closeButton, { borderColor: colors.border }]}
+                onPress={onClose}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.closeButtonText, { color: colors.text }]}>Close</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </TouchableOpacity>
       </View>
@@ -162,9 +126,6 @@ export default function HypeRevealModal({
   );
 }
 
-// All sizing primitives copy UpcomingFightModal's overlay / kavContainer /
-// modalContainer / scrollContent verbatim. No extra horizontal constraints
-// or alignSelf overrides that could fight Yoga's '88%' calculation.
 const styles = StyleSheet.create({
   overlay: {
     backgroundColor: 'rgba(0,0,0,0.6)',
@@ -184,58 +145,45 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 28,
+    paddingTop: 20,
     paddingBottom: 16,
     alignItems: 'center',
   },
-  header: {
-    fontSize: 16,
-    fontWeight: '600',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-    opacity: 0.7,
-    marginBottom: 20,
-  },
-  comparison: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 18,
-    textAlign: 'center',
-    letterSpacing: 0.2,
-    opacity: 0.7,
-  },
-  // Fan DNA third beat — italic + textSecondary grey so it reads as a quieter
-  // personal observation under the comparison line. The animated opacity
-  // (dnaFadeAnim) overrides any opacity here while the fade plays, so use
-  // color, not opacity, to convey "greyness."
-  dnaLine: {
-    fontSize: 13.5,
-    fontStyle: 'italic',
-    fontWeight: '500',
-    marginTop: 12,
-    paddingHorizontal: 8,
-    textAlign: 'center',
-    letterSpacing: 0.15,
-    lineHeight: 19,
-  },
-  // Spinner placeholder occupies roughly the same vertical space as a single
-  // line of dnaLine so the modal doesn't reflow when the line lands.
-  dnaLoading: {
-    marginTop: 14,
-    height: 19,
-  },
-  // Match Done button's pill shape and primary color; sized via paddingHorizontal
-  // rather than alignSelf:stretch so it can't compete with the chart for the
-  // modal's cross-axis width.
-  closeButton: {
+  bottomRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 10,
     marginTop: 24,
-    marginHorizontal: 36,
+    paddingHorizontal: 8,
+    width: '100%',
+  },
+  shareButton: {
+    flex: 1,
+    flexDirection: 'row',
     paddingVertical: 13,
     borderRadius: 12,
     alignItems: 'center',
-    alignSelf: 'stretch',
+    justifyContent: 'center',
   },
-  closeText: {
+  shareIcon: {
+    width: 18,
+    height: 18,
+    marginRight: 8,
+  },
+  shareButtonText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+  },
+  closeButton: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#000',

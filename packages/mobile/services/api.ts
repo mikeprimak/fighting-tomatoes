@@ -204,6 +204,17 @@ interface ApiError {
   details?: any;
 }
 
+export interface AppNotification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  linkType: string | null; // "fight" | "event" | "review" | ...
+  linkId: string | null;
+  createdAt: string;
+}
+
 export interface TopComment {
   id: string;
   content: string;
@@ -375,6 +386,9 @@ class ApiService {
     const token = await this.getAuthToken();
 
     const headers: HeadersInit = {
+      // Lets the backend tag broadcaster-link clicks (and other telemetry) by
+      // origin platform. RN requests have no Origin, so CORS never blocks this.
+      'x-client-platform': 'mobile',
       ...options.headers,
     };
 
@@ -1163,6 +1177,34 @@ class ApiService {
     });
   }
 
+  // Notification Center (in-app inbox)
+  async getNotifications(): Promise<{
+    notifications: AppNotification[];
+    unreadCount: number;
+    snoozedUntil: string | null;
+  }> {
+    return this.makeRequest('/notifications');
+  }
+
+  // Set/clear the "Silence for N hours" snooze. Pass 0 to clear.
+  async setNotificationSnooze(hours: number): Promise<{ snoozedUntil: string | null }> {
+    return this.makeRequest('/notifications/snooze', {
+      method: 'POST',
+      body: JSON.stringify({ hours }),
+    });
+  }
+
+  async getNotificationUnreadCount(): Promise<{ unreadCount: number }> {
+    return this.makeRequest('/notifications/unread-count');
+  }
+
+  async markNotificationsRead(ids?: string[]): Promise<{ updated: number }> {
+    return this.makeRequest('/notifications/mark-read', {
+      method: 'POST',
+      body: JSON.stringify(ids && ids.length > 0 ? { ids } : {}),
+    });
+  }
+
   // Fight follow/notification methods
   async followFight(fightId: string): Promise<{ message: string; isFollowing: boolean }> {
     return this.makeRequest(`/fights/${fightId}/follow`, {
@@ -1498,6 +1540,8 @@ class ApiService {
       nextFight: any | null;
       mostRecentFight: any | null;
     } | null;
+    // Lightweight rail of a few featurable fighters (mobile home horizontal scroll).
+    fighters?: any[];
   }> {
     return this.makeRequest('/community/highlighted-fighter');
   }

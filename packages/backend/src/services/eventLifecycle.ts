@@ -256,33 +256,44 @@ export async function runEventLifecycleCheck(): Promise<{
         results.eventsStarted++;
         console.log(`[Lifecycle] UPCOMING → LIVE: ${event.name}`);
 
-        // Manual-tracker events: fire the first-fight ping now. Subsequent
-        // pings fire when admin marks each fight COMPLETED (admin.ts).
-        // Order convention: orderOnCard=1 is the main event (last fight on
-        // the broadcast); the opener has the highest orderOnCard. The first
-        // fight chronologically is therefore the row with MAX(orderOnCard).
-        if (event.useManualLiveTracker) {
-          try {
-            const firstFight = await prisma.fight.findFirst({
-              where: { eventId: event.id, fightStatus: 'UPCOMING' },
-              orderBy: { orderOnCard: 'desc' },
-              include: {
-                fighter1: { select: { firstName: true, lastName: true } },
-                fighter2: { select: { firstName: true, lastName: true } },
-              },
-            });
-            if (firstFight) {
-              const fmt = (f: { firstName: string; lastName: string }) =>
-                f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
-              await notifyFightStartViaRules(
-                firstFight.id,
-                fmt(firstFight.fighter1),
-                fmt(firstFight.fighter2),
-              );
-            }
-          } catch (err: any) {
-            console.error(`[Lifecycle] Manual-tracker first-fight notif failed for ${event.name}: ${err.message}`);
+        // First-fight ping: fire for EVERY event at the UPCOMING→LIVE
+        // transition. The opener has no preceding fight, so the per-fight
+        // "next fight up" pings never cover it — those fire when the PRIOR
+        // fight completes (parser notifyNextFight for automatic events; admin
+        // set-status for manual events). Without this, the opener's followers
+        // get nothing until the second fight starts. Firing here closes that
+        // gap for all orgs (previously gated to useManualLiveTracker, which is
+        // off for every automatic event, so it effectively never ran).
+        //
+        // Idempotent with downstream pings: notifyFightStartViaRules marks each
+        // matched row notificationSent, so the parser's on-LIVE ping
+        // (ONE/PFL/Sherdog) and the Step 1.7 section-start aggregate both find
+        // the opener's matches already sent and skip them — no double-notify.
+        //
+        // Order convention: orderOnCard=1 is the main event (last fight on the
+        // broadcast); the opener has the highest orderOnCard. The first fight
+        // chronologically is therefore the row with MAX(orderOnCard). Filtering
+        // on fightStatus:UPCOMING skips a cancelled opener.
+        try {
+          const firstFight = await prisma.fight.findFirst({
+            where: { eventId: event.id, fightStatus: 'UPCOMING' },
+            orderBy: { orderOnCard: 'desc' },
+            include: {
+              fighter1: { select: { firstName: true, lastName: true } },
+              fighter2: { select: { firstName: true, lastName: true } },
+            },
+          });
+          if (firstFight) {
+            const fmt = (f: { firstName: string; lastName: string }) =>
+              f.firstName && f.lastName ? `${f.firstName} ${f.lastName}` : (f.lastName || f.firstName);
+            await notifyFightStartViaRules(
+              firstFight.id,
+              fmt(firstFight.fighter1),
+              fmt(firstFight.fighter2),
+            );
           }
+        } catch (err: any) {
+          console.error(`[Lifecycle] First-fight notif failed for ${event.name}: ${err.message}`);
         }
 
         // Trigger live tracker. VPS handles ufc/oktagon/bkfc/onefc/tapology; pfl

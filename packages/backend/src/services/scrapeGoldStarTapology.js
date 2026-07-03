@@ -97,9 +97,12 @@ async function scrapeEventsList(browser) {
     const events = await page.evaluate(() => {
       const extractedEvents = [];
       const seenUrls = new Set();
-      // Gold Star events use fighter-vs-fighter slugs (no org marker), so
-      // scope to #content to avoid the sidebar's other-org events.
-      const scope = document.querySelector('#content') || document;
+      // UPCOMING-ONLY (2026-06-13): scope to #mainUpcoming (upcoming events only).
+      // #content is the FULL archive; rendering each dead event via Scrapfly
+      // (~30-45 credits) blew the monthly cap. Gold Star slugs carry no org marker,
+      // so the isStale date filter below is a secondary net. Fall back to #content
+      // only if the container is gone. See docs/daily/2026-06-13.md.
+      const scope = document.querySelector('#mainUpcoming') || document.querySelector('#content') || document;
       scope.querySelectorAll('a[href*="/fightcenter/events/"]').forEach(link => {
         const eventUrl = link.href;
         const eventName = link.textContent.trim();

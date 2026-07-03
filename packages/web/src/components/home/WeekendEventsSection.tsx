@@ -3,19 +3,19 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronRight, Flame } from 'lucide-react';
 import { getEvents } from '@/lib/api';
 import { isEventLiveNow } from '@/lib/eventStatus';
+import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useEventBroadcasts } from '@/components/HowToWatch';
 import { SectionHeading } from './SectionHeading';
 
 /**
- * "Events this weekend" — the upcoming cards happening between now and the end
- * of the current week, grouped into per-day sections exactly like the mobile
- * home: today through the upcoming Sunday; on a Monday it spans the full next
- * week so the band isn't empty at the top of the week. Each day renders under
- * its own "Events Today / Tomorrow / <weekday>" heading with the date as a
- * subline; compact teaser cards link into the event detail page.
+ * "Events this week" — the upcoming cards happening in the next 7 days (a
+ * rolling window from today), grouped into per-day sections exactly like the
+ * mobile home. Each day renders under its own "Events Today / Tomorrow /
+ * <weekday>" heading with the date as a subline; compact teaser cards link into
+ * the event detail page.
  */
 const DAY_MS = 86_400_000;
 
@@ -84,16 +84,32 @@ function aiSummary(event: any): string | null {
     : null;
 }
 
+// A fight counts as "hyped" once the community signal is real, not noise: at
+// least 3 hype predictions and a 7.5+ average. Returns the qualifying fights
+// sorted by average hype (desc). Mirrors the mobile home.
+const HYPE_MIN_COUNT = 3;
+const HYPE_MIN_AVG = 7.5;
+function getHypeFights(event: any): any[] {
+  return (event.fights ?? [])
+    .filter((f: any) => (f.hypeCount ?? 0) >= HYPE_MIN_COUNT && (f.averageHype ?? 0) >= HYPE_MIN_AVG)
+    .sort((a: any, b: any) => (b.averageHype ?? 0) - (a.averageHype ?? 0));
+}
+
+// Compact matchup name — last name if present, else first (e.g. "Jones vs Miocic").
+function primaryName(fighter: any): string {
+  return (fighter?.lastName?.trim() || fighter?.firstName?.trim() || '').trim();
+}
+
 export function WeekendEventsSection() {
   // Upcoming events come back soonest-first, so this weekend's cards are always
-  // among the first handful. The home cards show only the event + its AI "why
-  // care" summary, so we do NOT request includeFights — that made the backend
-  // aggregate hype/counts for every fight on every event (the slowest part of
-  // this above-the-fold band). 16 safely covers a full week of events (incl. the
-  // Monday-spans-next-week window).
+  // among the first handful. The cards now show a "N hype fights" line + the top
+  // couple of genuinely-hyped matchups under the AI "why care" summary, so we
+  // request includeFights for the per-fight hype aggregates (averageHype /
+  // hypeCount). 16 safely covers a full week of events (incl. the Monday-
+  // spans-next-week window).
   const { data } = useQuery({
-    queryKey: ['home', 'weekend-events'],
-    queryFn: () => getEvents({ type: 'upcoming', includeFights: false, limit: 16 }),
+    queryKey: ['home', 'weekend-events', 'withFights'],
+    queryFn: () => getEvents({ type: 'upcoming', includeFights: true, limit: 16 }),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -106,16 +122,18 @@ export function WeekendEventsSection() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // "This weekend" window = today up to (but not including) the Monday that
-  // starts next week — the rest of the current Mon–Sun week. On Monday it rolls
-  // to the whole next week. UTC day keys (Event.date is a UTC-hour placeholder),
-  // anchored on the user's local calendar date — identical to the mobile home.
+  // "This week" window = the upcoming weekend chunk, from today through the coming
+  // Monday (inclusive). Fights cluster Fri–Sun, so this keeps the band focused on
+  // the immediate weekend instead of bleeding a full 7 days ahead (which surfaced
+  // events a week out, e.g. "next Friday"). The chunk always ends Monday so a
+  // Sunday-night card that rolls into Monday still shows. On Monday itself we reach
+  // the *next* Monday so the band doesn't collapse to a single day (the old failure
+  // mode the rolling-7 window was patching). UTC day keys (Event.date is a UTC-hour
+  // placeholder), anchored on the user's local calendar date — identical to mobile.
   const now = new Date();
   const todayKey = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-  const localDow = now.getDay(); // 0=Sun … 6=Sat
-  let daysUntilNextMonday = (1 - localDow + 7) % 7; // 0 when today is Monday
-  if (daysUntilNextMonday === 0) daysUntilNextMonday = 7; // on Monday, span the full week
-  const nextMondayKey = todayKey + daysUntilNextMonday * DAY_MS;
+  const daysUntilMonday = ((1 - now.getDay() + 7) % 7) || 7; // Mon → next Mon (7)
+  const windowEndKey = todayKey + (daysUntilMonday + 1) * DAY_MS; // through Monday, exclusive bound
 
   // The home screen is org-agnostic by design: every section shows content from
   // all promotions, regardless of the user's org filter selection (which only
@@ -128,7 +146,7 @@ export function WeekendEventsSection() {
   const events = (data?.events ?? [])
     .filter((e: any) => {
       const k = eventDayKey(e.date);
-      return k >= todayKey && k < nextMondayKey;
+      return k >= todayKey && k < windowEndKey;
     })
     .sort((a: any, b: any) => {
       const dayDiff = eventDayKey(a.date) - eventDayKey(b.date);
@@ -141,15 +159,25 @@ export function WeekendEventsSection() {
       return at - bt;
     });
 
-  // "Event Last Night" — UFC only (not other promotions). A UFC card belongs here
-  // on the day(s) immediately after it ran: its UTC calendar day is today or
-  // yesterday (UFC events start late and roll past midnight ET, so "yesterday"
-  // catches the common Saturday-night → Sunday-morning case). Most-recent-first.
+  // Most-recent UFC card that ran in the last day — UFC only (not other
+  // promotions). It belongs here on the day(s) immediately after it ran: its UTC
+  // calendar day is today or yesterday (UFC events start late and roll past
+  // midnight ET, so "yesterday" catches the common Saturday-night → Sunday-morning
+  // case). Most-recent-first.
   const lastNightUFC = (pastData?.events ?? []).filter((e: any) => {
     if ((e.promotion ?? '').toUpperCase() !== 'UFC') return false;
     const daysSince = Math.round((todayKey - eventDayKey(e.date)) / DAY_MS);
     return daysSince >= 0 && daysSince <= 1;
   });
+
+  // Title reflects when the freshest card actually ran: a card whose day is today
+  // ran "earlier today", not "last night". lastNightUFC is most-recent-first, so
+  // its first entry is the freshest.
+  const lastNightTitle =
+    lastNightUFC.length > 0 &&
+    Math.round((todayKey - eventDayKey(lastNightUFC[0].date)) / DAY_MS) <= 0
+      ? 'Event Earlier Today'
+      : 'Event Last Night';
 
   if (events.length === 0 && lastNightUFC.length === 0) return null;
 
@@ -173,7 +201,7 @@ export function WeekendEventsSection() {
       {lastNightUFC.length > 0 && (
         <section>
           <SectionHeading
-            title="Event Last Night"
+            title={lastNightTitle}
             subtitle={lastNightUFC.length === 1 ? formatDaySubline(lastNightUFC[0].date) : undefined}
             icon={CalendarDays}
           />
@@ -213,6 +241,9 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
   const summary = aiSummary(event);
   const firstStart = firstFightStart(event);
   const live = isEventLiveNow(event);
+  // "N hype fights" + the top couple of qualifying matchups, on the by-day cards
+  // only (the "Event Last Night" card passes hideMeta and has no fight data).
+  const hypeFights = hideMeta ? [] : getHypeFights(event);
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches the headline start time), then a
@@ -280,6 +311,27 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
             <p className="mt-1 text-[11px] leading-snug text-text-secondary">
               {summary}
             </p>
+          )}
+          {!hideMeta && (
+            <div className="mt-2">
+              <div className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-foreground">
+                <Flame size={11} className="text-primary" />
+                {hypeFights.length} hype {hypeFights.length === 1 ? 'fight' : 'fights'}
+              </div>
+              {hypeFights.slice(0, 2).map((f: any) => {
+                const avg = f.averageHype ?? 0;
+                return (
+                  <div key={f.id} className="mt-0.5 flex items-center justify-between gap-2">
+                    <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text-secondary">
+                      {primaryName(f.fighter1)} vs {primaryName(f.fighter2)}
+                    </span>
+                    <span className="text-xs font-extrabold" style={{ color: getHypeHeatmapColor(avg) }}>
+                      {avg === 10 ? '10' : avg.toFixed(1)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </div>
         <ChevronRight size={16} className="shrink-0 self-center text-text-secondary group-hover:text-primary" />

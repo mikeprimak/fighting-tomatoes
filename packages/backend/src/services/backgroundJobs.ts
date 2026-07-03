@@ -4,6 +4,8 @@
 import { prisma } from '../lib/prisma';
 import * as cron from 'node-cron';
 import { MMANewsScraper } from './mmaNewsScraper';
+import { getOrganicSessionsByMonth, isGaConfigured } from './googleAnalytics';
+import { EmailService } from '../utils/email';
 import { startEventLifecycle, stopEventLifecycle, runEventLifecycleCheck } from './eventLifecycle';
 import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 import { refreshShelvedPromotionsCache } from '../config/promotionRegistry';
@@ -30,6 +32,37 @@ import {
 
 let newsScraperJobs: cron.ScheduledTask[] = [];
 let dailyScraperJob: cron.ScheduledTask | null = null;
+let webReportJob: cron.ScheduledTask | null = null;
+
+/** Who receives the monthly web-traffic email. */
+function webReportRecipient(): string {
+  return (
+    process.env.WEB_REPORT_EMAIL ||
+    (process.env.ADMIN_EMAILS || '').split(',')[0].trim() ||
+    'michaelsprimak@gmail.com'
+  );
+}
+
+/**
+ * Compute and email the monthly organic web-traffic report.
+ * No-ops quietly if GA isn't configured on this host.
+ */
+export async function runMonthlyWebReport(): Promise<{ sent: boolean; reason?: string }> {
+  if (!isGaConfigured()) {
+    console.log('[Web Report] Skipped — GA not configured (GA_SERVICE_ACCOUNT_JSON + GA4_PROPERTY_ID)');
+    return { sent: false, reason: 'ga-not-configured' };
+  }
+  const rows = await getOrganicSessionsByMonth(12);
+  if (!rows || !rows.length) {
+    console.log('[Web Report] Skipped — no organic data returned from GA');
+    return { sent: false, reason: 'no-data' };
+  }
+  const to = webReportRecipient();
+  await EmailService.sendWebTrafficReport(to, rows);
+  const last = rows[rows.length - 1];
+  console.log(`[Web Report] Sent to ${to}: ${last.sessions} organic visitors (${last.month})`);
+  return { sent: true };
+}
 
 
 /**
@@ -60,6 +93,16 @@ export function startBackgroundJobs(): void {
   // Runs every 5 minutes: UPCOMING→LIVE, section-based fight completion, LIVE→COMPLETED
   startEventLifecycle();
 
+  // Monthly web-traffic report — 09:00 UTC on the 1st of each month.
+  // Emails the operator the real organic-search visitor count. No-ops if GA
+  // isn't configured, so it's safe to leave scheduled before creds land.
+  webReportJob = cron.schedule('0 9 1 * *', () => {
+    runMonthlyWebReport().catch((err) => console.error('[Web Report] Failed:', err));
+  });
+  console.log(
+    `[Background Jobs] Monthly web-traffic report scheduled (1st @ 09:00 UTC -> ${webReportRecipient()}); GA configured: ${isGaConfigured()}`,
+  );
+
   // DISABLED: News scraper (memory constraints - run manually via POST /api/news/scrape)
   console.log(`[Background Jobs] News scraper DISABLED (memory constraints - run manually via API)`);
 
@@ -89,6 +132,11 @@ export function stopBackgroundJobs(): void {
   if (dailyScraperJob) {
     dailyScraperJob.stop();
     console.log('[Background Jobs] Daily UFC scraper stopped');
+  }
+
+  if (webReportJob) {
+    webReportJob.stop();
+    console.log('[Background Jobs] Monthly web-traffic report stopped');
   }
 
   console.log('[Background Jobs] All background jobs stopped');

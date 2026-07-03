@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,13 @@ import {
   resolveBlogImageUrl,
   WEB_URL,
 } from '../../services/api';
+import {
+  useBlogScrollController,
+  BlogScrollProvider,
+  makeBlogRenderers,
+  blogElementModels,
+  transformBlogBlocks,
+} from '../../components/blog/BlogRichBlocks';
 
 // Rewrite root-relative URLs (src="/blog/..", href="/..") to the absolute web
 // host so images load and links resolve from the native reader.
@@ -60,7 +67,9 @@ export default function BlogPostScreen() {
   const styles = makeStyles(colors);
   const contentWidth = width - 32;
 
-  const html = post ? absolutizeUrls(post.html) : '';
+  const blog = useBlogScrollController();
+  const html = post ? transformBlogBlocks(absolutizeUrls(post.html)) : '';
+  const renderers = useMemo(() => makeBlogRenderers(contentWidth, colors), [contentWidth, colors]);
 
   return (
     <SafeAreaView style={styles.container} edges={[]}>
@@ -84,7 +93,15 @@ export default function BlogPostScreen() {
           <Text style={styles.errorText}>Couldn&apos;t load this article.</Text>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <BlogScrollProvider value={blog.ctx}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          onScroll={blog.onScroll}
+          onLayout={blog.onViewportLayout}
+          scrollEventThrottle={16}
+        >
+          <View ref={blog.contentRef} onLayout={blog.onContentLayout} collapsable={false}>
           <Image
             source={{ uri: resolveBlogImageUrl(post.image) }}
             style={styles.hero}
@@ -109,6 +126,8 @@ export default function BlogPostScreen() {
               baseStyle={styles.htmlBase}
               tagsStyles={tagsStyles(colors)}
               systemFonts={['System']}
+              customHTMLElementModels={blogElementModels}
+              renderers={renderers}
               renderersProps={{
                 a: {
                   onPress: (_e, href) => {
@@ -128,7 +147,9 @@ export default function BlogPostScreen() {
               </View>
             )}
           </View>
+          </View>
         </ScrollView>
+        </BlogScrollProvider>
       )}
     </SafeAreaView>
   );

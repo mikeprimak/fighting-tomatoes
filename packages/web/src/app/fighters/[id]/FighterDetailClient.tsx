@@ -19,12 +19,23 @@ function formatWeightClass(wc?: string | null): string | null {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** One label/value pair in the physical-facts strip (SEO step 7). */
+function FactItem({ label, value }: { label: string; value: string }) {
+  return (
+    <span>
+      <span className="text-xs uppercase tracking-wide text-text-secondary">{label}</span>{' '}
+      <span className="font-medium">{value}</span>
+    </span>
+  );
+}
+
 interface Props {
   fighterId: string;
   initialFighter: any;
+  initialFights?: any[];
 }
 
-export function FighterDetailClient({ fighterId, initialFighter }: Props) {
+export function FighterDetailClient({ fighterId, initialFighter, initialFights = [] }: Props) {
   const [sortBy, setSortBy] = useState<'rating' | 'date'>('date');
 
   const { data: fighterData, isLoading } = useQuery({
@@ -33,9 +44,16 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
     initialData: initialFighter ? { fighter: initialFighter } : undefined,
   });
 
+  // initialData (stamped stale via initialDataUpdatedAt: 0) makes the fight
+  // history part of the SSR HTML; the client immediately refetches for
+  // user-specific fields (includeUserData) — same pattern as the event page.
   const { data: fightsData, isLoading: fightsLoading } = useQuery({
     queryKey: ['fighterFights', fighterId],
     queryFn: () => getFights({ fighterId, limit: 50, includeUserData: true }),
+    initialData: initialFights.length > 0
+      ? { fights: initialFights, pagination: { page: 1, limit: 50, total: initialFights.length, totalPages: 1 } }
+      : undefined,
+    initialDataUpdatedAt: 0,
     enabled: !!fighterData,
   });
 
@@ -107,6 +125,20 @@ export function FighterDetailClient({ fighterId, initialFighter }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Physical facts strip (SEO step 7) — the visible counterpart to the
+          Person JSON-LD emitted server-side. Renders only what we have. */}
+      {(fighter.nationality || fighter.height || fighter.reach || fighter.stance || fighter.dateOfBirth) && (
+        <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 rounded-lg border border-border bg-card p-3 text-sm">
+          {fighter.nationality && <FactItem label="Country" value={fighter.nationality} />}
+          {fighter.height && <FactItem label="Height" value={fighter.height} />}
+          {fighter.reach && <FactItem label="Reach" value={fighter.reach} />}
+          {fighter.stance && <FactItem label="Stance" value={fighter.stance} />}
+          {fighter.dateOfBirth && (
+            <FactItem label="Born" value={new Date(fighter.dateOfBirth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })} />
+          )}
+        </div>
+      )}
 
       {/* About — AI-enriched fighter profile (Phase 5). Confidence-gated; also SEO content. */}
       <FighterAbout fighter={fighter} />
@@ -182,10 +214,12 @@ function FighterAbout({ fighter }: { fighter: any }) {
   const fanSubject = fanPronoun || fighter.lastName || 'them';
   const loveLabel = `Why fans love ${fanSubject}`;
   const hateLabel = `Why some fans hate ${fanSubject}`;
-  return (
-    <section className="mb-6">
-      <h2 className="mb-2 text-lg font-bold">About</h2>
-      {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
+  // Everything past the short tldr is the long body.
+  const hasMore = paragraphs.length > 0 || !!profile.whyFansLove || !!profile.whyFansHate;
+  // Body stays in the DOM (SEO); <details> just collapses it visually behind
+  // "See more" when there's a tldr to lead with — no client JS needed.
+  const body = (
+    <>
       {paragraphs.map((p: string, i: number) => (
         <p key={i} className="mb-3 text-sm leading-relaxed text-text-secondary">
           {p}
@@ -210,6 +244,23 @@ function FighterAbout({ fighter }: { fighter: any }) {
             </div>
           )}
         </div>
+      )}
+    </>
+  );
+  return (
+    <section className="mb-6">
+      <h2 className="mb-2 text-lg font-bold">About</h2>
+      {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
+      {hasMore && profile.tldr ? (
+        <details className="group">
+          <summary className="mb-3 cursor-pointer list-none font-semibold text-primary [&::-webkit-details-marker]:hidden">
+            <span className="group-open:hidden">See more</span>
+            <span className="hidden group-open:inline">See less</span>
+          </summary>
+          {body}
+        </details>
+      ) : (
+        body
       )}
     </section>
   );

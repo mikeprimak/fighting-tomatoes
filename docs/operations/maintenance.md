@@ -34,6 +34,18 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 
 ## Monthly
 
+### Fighter rating-aggregate refresh
+- **What:** From `packages/backend`, run `npx tsx scripts/backfillFighterRatingAggregates.ts` (dry run), sanity-check the top-10 output, then re-run with `--apply`.
+- **Why:** `Fighter.totalRatings/averageRating/totalFights/greatFights` are recomputed from per-fight data by this script only — nothing updates them at rating time, so they drift as new ratings land. They power the `/fighters` SEO hub's most-rated ordering and the "N ratings" badges.
+- **Time:** ~5 min.
+- **Output:** Nothing unless the top-10 looks wrong (then daily-doc it).
+
+### SEO indexing health check (GSC)
+- **What:** From `packages/backend`, run `node scripts/gsc.js sitemaps` (submitted vs indexed per sitemap, errors) and `node scripts/gsc.js query 28 page` (clicks/impressions by page). Watch: indexed counts climbing toward submitted (~5.6k URLs), slug URLs replacing UUID URLs in results, and whether fighter/fight/best-of-year pages are earning impressions.
+- **Why:** The programmatic SEO corpus (steps 1–6, shipped 2026-07-01) only pays off if Google actually indexes it — a silent gate regression, sitemap error, or Helpful-Content demotion shows up here first.
+- **Time:** ~10 min.
+- **Note:** run biweekly through the initial rollout (Jul–Sep 2026), then settle to monthly. Setup details in `docs/daily/2026-07-03.md`.
+
 ### AI enrichment — cost + coverage audit
 - **What:** Check actuals against the `<$300/year` ceiling. Verify coverage on the past month's cards (how many fights got `aiPreviewShort` populated, average confidence, missing-source events).
 - **Why:** Cost can creep silently if cron mis-fires or sources change shape. Coverage gaps mean users see empty cards.
@@ -59,6 +71,11 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Why:** Reviews are the only direct user-feedback channel; recurring complaints predict churn.
 - **Time:** ~15 min.
 
+### Card-placement evergreen PR review
+- **What:** The `Card Placement Evergreen` GitHub Action opens a PR (`bot/card-placement-evergreen`) on the 1st of each month. Read its `CHANGES.md` body: confirm the prose flags (e.g. "Eight fighters average a perfect 1.0"), check any banner missing a headshot, eyeball the article render, then merge. Hand-curate the REVIEW blocks (career avg / climbs / per-year headliners) from `suggested.md` only if you've verified them.
+- **Why:** Keeps the card-placement rankings article fresh without a full manual rebuild; the bot regenerates the data, a human keeps editorial control. See `packages/backend/scripts/card-placement/README.md`.
+- **Time:** ~10 min (more if REVIEW blocks changed).
+
 ## Quarterly
 
 ### Fan DNA — new trait additions
@@ -80,7 +97,10 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~10 min (the dry-run prints coverage; review the audit JSON before `--apply`).
 - **Note:** ufcstats now sits behind a JS proof-of-work gate; the scraper solves it automatically (`services/scrapeUFCStatsFighters.ts`).
 
-### Dependency + security update sweep
+### Fighter physicals refresh (ufcstats)
+- **What:** Re-run `packages/backend/src/scripts/backfillFighterPhysicals.ts` (dry-run first, then `--apply`) alongside the record refresh above — fills height/reach/stance on fighters missing them (feeds Person JSON-LD, SEO step 7).
+- **Why:** New fighters arrive without physicals; ufcstats is the exact source. Fill-only (never overwrites), so it's safe to re-run. Nationality/DOB come from the daily fighter-profile cron instead (grounded LLM extraction, also fill-only).
+- **Time:** piggybacks on the record refresh (same directory scrape, ~10 min).
 - **What:** `pnpm outdated` across all packages, review Dependabot alerts on GitHub, update Expo SDK if a new release exists.
 - **Why:** Security patches + Expo SDK alignment with EAS Build versions.
 - **Time:** ~2-4 hr including testing.

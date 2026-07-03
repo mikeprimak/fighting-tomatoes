@@ -21,6 +21,9 @@ import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
 import onboardingRoutes from './onboarding';
+import sitemapRoutes from './sitemap';
+import { isIndexable, fighterIndexWhere } from '../lib/seoIndex';
+import { WeightClass } from '@prisma/client';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { triggerDailyUFCScraper } from '../services/backgroundJobs';
@@ -226,6 +229,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'string' },
+                  slug: { type: ['string', 'null'] },
                   name: { type: 'string' },
                   promotion: { type: 'string' },
                   date: { type: 'string' },
@@ -372,6 +376,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Build select object
       const select: any = {
         id: true,
+        slug: true,
         name: true,
         promotion: true,
         date: true,
@@ -787,6 +792,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'string' },
+                slug: { type: ['string', 'null'] },
                 name: { type: 'string' },
                 promotion: { type: 'string' },
                 date: { type: 'string' },
@@ -802,6 +808,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 mainStartTime: { type: ['string', 'null'] },
                 notificationsAllowed: { type: 'boolean' },
                 hasLiveTracking: { type: 'boolean' },
+                shouldIndex: { type: 'boolean' },
+                aiEventSummary: { type: ['string', 'null'] },
+                aiEventConfidence: { type: ['number', 'null'] },
               },
             },
           },
@@ -828,7 +837,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
     try {
       const event = await fastify.prisma.event.findFirst({
         where: {
-          id,
+          // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+          OR: [{ id }, { slug: id }],
           isVisible: true,
           NOT: getHiddenPromotions().map(p => ({
             promotion: { contains: p, mode: 'insensitive' },
@@ -836,6 +846,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
         },
         select: {
           id: true,
+          slug: true,
           name: true,
           promotion: true,
           date: true,
@@ -850,6 +861,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
           prelimStartTime: true,
           mainStartTime: true,
           scraperType: true,
+          aiEventSummary: true,
+          aiEventConfidence: true,
         },
       });
 
@@ -864,10 +877,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // screen get the notify bell + live-tracking-aware toast.
       const notifyPromotions = await getNotifyPromotions(fastify.prisma);
       const notifyPromotionsUpper = notifyPromotions.map(p => p.toUpperCase());
+      const shouldIndex = await isIndexable(fastify.prisma, 'event', event.id);
       const eventWithFlags = {
         ...event,
         notificationsAllowed: notifyPromotionsUpper.includes((event.promotion || '').toUpperCase()),
         hasLiveTracking: hasReliableLiveTracker(event.scraperType, event.promotion),
+        shouldIndex,
       };
 
       return reply.code(200).send({ event: eventWithFlags });
@@ -1262,7 +1277,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // Fighters endpoint
+  // Fighters endpoint. `indexable=true` filters to the SEO index gate (the same
+  // whitelist as /fighters/sitemap.xml) — used by the /fighters hub + division
+  // hub pages on the web. `sort=ratings` orders most-rated first so hubs lead
+  // with the strongest pages.
   fastify.get('/api/fighters', {
     schema: {
       description: 'Get fighters list',
@@ -1272,6 +1290,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
         properties: {
           limit: { type: 'integer', minimum: 1, maximum: 100, default: 20 },
           page: { type: 'integer', minimum: 1, default: 1 },
+          indexable: { type: 'boolean', default: false },
+          weightClass: { type: 'string' },
+          sort: { type: 'string', enum: ['name', 'ratings'], default: 'name' },
         },
       },
       response: {
@@ -1284,6 +1305,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 type: 'object',
                 properties: {
                   id: { type: 'string' },
+                  slug: { type: ['string', 'null'] },
                   firstName: { type: 'string' },
                   lastName: { type: 'string' },
                   nickname: { type: 'string' },
@@ -1291,6 +1313,10 @@ export async function registerRoutes(fastify: FastifyInstance) {
                   losses: { type: 'integer' },
                   draws: { type: 'integer' },
                   weightClass: { type: 'string' },
+                  isChampion: { type: 'boolean' },
+                  championshipTitle: { type: ['string', 'null'] },
+                  averageRating: { type: 'number' },
+                  totalRatings: { type: 'integer' },
                   profileImage: { type: 'string' },
                   actionImage: { type: 'string' },
                 },
@@ -1317,17 +1343,37 @@ export async function registerRoutes(fastify: FastifyInstance) {
       },
     },
   }, async (request, reply) => {
-    const { limit = 20, page = 1 } = request.query as any;
+    const { limit = 20, page = 1, indexable = false, weightClass, sort = 'name' } = request.query as any;
     const skip = (page - 1) * limit;
 
     try {
+      // Optional filters: SEO index gate (hub pages) + division facet. An
+      // unknown weightClass string would throw a Prisma enum error → treat as
+      // no-match instead so the hub 404s gracefully.
+      const where: any = indexable ? fighterIndexWhere() : {};
+      if (weightClass) {
+        const validWC = Object.values(WeightClass).includes(weightClass);
+        if (!validWC) {
+          return reply.code(200).send({
+            fighters: [],
+            pagination: { page, limit, total: 0, totalPages: 0 },
+          });
+        }
+        where.weightClass = weightClass;
+      }
+      const orderBy = sort === 'ratings'
+        ? [{ totalRatings: 'desc' as const }, { lastName: 'asc' as const }, { id: 'asc' as const }]
+        : [{ lastName: 'asc' as const }, { id: 'asc' as const }];
+
       const [fighters, total] = await Promise.all([
         fastify.prisma.fighter.findMany({
+          where,
           skip,
           take: limit,
-          orderBy: { lastName: 'asc' },
+          orderBy,
           select: {
             id: true,
+            slug: true,
             firstName: true,
             lastName: true,
             nickname: true,
@@ -1335,11 +1381,15 @@ export async function registerRoutes(fastify: FastifyInstance) {
             losses: true,
             draws: true,
             weightClass: true,
+            isChampion: true,
+            championshipTitle: true,
+            averageRating: true,
+            totalRatings: true,
             profileImage: true,
             actionImage: true,
           },
         }),
-        fastify.prisma.fighter.count(),
+        fastify.prisma.fighter.count({ where }),
       ]);
 
       const totalPages = Math.ceil(total / limit);
@@ -1359,6 +1409,55 @@ export async function registerRoutes(fastify: FastifyInstance) {
         error: 'Internal server error',
         code: 'INTERNAL_ERROR',
       });
+    }
+  });
+
+  // Division facets: count of SEO-indexable fighters per weightClass. Powers the
+  // /fighters hub's division links (only non-thin divisions get linked/indexed).
+  // Static segment, so Fastify matches this before /api/fighters/:id.
+  fastify.get('/api/fighters/divisions', {
+    schema: {
+      description: 'Indexable-fighter counts per weight class (SEO hub facets)',
+      tags: ['fighters'],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            divisions: {
+              type: 'array',
+              items: {
+                type: 'object',
+                properties: {
+                  weightClass: { type: 'string' },
+                  count: { type: 'integer' },
+                },
+              },
+            },
+          },
+        },
+        500: {
+          type: 'object',
+          properties: {
+            error: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    try {
+      const grouped = await fastify.prisma.fighter.groupBy({
+        by: ['weightClass'],
+        where: { ...fighterIndexWhere(), weightClass: { not: null } },
+        _count: { _all: true },
+      });
+      const divisions = grouped
+        .map((g: any) => ({ weightClass: g.weightClass as string, count: g._count._all as number }))
+        .sort((a: any, b: any) => b.count - a.count);
+      return reply.code(200).send({ divisions });
+    } catch (error: any) {
+      request.log.error(error, 'Fighter divisions fetch error:');
+      return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
     }
   });
 
@@ -1382,6 +1481,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
               type: 'object',
               properties: {
                 id: { type: 'string' },
+                slug: { type: ['string', 'null'] },
                 firstName: { type: 'string' },
                 lastName: { type: 'string' },
                 nickname: { type: 'string' },
@@ -1390,16 +1490,19 @@ export async function registerRoutes(fastify: FastifyInstance) {
                 draws: { type: 'integer' },
                 weightClass: { type: 'string' },
                 rank: { type: 'string' },
-                team: { type: 'string' },
-                birthDate: { type: 'string' },
-                nationality: { type: 'string' },
-                reach: { type: 'number' },
-                height: { type: 'string' },
+                // Physical facts (SEO step 7 — Person JSON-LD on web). Display
+                // strings as scraped (height `5' 11"`, reach `76"`).
+                nationality: { type: 'string', nullable: true },
+                height: { type: 'string', nullable: true },
+                reach: { type: 'string', nullable: true },
+                stance: { type: 'string', nullable: true },
+                dateOfBirth: { type: 'string', nullable: true },
                 createdAt: { type: 'string' },
                 profileImage: { type: 'string' },
                 actionImage: { type: 'string' },
                 isFollowing: { type: 'boolean' },
                 followerCount: { type: 'integer' },
+                shouldIndex: { type: 'boolean' },
                 // AI profile enrichment (Phase 5). Floor-gated at write time
                 // (confidence >= 0.5). aiProfile is a free-form JSON object, so
                 // additionalProperties must be true or fast-json-stringify drops it.
@@ -1433,10 +1536,12 @@ export async function registerRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     try {
-      const fighter = await fastify.prisma.fighter.findUnique({
-        where: { id },
+      const fighter = await fastify.prisma.fighter.findFirst({
+        // Resolve by canonical slug or legacy UUID (see programmatic-SEO plan).
+        where: { OR: [{ id }, { slug: id }] },
         select: {
           id: true,
+          slug: true,
           firstName: true,
           lastName: true,
           nickname: true,
@@ -1446,6 +1551,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
           draws: true,
           weightClass: true,
           rank: true,
+          nationality: true,
+          height: true,
+          reach: true,
+          stance: true,
+          dateOfBirth: true,
           createdAt: true,
           profileImage: true,
           actionImage: true,
@@ -1467,7 +1577,7 @@ export async function registerRoutes(fastify: FastifyInstance) {
       // Total followers — powers the "X fans follow" social proof on fighter pages.
       // Matches the row-count semantics used by community top-followed (unfollow hard-deletes).
       const followerCount = await fastify.prisma.userFighterFollow.count({
-        where: { fighterId: id },
+        where: { fighterId: fighter.id },
       });
 
       // Check if user is following this fighter (if authenticated)
@@ -1478,18 +1588,22 @@ export async function registerRoutes(fastify: FastifyInstance) {
           where: {
             userId_fighterId: {
               userId: user.id,
-              fighterId: id,
+              fighterId: fighter.id,
             },
           },
         });
         isFollowing = !!follow;
       }
 
+      // SEO index gate (drives robots noindex on the web page + sitemap whitelist).
+      const shouldIndex = await isIndexable(fastify.prisma, 'fighter', fighter.id);
+
       return reply.code(200).send({
         fighter: {
           ...fighter,
           isFollowing,
           followerCount,
+          shouldIndex,
         },
       });
     } catch (error: any) {
@@ -2175,6 +2289,8 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register onboarding routes under /api/onboarding prefix
   await fastify.register(onboardingRoutes, { prefix: '/api/onboarding' });
+  // Bulk sitemap data for goodfights.app (paths carry their own /api prefix)
+  await fastify.register(sitemapRoutes);
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

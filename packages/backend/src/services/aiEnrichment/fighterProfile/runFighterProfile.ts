@@ -147,8 +147,9 @@ export async function runFighterProfileEnrichment(
         }
 
         const srcs = result.sourcesFetched.filter((s) => s.ok).map((s) => s.label).join('+') || 'none';
+        const facts = result.factsWritten.length ? `, facts[${result.factsWritten.join(',')}]` : '';
         console.log(
-          `[runFighterProfile] ${result.name}  → sources[${srcs}], ${tag}, $${result.costUsd.toFixed(4)}`,
+          `[runFighterProfile] ${result.name}  → sources[${srcs}], ${tag}${facts}, $${result.costUsd.toFixed(4)}`,
         );
       } catch (err: any) {
         summary.errors.push({ fighterId: c.id, name: c.id, message: String(err?.message ?? err) });

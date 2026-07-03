@@ -16,13 +16,15 @@ interface SpoilerFreeContextType {
 }
 
 const SpoilerFreeContext = createContext<SpoilerFreeContextType>({
-  spoilerFreeMode: false,
+  spoilerFreeMode: true,
   setSpoilerFreeMode: () => {},
 });
 
 export function SpoilerFreeProvider({ children }: { children: React.ReactNode }) {
   const colors = Colors.dark;
-  const [spoilerFreeMode, setSpoilerFreeModeState] = useState(false);
+  // Default ON: new users start spoiler-free until they opt out. Returning
+  // users who explicitly chose a setting are restored from storage below.
+  const [spoilerFreeMode, setSpoilerFreeModeState] = useState(true);
   const [onboardingVisible, setOnboardingVisible] = useState(false);
   const [toastMessage, setToastMessage] = useState<string>('');
   const toastOpacity = useRef(new Animated.Value(0)).current;
@@ -32,6 +34,8 @@ export function SpoilerFreeProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (value === 'true') setSpoilerFreeModeState(true);
+      else if (value === 'false') setSpoilerFreeModeState(false);
+      // value === null: no stored preference yet → keep the default-ON state.
     });
     shouldShowSpoilerOnboarding().then((show) => {
       if (show) setOnboardingVisible(true);

@@ -1,4 +1,5 @@
 import { Prisma, PrismaClient, Fight } from '@prisma/client';
+import { stripDiacritics } from './fighterMatcher';
 
 type AnyPrismaClient = PrismaClient | Prisma.TransactionClient;
 
@@ -24,6 +25,115 @@ type AnyPrismaClient = PrismaClient | Prisma.TransactionClient;
  */
 export interface BleedGuardOptions {
   crossEventDedup: true;
+}
+
+/**
+ * Opt-in same-event duplicate-fight guard.
+ *
+ * Some sources (notably ONE Championship's Thai Muay Thai cards) report the
+ * SAME fighter under slightly different name forms across scrapes — e.g.
+ * JSON-LD gives the canonical "Hern Looksuan" on one run and the display name
+ * embeds a camp token, "Hern NF Looksuan", on another. Each distinct
+ * firstName/lastName produces a SEPARATE Fighter row, so the order-sensitive
+ * Fight unique key (eventId, fighter1Id, fighter2Id) never matches and the
+ * daily scrape silently writes a DUPLICATE fight onto a card the live tracker
+ * has already advanced. (The ONE FC live tracker already dedups via
+ * firstName/lastName token overlap in findFightByFighters — this brings the
+ * daily-scrape create path to parity so the two never diverge.)
+ *
+ * When set, before CREATING a new fight the helper checks the SAME event for a
+ * fight whose two fighters' name tokens overlap the scraped pair (in either
+ * orientation). If found, that existing fight is UPDATED with the new metadata
+ * instead of creating a duplicate — and its fighter rows are deliberately left
+ * as-is (the existing fight may already carry live-tracker state we don't want
+ * to clobber; the freshly-created canonical Fighter row is simply left
+ * fight-less and harmless). Match is scoped to a single event with both
+ * fighters required to pair, so a false positive collapsing two real bouts is
+ * very unlikely; every collapse is logged.
+ */
+export interface SameEventNameDedupOptions {
+  sameEventNameDedup: true;
+}
+
+const normToken = (s: string): string => stripDiacritics(s || '').toLowerCase().trim();
+
+function nameTokens(f: { firstName: string; lastName: string }): Set<string> {
+  const tokens = new Set<string>();
+  const first = normToken(f.firstName);
+  const last = normToken(f.lastName);
+  if (first) tokens.add(first);
+  if (last) tokens.add(last);
+  return tokens;
+}
+
+const tokensOverlap = (a: Set<string>, b: Set<string>): boolean =>
+  [...a].some((t) => b.has(t));
+
+/**
+ * Find an existing fight on the SAME event whose fighters' name tokens overlap
+ * the scraped pair (mirrors the ONE FC live tracker's findFightByFighters).
+ * Returns the matched fight id, preferring non-CANCELLED rows. Only runs on the
+ * create branch, so the extra queries fire only when the exact-id lookup missed.
+ */
+async function findSameEventNameMatch(
+  prisma: AnyPrismaClient,
+  eventId: string,
+  fighter1Id: string,
+  fighter2Id: string,
+): Promise<string | null> {
+  const scraped = await prisma.fighter.findMany({
+    where: { id: { in: [fighter1Id, fighter2Id] } },
+    select: { id: true, firstName: true, lastName: true },
+  });
+  const a = scraped.find((f) => f.id === fighter1Id);
+  const b = scraped.find((f) => f.id === fighter2Id);
+  if (!a || !b) return null;
+
+  const aTokens = nameTokens(a);
+  const bTokens = nameTokens(b);
+  if (aTokens.size === 0 || bTokens.size === 0) return null;
+
+  const candidates = await prisma.fight.findMany({
+    where: {
+      eventId,
+      // exact-id orderings were already handled by the caller's lookup
+      NOT: {
+        OR: [
+          { fighter1Id, fighter2Id },
+          { fighter1Id: fighter2Id, fighter2Id: fighter1Id },
+        ],
+      },
+    },
+    select: {
+      id: true,
+      fightStatus: true,
+      fighter1: { select: { firstName: true, lastName: true } },
+      fighter2: { select: { firstName: true, lastName: true } },
+    },
+  });
+
+  // Prefer a live/real fight over a CANCELLED duplicate when both would match.
+  const ordered = [...candidates].sort(
+    (x, y) =>
+      (x.fightStatus === 'CANCELLED' ? 1 : 0) - (y.fightStatus === 'CANCELLED' ? 1 : 0),
+  );
+
+  for (const fight of ordered) {
+    const f1 = nameTokens(fight.fighter1);
+    const f2 = nameTokens(fight.fighter2);
+    const straight = tokensOverlap(aTokens, f1) && tokensOverlap(bTokens, f2);
+    const swapped = tokensOverlap(aTokens, f2) && tokensOverlap(bTokens, f1);
+    if (straight || swapped) {
+      const lbl = `${a.firstName} ${a.lastName} vs ${b.firstName} ${b.lastName}`.replace(/\s+/g, ' ').trim();
+      console.warn(
+        `ℹ️  SAME-EVENT-DEDUP: collapsing "${lbl}" onto existing fight ${fight.id} ` +
+          `(${fight.fighter1.firstName} ${fight.fighter1.lastName} vs ${fight.fighter2.firstName} ${fight.fighter2.lastName}, ` +
+          `${fight.fightStatus}) — name-form drift, not creating a duplicate.`,
+      );
+      return fight.id;
+    }
+  }
+  return null;
 }
 
 // Real boxing/MMA rematches are essentially never this close together. A
@@ -139,14 +249,21 @@ export async function upsertFightSwapAware(
   identity: { eventId: string; fighter1Id: string; fighter2Id: string },
   updateData: Prisma.FightUncheckedUpdateInput,
   createData: Prisma.FightUncheckedCreateInput,
-  bleedGuard: BleedGuardOptions,
+  guard: SameEventNameDedupOptions,
+): Promise<Fight>;
+export async function upsertFightSwapAware(
+  prisma: AnyPrismaClient,
+  identity: { eventId: string; fighter1Id: string; fighter2Id: string },
+  updateData: Prisma.FightUncheckedUpdateInput,
+  createData: Prisma.FightUncheckedCreateInput,
+  guard: BleedGuardOptions,
 ): Promise<Fight | null>;
 export async function upsertFightSwapAware(
   prisma: AnyPrismaClient,
   identity: { eventId: string; fighter1Id: string; fighter2Id: string },
   updateData: Prisma.FightUncheckedUpdateInput,
   createData: Prisma.FightUncheckedCreateInput,
-  bleedGuard?: BleedGuardOptions,
+  guard?: BleedGuardOptions | SameEventNameDedupOptions,
 ): Promise<Fight | null> {
   const { eventId, fighter1Id, fighter2Id } = identity;
 
@@ -172,8 +289,20 @@ export async function upsertFightSwapAware(
     });
   }
 
-  // CREATE branch — run the opt-in bleed backstop before writing a new row.
-  if (bleedGuard?.crossEventDedup) {
+  // CREATE branch — run any opt-in dedup backstop before writing a new row.
+
+  // Same-event name-form drift: a different Fighter row for the same person
+  // (camp-token / JSON-LD name variance) would otherwise create a duplicate
+  // bout. Reuse the matching fight instead. Fighter ids are intentionally NOT
+  // re-pointed — the existing fight may carry live-tracker state.
+  if ('sameEventNameDedup' in (guard ?? {}) && (guard as SameEventNameDedupOptions).sameEventNameDedup) {
+    const matchId = await findSameEventNameMatch(prisma, eventId, fighter1Id, fighter2Id);
+    if (matchId) {
+      return prisma.fight.update({ where: { id: matchId }, data: updateData });
+    }
+  }
+
+  if ('crossEventDedup' in (guard ?? {}) && (guard as BleedGuardOptions).crossEventDedup) {
     const isBleed = await isCrossEventBleed(prisma, eventId, fighter1Id, fighter2Id);
     if (isBleed) return null;
   }

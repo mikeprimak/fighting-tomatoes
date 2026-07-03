@@ -115,6 +115,9 @@ async function main() {
     const record: FighterProfileRecord = {
       profile: coerceProfile(rec.profile, confidence),
       summary: rec.summary ?? '',
+      // Hand-authored bios don't carry structured facts; the ufcstats backfill
+      // and the cron's fill-only facts pass own those columns.
+      facts: { nationality: null, dateOfBirth: null, height: null, reach: null, stance: null },
       confidence,
     };
 

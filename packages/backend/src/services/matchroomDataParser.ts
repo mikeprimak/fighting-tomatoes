@@ -853,7 +853,18 @@ export async function importMatchroomData(options: {
 
   try {
     // Read JSON files
-    const eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    // A missing events file means the scraper found no events to write (e.g. the
+    // promotion has no upcoming events). That's benign for a small/intermittent
+    // promotion — skip the import instead of crashing, which would falsely page the
+    // admin. (Matches the karateCombat/raf/dirtyBoxing idiom. Majors like UFC/BKFC/
+    // ONE FC deliberately throw here instead — zero events there signals a scrape failure.)
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch {
+      console.log('⚠ Events file not found - scraper likely found no events. Skipping import.');
+      return;
+    }
     const boxersJson = await fs.readFile(boxersFilePath, 'utf-8');
 
     const eventsData: ScrapedMatchroomEventsData = JSON.parse(eventsJson);
