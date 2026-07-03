@@ -349,6 +349,17 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
 
 ## Changelog
 
+- **2026-07-03** — **Home mirror BUILT (Phase 1 objective #1, branch-only).**
+  Backend `GET /api/home/mirror` (urgency rail: live/today event cards +
+  pinned hyped/followed fights, spoiler-safe, UTC-day convention) + mobile
+  `components/HomeMirror.tsx` at the top of Home for signed-in users:
+  greeting + rotating identity line (insight #1, daily-salted taste-profile),
+  LIVE NOW / TONIGHT cards, pinned fight rows (🔥hype / ★Following badges),
+  horizontal daily insight rail. Logged-out stays content-first. Verified live
+  against prod data (testdev account); NOT device-walked. Same day: branch
+  synced with main (0 behind) after the continue-the-pivot evaluation. Found
+  follow-up: DELETE prediction still hard-gated on verification while create
+  is soft-capped. Details: `docs/daily/2026-07-03.md`.
 - **2026-06-12 (2)** — **Onboarding BUILT (Phase 1 objective #3, branch-only).**
   The explain → rate-classics → instant-insight → follow-picker flow shipped on
   `claude/user-focused-pivot-l8l6mg`. Backend: `GET /api/fan-dna/taste-profile`
