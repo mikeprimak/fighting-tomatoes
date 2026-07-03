@@ -11,7 +11,7 @@ draft: false
 
 On July 18, Ben Askren will compete in a freestyle wrestling match at UW-Milwaukee Panther Arena, a little more than a year after undergoing a double lung transplant. It will be his 42nd birthday, and he has said it will be his final competition.
 
-Askren's wrestling credentials are extensive: two NCAA championships at Missouri, two Dan Hodge Trophies, a spot on the 2008 U.S. Olympic team, and later welterweight titles in Bellator and ONE Championship before a brief UFC run. He retired from MMA in 2019 and last competed in a 2021 boxing match against Jake Paul. Thirteen months ago, he was in a hospital bed recovering from the transplant, still too weak to stand without help.
+Askren's wrestling credentials are extensive: two NCAA championships at Missouri, two Dan Hodge Trophies, a spot on the 2008 U.S. Olympic team, and later welterweight titles in Bellator and ONE Championship before a brief UFC run. He retired from MMA in 2019 and last competed in a 2021 boxing match against Jake Paul. Then, last spring, he got sick — a sudden case of severe pneumonia that landed him in the hospital and ended with a double lung transplant.
 
 ## The month he lost
 
