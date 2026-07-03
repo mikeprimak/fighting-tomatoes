@@ -193,8 +193,22 @@ a fan-rated recap is not.
    noindex <10 fights) + `/fights/best` redirect; `/events` SSR index (the tab
    pages SSR only spinners); events list API returns `slug`; root sitemap +
    footer wiring. Details: `docs/daily/2026-07-01-seo-step6.md`.
-7. *(Later)* turn on long-form `aiPreview`; enrich fighter facts
-   (nationality/physicals) for richer `Person` schema.
+7. ✅ **Long-form `aiPreview` + fighter facts** — SHIPPED 2026-07-03.
+   (a) The fight-enrichment cron now also writes `Fight.aiPreview`: the extractor
+   emits a 2-3 paragraph grounded preview per covered fight (`extractFightEnrichment.ts`,
+   max_tokens 4096→16384; persist is keep-if-absent so a thin T-2 pass never wipes
+   a grounded T-10/T-5 preview); web "The Story" renders it (SSR) with
+   `aiPreviewShort` as fallback, same 0.5 confidence gate. Still grounded-only:
+   the model omits the field for namedropped fights, so most previews land on
+   main/co-main bouts. This is per-fight preview prose on existing gated pages —
+   NOT the de-scoped article-length mass generation.
+   (b) Fighter facts: new nullable `Fighter.nationality/height/reach/stance/dateOfBirth`
+   (migration `20260703000000`). Height/reach/stance backfilled exact from the
+   ufcstats directory (`backfillFighterPhysicals.ts`, 3,156 fighters filled,
+   quarterly re-run in maintenance.md); nationality/DOB fill gradually via the
+   fighter-profile cron's new grounded `facts` extraction (fill-only — scraped
+   values always win, columns never overwritten). Web fighter pages emit
+   nationality/birthDate/height in Person JSON-LD + a visible facts strip.
 
 ## Evergreen strategy (why time-sensitive content still compounds)
 

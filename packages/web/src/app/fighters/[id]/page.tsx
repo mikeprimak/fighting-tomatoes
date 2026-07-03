@@ -58,6 +58,11 @@ function buildFighterJsonLd(fighter: any, url: string) {
   };
   if (fighter.nickname) ld.alternateName = fighter.nickname;
   if (fighter.profileImage) ld.image = fighter.profileImage;
+  // Physical facts (SEO step 7). Backend stores display strings (height `5' 11"`,
+  // reach `76"`); schema.org accepts Text for these Person properties.
+  if (fighter.nationality) ld.nationality = { '@type': 'Country', name: fighter.nationality };
+  if (fighter.dateOfBirth) ld.birthDate = String(fighter.dateOfBirth).slice(0, 10);
+  if (fighter.height) ld.height = fighter.height;
   // Confidence-gated tldr doubles as the entity description (same floor the UI uses).
   const conf = fighter.aiProfileConfidence ?? 0;
   if (conf >= 0.5 && fighter.aiProfile?.tldr) ld.description = fighter.aiProfile.tldr;

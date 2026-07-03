@@ -52,9 +52,10 @@ linking). This session closed the loop between "pages exist" and "Google finds t
    GSC UI (Coverage reasons: "Crawled – not indexed" = quality/thin signal,
    "Discovered – not indexed" = crawl-budget signal), and consider whether the
    `shouldIndex` gate is letting thin pages through (`packages/backend/src/lib/seoIndex.ts`).
-3. **Step 7 (next build item, later-tier by design):** turn on long-form
-   `aiPreview` generation; enrich fighter facts (nationality/physicals) for richer
-   Person schema. Respect the AI-enrichment cost ceiling + confidence floors.
+3. ~~**Step 7 (next build item, later-tier by design)**~~ — ✅ DONE later on
+   2026-07-03 (same day, session 2): long-form `aiPreview` generation is on
+   (cron + web "The Story"), fighter facts added (ufcstats backfill + cron
+   fill-only extraction + Person JSON-LD). See `docs/daily/2026-07-03.md`.
 4. **Minor known gap:** home-page fight sections are still client-only (no SSR
    fight links); event/fighter/year surfaces carry the link graph, so low priority.
 

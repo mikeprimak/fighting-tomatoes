@@ -47,8 +47,22 @@ Output STRICT JSON (no prose, no markdown, no fences):
     "confidence": 0.0
   },
   "summary": "2-4 short paragraphs of readable long-form prose telling the fighter's story — career arc + style + the draw woven together. This is what renders on the fighter's page and gets indexed for SEO. Plain prose, no headers, no bullet points.",
+  "facts": {                                   // biographical facts — see "Facts rules" below
+    "nationality": "United States",            // country name in English; null when not in the sources
+    "dateOfBirth": "1988-07-30",               // ISO date YYYY-MM-DD; null when not in the sources
+    "height": "5' 11\\"",                       // feet-inches display string like 5' 11"; null when not in the sources
+    "reach": "76\\"",                            // inches display string like 76"; null when not in the sources
+    "stance": "Orthodox"                       // "Orthodox" | "Southpaw" | "Switch"; null when not in the sources
+  },
   "confidence": 0.0
 }
+
+Facts rules (the "facts" object):
+  - These are EXTRACTED VERBATIM-STYLE FACTS, not narrative. Each field must be stated in (or directly computable from) the SOURCE excerpts. NEVER fill a fact from your training data — null is always the safe answer.
+  - "nationality" is the country the fighter represents or is a citizen of, as the sources state it. If the sources only give a birthplace city with no country, or are ambiguous (dual nationality framed unclearly), use null.
+  - "dateOfBirth" must be a full date. If the sources only give an age or a birth year, use null.
+  - Convert metric to imperial for height/reach when the sources are metric (180 cm -> 5' 11", 193 cm -> 6' 4"). Round to the nearest inch.
+  - The facts object is independent of the profile confidence: fill what the sources support even when the narrative is thin, and null the rest.
 
 Hard rules:
   - The IDENTITY and record are ground truth from our database. Your narrative MUST be consistent with the recorded W-L-D and rank — never restate a different record or contradict champion/rank status.
@@ -112,9 +126,23 @@ export interface FighterProfileData {
   confidence: number;
 }
 
+/**
+ * Grounded biographical facts (SEO step 7). Extracted from sources only —
+ * persisted FILL-ONLY (never overwrite a populated column) and independent of
+ * the profile confidence floor.
+ */
+export interface FighterFacts {
+  nationality: string | null;
+  dateOfBirth: string | null; // "YYYY-MM-DD"
+  height: string | null; // `5' 11"`
+  reach: string | null; // `76"`
+  stance: string | null; // Orthodox | Southpaw | Switch
+}
+
 export interface FighterProfileRecord {
   profile: FighterProfileData;
   summary: string; // long-form prose; '' when the model gave nothing usable
+  facts: FighterFacts;
   confidence: number;
 }
 
@@ -302,7 +330,28 @@ function parseProfile(raw: string): FighterProfileRecord | null {
   return {
     profile,
     summary: typeof parsed.summary === 'string' ? stripDashes(parsed.summary.trim()) : '',
+    facts: parseFacts(parsed?.facts, clean),
     confidence,
+  };
+}
+
+function parseFacts(raw: any, clean: (v: any) => string | null): FighterFacts {
+  const none: FighterFacts = { nationality: null, dateOfBirth: null, height: null, reach: null, stance: null };
+  if (!raw || typeof raw !== 'object') return none;
+
+  const dob = clean(raw.dateOfBirth);
+  const stance = clean(raw.stance);
+  const VALID_STANCES = new Set(['orthodox', 'southpaw', 'switch']);
+  return {
+    nationality: clean(raw.nationality),
+    // Full ISO date only — the prompt says null for age/birth-year-only sources,
+    // but guard anyway so a stray "1988" never lands in a DateTime column.
+    dateOfBirth: dob && /^\d{4}-\d{2}-\d{2}$/.test(dob) ? dob : null,
+    height: clean(raw.height),
+    reach: clean(raw.reach),
+    stance: stance && VALID_STANCES.has(stance.toLowerCase())
+      ? stance[0].toUpperCase() + stance.slice(1).toLowerCase()
+      : null,
   };
 }
 

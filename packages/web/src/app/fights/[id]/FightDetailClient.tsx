@@ -191,15 +191,19 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         </div>
       )}
 
-      {/* The Story (pre-fight AI context — shown for upcoming and completed) */}
-      {(isUpcoming || isCompleted) && fight.aiConfidence != null && fight.aiConfidence >= 0.5 && fight.aiPreviewShort && (
+      {/* The Story (pre-fight AI context — shown for upcoming and completed).
+          Prefers the long-form aiPreview (multi-paragraph, SEO step 7) and falls
+          back to the one-line aiPreviewShort. Same 0.5 confidence gate as mobile. */}
+      {(isUpcoming || isCompleted) && fight.aiConfidence != null && fight.aiConfidence >= 0.5 && (fight.aiPreview || fight.aiPreviewShort) && (
         <div className="mb-6">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <BookOpen size={16} className="text-primary" />
             The Story
           </h3>
-          <div className="rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-text-secondary">
-            {fight.aiPreviewShort}
+          <div className="space-y-3 rounded-lg border border-border bg-card p-4 text-sm leading-relaxed text-text-secondary">
+            {typeof fight.aiPreview === 'string' && fight.aiPreview.trim()
+              ? fight.aiPreview.split(/\n\n+/).map((p: string) => p.trim()).filter(Boolean).map((p: string, i: number) => <p key={i}>{p}</p>)
+              : <p>{fight.aiPreviewShort}</p>}
           </div>
         </div>
       )}

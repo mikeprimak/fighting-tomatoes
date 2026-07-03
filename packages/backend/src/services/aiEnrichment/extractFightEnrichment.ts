@@ -13,7 +13,10 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 const MODEL = 'claude-haiku-4-5-20251001';
-const MAX_TOKENS = 4096;
+// Long-form previews add ~200-300 output tokens per covered fight; a full 13-fight
+// card plus the structured fields needs well past the old 4096 ceiling (a truncated
+// response fails JSON parsing and drops the whole event). Haiku 4.5 caps at 64k.
+const MAX_TOKENS = 16384;
 
 // Minimum fan ratings before a fight's hype is trustworthy enough to show the LLM.
 // Below this it's noise (a single 10/10 rating is not "fans are hyped"), so we omit
@@ -42,6 +45,7 @@ Output STRICT JSON (no prose, no markdown, no fences):
       "rankings": { "red": 7, "blue": 12 },       // numeric rank when shown ("#7"); use null for unranked side; use null for the whole field if no rankings shown
       "odds": { "red": "-135", "blue": "+115" },  // strings; null if not shown
       "whyCare": "1-sentence hook a casual fan would understand. Plain English, no jargon. Omit the field if you have nothing grounded.",
+      "preview": "2-3 short paragraphs (separated by \\n\\n, roughly 100-180 words total) previewing this fight for a fan deciding whether to watch. See 'Preview rules' below. OMIT the field when the editorial doesn't give you enough material for a real preview, a padded preview is worse than none.",
       "stakes": [],                                // short bullet list of what's on the line. Empty if not in editorial.
       "storylines": [],                            // narrative angles ("rematch of 2024 FOTY", "Allen returns from 18-month layoff"). When editorial confirms a prior fight between the same two named fighters, you MUST include the literal word "rematch" (or "trilogy" for a third meeting) in one of the entries. Empty if not in editorial.
       "styleTags": [],                             // contrast tags like "striker vs grappler", "wrestler vs striker", "kickboxer vs MMA grappler". Apply the Inference rules below — these don't require explicit editorial phrasing, just enough signal from the matchup or framing.
@@ -72,6 +76,15 @@ Inference rules (these are NOT fabrication — apply them whenever the matchup g
   - "styleTags" follow the same rule: emit contrast tags when fighters' established styles imply a clash, even if the editorial doesn't spell it out. Common patterns: "striker vs grappler", "wrestler vs striker", "kickboxer vs boxer", "veteran vs prospect". Skip when the matchup is symmetrical with no contrast hook.
   - Rematches/trilogies: when editorial confirms (or strongly implies) a prior meeting between the two named fighters, ALWAYS include the literal word "rematch" (or "trilogy" for a third meeting) in storylines, plus the prior outcome when given. Example: "rematch of 2024 FOTY (Allen UD)". This token is load-bearing for downstream personalization.
   - You may use your general knowledge of named fighters' styles for pace + styleTags + rematch detection. Don't make up records or specific past events not in the editorial, but recognizing that (for example) a known wrestler will likely wrestle is analysis, not fabrication.
+
+Preview rules (the per-fight "preview" field) — a short editorial preview, not a data dump:
+  - PURPOSE: this renders as "The Story" on the fight's web page. Write for a fan deciding whether to watch: what each fighter brings, how the styles interact, what's on the line.
+  - GROUNDING: factual claims (records, streaks, results, prior meetings, title lineage, quotes) MUST come from the editorial text. Style/pace framing follows the Inference rules above, analysis of how the matchup plays out is allowed and encouraged.
+  - EMIT the field only when editorial gives you real per-fight material (typically the main event, co-main, and featured bouts). A fight the editorial only namedrops gets whyCare at most, never a padded preview. Do NOT stretch thin material into paragraphs.
+  - TENSE: written before the fight. Never imply you know the result.
+  - STRUCTURE: 2-3 short paragraphs separated by \\n\\n. Lead with the hook, not biography. Plain English, no jargon, no bullet lists, no headings.
+  - Do not repeat the whyCare sentence verbatim, the preview should stand on its own.
+  - House style: no em dashes or en dashes (use commas, "and", or periods). Full fighter names on first mention, last names after.
 
 Event summary rules (the "event" object) — SELL the night, don't just describe it:
   - GOAL: make a fan WANT to watch. This is ad copy for the card, not a neutral listing. Lead with the hook that makes the night exciting; never settle for a flat "X faces Y for the title" recap when a sharper sell is available.
@@ -130,6 +143,8 @@ export interface FightEnrichmentRecord {
   rankings: { red: number | null; blue: number | null } | null;
   odds: { red: string | null; blue: string | null } | null;
   whyCare: string;
+  /** Long-form 2-3 paragraph preview ("The Story" on web). Empty when the model had too little material. */
+  preview: string;
   stakes: string[];
   storylines: string[];
   styleTags: string[];
@@ -294,7 +309,8 @@ function parseFights(
             blue: typeof f.odds.blue === 'string' ? f.odds.blue : null,
           }
         : null,
-      whyCare: typeof f.whyCare === 'string' ? f.whyCare.trim() : '',
+      whyCare: typeof f.whyCare === 'string' ? stripDashes(f.whyCare.trim()) : '',
+      preview: typeof f.preview === 'string' ? stripDashes(f.preview.trim()) : '',
       stakes: Array.isArray(f.stakes) ? f.stakes.filter((s: any) => typeof s === 'string') : [],
       storylines: Array.isArray(f.storylines) ? f.storylines.filter((s: any) => typeof s === 'string') : [],
       styleTags: Array.isArray(f.styleTags) ? f.styleTags.filter((s: any) => typeof s === 'string') : [],

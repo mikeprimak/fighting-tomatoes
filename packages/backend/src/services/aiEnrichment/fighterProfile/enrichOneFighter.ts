@@ -19,6 +19,7 @@ import {
 } from './extractFighterProfile';
 import {
   persistFighterProfile,
+  persistFighterFacts,
   fighterRecordKey,
   type PersistFighterProfileOutcome,
 } from './persistFighterProfile';
@@ -44,6 +45,8 @@ export interface EnrichOneFighterResult {
   sourcesFetched: Array<{ label: string; ok: boolean; chars: number }>;
   confidence: number | null;
   persistOutcome: PersistFighterProfileOutcome | null;
+  /** Fact columns filled this run (SEO step 7; fill-only, empty when none). */
+  factsWritten: string[];
   costUsd: number;
   elapsedMs: number;
   abortedReason?: string;
@@ -80,6 +83,7 @@ export async function enrichOneFighter(
       sourcesFetched,
       confidence: null,
       persistOutcome: null,
+      factsWritten: [],
       costUsd: 0,
       elapsedMs: 0,
       abortedReason: 'no_sources',
@@ -129,13 +133,19 @@ export async function enrichOneFighter(
       sourcesFetched,
       confidence: null,
       persistOutcome: null,
+      factsWritten: [],
       costUsd,
       elapsedMs,
       abortedReason: 'no_parseable_profile',
     };
   }
 
-  // 4. Persist.
+  // 4. Persist. Facts first (fill-only, independent of the confidence floor —
+  //    a thin narrative can still contribute a grounded DOB/nationality).
+  const factsWritten = await persistFighterFacts(prisma, fighter.id, result.record.facts, {
+    dryRun: !!opts.dryRun,
+  });
+
   const persistOutcome = await persistFighterProfile(
     prisma,
     fighter.id,
@@ -151,6 +161,7 @@ export async function enrichOneFighter(
     sourcesFetched,
     confidence: result.record.confidence,
     persistOutcome,
+    factsWritten,
     costUsd,
     elapsedMs,
   };

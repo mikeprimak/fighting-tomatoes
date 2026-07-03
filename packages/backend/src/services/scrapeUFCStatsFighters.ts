@@ -34,6 +34,12 @@ export interface UFCStatsFighterRow {
   firstName: string;
   lastName: string;
   nickname: string | null;
+  /** Display string as shown by ufcstats, e.g. `5' 11"`. null when listed as `--`. */
+  height: string | null;
+  /** Display string, e.g. `76"` (trailing `.0` trimmed). null when listed as `--`. */
+  reach: string | null;
+  /** "Orthodox" | "Southpaw" | "Switch" | rare others. null when blank/`--`. */
+  stance: string | null;
   wins: number;
   losses: number;
   draws: number;
@@ -109,6 +115,13 @@ function parseRecordCell(cell: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+/** ufcstats renders missing physicals as `--` (or blank). Tidy reach's `76.0"` → `76"`. */
+function parsePhysicalCell(cell: string): string | null {
+  const t = (cell || '').trim();
+  if (!t || t === '--') return null;
+  return t.replace(/\.0"$/, '"');
+}
+
 function parseDirectoryPage(html: string): UFCStatsFighterRow[] {
   const $ = cheerio.load(html);
   const out: UFCStatsFighterRow[] = [];
@@ -125,6 +138,9 @@ function parseDirectoryPage(html: string): UFCStatsFighterRow[] {
       firstName,
       lastName,
       nickname: cols[2] || null,
+      height: parsePhysicalCell(cols[3]),
+      reach: parsePhysicalCell(cols[5]),
+      stance: parsePhysicalCell(cols[6]),
       wins: parseRecordCell(cols[7]),
       losses: parseRecordCell(cols[8]),
       draws: parseRecordCell(cols[9]),

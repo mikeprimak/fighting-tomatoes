@@ -19,6 +19,16 @@ function formatWeightClass(wc?: string | null): string | null {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/** One label/value pair in the physical-facts strip (SEO step 7). */
+function FactItem({ label, value }: { label: string; value: string }) {
+  return (
+    <span>
+      <span className="text-xs uppercase tracking-wide text-text-secondary">{label}</span>{' '}
+      <span className="font-medium">{value}</span>
+    </span>
+  );
+}
+
 interface Props {
   fighterId: string;
   initialFighter: any;
@@ -115,6 +125,20 @@ export function FighterDetailClient({ fighterId, initialFighter, initialFights =
           </div>
         </div>
       </div>
+
+      {/* Physical facts strip (SEO step 7) — the visible counterpart to the
+          Person JSON-LD emitted server-side. Renders only what we have. */}
+      {(fighter.nationality || fighter.height || fighter.reach || fighter.stance || fighter.dateOfBirth) && (
+        <div className="mb-6 flex flex-wrap gap-x-6 gap-y-2 rounded-lg border border-border bg-card p-3 text-sm">
+          {fighter.nationality && <FactItem label="Country" value={fighter.nationality} />}
+          {fighter.height && <FactItem label="Height" value={fighter.height} />}
+          {fighter.reach && <FactItem label="Reach" value={fighter.reach} />}
+          {fighter.stance && <FactItem label="Stance" value={fighter.stance} />}
+          {fighter.dateOfBirth && (
+            <FactItem label="Born" value={new Date(fighter.dateOfBirth).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })} />
+          )}
+        </div>
+      )}
 
       {/* About — AI-enriched fighter profile (Phase 5). Confidence-gated; also SEO content. */}
       <FighterAbout fighter={fighter} />

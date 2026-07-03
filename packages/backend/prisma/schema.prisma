@@ -173,6 +173,17 @@ model Fighter {
   isChampion      Boolean   @default(false)
   championshipTitle String?
 
+  // Physical facts (SEO step 7 — richer Person JSON-LD on web fighter pages).
+  // All nullable + fill-only: the ufcstats directory backfill supplies height/
+  // reach/stance (exact display strings as scraped, e.g. `5' 11"` / `76"`); the
+  // fighter-profile cron fills nationality/dateOfBirth from grounded bio sources.
+  // Writers never overwrite a populated value.
+  nationality     String?   // country name in English, e.g. "United States"
+  height          String?   // display string, e.g. `5' 11"`
+  reach           String?   // display string, e.g. `76"`
+  stance          String?   // "Orthodox" | "Southpaw" | "Switch"
+  dateOfBirth     DateTime? // date-only precision (UTC midnight)
+
   // Stats
   averageRating   Float     @default(0)
   totalRatings    Int       @default(0)

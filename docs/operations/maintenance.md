@@ -97,7 +97,10 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~10 min (the dry-run prints coverage; review the audit JSON before `--apply`).
 - **Note:** ufcstats now sits behind a JS proof-of-work gate; the scraper solves it automatically (`services/scrapeUFCStatsFighters.ts`).
 
-### Dependency + security update sweep
+### Fighter physicals refresh (ufcstats)
+- **What:** Re-run `packages/backend/src/scripts/backfillFighterPhysicals.ts` (dry-run first, then `--apply`) alongside the record refresh above — fills height/reach/stance on fighters missing them (feeds Person JSON-LD, SEO step 7).
+- **Why:** New fighters arrive without physicals; ufcstats is the exact source. Fill-only (never overwrites), so it's safe to re-run. Nationality/DOB come from the daily fighter-profile cron instead (grounded LLM extraction, also fill-only).
+- **Time:** piggybacks on the record refresh (same directory scrape, ~10 min).
 - **What:** `pnpm outdated` across all packages, review Dependabot alerts on GitHub, update Expo SDK if a new release exists.
 - **Why:** Security patches + Expo SDK alignment with EAS Build versions.
 - **Time:** ~2-4 hr including testing.
