@@ -21,6 +21,7 @@ import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
 import onboardingRoutes from './onboarding';
+import homeMirrorRoutes from './homeMirror';
 import sitemapRoutes from './sitemap';
 import { isIndexable, fighterIndexWhere } from '../lib/seoIndex';
 import { WeightClass } from '@prisma/client';
@@ -2289,6 +2290,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register onboarding routes under /api/onboarding prefix
   await fastify.register(onboardingRoutes, { prefix: '/api/onboarding' });
+
+  // Home mirror — identity dashboard urgency rail (identity-platform Phase 1 #1)
+  await fastify.register(homeMirrorRoutes, { prefix: '/api/home' });
   // Bulk sitemap data for goodfights.app (paths carry their own /api prefix)
   await fastify.register(sitemapRoutes);
 

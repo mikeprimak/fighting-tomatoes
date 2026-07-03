@@ -26,6 +26,7 @@ import { getHypeHeatmapColor } from '../../utils/heatmap';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
+import HomeMirror from '../../components/HomeMirror';
 import { useEventBroadcasts } from '../../components/HowToWatch';
 import FighterCard from '../../components/FighterCard';
 import { SearchBar } from '../../components';
@@ -933,6 +934,10 @@ export default function HomeScreen() {
       }
     >
         <View>
+      {/* The mirror — identity dashboard above the fold (signed-in users).
+          Logged-out users get the content feed first, per the locked model. */}
+      <HomeMirror />
+
       {/* Event Last Night / Earlier Today — UFC only, the day(s) after a card ran */}
       {lastNightUFC.length > 0 ? (
         <Section

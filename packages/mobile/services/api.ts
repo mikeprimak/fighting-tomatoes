@@ -133,6 +133,38 @@ export interface TasteProfileResponse {
   coverage: { withCharacter: number; total: number };
 }
 
+/** One live/today event card on the home mirror's urgency rail. */
+export interface HomeMirrorEventCard {
+  eventId: string;
+  name: string;
+  promotion: string;
+  date: string;
+  mainStartTime: string | null;
+  prelimStartTime: string | null;
+  hypedFightCount: number;
+  followedFighterNames: string[];
+}
+
+/** One pinned fight (hyped and/or followed fighter) on the urgency rail. */
+export interface HomeMirrorPinnedFight {
+  fightId: string;
+  eventId: string;
+  eventName: string;
+  promotion: string;
+  eventDate: string;
+  isTitle: boolean;
+  fighter1: { name: string; profileImage: string | null };
+  fighter2: { name: string; profileImage: string | null };
+  hype: number | null;
+  followedFighterNames: string[];
+}
+
+export interface HomeMirrorResponse {
+  liveEvents: HomeMirrorEventCard[];
+  todayEvents: HomeMirrorEventCard[];
+  pinnedFights: HomeMirrorPinnedFight[];
+}
+
 interface Fight {
   id: string;
   orderOnCard: number;
@@ -768,15 +800,23 @@ class ApiService {
   async getTasteProfile(
     max?: number,
     fresh?: boolean,
+    salt?: string,
   ): Promise<TasteProfileResponse> {
     // fresh=true bypasses the backend's 10-min input cache — used by the
     // onboarding payoff screen, which loads seconds after the ratings and
-    // follows it should reflect.
+    // follows it should reflect. salt overrides the default weekly rotation
+    // (the home mirror passes a daily salt so the rail changes every day).
     const params = new URLSearchParams();
     if (max) params.append('max', String(max));
     if (fresh) params.append('fresh', 'true');
+    if (salt) params.append('salt', salt);
     const qs = params.toString();
     return this.makeRequest(`/fan-dna/taste-profile${qs ? `?${qs}` : ''}`);
+  }
+
+  /** Urgency rail for the home mirror (live/today events + pinned fights). */
+  async getHomeMirror(): Promise<HomeMirrorResponse> {
+    return this.makeRequest('/home/mirror');
   }
 
   async getTopFollowedFighters(
