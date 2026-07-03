@@ -40,6 +40,12 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~5 min.
 - **Output:** Nothing unless the top-10 looks wrong (then daily-doc it).
 
+### SEO indexing health check (GSC)
+- **What:** From `packages/backend`, run `node scripts/gsc.js sitemaps` (submitted vs indexed per sitemap, errors) and `node scripts/gsc.js query 28 page` (clicks/impressions by page). Watch: indexed counts climbing toward submitted (~5.6k URLs), slug URLs replacing UUID URLs in results, and whether fighter/fight/best-of-year pages are earning impressions.
+- **Why:** The programmatic SEO corpus (steps 1–6, shipped 2026-07-01) only pays off if Google actually indexes it — a silent gate regression, sitemap error, or Helpful-Content demotion shows up here first.
+- **Time:** ~10 min.
+- **Note:** run biweekly through the initial rollout (Jul–Sep 2026), then settle to monthly. Setup details in `docs/daily/2026-07-03.md`.
+
 ### AI enrichment — cost + coverage audit
 - **What:** Check actuals against the `<$300/year` ceiling. Verify coverage on the past month's cards (how many fights got `aiPreviewShort` populated, average confidence, missing-source events).
 - **Why:** Cost can creep silently if cron mis-fires or sources change shape. Coverage gaps mean users see empty cards.
