@@ -2,6 +2,8 @@
 
 A first-class workstream: make every interaction in the app feel like it pays off — immediately, over time, or both. Build a layered reward system that grows with the user without becoming gamified or cheap.
 
+> **Strategic frame above this workstream:** [identity-platform.md](identity-platform.md) — the aggregator→identity ("Letterboxd, not Rotten Tomatoes") thesis. The features below are how that thesis gets built; read it for the *why*.
+
 ## North Star
 
 Users keep coming back not because we nag them, but because the app **remembers them, reflects them back, and pays off their effort**. Every tap should feel like depositing something, not casting into a void.
@@ -31,6 +33,7 @@ Users keep coming back not because we nag them, but because the app **remembers 
 - [ ] **Post-fight closure card** — when the rated fight completes, the card grows a quiet line: *"Hype 8 · Community 7.4"*. No badge, no celebration.
 - [ ] **Closure-loop enrichment (AI tags)** — *"This was a 'tactical chess match' — community usually rates these 6.4, this one landed at 8.1."* Pulls from [[project-ai-enrichment-workstream]].
 - [ ] **Anniversary surfacing** — *"1 year ago today you rated UFC 297."* Quiet, optional, opt-out.
+- [ ] **Controversy polls** — admin-authored, per-fight, surfaced only on real disputes (*"early stoppage?"*, *"robbery?"*, *"penalize the eye pokes?"*). Locked + timestamped vote = "what I thought the first time I watched." Editorial/rare, so it dodges the six-verbs chore problem. Crowd split shows as closure payoff; verdicts collect on profile. Full design in [identity-platform.md](identity-platform.md) → Controversy Polls.
 
 ### Immediate gratification (the dopamine hit)
 

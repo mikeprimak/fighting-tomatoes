@@ -114,6 +114,14 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **When:** During every UFC PPV, major Tapology-tracked card, or named target event.
 - **Time:** Passive monitoring; ~10 min hands-on if intervention needed.
 
+### VPS live-tracker pre-flight (per card on the VPS)
+- **What:** Before/at the start of any VPS-tracked card (Tapology orgs, RAF, PFL, BKFC, ONE, Oktagon), confirm the tracker is actually *publishing* — `journalctl -u scraper-service -f` should show `[ORG] N fights ... Updated: N` AND the published `fightStatus` (not just `trackerFightStatus`) advancing in the app. Two silent failure modes seen 2026-06-13/14:
+  - **Shadow-only writes** — a scraper outside the default `production_scrapers` list (e.g. `raf`) publishes nothing unless the process called `refreshProductionScrapersCache`. App shows every fight UPCOMING while shadow fields are correct. (Fixed for raf; check any newly-added org.)
+  - **Missing Chrome on the VPS** — the Tapology live tracker still launches local Chrome even with Scrapfly; `Could not find Google Chrome executable ... /opt/google/chrome/chrome` = 0 fights extracted, silently. Install Chrome on the VPS (`apt install` Chrome stable, matching Puppeteer's channel) and re-verify.
+- **Why:** Both failures are silent — the event shows LIVE, logs look busy, but the card never advances for users. Caught only by watching the *published* state, not the log volume.
+- **When:** Start of each VPS-tracked card.
+- **Time:** ~5 min.
+
 ---
 
 ## How to add to this doc
