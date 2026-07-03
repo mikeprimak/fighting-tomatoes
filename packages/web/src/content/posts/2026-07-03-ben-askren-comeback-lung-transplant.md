@@ -64,3 +64,5 @@ Amy, who spent last summer waiting through weeks of uncertainty at his bedside, 
 ---
 
 *RAF 11 takes place Saturday, July 18 at UW-Milwaukee Panther Arena, streaming on Fox Nation, with wrestling beginning at 7 p.m. CT. Askren vs. Muhammad is the co-main event beneath Arman Tsarukyan vs. Colby Covington.*
+
+*How hyped are you for Askren's return? [Rate your hype for every match on the RAF 11 card](https://goodfights.app/events/raf11) on Good Fights — then come back after the final whistle and rate how it delivered. Never miss a Good Fight.*
