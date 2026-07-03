@@ -717,15 +717,6 @@ export default function HomeScreen() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Past events, used only to surface "Event Last Night" — the most recent UFC
-  // card that ran in the last day (UFC only, by design). Past events come back
-  // most-recent-first, so a small page covers the window.
-  const { data: pastEventsData } = useQuery({
-    queryKey: ['events', 'past', 'lastNightUFC'],
-    queryFn: () => apiService.getEvents({ type: 'past', includeFights: false, limit: 8 }),
-    staleTime: 5 * 60 * 1000,
-  });
-
   const { data: topUpcomingFights, isLoading: isUpcomingLoading } = useQuery({
     queryKey: ['topUpcomingFights', isAuthenticated, 'week'],
     queryFn: () => apiService.getTopUpcomingFights('week'),
