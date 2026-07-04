@@ -15,7 +15,7 @@ const MAX = 6;
  *  slightly off the edge so wide labels ("MY RATING") don't crowd it. */
 function ColumnHeaders({ left, right }: { left: string; right: string }) {
   return (
-    <div className="-mb-2 flex items-center justify-between pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
+    <div className="flex items-center justify-between pb-1.5 pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
       <span className="ml-2 w-12 whitespace-nowrap text-center">{left}</span>
       <span className="mr-2.5 w-12 whitespace-nowrap text-center">{right}</span>
     </div>
@@ -129,7 +129,7 @@ function EventBanner({ event, when }: { event: any; when: string }) {
     </>
   );
 
-  const className = 'group relative block h-28 overflow-hidden bg-background-secondary';
+  const className = 'group relative block aspect-[3/1] overflow-hidden bg-background-secondary';
   return event?.id ? (
     <Link href={`/events/${event.id}`} className={className}>
       {inner}
