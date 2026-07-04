@@ -352,7 +352,8 @@ function HypedFightRow({
 
   const name1 = getFighterPrimaryName(fight.fighter1);
   const name2 = getFighterPrimaryName(fight.fighter2);
-  const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : formatWeightClass(fight.weightClass);
+  // Weight class dropped from these rows per product — only title fights keep a tag.
+  const tag = fight.isTitle ? (fight.titleName || 'Title Fight') : null;
 
   return (
     <View style={[styles.hypedRow, !isLast && styles.hypedRowDivider]}>
