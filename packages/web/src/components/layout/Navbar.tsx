@@ -47,15 +47,13 @@ export function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4">
         <div className="flex h-14 items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          {/* Logo — full wordmark image (glove + GOOD FIGHTS) */}
+          <Link href="/" className="flex items-center">
             <img
-              src="/good-fights-hand.png"
-              alt=""
-              aria-hidden="true"
-              className="h-8 w-8 shrink-0 object-contain"
+              src="/good-fights-logo-line-thickened.png"
+              alt="Good Fights"
+              className="h-8 w-auto shrink-0 object-contain"
             />
-            <span className="text-xl font-bold text-primary">GOOD FIGHTS</span>
           </Link>
 
           {/* Desktop nav links */}
