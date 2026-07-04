@@ -120,19 +120,28 @@ function EventBanner({ event, when }: { event: any; when: string }) {
 }
 
 /** A banner-headed event group: the EventBanner over that event's fight cards,
- *  in one bordered card — the same silhouette as the mobile HypedEventCard. */
+ *  in one bordered card — the same silhouette as the mobile HypedEventCard.
+ *  `columns` labels the cards' score columns (community score left, the user's
+ *  own score right) — e.g. HYPE / MY HYPE upcoming, RATING / MY RATING recent.
+ *  The spans align with the cards' w-12 columns (left square sits at left-2). */
 function EventFightGroup({
   event,
   when,
+  columns,
   children,
 }: {
   event: any;
   when: string;
+  columns: { left: string; right: string };
   children: React.ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <EventBanner event={event} when={when} />
+      <div className="-mb-2 flex items-center justify-between pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
+        <span className="ml-2 w-12 whitespace-nowrap text-center">{columns.left}</span>
+        <span className="w-12 whitespace-nowrap text-center">{columns.right}</span>
+      </div>
       <div className="divide-y divide-border">{children}</div>
     </div>
   );
@@ -160,6 +169,7 @@ export function HotUpcomingFightsSection() {
             key={g.event?.id ?? i}
             event={g.event}
             when={relativeEventTime(g.event?.mainStartTime ?? g.event?.date)}
+            columns={{ left: 'Hype', right: 'My Hype' }}
           >
             {g.fights.map((fight: any) => (
               <UpcomingFightCard key={fight.id} fight={fight} />
@@ -194,6 +204,7 @@ export function RecentGoodFightsSection() {
             key={g.event?.id ?? i}
             event={g.event}
             when={pastEventDate(g.event?.mainStartTime ?? g.event?.date)}
+            columns={{ left: 'Rating', right: 'My Rating' }}
           >
             {g.fights.map((fight: any) => (
               <CompletedFightCard key={fight.id} fight={fight} />

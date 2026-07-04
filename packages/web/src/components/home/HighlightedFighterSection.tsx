@@ -1,8 +1,9 @@
 'use client';
 
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getHighlightedFighter } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
 import { SectionHeading } from './SectionHeading';
@@ -75,15 +76,60 @@ export function HighlightedFighterSection() {
       : data?.data?.fighter
         ? [data.data.fighter]
         : [];
+
+  // Netflix-style rail: scrollbar hidden, edge arrows page the rail. Each
+  // arrow only shows while there's content in that direction.
+  const railRef = useRef<HTMLDivElement>(null);
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = railRef.current;
+    if (!el) return;
+    setCanLeft(el.scrollLeft > 4);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    updateArrows();
+    window.addEventListener('resize', updateArrows);
+    return () => window.removeEventListener('resize', updateArrows);
+  }, [updateArrows, fighters.length]);
+
+  const page = (dir: 1 | -1) => {
+    const el = railRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.8, behavior: 'smooth' });
+  };
+
   if (fighters.length === 0) return null;
+
+  const arrowClass =
+    'absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/85 text-foreground shadow-md backdrop-blur transition-colors hover:bg-background';
 
   return (
     <section className="mb-8">
       <SectionHeading title="Highlighted Fighters" icon={Sparkles} />
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {fighters.map((f: any) => (
-          <FeaturedFighterCard key={f.id} fighter={f} />
-        ))}
+      <div className="relative">
+        {canLeft && (
+          <button type="button" aria-label="Scroll left" onClick={() => page(-1)} className={`${arrowClass} left-1`}>
+            <ChevronLeft size={20} />
+          </button>
+        )}
+        <div
+          ref={railRef}
+          onScroll={updateArrows}
+          className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {fighters.map((f: any) => (
+            <FeaturedFighterCard key={f.id} fighter={f} />
+          ))}
+        </div>
+        {canRight && (
+          <button type="button" aria-label="Scroll right" onClick={() => page(1)} className={`${arrowClass} right-1`}>
+            <ChevronRight size={20} />
+          </button>
+        )}
       </div>
     </section>
   );

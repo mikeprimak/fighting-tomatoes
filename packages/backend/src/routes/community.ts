@@ -734,7 +734,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             where: { parentReviewId: null, content: { not: '' } },
             orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
             take: 1,
-            select: { content: true },
+            select: { content: true, upvotes: true },
           },
         },
         orderBy: [
@@ -751,6 +751,32 @@ export default async function communityRoutes(fastify: FastifyInstance) {
       const start = pool.length > 0 ? (daySeed * limitNum) % pool.length : 0;
       const rotated = [...pool.slice(start), ...pool.slice(0, start)];
       const fights = rotated.slice(0, limitNum);
+
+      // Guarantee the day's visible window carries at least one fight with a
+      // standout comment (the mobile home shows the first 5 and renders each
+      // fight's comment snippet under its card). If none qualify, swap the
+      // nearest comment-backed pool fight into the last visible slot — prefer
+      // one whose top comment is actually upvoted. `rotated` is day-rotated,
+      // so which fight gets swapped in still changes daily.
+      const VISIBLE = Math.min(5, fights.length);
+      const hasSnippet = (f: any) => !!f.reviews?.[0]?.content?.trim();
+      if (VISIBLE > 0 && !fights.slice(0, VISIBLE).some(hasSnippet)) {
+        let ci = rotated.findIndex(
+          (f: any, i: number) => i >= VISIBLE && hasSnippet(f) && (f.reviews[0].upvotes ?? 0) >= 1,
+        );
+        if (ci === -1) {
+          ci = rotated.findIndex((f: any, i: number) => i >= VISIBLE && hasSnippet(f));
+        }
+        if (ci !== -1) {
+          if (ci < fights.length) {
+            // Candidate already sits later in the response — swap positions so
+            // it isn't duplicated.
+            [fights[VISIBLE - 1], fights[ci]] = [fights[ci], fights[VISIBLE - 1]];
+          } else {
+            fights[VISIBLE - 1] = rotated[ci];
+          }
+        }
+      }
 
       const data = fights.map((fight: any) => ({
         ...fight,
