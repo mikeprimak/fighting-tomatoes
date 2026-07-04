@@ -728,6 +728,14 @@ export default async function communityRoutes(fastify: FastifyInstance) {
               preFightComments: true,
             },
           },
+          // The fight's standout comment — the most-upvoted top-level review
+          // with text. The home shows its body (two lines) under the card.
+          reviews: {
+            where: { parentReviewId: null, content: { not: '' } },
+            orderBy: [{ upvotes: 'desc' }, { createdAt: 'desc' }],
+            take: 1,
+            select: { content: true },
+          },
         },
         orderBy: [
           { averageRating: 'desc' },
@@ -746,6 +754,8 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
       const data = fights.map((fight: any) => ({
         ...fight,
+        reviews: undefined, // strip the raw relation — only the snippet ships
+        topComment: fight.reviews?.[0]?.content?.trim() || null,
         reviewCount: fight._count?.reviews || 0,
         commentCount: fight._count?.preFightComments || 0,
         userRating: null, // by definition unrated by this user

@@ -574,6 +574,13 @@ export async function getClassicFights(limit = 8) {
   return makeRequest<{ data: any[] }>(`/community/classic-fights?limit=${limit}`);
 }
 
+// Best fights from the last couple weeks (rating > 7, >= 3 ratings), grouped by
+// event server-side (<= 3 events, <= 3 fights/event). Each fight carries .event —
+// the client groups them for the banner-card UI, exactly like the mobile home.
+export async function getRecentGoodFights() {
+  return makeRequest<{ data: any[] }>('/community/recent-good-fights');
+}
+
 export interface HighlightedFighter {
   fighter: {
     id: string;
@@ -593,7 +600,13 @@ export interface HighlightedFighter {
 }
 
 export async function getHighlightedFighter() {
-  return makeRequest<{ data: HighlightedFighter | null }>('/community/highlighted-fighter');
+  // `fighters` is a lightweight rail of the top featurable fighters (already
+  // engagement-ranked + day-rotated server-side) for the side-scroll home band;
+  // `data` remains the single chosen fighter for older clients.
+  return makeRequest<{
+    data: HighlightedFighter | null;
+    fighters?: HighlightedFighter['fighter'][];
+  }>('/community/highlighted-fighter');
 }
 
 export async function getHotFighters() {

@@ -462,8 +462,10 @@ function HypedEventCard({
         </View>
       </View>
 
-      {/* Fights */}
+      {/* Fights — a small right-aligned column header sits over the score
+          boxes so fans know what the number is (HYPE upcoming, RATING recent) */}
       <View style={styles.hypedFightList}>
+        <Text style={styles.hypedColLabel}>{mode === 'rating' ? 'RATING' : 'HYPE'}</Text>
         {fights.map((fight, i) => (
           <HypedFightRow
             key={fight.id}
@@ -862,7 +864,6 @@ export default function HomeScreen() {
   const followedFighters = rotateDaily(topFollowed?.data || [], 6, dayKey);
   const recentlyBooked = rotateDaily(recentlyBookedData?.data || [], 6, dayKey);
   const comments = (topComments?.data || []).slice(0, 3);
-  const throwbackComment = topComments?.throwback || null;
   const classics = (classicFights?.data || []).slice(0, 5);
 
   // Highlighted fighters — a few featurable fighters for the horizontal rail.
@@ -1010,17 +1011,7 @@ export default function HomeScreen() {
             </View>
           </Section>
         ))
-      ) : (
-        <Section
-          colors={colors}
-          styles={styles}
-          title="This Week"
-          icon="fire-flame-curved"
-          iconLib="fa6"
-        >
-          <Empty styles={styles} text="No events in the next 7 days" />
-        </Section>
-      )}
+      ) : null /* no events this week — the section disappears entirely (matches web) */}
 
       {/* Most Hyped Upcoming Fights ----------------------------------------*/}
       <Section
@@ -1090,19 +1081,23 @@ export default function HomeScreen() {
         {isCommentsLoading ? (
           <Loading colors={colors} styles={styles} />
         ) : comments.length > 0 ? (
-          comments.map((comment: any) => (
-            <CommentCard
-              key={comment.id}
-              comment={comment}
-              onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
-              onUpvote={() =>
-                comment.fight &&
-                upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
-              }
-              isUpvoting={upvotingCommentId === comment.id}
-              isAuthenticated={isAuthenticated}
-            />
-          ))
+          // Padded wrapper so the comment cards share the event cards' width
+          // and screen-edge margins (CommentCard itself is full-bleed).
+          <View style={styles.commentList}>
+            {comments.map((comment: any) => (
+              <CommentCard
+                key={comment.id}
+                comment={comment}
+                onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
+                onUpvote={() =>
+                  comment.fight &&
+                  upvoteMutation.mutate({ fightId: comment.fight.id, reviewId: comment.id })
+                }
+                isUpvoting={upvotingCommentId === comment.id}
+                isAuthenticated={isAuthenticated}
+              />
+            ))}
+          </View>
         ) : (
           <Empty styles={styles} text="No comments yet" />
         )}
@@ -1167,7 +1162,7 @@ export default function HomeScreen() {
       <Section
         colors={colors}
         styles={styles}
-        title="Most Followed"
+        title="Most Followed Fighters"
         subtitle="You'll get notified when they're booked and on days they fight."
         icon="users"
         iconLib="fa6"
@@ -1242,43 +1237,36 @@ export default function HomeScreen() {
         </Section>
       )}
 
-      {/* Classics to Watch (historic highly-rated, unrated by user) — with a
-          classic throwback comment shown within these old fights -----------*/}
-      {(isClassicsLoading || classics.length > 0 || throwbackComment) && (
+      {/* Classics to Watch (historic highly-rated, unrated by user). Each card
+          may carry a standout community comment (body only, two lines) shown
+          right below it — replaces the old standalone throwback comment. -----*/}
+      {(isClassicsLoading || classics.length > 0) && (
         <Section colors={colors} styles={styles} title="Classics to Watch" icon="film" iconLib="fa6">
           {isClassicsLoading ? (
             <Loading colors={colors} styles={styles} />
           ) : (
             classics.map((fight: any, index: number) => (
-              <CompletedFightCard
-                key={fight.id}
-                fight={fight}
-                onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
-                showEvent={true}
-                index={index}
-              />
+              <React.Fragment key={fight.id}>
+                <CompletedFightCard
+                  fight={fight}
+                  onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
+                  showEvent={true}
+                  index={index}
+                />
+                {fight.topComment ? (
+                  <TouchableOpacity
+                    style={styles.classicCommentWrap}
+                    activeOpacity={0.7}
+                    onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
+                  >
+                    <Text style={styles.classicCommentText} numberOfLines={2} ellipsizeMode="tail">
+                      &ldquo;{fight.topComment}&rdquo;
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
+              </React.Fragment>
             ))
           )}
-          {/* A standout comment from a classic fight, embedded here instead of
-              the old standalone "Classic Throwback" section. */}
-          {throwbackComment ? (
-            <CommentCard
-              comment={throwbackComment}
-              onPress={() =>
-                throwbackComment.fight &&
-                router.push(`/fight/${throwbackComment.fight.id}` as any)
-              }
-              onUpvote={() =>
-                throwbackComment.fight &&
-                upvoteMutation.mutate({
-                  fightId: throwbackComment.fight.id,
-                  reviewId: throwbackComment.id,
-                })
-              }
-              isUpvoting={upvotingCommentId === throwbackComment.id}
-              isAuthenticated={isAuthenticated}
-            />
-          ) : null}
         </Section>
       )}
 
@@ -1551,6 +1539,19 @@ function makeStyles(colors: ThemeColors) {
     hypedFightList: {
       paddingHorizontal: 14,
     },
+    // Right-aligned column header over the score boxes ("HYPE" / "RATING") —
+    // same width as hypedBadge so the label sits centered over the column.
+    hypedColLabel: {
+      alignSelf: 'flex-end',
+      width: 48,
+      textAlign: 'center',
+      fontSize: 9,
+      fontWeight: '700',
+      letterSpacing: 0.6,
+      color: colors.textSecondary,
+      marginTop: 8,
+      marginBottom: -4,
+    },
     hypedRow: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -1623,6 +1624,22 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 9,
       fontWeight: '600',
       textAlign: 'center',
+    },
+    // Home comment cards share the event cards' screen-edge margins.
+    commentList: {
+      paddingHorizontal: 16,
+    },
+    // Standout community comment under a Classics card: body only, two lines.
+    classicCommentWrap: {
+      paddingHorizontal: 16,
+      paddingTop: 2,
+      paddingBottom: 12,
+    },
+    classicCommentText: {
+      fontSize: 13,
+      lineHeight: 18,
+      fontStyle: 'italic',
+      color: colors.textSecondary,
     },
     // Most Followed horizontal chip
     followChip: {

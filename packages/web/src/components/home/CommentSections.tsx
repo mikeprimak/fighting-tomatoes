@@ -87,7 +87,7 @@ export function TopCommentsSection() {
 
   return (
     <section className="mb-8">
-      <SectionHeading title="Top Comments" icon={MessageSquareQuote} />
+      <SectionHeading title="Comments on Recent Fights" icon={MessageSquareQuote} />
       <div className="space-y-2">
         {comments.map((c: any) => (
           <CommentCard

@@ -13,7 +13,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**⏳ PENDING OTA — `docs/HANDOFF-home-reorder-ota-pending-2026-06-29.md`:** Home-screen reorder is committed to `main` (`d4095d05`) but its production OTA is **deliberately HELD** — new builds are in review at both stores. Publish the OTA only after those store builds are reviewed + accepted, and re-check the live runtimes first. Backend half already auto-deployed (additive, safe).
+**✅ DONE (2026-06-30) — Home-reorder OTA published.** The held OTA for the Home-screen reorder (`d4095d05`) was published after the 2.1.3 store builds went live: iOS runtime `2.1.3` (group `bca2b1d2…`), Android runtime `1.0.0` (group `54a94c8d…`). The 2.1.3 native builds were cut *before* the reorder commit, so this OTA is what delivers the reorder to them. See `docs/daily/2026-06-30.md`.
 
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.
 
@@ -103,22 +103,18 @@ Full docs: `archive/LIVE-EVENT-MANAGEMENT.md`. Admin panel: `https://<backend-ho
 - **API endpoints**: `docs/API.md`
 - **Doc system overview**: `docs/README.md`
 
-## ⏳ Pending native change — apply on NEXT Android build
-
-**Android notification tray icon fix (commit `f112c5c1`, 2026-06-22) is NOT in any live/in-review build.** The vc39/2.1.2 build submitted 2026-06-22 predates it. Native drawables (`android/app/src/main/res/drawable-*/notification_icon.png`) are **not OTA-able**, so the corrected white-glove icon only reaches users via a **new Android build** (vc40+). Don't cut a build solely for this — fold it into the next Android build whenever one happens. The fix is already committed on `main` (both the committed drawables AND the managed `assets/notification-icon.png`), so any new build picks it up automatically. See `docs/daily/2026-06-22.md`.
-
-## Current Store Versions (as of June 25, 2026)
+## Current Store Versions (as of July 4, 2026)
 
 | Platform | Version | Build # | Status |
 |---|---|---|---|
-| Android (Play Store) | 2.1.0 | versionCode 38 | **LIVE** (passed review ~early June 2026) |
-| iOS (App Store) | 2.1.2 | buildNumber (vc39) | **LIVE** (the 2.1.2 build submitted 2026-06-22 is now live) |
+| Android (Play Store) | 2.1.3 | versionCode 40 | **LIVE** (image-share + open-in-app build, cut 2026-06-29) |
+| iOS (App Store) | 2.1.3 | buildNumber 23 | **LIVE** (same 2.1.3 train) |
 
-- **Both store builds are live**, so production OTAs reach the full user base. OTA runtime targeting: **Android = `1.0.0`** (hardcoded `app.json` android `runtimeVersion`), **iOS = `2.1.2`** (`appVersion` policy). `eas update --branch production` auto-targets both. Verify the live runtime empirically with `eas update:list --branch production` before publishing — confirmed 2026-06-25 that recent production OTAs all target iOS `2.1.2`.
-
-- **Android prod was versionCode 36 (2.0.x); 2.1.0 shipped as vc 37 then vc 38** (2026-06-01, profile redesign + biometric native build). Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
-- `build.gradle`: Android versionCode `38`, versionName `2.1.0`. `app.json`: version `2.1.2`, iOS buildNumber vc39. **Note iOS marketing version (2.1.2) is ahead of Android versionName (2.1.0)** — they diverged because the iOS 2.1.0 train was sealed (see below).
-- **iOS 2.1.0 train is CLOSED** — an approved build sealed it, so ASC rejects new 2.1.0 builds (ITMS-90186 + 90062). Bump `app.json` version for any new iOS build. iOS `runtimeVersion` uses the `appVersion` policy, so the version bump also moves the iOS OTA runtime (now `2.1.2`).
+- **Both store builds are live**, so production OTAs reach the full user base. OTA runtime targeting: **Android = `1.0.0`** (hardcoded `app.json` android `runtimeVersion`), **iOS = `2.1.3`** (`appVersion` policy). `eas update --branch production` auto-targets both. Verify the live runtime empirically with `eas update:list --branch production` before publishing — confirmed 2026-07-04 that the latest production OTA (2026-06-30 home-reorder) targets iOS `2.1.3` / Android `1.0.0`.
+- **Android notification tray icon fix (`f112c5c1`) SHIPPED in vc40** — the fix predates the 2.1.3 bump commit (`13ba1be5`), so the white-glove icon is live. No pending native changes.
+- **Android prod history: vc 36 (2.0.x) → vc 37/38 (2.1.0, 2026-06-01) → vc 40 (2.1.3)**. Always check the live Play Console versionCode before bumping — `build.gradle` governs (bare `android/` dir), not `app.json`.
+- `build.gradle`: Android versionCode `40`, versionName `2.1.3`. `app.json`: version `2.1.3`, iOS buildNumber `23`. iOS and Android marketing versions are re-aligned at 2.1.3.
+- **Old iOS version trains are CLOSED once a build is approved** — ASC rejects new builds on a sealed version (ITMS-90186 + 90062). Bump `app.json` version for any new iOS build. iOS `runtimeVersion` uses the `appVersion` policy, so the version bump also moves the iOS OTA runtime (now `2.1.3`).
 - Android `eas submit` fails due to Google service account permissions — download `.aab` and upload manually in Play Console.
 - iOS App Store Connect won't let you swap builds on an existing version — create a new version instead.
 - **`eas build` needs eas-cli >= 20** (eas.json constraint); the global install is a stale 16.28.0, so use `npx eas-cli@latest ...`. `eas update` works on the old one.

@@ -142,7 +142,7 @@ export function RecentlyBookedSection() {
 
   return (
     <section className="mb-8">
-      <SectionHeading title="Recently Booked" icon={CalendarPlus} />
+      <SectionHeading title="Recently Booked Fighters" icon={CalendarPlus} />
       <FighterRowList>
         {booked.map((b) => (
           <FighterRow

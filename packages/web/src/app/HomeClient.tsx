@@ -43,8 +43,8 @@ export function HomeClient() {
       <HotUpcomingFightsSection />
       <RecentGoodFightsSection />
       <TopCommentsSection />
-      <HighlightedFighterSection />
       <RecentlyBookedSection />
+      <HighlightedFighterSection />
       <ClassicGoodFightsSection />
       <ClassicCommentsSection />
     </SidebarLayout>
