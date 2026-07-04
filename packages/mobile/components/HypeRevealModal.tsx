@@ -2,7 +2,6 @@ import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
-  Image,
   TouchableOpacity,
   StyleSheet,
   Animated,
@@ -10,10 +9,9 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import ShareableFightCard, { ShareCardFight } from './ShareableFightCard';
+import ShareThisIcon from './icons/ShareThisIcon';
 import { shareFightLink } from '../utils/shareFightCard';
 import { captureAndShareCard } from '../utils/captureFightCard';
-
-const SHARE_ICON = require('../assets/share.png');
 
 // NOTE: this component is rendered INSIDE UpcomingFightModal's <Modal> tree,
 // not as its own <Modal>. That guarantees the reveal container shares the exact
@@ -94,29 +92,28 @@ export default function HypeRevealModal({
               fight={fight}
               value={userHype}
               average={averageHype}
-              distribution={distribution}
               total={totalPredictions}
               comment={comment}
             />
 
-            {/* Two equal-width buttons: yellow Share (primary) + neutral Close. */}
+            {/* Small grey icon-only Share + full-width yellow Close (mirrors
+                the bell + Done layout on the hype modal). */}
             <View style={styles.bottomRow}>
               <TouchableOpacity
-                style={[styles.shareButton, { backgroundColor: colors.primary }]}
+                style={[styles.shareIconButton, { borderColor: colors.border }]}
                 onPress={handleShare}
-                activeOpacity={0.85}
+                activeOpacity={0.7}
                 disabled={sharing}
               >
-                <Image source={SHARE_ICON} style={styles.shareIcon} />
-                <Text style={styles.shareButtonText}>Share</Text>
+                <ShareThisIcon size={20} color={colors.textSecondary} />
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={[styles.closeButton, { borderColor: colors.border }]}
+                style={[styles.closeButton, { backgroundColor: colors.primary }]}
                 onPress={onClose}
-                activeOpacity={0.7}
+                activeOpacity={0.85}
               >
-                <Text style={[styles.closeButtonText, { color: colors.text }]}>Close</Text>
+                <Text style={styles.closeButtonText}>Close</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -151,35 +148,26 @@ const styles = StyleSheet.create({
   },
   bottomRow: {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
     gap: 10,
     marginTop: 24,
     paddingHorizontal: 8,
     width: '100%',
   },
-  shareButton: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 13,
+  // Same footprint as the notify-bell button on the hype modal.
+  shareIconButton: {
+    width: 46,
+    height: 46,
     borderRadius: 12,
+    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  shareIcon: {
-    width: 18,
-    height: 18,
-    marginRight: 8,
-  },
-  shareButtonText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#000',
-  },
+  // Same size/shape as the hype modal's Done button.
   closeButton: {
     flex: 1,
     paddingVertical: 13,
     borderRadius: 12,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

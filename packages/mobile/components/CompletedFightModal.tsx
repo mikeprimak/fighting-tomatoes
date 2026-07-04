@@ -634,7 +634,7 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
                     const count = fightDetailData?.fight?.totalReviews || fightDetailData?.fight?.reviewCount || fight.totalReviews || fight.reviewCount || 0;
                     return count > 0
                       ? `See ${count} ${count === 1 ? 'Comment' : 'Comments'} >`
-                      : 'See Comments >';
+                      : 'See Details >';
                   })()}
                 </Text>
               </TouchableOpacity>

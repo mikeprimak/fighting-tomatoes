@@ -749,7 +749,7 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
                       ) || 0);
                       return totalComments > 0
                         ? `See ${totalComments} ${totalComments === 1 ? 'Comment' : 'Comments'} >`
-                        : 'See Comments >';
+                        : 'See Details >';
                     })()}
                   </Text>
                 </TouchableOpacity>

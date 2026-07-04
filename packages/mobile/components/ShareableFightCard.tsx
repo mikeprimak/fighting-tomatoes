@@ -1,10 +1,8 @@
-import React, { forwardRef, useState, useRef } from 'react';
-import { View, Text, Image, StyleSheet, ViewStyle, Animated } from 'react-native';
+import React, { forwardRef, useState } from 'react';
+import { View, Text, Image, StyleSheet, ViewStyle } from 'react-native';
 import { FontAwesome, FontAwesome6 } from '@expo/vector-icons';
 import { getFighterImage, formatEventName, formatDate } from './fight-cards/shared/utils';
 import { getHypeHeatmapColor } from '../utils/heatmap';
-import HypeDistributionChart from './HypeDistributionChart';
-import RatingDistributionChart from './RatingDistributionChart';
 
 // Minimal shape the card actually reads. Kept deliberately loose so the
 // varied local `Fight` interfaces in the parent modals (event?: any, etc.)
@@ -34,8 +32,7 @@ const LOGO = require('../assets/GOOD-FIGHTS-LOGO-crisp.png');
 // settings.
 //
 // The story it tells at a glance: the matchup, MY score vs the COMMUNITY score
-// (the comparison is the emotional hook), and the distribution with my vote
-// marked (social proof + where I stand).
+// (the comparison is the emotional hook).
 //
 // forwardRef exposes the outer card View so a future capture step
 // (react-native-view-shot) can snapshot exactly these pixels.
@@ -55,7 +52,6 @@ interface ShareableFightCardProps {
   fight: ShareCardFight;
   value: number; // the user's hype (1-10) or rating (1-10)
   average?: number; // community aggregate (averageHype / averageRating)
-  distribution?: Record<number, number>; // community vote counts, keyed 1-10
   total?: number; // total community votes (incl. the user's)
   comment?: string; // the user's own comment/review text, if any
   style?: ViewStyle;
@@ -88,7 +84,7 @@ function FighterColumn({ fighter }: { fighter: ShareCardFighter }) {
 }
 
 const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
-  ({ variant, fight, value, average = 0, distribution = {}, total = 0, comment }, ref) => {
+  ({ variant, fight, value, average = 0, total = 0, comment }, ref) => {
     const isHype = variant === 'hype';
     const myAccent = getHypeHeatmapColor(value);
     const myDisplay = Number.isInteger(value) ? `${value}` : value.toFixed(1);
@@ -98,15 +94,7 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
     const commAccent = hasCommunity ? getHypeHeatmapColor(average) : CARD.textSecondary;
     const commDisplay = hasCommunity ? average.toFixed(1) : '—';
 
-    const hasDistribution = total > 0 && Object.keys(distribution).length > 0;
     const commentText = comment?.trim() || '';
-
-    // Static fade value — the chart components animate via this; on the card we
-    // just want the bars shown (the modal handles the open animation).
-    const chartFade = useRef(new Animated.Value(1)).current;
-    // Measure the available width so the chart fills the card without
-    // overflowing on small screens. Safe default for first paint (~iPhone SE).
-    const [chartWidth, setChartWidth] = useState(240);
 
     const renderIcon = (color: string, sz: number) =>
       isHype ? (
@@ -164,33 +152,6 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
           <Text style={styles.comment} numberOfLines={3} ellipsizeMode="tail">
             “{commentText}”
           </Text>
-        )}
-
-        {/* Community distribution with my vote marked */}
-        {hasDistribution && (
-          <View
-            style={styles.chartWrap}
-            onLayout={(e) => setChartWidth(Math.round(e.nativeEvent.layout.width))}
-          >
-            {isHype ? (
-              <HypeDistributionChart
-                distribution={distribution}
-                totalPredictions={total}
-                hasRevealedHype={true}
-                fadeAnim={chartFade}
-                userHype={value}
-                width={chartWidth}
-              />
-            ) : (
-              <RatingDistributionChart
-                distribution={distribution}
-                totalRatings={total}
-                userRating={value}
-                fadeAnim={chartFade}
-                width={chartWidth}
-              />
-            )}
-          </View>
         )}
       </View>
     );
@@ -321,10 +282,5 @@ const styles = StyleSheet.create({
     marginTop: 16,
     paddingHorizontal: 6,
     textAlign: 'center',
-  },
-  chartWrap: {
-    width: '100%',
-    marginTop: 18,
-    alignItems: 'center',
   },
 });
