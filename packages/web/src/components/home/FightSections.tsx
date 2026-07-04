@@ -10,11 +10,31 @@ import { SectionHeading } from './SectionHeading';
 
 const MAX = 6;
 
-/** Bordered, divided list container shared by the fight bands. */
-function FightCardList({ children }: { children: React.ReactNode }) {
+/** Labels over the fight cards' score columns (community left, the user's own
+ *  right). Spans align with the cards' w-12 columns; the right label is pulled
+ *  slightly off the edge so wide labels ("MY RATING") don't crowd it. */
+function ColumnHeaders({ left, right }: { left: string; right: string }) {
   return (
-    <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-      {children}
+    <div className="-mb-2 flex items-center justify-between pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
+      <span className="ml-2 w-12 whitespace-nowrap text-center">{left}</span>
+      <span className="mr-2.5 w-12 whitespace-nowrap text-center">{right}</span>
+    </div>
+  );
+}
+
+/** Bordered, divided list container shared by the fight bands. Pass `columns`
+ *  to label the score columns above the first card. */
+function FightCardList({
+  columns,
+  children,
+}: {
+  columns?: { left: string; right: string };
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-border bg-card">
+      {columns && <ColumnHeaders {...columns} />}
+      <div className="divide-y divide-border">{children}</div>
     </div>
   );
 }
@@ -138,10 +158,7 @@ function EventFightGroup({
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-card">
       <EventBanner event={event} when={when} />
-      <div className="-mb-2 flex items-center justify-between pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
-        <span className="ml-2 w-12 whitespace-nowrap text-center">{columns.left}</span>
-        <span className="w-12 whitespace-nowrap text-center">{columns.right}</span>
-      </div>
+      <ColumnHeaders {...columns} />
       <div className="divide-y divide-border">{children}</div>
     </div>
   );
@@ -230,7 +247,7 @@ export function ClassicGoodFightsSection() {
   return (
     <section className="mb-8">
       <SectionHeading title="Classic Good Fights" icon={History} href="/fights/top?period=all" />
-      <FightCardList>
+      <FightCardList columns={{ left: 'Rating', right: 'My Rating' }}>
         {fights.map((fight: any) => (
           <CompletedFightCard key={fight.id} fight={fight} showEvent />
         ))}
