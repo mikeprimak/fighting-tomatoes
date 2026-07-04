@@ -1256,7 +1256,13 @@ export default function HomeScreen() {
                 />
                 {fight.topComment ? (
                   <TouchableOpacity
-                    style={styles.classicCommentWrap}
+                    // Continue the card's alternating background (see
+                    // CompletedFightCard's cardBgColor) so the snippet reads as
+                    // part of the same card.
+                    style={[
+                      styles.classicCommentWrap,
+                      { backgroundColor: index % 2 === 0 ? '#222222' : '#181818' },
+                    ]}
                     activeOpacity={0.7}
                     onPress={() => router.push(`/fight/${fight.id}?mode=completed` as any)}
                   >
@@ -1631,8 +1637,9 @@ function makeStyles(colors: ThemeColors) {
       paddingHorizontal: 16,
     },
     // Standout community comment under a Classics card: body only, two lines.
+    // Wide horizontal inset (card padding + ~30px) so the quote reads indented.
     classicCommentWrap: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 46,
       paddingTop: 2,
       paddingBottom: 12,
     },

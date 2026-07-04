@@ -133,8 +133,6 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
               {renderIcon(myAccent, 22)}
               <Text style={[styles.scoreNumber, { color: myAccent }]}>{myDisplay}</Text>
             </View>
-            {/* Blank line reserving the count's height so both scores stay level. */}
-            {hasCommunity && <Text style={styles.scoreCount}> </Text>}
           </View>
           <View style={styles.scoreDivider} />
           <View style={styles.scoreCell}>
@@ -142,8 +140,10 @@ const ShareableFightCard = forwardRef<View, ShareableFightCardProps>(
             <View style={styles.scoreValueRow}>
               {renderIcon(commAccent, 22)}
               <Text style={[styles.scoreNumber, { color: commAccent }]}>{commDisplay}</Text>
+              {/* Vote count inline beside the score so it never adds a line
+                  that vertically stretches the bordered panel. */}
+              {hasCommunity && <Text style={styles.scoreCount}>({total})</Text>}
             </View>
-            {hasCommunity && <Text style={styles.scoreCount}>({total})</Text>}
           </View>
         </View>
 
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     color: CARD.textSecondary,
     fontSize: 12,
     fontWeight: '600',
-    marginTop: 2,
+    marginLeft: 5,
   },
   comment: {
     color: CARD.text,
