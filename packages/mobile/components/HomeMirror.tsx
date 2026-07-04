@@ -3,21 +3,26 @@
  * (identity-platform.md, Phase 1 objective #1).
  *
  * Two zones, per the locked 2026-06-09 model:
- *   A. Urgency rail (deterministic, pinned while true): live-now events,
- *      events today, and this week's fights you hyped / with fighters you
- *      follow — from GET /api/home/mirror.
- *   B. Rotating rail: taste insights from GET /api/fan-dna/taste-profile,
- *      salted by calendar day so the rail changes daily. The first insight
- *      doubles as the greeting's rotating identity line.
+ *   A. "This Week" urgency rail (deterministic, pinned while true): live-now
+ *      events, events today, and the 1–2 soonest fights you hyped / with
+ *      fighters you follow — from GET /api/home/mirror. Overflow collapses
+ *      into a quiet "+N more" line (Mike, 2026-07-03: don't list all ten).
+ *   B. "More about you" rotating rail: taste insights from
+ *      GET /api/fan-dna/taste-profile, salted by calendar day.
+ *
+ * The greeting wears a rotating identity PILL ("KO Lover") from the same
+ * endpoint — a noun, not a prose insight (Mike, 2026-07-03). Still rotating,
+ * never a frozen type, per the locked signature decision.
  *
  * Copy rules (locked): human headline, number in the subline; silence over
- * filler — an empty profile renders just the greeting, never fake insights.
+ * filler — no data renders just the greeting, never fake insights.
  * Spoiler-safe: everything here is upcoming/live; no results are shown.
  */
 import React from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
@@ -32,11 +37,15 @@ import { useAuth } from '../store/AuthContext';
 import {
   apiService,
   HomeMirrorEventCard,
+  HomeMirrorPinnedFight,
 } from '../services/api';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const dayKey = (d: string | Date): number =>
   Math.floor(new Date(d).getTime() / DAY_MS);
+
+// The urgency rail is a glance, not a list — soonest couple of pins only.
+const MAX_VISIBLE_PINS = 2;
 
 /** "Today" / "Tomorrow" / "Saturday" — event days are UTC-day placeholders. */
 function dayLabel(eventDate: string): string {
@@ -65,6 +74,43 @@ function eventReason(card: HomeMirrorEventCard): string {
   if (names.length === 2) parts.push(`${names[0]} and ${names[1]} are on this card`);
   if (names.length > 2) parts.push(`${names.length} fighters you follow are on this card`);
   return parts.join(' · ');
+}
+
+function HeadshotPair({
+  fight,
+  colors,
+}: {
+  fight: HomeMirrorPinnedFight;
+  colors: any;
+}) {
+  const imgStyle = {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.backgroundSecondary,
+  } as const;
+  return (
+    <View style={{ flexDirection: 'row', width: 56, marginRight: 10 }}>
+      {fight.fighter1.profileImage ? (
+        <Image source={{ uri: fight.fighter1.profileImage }} style={imgStyle} />
+      ) : (
+        <View style={[imgStyle, { alignItems: 'center', justifyContent: 'center' }]}>
+          <FontAwesome name="user" size={14} color={colors.textSecondary} />
+        </View>
+      )}
+      <View style={{ marginLeft: -12 }}>
+        {fight.fighter2.profileImage ? (
+          <Image source={{ uri: fight.fighter2.profileImage }} style={imgStyle} />
+        ) : (
+          <View style={[imgStyle, { alignItems: 'center', justifyContent: 'center' }]}>
+            <FontAwesome name="user" size={14} color={colors.textSecondary} />
+          </View>
+        )}
+      </View>
+    </View>
+  );
 }
 
 export default function HomeMirror() {
@@ -96,30 +142,45 @@ export default function HomeMirror() {
     user?.displayName?.trim().split(' ')[0] ||
     null;
 
-  const insights = taste?.insights ?? [];
-  // The identity line is itself a rotating insight (locked model: no frozen
-  // "you are X" label). The rail shows the rest.
-  const identityLine = insights[0]?.headline ?? null;
-  const railInsights = insights.slice(1, 4);
+  const identityLabel = taste?.identityLabel ?? null;
+  const railInsights = (taste?.insights ?? []).slice(0, 3);
 
   const liveEvents = mirror?.liveEvents ?? [];
   const todayEvents = mirror?.todayEvents ?? [];
   // Fights on today's cards are already summarized by the today-event card.
   const todayEventIds = new Set(todayEvents.map((e) => e.eventId));
-  const pinnedFights = (mirror?.pinnedFights ?? []).filter(
+  const allPins = (mirror?.pinnedFights ?? []).filter(
     (f) => !todayEventIds.has(f.eventId),
   );
+  const visiblePins = allPins.slice(0, MAX_VISIBLE_PINS);
+  const hiddenPinCount = allPins.length - visiblePins.length;
+
+  const hasUrgency =
+    liveEvents.length > 0 || todayEvents.length > 0 || visiblePins.length > 0;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>
-        {firstName ? `Welcome back, ${firstName}` : 'Welcome back'}
-      </Text>
-      {identityLine ? (
-        <Text style={styles.identityLine}>{identityLine}</Text>
+      {/* Greeting + rotating identity pill */}
+      <View style={styles.greetingBlock}>
+        <Text style={styles.greeting}>
+          {firstName ? `Welcome back, ${firstName}` : 'Welcome back'}
+        </Text>
+        {identityLabel ? (
+          <View style={styles.identityPill}>
+            <FontAwesome name="star" size={10} color={colors.primary} />
+            <Text style={styles.identityPillText}>{identityLabel}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      {/* A. This Week — pinned while true, never rotated away */}
+      {hasUrgency ? (
+        <View style={styles.sectionHeader}>
+          <FontAwesome name="bolt" size={18} color={colors.primary} />
+          <Text style={styles.sectionTitle}>This Week</Text>
+        </View>
       ) : null}
 
-      {/* A. Urgency rail — pinned while true, never rotated away */}
       {liveEvents.map((card) => (
         <TouchableOpacity
           key={card.eventId}
@@ -161,13 +222,14 @@ export default function HomeMirror() {
         );
       })}
 
-      {pinnedFights.map((fight) => (
+      {visiblePins.map((fight) => (
         <TouchableOpacity
           key={fight.fightId}
           style={styles.pinnedRow}
           onPress={() => router.push(`/event/${fight.eventId}` as any)}
           activeOpacity={0.8}
         >
+          <HeadshotPair fight={fight} colors={colors} />
           <View style={styles.pinnedText}>
             <Text style={styles.pinnedTitle} numberOfLines={1}>
               {fight.fighter1.name} vs {fight.fighter2.name}
@@ -190,29 +252,40 @@ export default function HomeMirror() {
         </TouchableOpacity>
       ))}
 
-      {/* B. Rotating rail — a fresh look in the mirror each day */}
-      {railInsights.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.insightRail}
-          contentContainerStyle={styles.insightRailContent}
-        >
-          {railInsights.map((insight) => (
-            <TouchableOpacity
-              key={insight.key}
-              style={styles.insightCard}
-              onPress={() => router.push('/activity/fan-dna' as any)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.insightHeadline}>{insight.headline}</Text>
-              <Text style={styles.insightSubline} numberOfLines={2}>
-                {insight.subline}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+      {hiddenPinCount > 0 ? (
+        <Text style={styles.morePins}>
+          +{hiddenPinCount} more {hiddenPinCount === 1 ? 'fight' : 'fights'} you're
+          watching this week
+        </Text>
       ) : null}
+
+      {/* B. More about you — a fresh look in the mirror each day */}
+      {railInsights.length > 0 ? (
+        <>
+          <Text style={styles.railHeading}>MORE ABOUT YOU</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.insightRailContent}
+          >
+            {railInsights.map((insight) => (
+              <TouchableOpacity
+                key={insight.key}
+                style={styles.insightCard}
+                onPress={() => router.push('/activity/fan-dna' as any)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.insightHeadline}>{insight.headline}</Text>
+                <Text style={styles.insightSubline} numberOfLines={2}>
+                  {insight.subline}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </>
+      ) : null}
+
+      <View style={styles.bottomRule} />
     </View>
   );
 }
@@ -220,19 +293,48 @@ export default function HomeMirror() {
 const createStyles = (colors: any) => StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingTop: 14,
+    paddingBottom: 2,
+  },
+  greetingBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 4,
   },
   greeting: {
     fontSize: 22,
     fontWeight: 'bold',
     color: colors.text,
   },
-  identityLine: {
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginTop: 2,
-    marginBottom: 4,
+  identityPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  identityPillText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+    letterSpacing: 0.3,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
   },
   urgencyCard: {
     backgroundColor: colors.card,
@@ -240,7 +342,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     padding: 14,
-    marginTop: 10,
+    marginBottom: 8,
   },
   liveCard: {
     borderColor: colors.danger,
@@ -283,26 +385,26 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.card,
-    borderRadius: 10,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    marginTop: 8,
+    marginBottom: 8,
   },
   pinnedText: {
     flex: 1,
     marginRight: 8,
   },
   pinnedTitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
     color: colors.text,
   },
   pinnedSub: {
     fontSize: 12,
     color: colors.textSecondary,
-    marginTop: 1,
+    marginTop: 2,
   },
   badge: {
     flexDirection: 'row',
@@ -328,19 +430,34 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     color: colors.textSecondary,
   },
-  insightRail: {
+  morePins: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+    marginBottom: 4,
+    marginLeft: 2,
+  },
+  railHeading: {
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    color: colors.textSecondary,
     marginTop: 12,
+    marginBottom: 8,
   },
   insightRailContent: {
     gap: 8,
     paddingRight: 8,
   },
   insightCard: {
-    width: 240,
+    width: 250,
     backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
     padding: 14,
   },
   insightHeadline: {
@@ -348,10 +465,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: '600',
     color: colors.text,
     marginBottom: 4,
+    lineHeight: 20,
   },
   insightSubline: {
     fontSize: 12,
     color: colors.textSecondary,
     lineHeight: 16,
+  },
+  bottomRule: {
+    height: 1,
+    backgroundColor: colors.border,
+    opacity: 0.6,
+    marginTop: 14,
+    marginBottom: 10,
   },
 });

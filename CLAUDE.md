@@ -13,7 +13,7 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ (Phase 1 branch work) `docs/HANDOFF-onboarding-iteration-2026-06-12-evening.md`** —
+**→ (Phase 1 branch work) `docs/HANDOFF-home-mirror-iteration-2026-07-03.md`** — home mirror built + on-device; design iteration in progress; dev-loop gotchas (firewall!) documented there. Earlier: `docs/HANDOFF-onboarding-iteration-2026-06-12-evening.md` —
 onboarding iteration on `claude/user-focused-pivot-l8l6mg`: 3 device-walk
 rounds shipped (mandatory flow, star-wheel stack, taste-engine diversity
 rework, fighter recs). 50-cap also shipped. Next: device-verify round 3 +

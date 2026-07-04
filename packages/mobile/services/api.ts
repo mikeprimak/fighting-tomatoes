@@ -129,6 +129,8 @@ export interface TasteProfileInsight {
 
 export interface TasteProfileResponse {
   insights: TasteProfileInsight[];
+  /** Rotating identity noun for the greeting pill ("KO Lover"); null = hide. */
+  identityLabel?: string | null;
   baseline: { count: number; avg: number; tensCount: number };
   coverage: { withCharacter: number; total: number };
 }

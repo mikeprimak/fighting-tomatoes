@@ -19,6 +19,7 @@ import {
   loadTasteInputs,
   type LoadedTasteInputs,
 } from '../services/fanDNA/tasteProfile/loadInputs';
+import { pickIdentityLabel } from '../services/fanDNA/tasteProfile/identityLabel';
 import type {
   FanDNAAction,
   FanDNASurface,
@@ -375,6 +376,12 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
           subline: i.subline,
           score: i.score,
         })),
+        // Rotating noun for the home-mirror greeting pill ("KO Lover").
+        // Salted like the insights; null = render nothing (silence > filler).
+        identityLabel: pickIdentityLabel(
+          result.insights,
+          query.salt || isoWeekSalt(),
+        ),
         baseline: { count: b.count, avg: b.avg, tensCount: b.tensCount },
         coverage: cached.inputs.characterCoverage,
       });
