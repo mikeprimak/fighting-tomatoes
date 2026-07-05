@@ -1,12 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Search, User, Menu, X, Home, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone, Users } from 'lucide-react';
-import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Search, User, Menu, X, Home, Flame, Radio, Star, Trophy, EyeOff, Eye, Smartphone, Users, Calendar, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth, useHasApp } from '@/lib/auth';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAnyLiveEvent } from '@/lib/useAnyLiveEvent';
+import { searchSuggest } from '@/lib/api';
+import { FighterAvatar } from '@/components/FighterAvatar';
 
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
@@ -28,18 +31,54 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchFocused, setSearchFocused] = useState(false);
+  const router = useRouter();
+
+  // Debounce typing so suggestions don't fire on every keystroke
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 250);
+    return () => clearTimeout(handle);
+  }, [searchQuery]);
+
+  const { data: suggestData } = useQuery({
+    queryKey: ['search-suggest', debouncedQuery],
+    queryFn: () => searchSuggest(debouncedQuery),
+    enabled: searchOpen && debouncedQuery.length >= 2,
+    staleTime: 30 * 1000,
+  });
+
+  const suggestions = suggestData?.data;
+  const hasSuggestions =
+    !!suggestions &&
+    (suggestions.fighters.length > 0 ||
+      suggestions.events.length > 0 ||
+      suggestions.promotions.length > 0);
+  const showSuggestions =
+    searchOpen && searchFocused && searchQuery.trim().length >= 2 && hasSuggestions;
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
 
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery('');
+    setSearchFocused(false);
+  };
+
+  const goToSuggestion = (href: string) => {
+    closeSearch();
+    router.push(href);
+  };
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(searchQuery.trim())}`;
-      setSearchOpen(false);
-      setSearchQuery('');
+      const q = searchQuery.trim();
+      closeSearch();
+      router.push(`/search?q=${encodeURIComponent(q)}`);
     }
   };
 
@@ -110,23 +149,106 @@ export function Navbar() {
 
             {/* Search */}
             {searchOpen ? (
-              <form onSubmit={handleSearch} className="flex items-center">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search fighters, fights, events..."
-                  className="w-48 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none md:w-64"
-                  autoFocus
-                />
-                <button
-                  type="button"
-                  onClick={() => { setSearchOpen(false); setSearchQuery(''); }}
-                  className="ml-1 p-1 text-text-secondary hover:text-foreground"
-                >
-                  <X size={16} />
-                </button>
-              </form>
+              <div className="relative">
+                <form onSubmit={handleSearch} className="flex items-center">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    onFocus={() => setSearchFocused(true)}
+                    onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
+                    placeholder="Search fighters, fights, events..."
+                    className="w-48 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none md:w-64"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={closeSearch}
+                    className="ml-1 p-1 text-text-secondary hover:text-foreground"
+                  >
+                    <X size={16} />
+                  </button>
+                </form>
+
+                {/* Predictive suggestions */}
+                {showSuggestions && suggestions && (
+                  <div className="absolute right-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-lg border border-border bg-card shadow-lg md:w-80">
+                    {suggestions.fighters.map((fighter) => (
+                      <button
+                        key={`fighter-${fighter.id}`}
+                        onClick={() => goToSuggestion(`/fighters/${fighter.id}`)}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-background"
+                      >
+                        <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-background">
+                          <FighterAvatar
+                            src={fighter.profileImage}
+                            initials={`${fighter.firstName?.[0] ?? ''}${fighter.lastName?.[0] ?? ''}`}
+                            imgClassName="h-full w-full object-cover"
+                            initialsClassName="flex h-full w-full items-center justify-center text-xs font-bold text-text-secondary"
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {fighter.firstName} {fighter.lastName}
+                            {fighter.isChampion ? ' 🏆' : ''}
+                          </p>
+                          <p className="truncate text-xs text-text-secondary">
+                            {[fighter.record, fighter.nickname ? `"${fighter.nickname}"` : null]
+                              .filter(Boolean)
+                              .join(' · ') || 'Fighter'}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+
+                    {suggestions.events.map((event) => (
+                      <button
+                        key={`event-${event.id}`}
+                        onClick={() => goToSuggestion(`/events/${event.id}`)}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-background"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background">
+                          <Calendar size={14} className="text-text-secondary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{event.name}</p>
+                          <p className="truncate text-xs text-text-secondary">
+                            {event.promotion} · {new Date(event.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+
+                    {suggestions.promotions.map((promotion) => (
+                      <button
+                        key={`promotion-${promotion.name}`}
+                        onClick={() => goToSuggestion(`/search?q=${encodeURIComponent(promotion.name)}`)}
+                        className="flex w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:bg-background"
+                      >
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background">
+                          <Shield size={14} className="text-text-secondary" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">{promotion.name}</p>
+                          <p className="text-xs text-text-secondary">Promotion</p>
+                        </div>
+                      </button>
+                    ))}
+
+                    <button
+                      onClick={() => goToSuggestion(`/search?q=${encodeURIComponent(searchQuery.trim())}`)}
+                      className="flex w-full items-center gap-3 border-t border-border px-3 py-2 text-left transition-colors hover:bg-background"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-background">
+                        <Search size={14} className="text-primary" />
+                      </div>
+                      <p className="truncate text-sm font-medium text-primary">
+                        See all results for &quot;{searchQuery.trim()}&quot;
+                      </p>
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <button
                 onClick={() => setSearchOpen(true)}

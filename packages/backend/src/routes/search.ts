@@ -4,10 +4,192 @@ import { optionalAuth } from '../middleware/auth';
 import { notificationRuleEngine } from '../services/notificationRuleEngine';
 import { getHiddenPromotions } from '../config/hiddenPromotions';
 
-
 /**
  * Search routes - unified search across fighters, fights, events, and promotions
  */
+
+interface QueryContext {
+  searchTerm: string;
+  searchLower: string;
+  searchTerms: string[];
+  searchTermsLower: string[];
+}
+
+const buildQueryContext = (raw: string): QueryContext => {
+  const searchTerm = raw.trim();
+  const searchTerms = searchTerm.split(/\s+/).filter((t) => t.length > 0);
+  return {
+    searchTerm,
+    searchLower: searchTerm.toLowerCase(),
+    searchTerms,
+    searchTermsLower: searchTerms.map((t) => t.toLowerCase()),
+  };
+};
+
+// Fighters matching: OR over name fields for the full term, plus per-word
+// conditions and first/last combinations for multi-word queries.
+const buildFighterSearchConditions = (ctx: QueryContext): any => {
+  const { searchTerm, searchTerms } = ctx;
+  const baseConditions: any[] = [
+    { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
+    { lastName: { contains: searchTerm, mode: 'insensitive' as const } },
+    { nickname: { contains: searchTerm, mode: 'insensitive' as const } },
+  ];
+
+  if (searchTerms.length > 1) {
+    for (const term of searchTerms) {
+      baseConditions.push(
+        { firstName: { contains: term, mode: 'insensitive' as const } },
+        { lastName: { contains: term, mode: 'insensitive' as const } },
+        { nickname: { contains: term, mode: 'insensitive' as const } }
+      );
+    }
+
+    if (searchTerms.length === 2) {
+      const [term1, term2] = searchTerms;
+      baseConditions.push(
+        {
+          AND: [
+            { firstName: { contains: term1, mode: 'insensitive' as const } },
+            { lastName: { contains: term2, mode: 'insensitive' as const } },
+          ],
+        },
+        {
+          AND: [
+            { firstName: { contains: term2, mode: 'insensitive' as const } },
+            { lastName: { contains: term1, mode: 'insensitive' as const } },
+          ],
+        }
+      );
+    }
+  }
+
+  return { OR: baseConditions };
+};
+
+// Score how well a fighter's name matches the query. Exact name match must
+// outrank champion/recency, so a search for the fighter's name surfaces them
+// at the top even if they're retired.
+const getFighterRelevanceScore = (
+  ctx: QueryContext,
+  f: { firstName: string | null; lastName: string | null; nickname: string | null }
+): number => {
+  const { searchLower, searchTermsLower } = ctx;
+  const first = (f.firstName || '').toLowerCase();
+  const last = (f.lastName || '').toLowerCase();
+  const nick = (f.nickname || '').toLowerCase();
+  const full = `${first} ${last}`.trim();
+
+  if (full === searchLower) return 1000;
+
+  if (searchTermsLower.length >= 2) {
+    const [s1, s2] = searchTermsLower;
+    if (first === s1 && last === s2) return 1000;
+    if (first === s2 && last === s1) return 950;
+    // Query is a prefix of the full name mid-typing (e.g. "rose nam" →
+    // Rose Namajunas) — must outrank a bare exact-lastName match on the
+    // last word (e.g. Tyson Nam).
+    if (full.startsWith(searchLower)) return 920;
+    const lastTerm = searchTermsLower[searchTermsLower.length - 1];
+    if (last === lastTerm) {
+      // Multi-word query where the last word is an exact lastName match
+      // (e.g. "conor mcgregor" → McGregor). Also reward matching first name.
+      return first === searchTermsLower[0] ? 900 : 700;
+    }
+  }
+
+  // Exact match on any single name part is one tier — the prominence
+  // tie-break (champion, fight count) decides between e.g. an obscure
+  // "John Conor" and Conor McGregor for the query "conor".
+  if (last === searchLower || nick === searchLower || first === searchLower) return 750;
+
+  if (last.startsWith(searchLower)) return 500;
+  if (nick.startsWith(searchLower)) return 450;
+  if (first.startsWith(searchLower)) return 400;
+
+  if (full.includes(searchLower)) return 250;
+  if (nick.includes(searchLower)) return 200;
+
+  // Per-word partial scoring for everything else
+  let score = 0;
+  for (const t of searchTermsLower) {
+    if (last === t) score += 100;
+    else if (first === t) score += 80;
+    else if (nick === t) score += 80;
+    else if (last.startsWith(t)) score += 50;
+    else if (first.startsWith(t)) score += 40;
+    else if (last.includes(t) || first.includes(t) || nick.includes(t)) score += 20;
+  }
+  return score;
+};
+
+const buildEventSearchConditions = (ctx: QueryContext) => {
+  const { searchTerm, searchTerms } = ctx;
+  const conditions: any[] = [
+    { name: { contains: searchTerm, mode: 'insensitive' as const } },
+    { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
+  ];
+
+  if (searchTerms.length > 1) {
+    for (const term of searchTerms) {
+      conditions.push(
+        { name: { contains: term, mode: 'insensitive' as const } },
+        { promotion: { contains: term, mode: 'insensitive' as const } }
+      );
+    }
+  }
+
+  return { OR: conditions };
+};
+
+// Score how well an event matches the query (name primary, promotion secondary).
+const getEventRelevanceScore = (
+  ctx: QueryContext,
+  name: string,
+  promotion?: string | null
+): number => {
+  const { searchLower, searchTerms } = ctx;
+  const nameLower = name.toLowerCase();
+  const promoLower = (promotion || '').toLowerCase();
+
+  if (nameLower === searchLower) return 1000;
+  if (nameLower.startsWith(searchLower)) return 500;
+  if (nameLower.includes(searchLower)) return 300;
+  if (promoLower === searchLower) return 300;
+  if (promoLower.includes(searchLower)) return 150;
+
+  const matchedWords = searchTerms.filter((term) =>
+    nameLower.includes(term.toLowerCase())
+  ).length;
+
+  return matchedWords * 50;
+};
+
+// Tie-break equally-relevant fighters by prominence: champion first, then by
+// fight count. totalFights can be stale/zero for non-UFC fighters, so fall
+// back to career bouts from the record.
+const compareFighterProminence = (
+  a: { isChampion: boolean; totalFights: number | null; wins?: number; losses?: number; draws?: number },
+  b: { isChampion: boolean; totalFights: number | null; wins?: number; losses?: number; draws?: number }
+): number => {
+  if (a.isChampion !== b.isChampion) return a.isChampion ? -1 : 1;
+  const bouts = (f: typeof a) =>
+    Math.max(f.totalFights || 0, (f.wins || 0) + (f.losses || 0) + (f.draws || 0));
+  return bouts(b) - bouts(a);
+};
+
+const hiddenPromotionsFilter = () =>
+  getHiddenPromotions().map((p) => ({
+    promotion: { contains: p, mode: 'insensitive' as const },
+  }));
+
+// Upcoming/live first (0), completed next (1), cancelled last (2)
+const fightStatusRank = (status: string): number => {
+  if (status === 'CANCELLED') return 2;
+  if (status === 'COMPLETED') return 1;
+  return 0;
+};
+
 export default async function searchRoutes(fastify: FastifyInstance) {
   /**
    * GET /api/search
@@ -15,6 +197,13 @@ export default async function searchRoutes(fastify: FastifyInstance) {
    * Query params:
    *   - q: search query (required, min 2 chars)
    *   - limit: max results per category (default 10, max 50)
+   *
+   * Intent-aware behavior:
+   *   - Fights are ranked by how well their fighters/event match the query,
+   *     upcoming before completed, so a fighter search puts their next fight first.
+   *   - When the query clearly targets one fighter (exact first/last/full name
+   *     or nickname), the response includes `data.featured` with that fighter's
+   *     details plus their next upcoming fight and most recent completed fight.
    */
   fastify.get('/search', { preHandler: optionalAuth }, async (request, reply) => {
     const { q, limit = 10 } = request.query as { q?: string; limit?: number };
@@ -28,59 +217,15 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const searchTerm = q.trim();
+    const ctx = buildQueryContext(q);
+    const { searchTerm } = ctx;
     const resultLimit = Math.min(Math.max(1, Number(limit) || 10), 50);
 
-    // Split search term into individual words for multi-term matching
-    const searchTerms = searchTerm.split(/\s+/).filter(t => t.length > 0);
-
     try {
-      // Search fighters (first name, last name, or nickname)
-      // For multi-word queries like "Jon Jones", match first + last name combinations
-      const buildFighterSearchConditions = (): any => {
-        const baseConditions: any[] = [
-          { firstName: { contains: searchTerm, mode: 'insensitive' as const } },
-          { lastName: { contains: searchTerm, mode: 'insensitive' as const } },
-          { nickname: { contains: searchTerm, mode: 'insensitive' as const } },
-        ];
-
-        // Add individual word searches for multi-word queries
-        if (searchTerms.length > 1) {
-          for (const term of searchTerms) {
-            baseConditions.push(
-              { firstName: { contains: term, mode: 'insensitive' as const } },
-              { lastName: { contains: term, mode: 'insensitive' as const } },
-              { nickname: { contains: term, mode: 'insensitive' as const } }
-            );
-          }
-
-          // For 2-word queries, also try "first last" combinations
-          if (searchTerms.length === 2) {
-            const [term1, term2] = searchTerms;
-            baseConditions.push(
-              {
-                AND: [
-                  { firstName: { contains: term1, mode: 'insensitive' as const } },
-                  { lastName: { contains: term2, mode: 'insensitive' as const } },
-                ],
-              },
-              {
-                AND: [
-                  { firstName: { contains: term2, mode: 'insensitive' as const } },
-                  { lastName: { contains: term1, mode: 'insensitive' as const } },
-                ],
-              }
-            );
-          }
-        }
-
-        return { OR: baseConditions };
-      };
-
       const candidateFighters = await prisma.fighter.findMany({
         where: {
           AND: [
-            buildFighterSearchConditions(),
+            buildFighterSearchConditions(ctx),
             { isActive: true },
           ],
         },
@@ -108,68 +253,38 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         ],
       });
 
-      // Score each candidate by how well the name matches the search term.
-      // Exact name match must outrank champion/recency, so a search for the
-      // fighter's name surfaces them at the top even if they're retired.
-      const searchLower = searchTerm.toLowerCase();
-      const searchTermsLower = searchTerms.map((t) => t.toLowerCase());
-
-      const getFighterRelevanceScore = (f: typeof candidateFighters[number]): number => {
-        const first = (f.firstName || '').toLowerCase();
-        const last = (f.lastName || '').toLowerCase();
-        const nick = (f.nickname || '').toLowerCase();
-        const full = `${first} ${last}`.trim();
-
-        if (full === searchLower) return 1000;
-
-        if (searchTermsLower.length >= 2) {
-          const [s1, s2] = searchTermsLower;
-          if (first === s1 && last === s2) return 1000;
-          if (first === s2 && last === s1) return 950;
-          const lastTerm = searchTermsLower[searchTermsLower.length - 1];
-          if (last === lastTerm) {
-            // Multi-word query where the last word is an exact lastName match
-            // (e.g. "conor mcgregor" → McGregor). Also reward matching first name.
-            return first === searchTermsLower[0] ? 900 : 700;
-          }
-        }
-
-        if (last === searchLower) return 800;
-        if (nick === searchLower) return 750;
-        if (first === searchLower) return 700;
-
-        if (last.startsWith(searchLower)) return 500;
-        if (nick.startsWith(searchLower)) return 450;
-        if (first.startsWith(searchLower)) return 400;
-
-        if (full.includes(searchLower)) return 250;
-        if (nick.includes(searchLower)) return 200;
-
-        // Per-word partial scoring for everything else
-        let score = 0;
-        for (const t of searchTermsLower) {
-          if (last === t) score += 100;
-          else if (first === t) score += 80;
-          else if (nick === t) score += 80;
-          else if (last.startsWith(t)) score += 50;
-          else if (first.startsWith(t)) score += 40;
-          else if (last.includes(t) || first.includes(t) || nick.includes(t)) score += 20;
-        }
-        return score;
-      };
-
-      const scoredFighters = candidateFighters
-        .map((f) => ({ fighter: f, score: getFighterRelevanceScore(f) }))
+      const scoredCandidates = candidateFighters
+        .map((f) => ({ fighter: f, score: getFighterRelevanceScore(ctx, f) }))
         .sort((a, b) => {
           if (b.score !== a.score) return b.score - a.score;
-          // Tie-break: champion first, then more total fights, then better rated
-          if (a.fighter.isChampion !== b.fighter.isChampion) {
-            return a.fighter.isChampion ? -1 : 1;
-          }
-          return (b.fighter.totalFights || 0) - (a.fighter.totalFights || 0);
-        })
+          return compareFighterProminence(a.fighter, b.fighter);
+        });
+
+      // Relevance + prominence by fighter id — used to rank fights by their
+      // participants (prominence breaks ties between equally-matched names,
+      // e.g. McGregor's fight over an obscure Conor's fight).
+      const fighterScoreById = new Map<string, number>();
+      const fighterBoutsById = new Map<string, number>();
+      for (const { fighter, score } of scoredCandidates) {
+        fighterScoreById.set(fighter.id, score);
+        fighterBoutsById.set(
+          fighter.id,
+          Math.max(
+            fighter.totalFights || 0,
+            (fighter.wins || 0) + (fighter.losses || 0) + (fighter.draws || 0)
+          )
+        );
+      }
+
+      const scoredFighters = scoredCandidates
         .slice(0, resultLimit)
         .map(({ fighter }) => fighter);
+
+      // Detect single-fighter intent: the top match is an exact first/last/full
+      // name or nickname match (score >= 700). That fighter gets featured.
+      const topCandidate = scoredCandidates[0];
+      const featuredFighterBase =
+        topCandidate && topCandidate.score >= 700 ? topCandidate.fighter : null;
 
       // Calculate average rating from last 3 completed fights for each fighter
       const fighters = await Promise.all(
@@ -206,33 +321,10 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         })
       );
 
-      // Search events (by name and promotion)
-      // Build OR conditions for full term and individual words
-      const buildEventSearchConditions = () => {
-        const conditions: any[] = [
-          { name: { contains: searchTerm, mode: 'insensitive' as const } },
-          { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
-        ];
-
-        // Add individual word searches for multi-word queries
-        if (searchTerms.length > 1) {
-          for (const term of searchTerms) {
-            conditions.push(
-              { name: { contains: term, mode: 'insensitive' as const } },
-              { promotion: { contains: term, mode: 'insensitive' as const } }
-            );
-          }
-        }
-
-        return { OR: conditions };
-      };
-
       const allEvents = await prisma.event.findMany({
         where: {
-          ...buildEventSearchConditions(),
-          NOT: getHiddenPromotions().map(p => ({
-            promotion: { contains: p, mode: 'insensitive' as const },
-          })),
+          ...buildEventSearchConditions(ctx),
+          NOT: hiddenPromotionsFilter(),
         },
         select: {
           id: true,
@@ -249,48 +341,22 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         },
       });
 
-      // Calculate relevance score for events
-      // Higher score = more relevant match
-      const getEventRelevanceScore = (event: typeof allEvents[0]): number => {
-        const nameLower = event.name.toLowerCase();
-        const searchLower = searchTerm.toLowerCase();
-
-        // Exact match on name (highest priority)
-        if (nameLower === searchLower) return 1000;
-
-        // Name starts with search term
-        if (nameLower.startsWith(searchLower)) return 500;
-
-        // Name contains full search term as a distinct part (e.g., "UFC 300" in "UFC 300: Pereira vs Hill")
-        if (nameLower.includes(searchLower)) return 300;
-
-        // For multi-word queries, check how many words match
-        const matchedWords = searchTerms.filter(term =>
-          nameLower.includes(term.toLowerCase())
-        ).length;
-
-        return matchedWords * 50;
-      };
-
       // Sort: by relevance first, then upcoming events (soonest), then past events (most recent)
       const now = new Date();
       const scoredEvents = allEvents.map(e => ({
         ...e,
-        relevanceScore: getEventRelevanceScore(e),
+        relevanceScore: getEventRelevanceScore(ctx, e.name, e.promotion),
         isUpcoming: new Date(e.date) >= now,
       }));
 
-      // Sort by: relevance (desc), then upcoming before past, then by date
       scoredEvents.sort((a, b) => {
-        // First by relevance score
         if (b.relevanceScore !== a.relevanceScore) {
           return b.relevanceScore - a.relevanceScore;
         }
-        // Then upcoming events before past
         if (a.isUpcoming !== b.isUpcoming) {
           return a.isUpcoming ? -1 : 1;
         }
-        // Then by date (upcoming: soonest first, past: most recent first)
+        // By date (upcoming: soonest first, past: most recent first)
         if (a.isUpcoming) {
           return new Date(a.date).getTime() - new Date(b.date).getTime();
         } else {
@@ -304,6 +370,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       // Search fights (by fighter names and event/promotion)
       // For multi-word queries like "UFC Jon", require ALL words to match across different fields
       const buildFightSearchConditions = () => {
+        const { searchTerms } = ctx;
         // Single word query - match any field
         if (searchTerms.length === 1) {
           return {
@@ -338,11 +405,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           };
         }
 
-        // Multi-word query - require ALL words to match
-        // For "UFC Jon", we need to ensure each word appears somewhere in the fight
-        const allConditions: any[] = [];
-
-        // Build AND conditions - each word must match somewhere
+        // Multi-word query - require ALL words to match somewhere in the fight
         const wordMatchConditions = searchTerms.map((term) => ({
           OR: [
             {
@@ -374,7 +437,6 @@ export default async function searchRoutes(fastify: FastifyInstance) {
           ],
         }));
 
-        // All words must match (AND)
         return { AND: wordMatchConditions };
       };
 
@@ -389,6 +451,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             profileImage: true,
             weightClass: true,
             rank: true,
+            wins: true,
+            losses: true,
+            draws: true,
           },
         },
         fighter2: {
@@ -400,6 +465,9 @@ export default async function searchRoutes(fastify: FastifyInstance) {
             profileImage: true,
             weightClass: true,
             rank: true,
+            wins: true,
+            losses: true,
+            draws: true,
           },
         },
         event: {
@@ -439,25 +507,97 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         };
       }
 
+      // Over-fetch fight candidates so JS-side relevance ranking has a real
+      // pool to work with (DB order alone is just event-date recency).
       const rawFights = await prisma.fight.findMany({
         where: {
           ...buildFightSearchConditions(),
           event: {
-            NOT: getHiddenPromotions().map(p => ({
-              promotion: { contains: p, mode: 'insensitive' as const },
-            })),
+            NOT: hiddenPromotionsFilter(),
           },
         },
         include,
-        take: resultLimit,
+        take: Math.max(resultLimit * 3, 30),
         orderBy: [
           { event: { date: 'desc' } },
           { orderOnCard: 'asc' },
         ],
       });
 
+      // Guarantee the featured fighter's next fight(s) and last completed fight
+      // are in the candidate pool even if the text query or date-ordered take
+      // missed them.
+      if (featuredFighterBase) {
+        const [featuredUpcoming, featuredLast] = await Promise.all([
+          prisma.fight.findMany({
+            where: {
+              OR: [
+                { fighter1Id: featuredFighterBase.id },
+                { fighter2Id: featuredFighterBase.id },
+              ],
+              fightStatus: { in: ['UPCOMING', 'LIVE'] },
+              event: { NOT: hiddenPromotionsFilter() },
+            },
+            include,
+            orderBy: { event: { date: 'asc' } },
+            take: 2,
+          }),
+          prisma.fight.findMany({
+            where: {
+              OR: [
+                { fighter1Id: featuredFighterBase.id },
+                { fighter2Id: featuredFighterBase.id },
+              ],
+              fightStatus: 'COMPLETED',
+              event: { NOT: hiddenPromotionsFilter() },
+            },
+            include,
+            orderBy: { event: { date: 'desc' } },
+            take: 1,
+          }),
+        ]);
+
+        const seenIds = new Set(rawFights.map((f) => f.id));
+        for (const fight of [...featuredUpcoming, ...featuredLast]) {
+          if (!seenIds.has(fight.id)) {
+            rawFights.push(fight);
+            seenIds.add(fight.id);
+          }
+        }
+      }
+
+      // Rank fights: fighter-name relevance (or event relevance for event-only
+      // matches), then upcoming before completed before cancelled, then date
+      // (upcoming soonest-first, completed most-recent-first).
+      const rankedFights = (rawFights as any[])
+        .map((fight) => {
+          const fighterScore = Math.max(
+            fighterScoreById.get(fight.fighter1Id) || 0,
+            fighterScoreById.get(fight.fighter2Id) || 0
+          );
+          const eventScore =
+            getEventRelevanceScore(ctx, fight.event.name, fight.event.promotion) * 0.4;
+          const prominence = Math.max(
+            fighterBoutsById.get(fight.fighter1Id) || 0,
+            fighterBoutsById.get(fight.fighter2Id) || 0
+          );
+          return { fight, relevance: Math.max(fighterScore, eventScore), prominence };
+        })
+        .sort((a, b) => {
+          if (b.relevance !== a.relevance) return b.relevance - a.relevance;
+          if (b.prominence !== a.prominence) return b.prominence - a.prominence;
+          const ra = fightStatusRank(a.fight.fightStatus);
+          const rb = fightStatusRank(b.fight.fightStatus);
+          if (ra !== rb) return ra - rb;
+          const da = new Date(a.fight.event.date).getTime();
+          const db = new Date(b.fight.event.date).getTime();
+          return ra === 0 ? da - db : db - da;
+        })
+        .slice(0, resultLimit)
+        .map(({ fight }) => fight);
+
       // Calculate averageHype for each fight from predictions
-      const fightIds = rawFights.map(f => f.id);
+      const fightIds = rankedFights.map(f => f.id);
       const allPredictions = await prisma.fightPrediction.findMany({
         where: {
           fightId: { in: fightIds },
@@ -481,7 +621,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       }
 
       // Transform fights to add averageHype (for all users) and user data (for logged-in users)
-      let fights: any[] = rawFights.map(fight => {
+      let fights: any[] = rankedFights.map(fight => {
         const transformed: any = { ...fight };
 
         // Add aggregate hype from batch calculation (for all users)
@@ -558,15 +698,13 @@ export default async function searchRoutes(fastify: FastifyInstance) {
 
       // Search promotions (UFC, Bellator, ONE, etc.)
       // We'll get unique promotions from events that match the search term
-      // Build OR conditions for full term and individual words
       const buildPromotionSearchConditions = () => {
         const conditions: any[] = [
           { promotion: { contains: searchTerm, mode: 'insensitive' as const } },
         ];
 
-        // Add individual word searches for multi-word queries
-        if (searchTerms.length > 1) {
-          for (const term of searchTerms) {
+        if (ctx.searchTerms.length > 1) {
+          for (const term of ctx.searchTerms) {
             conditions.push({ promotion: { contains: term, mode: 'insensitive' as const } });
           }
         }
@@ -577,9 +715,7 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       const promotions = await prisma.event.findMany({
         where: {
           ...buildPromotionSearchConditions(),
-          NOT: getHiddenPromotions().map(p => ({
-            promotion: { contains: p, mode: 'insensitive' as const },
-          })),
+          NOT: hiddenPromotionsFilter(),
         },
         select: {
           promotion: true,
@@ -627,15 +763,43 @@ export default async function searchRoutes(fastify: FastifyInstance) {
         })
       );
 
+      const mappedFighters = fighters.map((f) => ({
+        ...f,
+        record:
+          f.wins + f.losses + f.draws + f.noContests > 0
+            ? `${f.wins}-${f.losses}${f.draws > 0 ? `-${f.draws}` : ''}`
+            : null,
+      }));
+
+      // Build the featured block from the enriched fighter + enriched fights
+      let featured: any = null;
+      if (featuredFighterBase) {
+        const featuredFighter =
+          mappedFighters.find((f) => f.id === featuredFighterBase.id) || null;
+        if (featuredFighter) {
+          const isTheirs = (fight: any) =>
+            fight.fighter1Id === featuredFighterBase.id ||
+            fight.fighter2Id === featuredFighterBase.id;
+          const nextFight =
+            fights.find(
+              (f: any) => isTheirs(f) && fightStatusRank(f.fightStatus) === 0
+            ) || null;
+          const lastFight =
+            fights.find((f: any) => isTheirs(f) && f.fightStatus === 'COMPLETED') || null;
+
+          featured = {
+            type: 'fighter',
+            fighter: featuredFighter,
+            nextFight,
+            lastFight,
+          };
+        }
+      }
+
       return reply.send({
         data: {
-          fighters: fighters.map((f) => ({
-            ...f,
-            record:
-              f.wins + f.losses + f.draws + f.noContests > 0
-                ? `${f.wins}-${f.losses}${f.draws > 0 ? `-${f.draws}` : ''}`
-                : null,
-          })),
+          featured,
+          fighters: mappedFighters,
           fights,
           events,
           promotions: promotionResults,
@@ -651,6 +815,138 @@ export default async function searchRoutes(fastify: FastifyInstance) {
       return reply.status(500).send({
         error: 'Failed to perform search',
         code: 'SEARCH_ERROR',
+      });
+    }
+  });
+
+  /**
+   * GET /api/search/suggest
+   * Lightweight typeahead suggestions — small payload, no auth, no per-fight
+   * enrichment. Meant to be called on every debounced keystroke.
+   * Query params:
+   *   - q: search query (required, min 2 chars)
+   */
+  fastify.get('/search/suggest', async (request, reply) => {
+    const { q } = request.query as { q?: string };
+
+    if (!q || typeof q !== 'string' || q.trim().length < 2) {
+      return reply.send({
+        data: { fighters: [], events: [], promotions: [] },
+        meta: { query: (q || '').trim() },
+      });
+    }
+
+    const ctx = buildQueryContext(q);
+
+    try {
+      const [candidateFighters, candidateEvents, promotionRows] = await Promise.all([
+        prisma.fighter.findMany({
+          where: {
+            AND: [buildFighterSearchConditions(ctx), { isActive: true }],
+          },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            nickname: true,
+            profileImage: true,
+            weightClass: true,
+            wins: true,
+            losses: true,
+            draws: true,
+            noContests: true,
+            isChampion: true,
+            totalFights: true,
+          },
+          take: 30,
+          orderBy: [
+            { isChampion: 'desc' },
+            { totalFights: 'desc' },
+            { averageRating: 'desc' },
+          ],
+        }),
+        prisma.event.findMany({
+          where: {
+            ...buildEventSearchConditions(ctx),
+            NOT: hiddenPromotionsFilter(),
+          },
+          select: {
+            id: true,
+            name: true,
+            promotion: true,
+            date: true,
+            eventStatus: true,
+          },
+          // date desc puts future events first, then most recent past — a
+          // candidate pool the relevance scorer can actually work with
+          // (an unordered take can miss e.g. "UFC 329" entirely for broad
+          // per-word matches like "ufc ...").
+          orderBy: { date: 'desc' },
+          take: 50,
+        }),
+        prisma.event.findMany({
+          where: {
+            promotion: { contains: ctx.searchTerm, mode: 'insensitive' as const },
+            NOT: hiddenPromotionsFilter(),
+          },
+          select: { promotion: true },
+          distinct: ['promotion'],
+          take: 3,
+        }),
+      ]);
+
+      const fighters = candidateFighters
+        .map((f) => ({ fighter: f, score: getFighterRelevanceScore(ctx, f) }))
+        .sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return compareFighterProminence(a.fighter, b.fighter);
+        })
+        .slice(0, 5)
+        .map(({ fighter }) => ({
+          id: fighter.id,
+          firstName: fighter.firstName,
+          lastName: fighter.lastName,
+          nickname: fighter.nickname,
+          profileImage: fighter.profileImage,
+          weightClass: fighter.weightClass,
+          isChampion: fighter.isChampion,
+          record:
+            fighter.wins + fighter.losses + fighter.draws + fighter.noContests > 0
+              ? `${fighter.wins}-${fighter.losses}${fighter.draws > 0 ? `-${fighter.draws}` : ''}`
+              : null,
+        }));
+
+      const now = new Date();
+      const events = candidateEvents
+        .map((e) => ({
+          ...e,
+          relevanceScore: getEventRelevanceScore(ctx, e.name, e.promotion),
+          isUpcoming: new Date(e.date) >= now,
+        }))
+        .sort((a, b) => {
+          if (b.relevanceScore !== a.relevanceScore) return b.relevanceScore - a.relevanceScore;
+          if (a.isUpcoming !== b.isUpcoming) return a.isUpcoming ? -1 : 1;
+          if (a.isUpcoming) {
+            return new Date(a.date).getTime() - new Date(b.date).getTime();
+          }
+          return new Date(b.date).getTime() - new Date(a.date).getTime();
+        })
+        .slice(0, 3)
+        .map(({ relevanceScore, isUpcoming, ...e }) => e);
+
+      return reply.send({
+        data: {
+          fighters,
+          events,
+          promotions: promotionRows.map((p) => ({ name: p.promotion })),
+        },
+        meta: { query: ctx.searchTerm },
+      });
+    } catch (error) {
+      console.error('[Search Suggest] Error:', error);
+      return reply.status(500).send({
+        error: 'Failed to fetch suggestions',
+        code: 'SEARCH_SUGGEST_ERROR',
       });
     }
   });

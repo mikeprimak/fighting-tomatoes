@@ -669,14 +669,50 @@ export async function getTopRecentFights(
 
 // ==================== SEARCH ====================
 
+export interface SearchFeatured {
+  type: 'fighter';
+  fighter: any;
+  nextFight: any | null;
+  lastFight: any | null;
+}
+
 export async function search(query: string, limit = 10) {
   return makeRequest<{
     data: {
+      featured?: SearchFeatured | null;
       fighters: any[];
       fights: any[];
       events: any[];
+      promotions: any[];
     };
   }>(`/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+}
+
+export interface SearchSuggestions {
+  fighters: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    nickname?: string | null;
+    profileImage?: string | null;
+    weightClass?: string | null;
+    isChampion: boolean;
+    record: string | null;
+  }>;
+  events: Array<{
+    id: string;
+    name: string;
+    promotion: string;
+    date: string;
+    eventStatus: string;
+  }>;
+  promotions: Array<{ name: string }>;
+}
+
+export async function searchSuggest(query: string) {
+  return makeRequest<{ data: SearchSuggestions }>(
+    `/search/suggest?q=${encodeURIComponent(query)}`,
+  );
 }
 
 // ==================== FEEDBACK ====================

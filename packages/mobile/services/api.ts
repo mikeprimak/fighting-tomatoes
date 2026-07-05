@@ -1646,6 +1646,28 @@ class ApiService {
 
   async search(query: string, limit: number = 10): Promise<{
     data: {
+      featured?: {
+        type: 'fighter';
+        fighter: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          nickname?: string;
+          profileImage?: string;
+          weightClass?: string;
+          rank?: string;
+          wins: number;
+          losses: number;
+          draws: number;
+          record: string | null;
+          averageRating: number;
+          totalFights: number;
+          isChampion: boolean;
+          championshipTitle?: string;
+        };
+        nextFight: any | null;
+        lastFight: any | null;
+      } | null;
       fighters: Array<{
         id: string;
         firstName: string;
@@ -1676,6 +1698,7 @@ class ApiService {
         time?: string;
         averageRating: number;
         totalRatings: number;
+        totalReviews: number;
         fighter1: {
           id: string;
           firstName: string;
@@ -1684,6 +1707,9 @@ class ApiService {
           profileImage?: string;
           weightClass?: string;
           rank?: string;
+          wins: number;
+          losses: number;
+          draws: number;
         };
         fighter2: {
           id: string;
@@ -1693,6 +1719,9 @@ class ApiService {
           profileImage?: string;
           weightClass?: string;
           rank?: string;
+          wins: number;
+          losses: number;
+          draws: number;
         };
         event: {
           id: string;
@@ -1720,6 +1749,7 @@ class ApiService {
         totalEvents: number;
         averageRating: number;
         upcomingEvents: number;
+        image?: string | null;
       }>;
     };
     meta: {
@@ -1728,6 +1758,34 @@ class ApiService {
     };
   }> {
     return this.makeRequest(`/search?q=${encodeURIComponent(query)}&limit=${limit}`, {
+      method: 'GET',
+    });
+  }
+
+  async searchSuggest(query: string): Promise<{
+    data: {
+      fighters: Array<{
+        id: string;
+        firstName: string;
+        lastName: string;
+        nickname?: string;
+        profileImage?: string;
+        weightClass?: string;
+        isChampion: boolean;
+        record: string | null;
+      }>;
+      events: Array<{
+        id: string;
+        name: string;
+        promotion: string;
+        date: string;
+        eventStatus: string;
+      }>;
+      promotions: Array<{ name: string }>;
+    };
+    meta: { query: string };
+  }> {
+    return this.makeRequest(`/search/suggest?q=${encodeURIComponent(query)}`, {
       method: 'GET',
     });
   }
