@@ -1,3 +1,18 @@
+/**
+ * Fan DNA — the full-screen mirror.
+ *
+ * Revamped 2026-07-04 onto the taste-profile engine
+ * (services/fanDNA/tasteProfile): ranked insights + the rotating identity
+ * noun are the whole screen. The old trait-card list and the frozen
+ * personalityType card are gone — the single-label engine is shelved per the
+ * locked signature decision (identity-platform.md 2026-06-09: rotating
+ * stream only, no "you are X" type).
+ *
+ * Voice per Good_Fights_Voice_Guide: the header is the friend talking
+ * ("Here's what your ratings gave away"), insights carry the voice, and the
+ * plumbing (loading, errors, empty states) stays plain. Silence > filler:
+ * no insights means an honest empty state, never fake ones.
+ */
 import React, { useCallback } from 'react';
 import {
   View,
@@ -12,64 +27,48 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, router, useFocusEffect } from 'expo-router';
 import { useColorScheme } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { FontAwesome, FontAwesome6, Ionicons } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 import { apiService } from '../../services/api';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
 
-const FAMILY_LABELS: Record<string, string> = {
-  affinity: 'Affinity',
-  behaviour: 'Behaviour',
-  prediction: 'Prediction',
-  identity: 'Identity',
-};
-
-const FAMILY_COLORS: Record<string, string> = {
-  affinity: '#A78BFA',
-  behaviour: '#60A5FA',
-  prediction: '#34D399',
-  identity: '#F59E0B',
-};
-
 // Hidden 2026-05-18 — list works but the row layout/copy needs another pass
 // before users see it. Flip to true when ready to ship.
 const SHOW_HOT_TAKES_LIST = false;
+
+// The full screen shows more than the home rail's three, still ranked.
+const MAX_INSIGHTS = 12;
 
 export default function FanDNAScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const styles = createStyles(colors);
 
-  const profileQuery = useQuery({
-    queryKey: ['fanDNAProfile'],
-    queryFn: () => apiService.getFanDNAProfile(),
+  // Same day-salt as the home rail so the two surfaces agree with each other
+  // within a day and both turn over tomorrow.
+  const todaySalt = new Date().toISOString().slice(0, 10);
+
+  const tasteQuery = useQuery({
+    queryKey: ['tasteProfile', 'fullScreen', todaySalt],
+    queryFn: () => apiService.getTasteProfile(MAX_INSIGHTS, false, todaySalt),
   });
 
   const hypeAccuracyQuery = useQuery({
     queryKey: ['hypeAccuracy', 100],
     queryFn: () => apiService.getHypeAccuracy(100),
-  });
-
-  // Early read: while the trait engine hasn't met its floors yet (new
-  // accounts straight out of onboarding), the taste-profile insights built
-  // from their onboarding ratings/follows fill the screen instead of
-  // "computing your DNA" emptiness.
-  const tasteQuery = useQuery({
-    queryKey: ['tasteProfile'],
-    queryFn: () => apiService.getTasteProfile(),
+    enabled: SHOW_HOT_TAKES_LIST,
   });
 
   useFocusEffect(
     useCallback(() => {
-      profileQuery.refetch();
-      hypeAccuracyQuery.refetch();
       tasteQuery.refetch();
-    }, [profileQuery.refetch, hypeAccuracyQuery.refetch, tasteQuery.refetch]),
+      if (SHOW_HOT_TAKES_LIST) hypeAccuracyQuery.refetch();
+    }, [tasteQuery.refetch, hypeAccuracyQuery.refetch]),
   );
 
-  const cards = profileQuery.data?.cards ?? [];
-  const personalityType = profileQuery.data?.personalityType ?? null;
-  const tasteInsights = tasteQuery.data?.insights ?? [];
+  const insights = tasteQuery.data?.insights ?? [];
+  const identityLabel = tasteQuery.data?.identityLabel ?? null;
+  const ratedCount = tasteQuery.data?.baseline?.count ?? 0;
   const hotTakes =
     (hypeAccuracyQuery.data?.fights ?? []).filter((f) => f.isHotTake);
 
@@ -94,120 +93,66 @@ export default function FanDNAScreen() {
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
-              refreshing={profileQuery.isFetching}
-              onRefresh={() => {
-                profileQuery.refetch();
-                hypeAccuracyQuery.refetch();
-              }}
+              refreshing={tasteQuery.isFetching}
+              onRefresh={() => tasteQuery.refetch()}
               tintColor={colors.textSecondary}
             />
           }
         >
-          <View style={styles.heroBlock}>
-            <FontAwesome6 name="dna" size={28} color={FAMILY_COLORS.affinity} />
-            <Text style={styles.heroTitle}>Your Fan DNA</Text>
-            <Text style={styles.heroSubtitle}>
-              Patterns the app has learned from your ratings and hypes.
-            </Text>
-          </View>
-
-          {personalityType && (
-            <View style={styles.typeCard}>
-              <Text style={styles.typeLabel}>YOUR TYPE</Text>
-              <Text style={styles.typeName}>{personalityType.label}</Text>
-              <Text style={styles.typeBody}>{personalityType.body}</Text>
-              {personalityType.primaryStat ? (
-                <View style={styles.typeStatRow}>
-                  <Text style={styles.typeStatPrimary}>{personalityType.primaryStat}</Text>
-                  {personalityType.secondaryStat ? (
-                    <Text style={styles.typeStatSecondary}>{personalityType.secondaryStat}</Text>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
-          )}
-
-          {profileQuery.isLoading ? (
+          {tasteQuery.isLoading ? (
             <View style={styles.centerBlock}>
-              <ActivityIndicator size="large" color={FAMILY_COLORS.affinity} />
-              <Text style={styles.loadingText}>Computing your DNA…</Text>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text style={styles.loadingText}>Reading your ratings…</Text>
             </View>
-          ) : profileQuery.error ? (
+          ) : tasteQuery.error ? (
             <View style={styles.centerBlock}>
               <FontAwesome name="exclamation-triangle" size={32} color={colors.danger} />
               <Text style={[styles.loadingText, { color: colors.danger }]}>Couldn't load Fan DNA</Text>
               <TouchableOpacity
-                onPress={() => profileQuery.refetch()}
+                onPress={() => tasteQuery.refetch()}
                 style={styles.retryButton}
               >
                 <Text style={styles.retryText}>Retry</Text>
               </TouchableOpacity>
             </View>
-          ) : cards.length === 0 && tasteInsights.length > 0 ? (
-            <View>
-              <Text style={styles.earlyReadLabel}>EARLY READ</Text>
-              <Text style={styles.earlyReadSubtitle}>
-                What your first ratings and follows already say. Your full Fan
-                DNA builds from here.
+          ) : insights.length === 0 ? (
+            <View style={styles.centerBlock}>
+              <Text style={styles.emptyTitle}>Nothing to read yet</Text>
+              <Text style={styles.emptyBody}>
+                Rate some fights. The patterns show up on their own.
               </Text>
+            </View>
+          ) : (
+            <>
+              {/* Hero: rotating identity noun as the headline of the screen.
+                  No label computed = no hero line (silence > filler). */}
+              <View style={styles.heroBlock}>
+                {identityLabel ? (
+                  <>
+                    <Text style={styles.heroEyebrow}>THIS WEEK YOU'RE A</Text>
+                    <Text style={styles.heroIdentity}>{identityLabel}</Text>
+                  </>
+                ) : null}
+                <Text style={styles.heroSubtitle}>
+                  Here's what your ratings gave away.
+                </Text>
+              </View>
+
               <View style={{ gap: 12 }}>
-                {tasteInsights.map((insight) => (
+                {insights.map((insight) => (
                   <View key={insight.key} style={styles.card}>
                     <Text style={styles.cardHeadline}>{insight.headline}</Text>
                     <Text style={styles.cardBody}>{insight.subline}</Text>
                   </View>
                 ))}
               </View>
-            </View>
-          ) : cards.length === 0 ? (
-            <View style={styles.centerBlock}>
-              <Text style={styles.emptyTitle}>No DNA yet</Text>
-              <Text style={styles.emptyBody}>
-                Rate and hype more fights — patterns will surface here as the data builds.
-              </Text>
-            </View>
-          ) : (
-            <View style={{ gap: 12 }}>
-              {cards.map((card, i) => (
-                <View key={`${card.traitId}-${i}`} style={styles.card}>
-                  <View style={styles.cardRow}>
-                    {card.primaryStat ? (
-                      <View style={[styles.statBlock, { backgroundColor: `${FAMILY_COLORS[card.family] ?? '#888'}22` }]}>
-                        <Text style={styles.statPrimary}>{card.primaryStat}</Text>
-                        {card.secondaryStat ? (
-                          <Text style={styles.statSecondary} numberOfLines={1}>
-                            {card.secondaryStat}
-                          </Text>
-                        ) : null}
-                      </View>
-                    ) : null}
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.headlineRow}>
-                        <Text style={styles.cardHeadline}>{card.headline}</Text>
-                        <View
-                          style={[
-                            styles.familyChip,
-                            { backgroundColor: `${FAMILY_COLORS[card.family] ?? '#888'}33` },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.familyChipText,
-                              { color: FAMILY_COLORS[card.family] ?? colors.textSecondary },
-                            ]}
-                          >
-                            {FAMILY_LABELS[card.family] ?? card.family}
-                          </Text>
-                        </View>
-                      </View>
-                      {card.body ? (
-                        <Text style={styles.cardBody}>{card.body}</Text>
-                      ) : null}
-                    </View>
-                  </View>
-                </View>
-              ))}
-            </View>
+
+              {ratedCount > 0 ? (
+                <Text style={styles.footerStat}>
+                  {ratedCount.toLocaleString()} {ratedCount === 1 ? 'fight' : 'fights'} rated
+                </Text>
+              ) : null}
+            </>
           )}
 
           {SHOW_HOT_TAKES_LIST && hotTakes.length > 0 && (
@@ -218,7 +163,7 @@ export default function FanDNAScreen() {
                 <Text style={styles.hotTakesCount}>{hotTakes.length}</Text>
               </View>
               <Text style={styles.hotTakesSubtitle}>
-                Fights where your hype was very different from the community, but you were right.
+                You called it before the fight when the crowd had it wrong.
               </Text>
               <View style={{ gap: 8, marginTop: 12 }}>
                 {hotTakes.slice(0, 20).map((take) => (
@@ -260,62 +205,27 @@ const createStyles = (colors: any) =>
     container: { flex: 1, backgroundColor: colors.background },
     scrollContent: { padding: 16, paddingBottom: 32 },
     heroBlock: {
-      alignItems: 'center',
-      paddingVertical: 20,
-      gap: 8,
+      paddingTop: 12,
+      paddingBottom: 18,
+      gap: 4,
     },
-    heroTitle: {
-      fontSize: 22,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    heroSubtitle: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      textAlign: 'center',
-      maxWidth: 280,
-    },
-    typeCard: {
-      marginTop: 12,
-      marginBottom: 4,
-      padding: 18,
-      borderRadius: 14,
-      backgroundColor: 'rgba(167, 139, 250, 0.18)',
-      borderWidth: 1,
-      borderColor: 'rgba(167, 139, 250, 0.45)',
-    },
-    typeLabel: {
+    heroEyebrow: {
       fontSize: 11,
       fontWeight: '700',
-      color: '#A78BFA',
-      letterSpacing: 0.6,
+      letterSpacing: 1,
+      color: colors.textSecondary,
     },
-    typeName: {
-      fontSize: 22,
+    heroIdentity: {
+      fontSize: 30,
       fontWeight: '800',
-      color: colors.text,
-      marginTop: 4,
+      color: colors.primary,
+      lineHeight: 36,
     },
-    typeBody: {
+    heroSubtitle: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginTop: 6,
-      lineHeight: 20,
-    },
-    typeStatRow: {
-      flexDirection: 'row',
-      alignItems: 'baseline',
-      gap: 8,
-      marginTop: 10,
-    },
-    typeStatPrimary: {
-      fontSize: 26,
-      fontWeight: '800',
-      color: '#A78BFA',
-    },
-    typeStatSecondary: {
-      fontSize: 12,
-      color: colors.textSecondary,
+      marginTop: 4,
+      lineHeight: 19,
     },
     centerBlock: {
       alignItems: 'center',
@@ -339,20 +249,6 @@ const createStyles = (colors: any) =>
       fontWeight: '700',
       color: colors.text,
     },
-    earlyReadLabel: {
-      fontSize: 11,
-      fontWeight: '700',
-      color: '#A78BFA',
-      letterSpacing: 0.6,
-      marginTop: 8,
-    },
-    earlyReadSubtitle: {
-      fontSize: 13,
-      color: colors.textSecondary,
-      marginTop: 4,
-      marginBottom: 12,
-      lineHeight: 18,
-    },
     emptyBody: {
       fontSize: 13,
       color: colors.textSecondary,
@@ -362,59 +258,29 @@ const createStyles = (colors: any) =>
     card: {
       backgroundColor: colors.card,
       borderRadius: 12,
-      padding: 14,
+      padding: 16,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    cardRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    statBlock: {
-      minWidth: 72,
-      paddingHorizontal: 10,
-      paddingVertical: 10,
-      borderRadius: 10,
-      alignItems: 'center',
-    },
-    statPrimary: {
-      fontSize: 20,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    statSecondary: {
-      fontSize: 10,
-      color: colors.textSecondary,
-      marginTop: 2,
-    },
-    headlineRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.primary,
     },
     cardHeadline: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '600',
+      fontSize: 17,
+      fontWeight: '700',
       color: colors.text,
-    },
-    familyChip: {
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 999,
-    },
-    familyChipText: {
-      fontSize: 10,
-      fontWeight: '600',
-      textTransform: 'uppercase',
-      letterSpacing: 0.5,
+      lineHeight: 23,
     },
     cardBody: {
       fontSize: 13,
       color: colors.textSecondary,
-      marginTop: 4,
+      marginTop: 5,
       lineHeight: 18,
+    },
+    footerStat: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      marginTop: 20,
     },
     hotTakesBlock: {
       marginTop: 28,

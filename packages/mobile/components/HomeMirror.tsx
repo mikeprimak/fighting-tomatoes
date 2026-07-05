@@ -259,10 +259,11 @@ export default function HomeMirror() {
         </Text>
       ) : null}
 
-      {/* B. More about you — a fresh look in the mirror each day */}
+      {/* B. Rotating insight rail — a fresh look in the mirror each day.
+          Heading voice per Good_Fights_Voice_Guide §7 (the model header). */}
       {railInsights.length > 0 ? (
         <>
-          <Text style={styles.railHeading}>MORE ABOUT YOU</Text>
+          <Text style={styles.railHeading}>WHAT YOUR RATINGS GAVE AWAY</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -276,7 +277,7 @@ export default function HomeMirror() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.insightHeadline}>{insight.headline}</Text>
-                <Text style={styles.insightSubline} numberOfLines={2}>
+                <Text style={styles.insightSubline} numberOfLines={3}>
                   {insight.subline}
                 </Text>
               </TouchableOpacity>
@@ -451,7 +452,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingRight: 8,
   },
   insightCard: {
-    width: 250,
+    width: 260,
     backgroundColor: colors.card,
     borderRadius: 12,
     borderWidth: 1,
@@ -461,16 +462,16 @@ const createStyles = (colors: any) => StyleSheet.create({
     padding: 14,
   },
   insightHeadline: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     color: colors.text,
-    marginBottom: 4,
-    lineHeight: 20,
+    marginBottom: 5,
+    lineHeight: 21,
   },
   insightSubline: {
-    fontSize: 12,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 16,
+    lineHeight: 17,
   },
   bottomRule: {
     height: 1,

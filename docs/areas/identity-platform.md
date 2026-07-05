@@ -349,6 +349,24 @@ all copy wording, home-screen ranking weights. All recomputable from raw ratings
 
 ## Changelog
 
+- **2026-07-04** — **Voice guide adopted + Fan DNA surfaces revamped onto the
+  taste engine (branch-only).** `Good_Fights_Voice_Guide.docx` (root, Mike) is
+  now the governing voice doc for all identity/insight/recommendation copy —
+  it extends the locked copy principles below (reveal-don't-report, subline
+  adds never echoes, enemies in the lines, kill list: "might like", "go home
+  happy", "rarely lets you down", crowd-as-reason, app self-reference).
+  Applied: full `tasteProfile/copy.ts` pool rewrite (tests pass; also fixed a
+  latent digit-in-headline variant), onboarding payoff + welcome copy, mobile
+  + web Fan DNA screens rebuilt on ranked insights + rotating identity noun
+  (frozen `personalityType` card REMOVED from all consumer surfaces per the
+  locked rotating-signature decision: mobile fan-dna screen, mobile profile
+  row, web /fan-dna, web sidebar Identity/FanDNA blocks), web sidebar rec
+  blocks re-headed ("You missed one", "Your next fight", "Most followed"),
+  backend rec reasons de-crowded ("Popular on Good Fights" → "Most followed";
+  "Highly rated fighter" → "Always in good fights"). Home-mirror rail heading
+  now "WHAT YOUR RATINGS GAVE AWAY". Still to sweep: old trait-engine
+  reveal-modal quips (hype-accuracy "the room" lines). Details:
+  `docs/daily/2026-07-04-pivot.md`.
 - **2026-07-03** — **Home mirror BUILT (Phase 1 objective #1, branch-only).**
   Backend `GET /api/home/mirror` (urgency rail: live/today event cards +
   pinned hyped/followed fights, spoiler-safe, UTC-day convention) + mobile

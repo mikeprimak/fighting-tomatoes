@@ -2,12 +2,19 @@
  * Copy rendering for taste insights.
  *
  * Locked copy rules (identity-platform.md 2026-06-09; sublines reworked
- * 2026-06-12 round 4):
+ * 2026-06-12 round 4; full voice pass 2026-07-04 per Good_Fights_Voice_Guide):
  *   - Human, non-statistical HEADLINE ("You love wars").
  *   - The SUBLINE is human and colloquial too — NO numbers anywhere (Mike,
  *     2026-06-12: "the numbers are too confusing for a new user"). It
  *     elaborates the headline in plain fan language; the raw stats stay on
  *     the candidate's `stats` for debugging and pilot review.
+ *   - VOICE (Good_Fights_Voice_Guide, root): the narrator is the friend who's
+ *     been watching since Pride. The headline makes a claim; the subline adds
+ *     proof, consequence, or a twist — never an echo. No hedging ("might",
+ *     "tends to", "seem to"), no customer-service cheer ("go home happy",
+ *     "never lets you down"), no app self-reference, no "their" for a named
+ *     fighter. Half the lines want an enemy in them (the bike, the judges,
+ *     the point-fighter). Reveal, don't report.
  *   - Deep pools per insight family + combinatorial specificity, picked
  *     deterministically (pickVariety) so a given insight is stable within a
  *     rotation period but spread across the pool between users/insights.
@@ -26,41 +33,41 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
   loves: [
     'You love {X}',
     '{Xcap} are your thing',
-    'A certified fan of {X}',
     'You live for {X}',
-    '{Xcap} speak to you',
-    'Few things win you over like {X}',
+    '{Xcap} own your scorecard',
+    'Nothing buys your score like {X}',
+    "You'd clear a Tuesday for {X}",
   ],
   cold: [
     'Cold on {X}',
     '{Xcap} leave you flat',
-    "You're a tough crowd for {X}",
     "{Xcap} don't do it for you",
-    'Not your thing: {X}',
+    '{Xcap} get nothing from you',
+    'You never bought {X}',
   ],
   'community-high': [
     'You see more in {X} than {community}',
     "You're higher on {X} than {community}",
     'Where {communityS} shrugs at {X}, you lean in',
-    'You rate {X} extra high',
     '{Xcap} get extra credit from you',
     'You out-rate {community} on {X}',
+    'Somebody has to defend {X}. You volunteered',
   ],
   'community-low': [
     "You're harder on {X} than {community}",
-    '{Xcap} get less love from you',
     'You hold {X} to a higher bar',
     '{Xcap} have to earn it with you',
+    'The hype around {X} stops at your door',
   ],
   'rating-bias-high': [
     'You grade kinder than {community}',
     'A generous grader',
     'You find the good in a fight',
-    'Your scores run warm',
+    'You walk in rooting for the fight',
   ],
   'rating-bias-low': [
+    "You're a tough grader",
     'You grade harder than {community}',
-    'A tough grader',
     'You make fights earn every point',
     'Your scores run cool',
   ],
@@ -78,45 +85,43 @@ const HEADLINES: Record<InsightKind, readonly string[]> = {
   ],
   'rates-high': [
     '{Xcap} score big with you',
-    'You show up for {X}',
-    '{Xcap} rarely disappoint you',
     '{Xcap} bring out your high scores',
-    'Good nights usually involve {X}',
+    'Your good nights have {X} in them',
+    'You know what you came for: {X}',
   ],
   'fighter-love': [
-    'You seem to love {name} fights',
-    'A {name} fight never misses for you',
+    '{name} never misses for you',
+    'A {name} fight is appointment viewing for you',
     '{name} keeps earning your high scores',
-    'When {name} fights, you watch happy',
+    'You collect {name} fights',
   ],
   'fighter-rec': [
-    'You might like {name}',
-    '{name} looks like your kind of fighter',
-    'One for your radar: {name}',
-    'A name worth following: {name}',
+    'Watch {name}',
+    '{name} is your kind of fighter',
+    '{name} belongs on your radar',
+    'Your taste already picked {name}',
   ],
   'never-above': [
     'Your top shelf has no room for {X}',
     "There's a ceiling on {X} for you",
     '{Xcap} never reach your summit',
-    "You've yet to meet {X} worth raving about",
+    'Good {X} exist. Great ones keep not showing up',
   ],
   'all-high': [
     '{Xcap} never miss for you',
-    '{Xcap}: a perfect track record',
+    '{Xcap}: a perfect record with you',
     "When it's {X}, you're all in",
-    '{Xcap} have never let you down',
   ],
   'all-tens-share': [
     'Your perfect scores have one thing in common: {X}',
-    'The road to your 10s runs through {X}',
+    'The road to your top scores runs through {X}',
     'Every masterpiece on your list features {X}',
   ],
   'fighter-style': [
     "You're drawn to {X}",
     '{Xcap} are your people',
     'Your kind of fighter: {X}',
-    'You gravitate to {X}',
+    'You keep ending up with {X}',
   ],
   'fighter-appeal': [
     'What pulls you in: {X}',
@@ -166,79 +171,83 @@ const CLUSTER_HEADLINES: Record<string, readonly string[]> = {
 };
 
 // No numbers, no stats — plain fan language only (Mike, 2026-06-12 round 4).
+// The subline ADDS: proof, consequence, or a twist. Never an echo of the
+// headline, never customer-service cheer (Good_Fights_Voice_Guide rules 1, 7).
 const SUBLINES: Record<InsightKind, readonly string[]> = {
   loves: [
-    'These keep landing at the top of your scorecard.',
-    'Fights like this bring out your highest scores.',
-    'Your ratings climb whenever a fight delivers this.',
+    'Your top scores read like a highlight reel of {X}.',
+    'Everything else is killing time between {X}.',
+    'A card without {X} barely counts as a card to you.',
   ],
   cold: [
-    'They rarely crack your top scores.',
-    'Something about them never quite lands for you.',
-    'Your scores dip whenever a fight turns into this.',
+    "Everyone has a price. {Xcap} aren't yours.",
+    'You sit through them. You just refuse to reward them.',
+    'Your scorecard has a door policy, and {X} wait outside.',
   ],
   'community-high': [
-    'You keep finding more in these than {community}.',
-    'Fights {communityS} shrugs at, you score up.',
-    'You see something here that {communityS} misses.',
+    'While {communityS} reaches for the remote, you lean in.',
+    "You're not grading on the crowd's curve.",
+    'You catch what {communityS} keeps missing in these.',
   ],
   'community-low': [
-    'These have to work harder to win you over.',
-    'You hold them to a higher bar than {community}.',
-    'What impresses {community} does not always impress you.',
+    'These have to show receipts for what {communityS} gives away free.',
+    'What impresses {community} barely moves you.',
+    'You watched the same fight and refused to round up.',
   ],
   'rating-bias-high': [
-    'You hand out high scores more freely than {community}.',
-    'You look for reasons to like a fight, and usually find one.',
+    'You walk into every card wanting it to be great, and your scores admit it.',
+    'Somewhere in every dud you find the round that almost saved it.',
   ],
   'rating-bias-low': [
-    'A high score from you has to be earned.',
-    'You give out top marks less freely than {community}.',
+    "Most fights bore you. The ones that don't, you remember.",
+    'A high score from you means something actually happened in that cage.',
   ],
   prefers: [
-    'When it comes down to it, your scores pick {X}.',
     '{Ycap} are fine. {Xcap} are why you watch.',
-    'Both have their nights, but {X} win yours.',
+    'When both are on the card, everyone knows where your score is going.',
+    'Your scores picked a side a long time ago.',
   ],
   'era-lean': [
-    '{eraWinsCap} keep outscoring {eraLoses} in your book.',
+    'Put {eraLoses} next to {eraWins} and your scorecard already knows the winner.',
     'Your highest scores keep coming from {eraWins}.',
   ],
   'rates-high': [
-    'You love the nights that turn into {X}.',
-    'Fights like this rarely let you down.',
-    'When you get {X}, you go home happy.',
+    'The nights you rave about keep having {X} in them.',
+    "No {X}, no rave. That's how your scores read.",
+    'Your scorecard keeps writing the same love letter to {X}.',
   ],
   'fighter-love': [
-    'Their fights keep earning your highest scores.',
-    'Almost every one you watched delivered for you.',
+    'Almost every one you watched, you scored like a main event.',
+    'Some fighters sell tickets. {name} sells you.',
+    "You don't rate {name} fights so much as collect them.",
   ],
   'fighter-rec': [
-    'Fits your taste for {recList}.',
-    'Checks your boxes: {recList}.',
+    "You reward {recList}. That's {name} all over.",
+    'Your scorecard keeps asking for {recList}. {name} is the answer.',
   ],
   'never-above': [
-    'None of them have truly blown you away yet.',
-    'You are still waiting for a great one.',
+    'You keep showing up for them. They keep almost paying it off.',
+    'Good, sure. Great, never. Your scores draw that line.',
   ],
   'all-high': [
-    'Every single one you rated delivered for you.',
-    "You haven't met one you didn't like.",
+    'You keep waiting for a bad one. It keeps not coming.',
+    'Every single one you rated, you rated high. No exceptions yet.',
   ],
   'all-tens-share': [
-    "Every fight you've called perfect has this in it.",
-    'Your all-time favorites all share this.',
+    "That's not a coincidence. That's a signature.",
+    'Call it luck if you want. It keeps happening.',
   ],
   'fighter-style': [
-    'The fighters you rate, hype, and follow keep proving it, {names} most of all.',
-    'Fighters like {names} keep pulling you in.',
+    'The proof is who you keep coming back to: {names}.',
+    '{names} did not end up on your list by accident.',
   ],
   'fighter-appeal': [
-    'The fighters you gravitate to all bring this, {names} most of all.',
-    'Fighters like {names} keep pulling you in.',
+    "It's why {names} keep showing up in your ratings.",
+    '{names} figured you out a long time ago.',
   ],
   'fighter-persona': [
-    'The fighters you keep coming back to fit the mold, led by {names}.',
+    'The ones you keep backing fit the mold, {names} up front.',
+    '{names} led you there, and you went willingly.',
   ],
 };
 

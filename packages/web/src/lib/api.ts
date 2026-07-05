@@ -707,6 +707,41 @@ export async function getFanDNAProfile() {
   return makeRequest<FanDNAProfile>('/fan-dna/profile');
 }
 
+// Taste-profile engine (services/fanDNA/tasteProfile) — the ranked-insight
+// system behind the mobile home mirror and Fan DNA screen. Replaces the
+// trait cards + frozen personalityType on identity surfaces (the single
+// "you are X" label is shelved per the locked rotating-signature decision).
+export interface TasteProfileInsight {
+  key: string;
+  kind: string;
+  dimension: string;
+  token: string;
+  headline: string;
+  subline: string;
+  score: number;
+}
+
+export interface TasteProfileResponse {
+  insights: TasteProfileInsight[];
+  /** Rotating identity noun ("KO Lover"); null = render nothing. */
+  identityLabel?: string | null;
+  baseline: { count: number; avg: number; tensCount: number };
+  coverage: { withCharacter: number; total: number };
+}
+
+export async function getTasteProfile(opts?: {
+  max?: number;
+  salt?: string;
+}): Promise<TasteProfileResponse> {
+  const params = new URLSearchParams();
+  if (opts?.max) params.set('max', String(opts.max));
+  if (opts?.salt) params.set('salt', opts.salt);
+  const qs = params.toString();
+  return makeRequest<TasteProfileResponse>(
+    `/fan-dna/taste-profile${qs ? `?${qs}` : ''}`,
+  );
+}
+
 // ==================== ME / RECENCY ====================
 
 export interface UpcomingFollowedFight {

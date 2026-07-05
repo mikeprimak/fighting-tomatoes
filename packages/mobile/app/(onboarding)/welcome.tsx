@@ -74,8 +74,7 @@ export default function OnboardingWelcomeScreen() {
             <View style={styles.beatTextWrap}>
               <Text style={styles.beatTitle}>The app pays it back</Text>
               <Text style={styles.beatBody}>
-                Insights about the fan you are — just for you, sharper with
-                every rating.
+                Insights about the fan you are, sharper with every rating.
               </Text>
             </View>
           </View>
@@ -87,8 +86,7 @@ export default function OnboardingWelcomeScreen() {
             <View style={styles.beatTextWrap}>
               <Text style={styles.beatTitle}>Fight recommendations</Text>
               <Text style={styles.beatBody}>
-                We'll point you to upcoming fights you might love, based on
-                the taste you build.
+                Upcoming fights picked off your taste, not the crowd's.
               </Text>
             </View>
           </View>

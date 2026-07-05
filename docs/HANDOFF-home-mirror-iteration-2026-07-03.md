@@ -1,5 +1,14 @@
 # HANDOFF — Home mirror: built, device-tested, mid-design-iteration (2026-07-03)
 
+> **2026-07-04 update:** voice-guide pass + Fan DNA revamp shipped on this
+> branch (see `docs/daily/2026-07-04-pivot.md`): taste copy pools rewritten in
+> the `Good_Fights_Voice_Guide.docx` voice, mobile + web Fan DNA screens
+> rebuilt on taste-profile insights + identity noun (personalityType removed
+> from all consumer surfaces), sidebar/onboarding/rec-reason kill-list sweep.
+> NOT device-walked. Next-steps list below still stands otherwise (un-hype
+> gate bug, prelim-position insight, coverage). Mike's round-1 design verdict
+> STILL pending — ask first.
+
 **Branch:** `claude/user-focused-pivot-l8l6mg`, worktree `C:/Users/avoca/fight-mobile-app-pivot`
 (Phase 1 integration branch — **NO merges to main, no OTA, no prod publish, no migrations**).
 Branch was synced with main earlier today (merge `1b1c5b2f`) — **0 behind** as of this handoff;

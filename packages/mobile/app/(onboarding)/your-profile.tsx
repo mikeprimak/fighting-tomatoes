@@ -60,9 +60,12 @@ export default function YourProfileScreen() {
           </View>
         ) : insights.length > 0 ? (
           <>
-            <Text style={styles.title}>The app already knows you</Text>
+            {/* Voice per Good_Fights_Voice_Guide rule 2: never let the app
+                talk about the app. Show the knowing by being right. */}
+            <Text style={styles.title}>Here's what your ratings gave away</Text>
             <Text style={styles.subtitle}>
-              Built from your ratings and follows. It sharpens with every one.
+              This is the rough sketch. Rate more, and it gets uncomfortably
+              accurate.
             </Text>
             <ScrollView
               style={styles.cards}
@@ -82,8 +85,7 @@ export default function YourProfileScreen() {
             <FontAwesome name="line-chart" size={56} color={colors.primary} />
             <Text style={styles.title2}>Your profile is forming</Text>
             <Text style={styles.formingBody}>
-              Every rating sharpens it. Keep rating and the app will start
-              telling you things about yourself.
+              Keep rating. The patterns show up on their own.
             </Text>
             {baseline && baseline.count > 0 ? (
               <Text style={styles.formingStats}>

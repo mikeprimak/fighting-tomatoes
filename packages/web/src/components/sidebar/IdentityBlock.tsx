@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { getFanDNAProfile } from '@/lib/api';
+import { getTasteProfile } from '@/lib/api';
 
 function formatMemberSince(createdAt: string): string {
   const created = new Date(createdAt);
@@ -21,9 +21,13 @@ function formatMemberSince(createdAt: string): string {
 export function IdentityBlock() {
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  const { data: dna } = useQuery({
-    queryKey: ['fanDNAProfile', user?.id ?? null],
-    queryFn: getFanDNAProfile,
+  // Rotating identity noun + top insight from the taste engine (2026-07-04
+  // revamp; the frozen personalityType label is shelved). max 4 + daily salt
+  // match the other surfaces so the noun agrees everywhere today.
+  const todaySalt = new Date().toISOString().slice(0, 10);
+  const { data: taste } = useQuery({
+    queryKey: ['tasteProfile', 'identity', user?.id ?? null, todaySalt],
+    queryFn: () => getTasteProfile({ max: 4, salt: todaySalt }),
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
@@ -102,7 +106,8 @@ export function IdentityBlock() {
 
   const displayName = user.displayName || user.email.split('@')[0];
   const initial = displayName[0]?.toUpperCase() ?? '?';
-  const personality = dna?.personalityType ?? null;
+  const identityLabel = taste?.identityLabel ?? null;
+  const topInsight = taste?.insights?.[0] ?? null;
 
   return (
     <div className="rounded-lg border border-border bg-card p-4">
@@ -127,9 +132,9 @@ export function IdentityBlock() {
           <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
             {displayName}
           </p>
-          {personality ? (
+          {identityLabel ? (
             <p className="mt-0.5 truncate text-xs font-medium text-primary">
-              {personality.label}
+              {identityLabel}
             </p>
           ) : (
             <p className="mt-0.5 text-[11px] text-text-secondary">
@@ -139,10 +144,11 @@ export function IdentityBlock() {
         </div>
       </Link>
 
-      {/* Personality body line (if we have one) */}
-      {personality?.body ? (
+      {/* Top taste insight (if the engine has one) */}
+      {topInsight ? (
         <p className="mt-3 text-[11px] leading-relaxed text-text-secondary">
-          {personality.body}
+          <span className="font-semibold text-foreground">{topInsight.headline}.</span>{' '}
+          {topInsight.subline}
         </p>
       ) : null}
 

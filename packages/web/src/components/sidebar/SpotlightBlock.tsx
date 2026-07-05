@@ -74,7 +74,7 @@ export function SpotlightBlock() {
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Telescope size={11} className="text-primary" />
-        A good fight you might love
+        You missed one
       </div>
       <Link href={`/fights/${f.id}`} className="block group">
         <div className="flex items-center justify-between gap-2">
@@ -94,7 +94,7 @@ export function SpotlightBlock() {
           <p className="-mt-[3px] truncate text-[11px] text-text-secondary">{eventLine}</p>
         ) : null}
         <p className="mt-2 text-[10px] text-text-secondary">
-          {f.totalRatings} fans agreed.
+          Rate it and see where you land.
         </p>
       </Link>
     </div>

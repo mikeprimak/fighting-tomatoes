@@ -74,7 +74,7 @@ export function MightLikeBlock() {
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Telescope size={11} className="text-primary" />
-        Upcoming fight you might like
+        Your next fight
       </h3>
 
       <Link

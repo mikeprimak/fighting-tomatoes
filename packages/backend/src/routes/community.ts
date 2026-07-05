@@ -1792,7 +1792,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         const fighterMap = new Map(fighters.map((f) => [f.id, f]));
         return grouped
           .filter((g) => !alreadyFollowed.has(g.fighterId))
-          .map((g) => ({ fighter: fighterMap.get(g.fighterId), reason: 'Popular on Good Fights' }))
+          // Cold start has no user signal to cite, so the reason stays plain
+          // and factual — never "Popular on Good Fights" (crowd-as-reason is
+          // on the voice guide's kill list).
+          .map((g) => ({ fighter: fighterMap.get(g.fighterId), reason: 'Most followed' }))
           .filter((x): x is { fighter: any; reason: string } => !!x.fighter)
           .slice(0, limit);
       };
@@ -1867,7 +1870,10 @@ export default async function communityRoutes(fastify: FastifyInstance) {
 
       const fighters = candidates.map((c) => {
         const namesake = c.weightClass ? weightClassNamesake.get(c.weightClass) : undefined;
-        const reason = namesake ? `Same weight as ${namesake}` : 'Highly rated fighter';
+        // Reason comes from the user's own taste where we have it (namesake =
+        // a fighter they follow or rated high); the fallback claims the
+        // fighter, never the crowd ("Highly rated" is the algorithm talking).
+        const reason = namesake ? `Runs in ${namesake}'s division` : 'Always in good fights';
         return { fighter: c, reason };
       });
 
