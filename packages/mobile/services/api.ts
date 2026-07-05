@@ -122,14 +122,25 @@ export interface TasteProfileInsight {
   token: string;
   /** Human, non-statistical headline ("You love wars"). */
   headline: string;
-  /** The number lives here, small. */
+  /** Plain-language elaboration, no numbers. */
   subline: string;
+  /** Receipts: "Because you liked Max Holloway vs Justin Gaethje". */
+  evidence?: string | null;
   score: number;
+}
+
+/** Rotating identity noun + plain-language meaning + receipts. */
+export interface TasteIdentity {
+  label: string;
+  explanation: string;
+  evidence?: string | null;
 }
 
 export interface TasteProfileResponse {
   insights: TasteProfileInsight[];
-  /** Rotating identity noun for the greeting pill ("KO Lover"); null = hide. */
+  /** Rotating identity; null = render nothing (silence > filler). */
+  identity?: TasteIdentity | null;
+  /** Back-compat noun for the greeting pill ("KO Lover"); null = hide. */
   identityLabel?: string | null;
   baseline: { count: number; avg: number; tensCount: number };
   coverage: { withCharacter: number; total: number };

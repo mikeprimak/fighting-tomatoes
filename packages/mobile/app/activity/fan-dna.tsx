@@ -67,7 +67,7 @@ export default function FanDNAScreen() {
   );
 
   const insights = tasteQuery.data?.insights ?? [];
-  const identityLabel = tasteQuery.data?.identityLabel ?? null;
+  const identity = tasteQuery.data?.identity ?? null;
   const ratedCount = tasteQuery.data?.baseline?.count ?? 0;
   const hotTakes =
     (hypeAccuracyQuery.data?.fights ?? []).filter((f) => f.isHotTake);
@@ -124,18 +124,25 @@ export default function FanDNAScreen() {
             </View>
           ) : (
             <>
-              {/* Hero: rotating identity noun as the headline of the screen.
-                  No label computed = no hero line (silence > filler). */}
+              {/* Hero: rotating identity noun + what it means + the fights
+                  behind it. No identity = no hero block (silence > filler). */}
               <View style={styles.heroBlock}>
-                {identityLabel ? (
+                {identity ? (
                   <>
                     <Text style={styles.heroEyebrow}>THIS WEEK YOU'RE A</Text>
-                    <Text style={styles.heroIdentity}>{identityLabel}</Text>
+                    <Text style={styles.heroIdentity}>{identity.label}</Text>
+                    <Text style={styles.heroExplanation}>
+                      {identity.explanation}
+                    </Text>
+                    {identity.evidence ? (
+                      <Text style={styles.heroEvidence}>{identity.evidence}</Text>
+                    ) : null}
                   </>
-                ) : null}
-                <Text style={styles.heroSubtitle}>
-                  Here's what your ratings gave away.
-                </Text>
+                ) : (
+                  <Text style={styles.heroSubtitle}>
+                    Here's what your ratings gave away.
+                  </Text>
+                )}
               </View>
 
               <View style={{ gap: 12 }}>
@@ -143,6 +150,9 @@ export default function FanDNAScreen() {
                   <View key={insight.key} style={styles.card}>
                     <Text style={styles.cardHeadline}>{insight.headline}</Text>
                     <Text style={styles.cardBody}>{insight.subline}</Text>
+                    {insight.evidence ? (
+                      <Text style={styles.cardEvidence}>{insight.evidence}</Text>
+                    ) : null}
                   </View>
                 ))}
               </View>
@@ -221,6 +231,19 @@ const createStyles = (colors: any) =>
       color: colors.primary,
       lineHeight: 36,
     },
+    heroExplanation: {
+      fontSize: 14,
+      color: colors.text,
+      marginTop: 6,
+      lineHeight: 20,
+    },
+    heroEvidence: {
+      fontSize: 12,
+      fontStyle: 'italic',
+      color: colors.textSecondary,
+      marginTop: 4,
+      lineHeight: 17,
+    },
     heroSubtitle: {
       fontSize: 14,
       color: colors.textSecondary,
@@ -275,6 +298,14 @@ const createStyles = (colors: any) =>
       color: colors.textSecondary,
       marginTop: 5,
       lineHeight: 18,
+    },
+    cardEvidence: {
+      fontSize: 12,
+      fontStyle: 'italic',
+      color: colors.textSecondary,
+      opacity: 0.85,
+      marginTop: 6,
+      lineHeight: 16,
     },
     footerStat: {
       fontSize: 12,

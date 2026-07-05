@@ -106,7 +106,7 @@ export function IdentityBlock() {
 
   const displayName = user.displayName || user.email.split('@')[0];
   const initial = displayName[0]?.toUpperCase() ?? '?';
-  const identityLabel = taste?.identityLabel ?? null;
+  const identity = taste?.identity ?? null;
   const topInsight = taste?.insights?.[0] ?? null;
 
   return (
@@ -132,9 +132,9 @@ export function IdentityBlock() {
           <p className="truncate text-sm font-bold text-foreground group-hover:text-primary">
             {displayName}
           </p>
-          {identityLabel ? (
+          {identity ? (
             <p className="mt-0.5 truncate text-xs font-medium text-primary">
-              {identityLabel}
+              {identity.label}
             </p>
           ) : (
             <p className="mt-0.5 text-[11px] text-text-secondary">
@@ -144,8 +144,12 @@ export function IdentityBlock() {
         </div>
       </Link>
 
-      {/* Top taste insight (if the engine has one) */}
-      {topInsight ? (
+      {/* What the identity means; falls back to the top taste insight. */}
+      {identity ? (
+        <p className="mt-3 text-[11px] leading-relaxed text-text-secondary">
+          {identity.explanation}
+        </p>
+      ) : topInsight ? (
         <p className="mt-3 text-[11px] leading-relaxed text-text-secondary">
           <span className="font-semibold text-foreground">{topInsight.headline}.</span>{' '}
           {topInsight.subline}

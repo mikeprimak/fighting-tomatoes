@@ -73,6 +73,8 @@ interface Accumulator {
   tensCount: number;
   cmpN: number;
   cmpDeltaSum: number;
+  /** Top-rated labeled fights carrying this token (kept sorted, max 2). */
+  examples: Array<{ label: string; rating: number }>;
 }
 
 function aggregateFightTokens(fights: RatedFightInput[]): TokenStat[] {
@@ -104,6 +106,7 @@ function aggregateFightTokens(fights: RatedFightInput[]): TokenStat[] {
             tensCount: 0,
             cmpN: 0,
             cmpDeltaSum: 0,
+            examples: [],
           };
           acc.set(key, a);
         }
@@ -113,6 +116,12 @@ function aggregateFightTokens(fights: RatedFightInput[]): TokenStat[] {
         a.min = Math.min(a.min, fight.rating);
         if (fight.rating >= HIGH_RATING) a.highCount++;
         if (fight.rating >= TOP_RATING) a.tensCount++;
+        // Receipts for evidence lines: this token's top-rated labeled fights.
+        if (fight.label) {
+          a.examples.push({ label: fight.label, rating: fight.rating });
+          a.examples.sort((x, y) => y.rating - x.rating);
+          if (a.examples.length > 2) a.examples.length = 2;
+        }
         if (trustworthyCmp) {
           a.cmpN++;
           a.cmpDeltaSum += fight.rating - (fight.communityAvg as number);
@@ -133,6 +142,11 @@ function aggregateFightTokens(fights: RatedFightInput[]): TokenStat[] {
     presentShare: total > 0 ? a.count / total : 0,
     cmpN: a.cmpN,
     avgDeltaVsCommunity: a.cmpN > 0 ? a.cmpDeltaSum / a.cmpN : null,
+    // Only genuinely-liked fights make the receipt line: a harsh grader's
+    // "best" 6 would read as a contradiction under a positive claim.
+    topExamples: a.examples
+      .filter((e) => e.rating >= HIGH_RATING)
+      .map((e) => e.label),
   }));
 }
 

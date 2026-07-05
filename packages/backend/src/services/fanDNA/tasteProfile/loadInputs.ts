@@ -107,11 +107,18 @@ export async function loadTasteInputs(
   ]);
 
   // ── fights ────────────────────────────────────────────────────────────────
+  const fullName = (
+    x: { firstName: string; lastName: string } | null | undefined,
+  ): string => (x ? `${x.firstName} ${x.lastName}`.trim() : '');
   let withCharacter = 0;
   const fights: RatedFightInput[] = ratings.map((r) => {
     const f = r.fight;
     const rating = clampRating(r.rating);
     const dims: RatedFightInput['dims'] = {};
+    // Evidence label ("Max Holloway vs Justin Gaethje") for insight receipts.
+    const n1 = fullName(f.fighter1);
+    const n2 = fullName(f.fighter2);
+    const label = n1 && n2 ? `${n1} vs ${n2}` : undefined;
 
     const method = bucketMethod(f.method);
     if (method) dims.method = method;
@@ -148,6 +155,7 @@ export async function loadTasteInputs(
 
     return {
       fightId: f.id,
+      label,
       rating,
       dims,
       communityAvg,
@@ -164,24 +172,40 @@ export async function loadTasteInputs(
   }
   const acc = new Map<
     string,
-    { row: FighterRow; followed: boolean; highRatedCount: number; hypedCount: number; ratedCount: number }
+    {
+      row: FighterRow;
+      followed: boolean;
+      highRatedCount: number;
+      hypedCount: number;
+      ratedCount: number;
+      topFights: Array<{ label: string; rating: number }>;
+    }
   >();
   const touch = (row: FighterRow | null | undefined) => {
     if (!row) return null;
     let a = acc.get(row.id);
     if (!a) {
-      a = { row, followed: false, highRatedCount: 0, hypedCount: 0, ratedCount: 0 };
+      a = { row, followed: false, highRatedCount: 0, hypedCount: 0, ratedCount: 0, topFights: [] };
       acc.set(row.id, a);
     }
     return a;
   };
 
   for (const r of ratings) {
+    const n1 = fullName(r.fight.fighter1);
+    const n2 = fullName(r.fight.fighter2);
+    const label = n1 && n2 ? `${n1} vs ${n2}` : null;
     for (const side of [r.fight.fighter1, r.fight.fighter2]) {
       const a = touch(side as FighterRow);
       if (!a) continue;
       a.ratedCount++;
       if (r.rating >= HIGH_RATING) a.highRatedCount++;
+      // Track this fighter's top-rated fights for evidence lines (keep 2).
+      if (label) {
+        a.topFights.push({ label, rating: r.rating });
+        a.topFights.sort((x, y) => y.rating - x.rating);
+        if (a.topFights.length > 2) a.topFights.length = 2;
+      }
     }
   }
   for (const p of predictions) {
@@ -214,6 +238,9 @@ export async function loadTasteInputs(
       highRatedCount: a.highRatedCount,
       hypedCount: a.hypedCount,
       ratedCount: a.ratedCount,
+      exampleFights: a.topFights
+        .filter((t) => t.rating >= HIGH_RATING)
+        .map((t) => t.label),
     };
   });
 

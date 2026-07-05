@@ -19,7 +19,7 @@ import {
   loadTasteInputs,
   type LoadedTasteInputs,
 } from '../services/fanDNA/tasteProfile/loadInputs';
-import { pickIdentityLabel } from '../services/fanDNA/tasteProfile/identityLabel';
+import { pickIdentity } from '../services/fanDNA/tasteProfile/identityLabel';
 import type {
   FanDNAAction,
   FanDNASurface,
@@ -366,6 +366,9 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
       });
 
       const b = result.signature.baseline;
+      // Rotating identity: noun + plain-language meaning + receipts.
+      // Salted like the insights; null = render nothing (silence > filler).
+      const identity = pickIdentity(result.insights, query.salt || isoWeekSalt());
       return reply.code(200).send({
         insights: result.insights.map((i) => ({
           key: i.key,
@@ -374,14 +377,13 @@ export default async function fanDNARoutes(fastify: FastifyInstance) {
           token: i.token,
           headline: i.headline,
           subline: i.subline,
+          // "Because you liked Max Holloway vs Justin Gaethje" (may be absent).
+          evidence: i.evidence ?? null,
           score: i.score,
         })),
-        // Rotating noun for the home-mirror greeting pill ("KO Lover").
-        // Salted like the insights; null = render nothing (silence > filler).
-        identityLabel: pickIdentityLabel(
-          result.insights,
-          query.salt || isoWeekSalt(),
-        ),
+        identity,
+        // Back-compat noun for the greeting pill.
+        identityLabel: identity?.label ?? null,
         baseline: { count: b.count, avg: b.avg, tensCount: b.tensCount },
         coverage: cached.inputs.characterCoverage,
       });

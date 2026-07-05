@@ -60,6 +60,28 @@ function pickDiverse(
   return picked;
 }
 
+/**
+ * Kinds whose claim is positive enough to carry a "Because you liked ..."
+ * receipt line. Negative/absence claims (cold, never-above, community-low)
+ * get none — citing fights the user LIKED under a claim about what they
+ * don't would read as a contradiction.
+ */
+const EVIDENCE_KINDS = new Set([
+  'loves',
+  'community-high',
+  'rates-high',
+  'all-high',
+  'all-tens-share',
+  'prefers',
+  'era-lean',
+]);
+
+/** "Because you liked A and B" — the receipts behind a positive claim. */
+export function renderEvidence(examples: string[] | undefined): string | undefined {
+  if (!examples || examples.length === 0) return undefined;
+  return `Because you liked ${examples.join(' and ')}`;
+}
+
 export function computeTasteProfile(
   input: TasteProfileInput,
 ): TasteProfileResult {
@@ -72,13 +94,33 @@ export function computeTasteProfile(
   const max = input.maxInsights ?? DEFAULT_MAX_INSIGHTS;
   const salt = input.rotationSalt ?? '';
 
+  // Receipt lookups for evidence lines (Mike, 2026-07-04: cite the concrete
+  // fights behind the claim). Token insights read from the signature's
+  // aggregates; fighter-love reads from that fighter's own top-rated fights.
+  const tokenExamples = new Map<string, string[]>();
+  for (const t of signature.tokens) {
+    if (t.topExamples.length > 0)
+      tokenExamples.set(`${t.dimension}|${t.token}`, t.topExamples);
+  }
+  const fighterExamples = new Map<string, string[]>();
+  for (const f of input.fighters ?? []) {
+    if (f.exampleFights && f.exampleFights.length > 0)
+      fighterExamples.set(f.fighterId, f.exampleFights);
+  }
+
   const insights: RankedInsight[] = pickDiverse(candidates, max).map((c) => {
     const key = `${c.kind}|${c.dimension}|${c.token}|${c.direction}`;
     const { headline, subline } = renderInsight(
       c,
       `${input.userId}|${key}|${salt}`,
     );
-    return { ...c, key, headline, subline };
+    const examples =
+      c.kind === 'fighter-love'
+        ? fighterExamples.get(c.token)
+        : EVIDENCE_KINDS.has(c.kind)
+          ? tokenExamples.get(`${c.dimension}|${c.token}`)
+          : undefined;
+    return { ...c, key, headline, subline, evidence: renderEvidence(examples) };
   });
 
   return { signature, insights };

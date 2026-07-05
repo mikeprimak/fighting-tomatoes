@@ -76,6 +76,9 @@ export default function YourProfileScreen() {
                 <View key={insight.key} style={styles.card}>
                   <Text style={styles.cardHeadline}>{insight.headline}</Text>
                   <Text style={styles.cardSubline}>{insight.subline}</Text>
+                  {insight.evidence ? (
+                    <Text style={styles.cardEvidence}>{insight.evidence}</Text>
+                  ) : null}
                 </View>
               ))}
             </ScrollView>
@@ -169,6 +172,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
+  },
+  cardEvidence: {
+    fontSize: 12,
+    fontStyle: 'italic',
+    color: colors.textSecondary,
+    opacity: 0.85,
+    marginTop: 5,
+    lineHeight: 16,
   },
   formingBody: {
     fontSize: 14,

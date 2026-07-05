@@ -58,7 +58,7 @@ export default function FanDNAPage() {
   }
 
   const insights = data?.insights ?? [];
-  const identityLabel = data?.identityLabel ?? null;
+  const identity = data?.identity ?? null;
   const ratedCount = data?.baseline?.count ?? 0;
 
   return (
@@ -83,23 +83,34 @@ export default function FanDNAPage() {
         </div>
       ) : (
         <>
-          {/* Hero: rotating identity noun. No noun = no hero line. */}
+          {/* Hero: rotating identity noun + what it means + the fights
+              behind it. No identity = plain header. */}
           <div className="mb-6">
-            {identityLabel ? (
+            {identity ? (
               <>
                 <p className="text-[11px] font-bold uppercase tracking-widest text-text-secondary">
                   This week you&apos;re a
                 </p>
                 <h1 className="mt-1 text-3xl font-extrabold text-primary">
-                  {identityLabel}
+                  {identity.label}
                 </h1>
+                <p className="mt-2 text-sm text-foreground">
+                  {identity.explanation}
+                </p>
+                {identity.evidence ? (
+                  <p className="mt-1 text-xs italic text-text-secondary">
+                    {identity.evidence}
+                  </p>
+                ) : null}
               </>
             ) : (
-              <h1 className="text-2xl font-bold text-foreground">Your Fan DNA</h1>
+              <>
+                <h1 className="text-2xl font-bold text-foreground">Your Fan DNA</h1>
+                <p className="mt-2 text-sm text-text-secondary">
+                  Here&apos;s what your ratings gave away.
+                </p>
+              </>
             )}
-            <p className="mt-2 text-sm text-text-secondary">
-              Here&apos;s what your ratings gave away.
-            </p>
           </div>
 
           <div className="space-y-3">
@@ -114,6 +125,11 @@ export default function FanDNAPage() {
                 <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
                   {insight.subline}
                 </p>
+                {insight.evidence ? (
+                  <p className="mt-1.5 text-xs italic text-text-secondary/85">
+                    {insight.evidence}
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>

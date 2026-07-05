@@ -718,12 +718,23 @@ export interface TasteProfileInsight {
   token: string;
   headline: string;
   subline: string;
+  /** Receipts: "Because you liked Max Holloway vs Justin Gaethje". */
+  evidence?: string | null;
   score: number;
+}
+
+/** Rotating identity noun + plain-language meaning + receipts. */
+export interface TasteIdentity {
+  label: string;
+  explanation: string;
+  evidence?: string | null;
 }
 
 export interface TasteProfileResponse {
   insights: TasteProfileInsight[];
-  /** Rotating identity noun ("KO Lover"); null = render nothing. */
+  /** Rotating identity; null = render nothing (silence > filler). */
+  identity?: TasteIdentity | null;
+  /** Back-compat noun ("KO Lover"); null = render nothing. */
   identityLabel?: string | null;
   baseline: { count: number; avg: number; tensCount: number };
   coverage: { withCharacter: number; total: number };

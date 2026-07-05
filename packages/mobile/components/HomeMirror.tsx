@@ -253,16 +253,23 @@ export default function HomeMirror() {
       ))}
 
       {hiddenPinCount > 0 ? (
-        <Text style={styles.morePins}>
-          +{hiddenPinCount} more {hiddenPinCount === 1 ? 'fight' : 'fights'} you're
-          watching this week
-        </Text>
+        <TouchableOpacity
+          onPress={() => router.push('/(tabs)/events' as any)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.morePins}>
+            +{hiddenPinCount} more {hiddenPinCount === 1 ? 'fight' : 'fights'} you're
+            watching this week
+            <Text style={styles.morePinsLink}>  See all upcoming</Text>
+          </Text>
+        </TouchableOpacity>
       ) : null}
 
       {/* B. Rotating insight rail — a fresh look in the mirror each day.
-          Heading voice per Good_Fights_Voice_Guide §7 (the model header). */}
+          Bordered container so the section reads as its own unit (Mike,
+          2026-07-04). Heading voice per Good_Fights_Voice_Guide §7. */}
       {railInsights.length > 0 ? (
-        <>
+        <View style={styles.railContainer}>
           <Text style={styles.railHeading}>WHAT YOUR RATINGS GAVE AWAY</Text>
           <ScrollView
             horizontal
@@ -277,13 +284,18 @@ export default function HomeMirror() {
                 activeOpacity={0.8}
               >
                 <Text style={styles.insightHeadline}>{insight.headline}</Text>
-                <Text style={styles.insightSubline} numberOfLines={3}>
+                <Text style={styles.insightSubline} numberOfLines={2}>
                   {insight.subline}
                 </Text>
+                {insight.evidence ? (
+                  <Text style={styles.insightEvidence} numberOfLines={2}>
+                    {insight.evidence}
+                  </Text>
+                ) : null}
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </>
+        </View>
       ) : null}
 
       <View style={styles.bottomRule} />
@@ -438,13 +450,27 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginBottom: 4,
     marginLeft: 2,
   },
+  morePinsLink: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+  railContainer: {
+    marginTop: 12,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingHorizontal: 12,
+  },
   railHeading: {
     fontSize: 12,
     fontWeight: '600',
     letterSpacing: 0.5,
     textTransform: 'uppercase',
     color: colors.textSecondary,
-    marginTop: 12,
     marginBottom: 8,
   },
   insightRailContent: {
@@ -453,7 +479,7 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   insightCard: {
     width: 260,
-    backgroundColor: colors.card,
+    backgroundColor: colors.backgroundSecondary,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.border,
@@ -472,6 +498,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 17,
+  },
+  insightEvidence: {
+    fontSize: 11,
+    fontStyle: 'italic',
+    color: colors.textSecondary,
+    opacity: 0.85,
+    marginTop: 6,
+    lineHeight: 14,
   },
   bottomRule: {
     height: 1,

@@ -17,6 +17,8 @@
 /** One rated fight, flattened to (dimension → token(s)) plus community context. */
 export interface RatedFightInput {
   fightId: string;
+  /** Display label for evidence lines, e.g. "Max Holloway vs Justin Gaethje". */
+  label?: string;
   /** The user's 1-10 rating. */
   rating: number;
   /** The user's pre-fight hype on this fight, if any. */
@@ -55,6 +57,8 @@ export interface FighterInput {
   hypedCount?: number;
   /** Total user ratings on this fighter's fights. */
   ratedCount?: number;
+  /** Labels of this fighter's fights the user rated highest (up to 2). */
+  exampleFights?: string[];
 }
 
 /**
@@ -91,6 +95,12 @@ export interface TokenStat {
   cmpN: number;
   /** mean(user rating − community avg) over those fights. null if cmpN = 0. */
   avgDeltaVsCommunity: number | null;
+  /**
+   * Labels of the user's top-rated fights carrying this token (up to 2, by
+   * rating) — the concrete receipts behind a positive insight ("Because you
+   * liked Max Holloway vs Justin Gaethje"). Empty when inputs carry no labels.
+   */
+  topExamples: string[];
 }
 
 /** Aggregated stats for one fighter-axis token (archetype/appeal/persona). */
@@ -215,6 +225,22 @@ export interface RankedInsight extends InsightCandidate {
    * numeric sublines read confusing). The stats stay in `stats` for debugging.
    */
   subline: string;
+  /**
+   * Concrete receipts, rendered ("Because you liked Max Holloway vs Justin
+   * Gaethje"). Positive insights only; absent when no labeled examples exist
+   * (Mike, 2026-07-04: cite the actual fights behind the claim).
+   */
+  evidence?: string;
+}
+
+/** The rotating identity noun plus its plain-language explanation. */
+export interface TasteIdentity {
+  /** The noun ("Cardio Junkie") — same string the greeting pill shows. */
+  label: string;
+  /** What the noun means in fan terms ("You like fights that keep a high pace..."). */
+  explanation: string;
+  /** Concrete receipts, same format as insight evidence. */
+  evidence?: string;
 }
 
 export interface TasteProfileInput {
