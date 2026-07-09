@@ -166,6 +166,12 @@
       "source": "The Odds API (US consensus median)",
       "mcgregor": 180,
       "holloway": -218
+    },
+    {
+      "date": "2026-07-09",
+      "source": "The Odds API (US consensus median)",
+      "mcgregor": 185,
+      "holloway": -225
     }
   ]
 }
