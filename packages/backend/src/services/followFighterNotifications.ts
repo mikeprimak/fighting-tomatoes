@@ -75,6 +75,7 @@ export async function dispatchBookedNotification(args: {
     where: { id: fightId },
     select: {
       id: true,
+      eventId: true,
       fighter1Id: true,
       fighter2Id: true,
       fighter1: { select: { firstName: true, lastName: true } },
@@ -83,6 +84,37 @@ export async function dispatchBookedNotification(args: {
     },
   });
   if (!fight) return;
+
+  // Same-event dedup (RAF Georgia 2026-07-10): if this user was already
+  // booked-notified for this fighter on ANOTHER fight of the same event, the
+  // "new" fight is almost always a scraper rename-fork of the same bout — and
+  // even a genuine opponent swap doesn't warrant a second "just got booked"
+  // push (the 3-day / morning-of lanes still cover it). Stamp and skip.
+  const priorBooked = await prisma.followNotificationEvent.findMany({
+    where: {
+      userId,
+      fighterId: followedFighterId,
+      lane: 'BOOKED',
+      fightId: { not: fightId },
+    },
+    select: { fightId: true },
+  });
+  if (priorBooked.length > 0) {
+    const sameEventFight = await prisma.fight.findFirst({
+      where: { id: { in: priorBooked.map((e) => e.fightId) }, eventId: fight.eventId },
+      select: { id: true },
+    });
+    if (sameEventFight) {
+      await prisma.fightNotificationMatch.update({
+        where: { id: matchId },
+        data: { bookedSentAt: new Date() },
+      });
+      console.log(
+        `[Notifications] Booked suppressed (user=${userId} fighter=${followedFighterId} already notified on event ${fight.eventId} via fight ${sameEventFight.id})`,
+      );
+      return;
+    }
+  }
 
   const identity: FollowedFighterIdentity = fight.fighter1Id === followedFighterId
     ? {

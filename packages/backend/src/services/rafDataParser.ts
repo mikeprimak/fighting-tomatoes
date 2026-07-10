@@ -8,6 +8,7 @@ import { eventTimeToUTC } from '../utils/timezone';
 import { uploadEventImage } from './imageStorage';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { resolveRenamedOpponent, normalizeFullName } from '../utils/fighterRename';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
@@ -310,11 +311,69 @@ async function importRAFEvents(
     // Fighter IDs present anywhere in this scrape — used to detect rebookings
     // (a fighter on a DIFFERENT matchup means the old bout is dead).
     const scrapedFighterIds = new Set<string>();
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (the old name still appearing elsewhere on the card).
+    const scrapedEventNames = new Set<string>();
+    for (const f of eventData.fights) {
+      scrapedEventNames.add(normalizeFullName(f.fighter1.name));
+      scrapedEventNames.add(normalizeFullName(f.fighter2.name));
+    }
+
+    // The athletes-page map misses fighters that only appear on fight cards —
+    // resolve those against the DB by exact name so the rename-fork guard
+    // below always has its anchor.
+    const resolveExactFighter = async (name: string): Promise<string | undefined> => {
+      const { firstName, lastName } = parseFighterName(name);
+      if (!firstName && !lastName) return undefined;
+      const existing = await prisma.fighter.findFirst({
+        where: {
+          firstName: { equals: firstName, mode: 'insensitive' },
+          lastName: { equals: lastName, mode: 'insensitive' },
+        },
+        select: { id: true },
+      });
+      return existing?.id;
+    };
 
     for (const fightData of eventData.fights) {
       // Find or create fighters
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighter1.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighter2.name).toLowerCase());
+
+      if (!fighter1Id) {
+        fighter1Id = await resolveExactFighter(fightData.fighter1.name);
+        if (fighter1Id) fighterNameToId.set(normalizeName(fightData.fighter1.name).toLowerCase(), fighter1Id);
+      }
+      if (!fighter2Id) {
+        fighter2Id = await resolveExactFighter(fightData.fighter2.name);
+        if (fighter2Id) fighterNameToId.set(normalizeName(fightData.fighter2.name).toLowerCase(), fighter2Id);
+      }
+
+      // Rename-fork guard (RAF Georgia 2026-07-10): one side resolved, the
+      // other unknown. If the unknown name is a respelling of the resolved
+      // side's existing opponent on this event, reuse (and rename) that
+      // fighter row instead of forking a duplicate fighter + fight — which
+      // would strand predictions/notification matches on a cancelled dup and
+      // re-fire booked pushes.
+      if (!!fighter1Id !== !!fighter2Id) {
+        const anchorFighterId = (fighter1Id ?? fighter2Id)!;
+        const missingName = fighter1Id ? fightData.fighter2.name : fightData.fighter1.name;
+        const renamedId = await resolveRenamedOpponent(prisma, {
+          eventId: event.id,
+          anchorFighterId,
+          scrapedOpponentName: missingName,
+          scrapedEventNames,
+        }).catch((err) => {
+          console.warn('    ⚠ Rename-fork guard failed, falling back to create:', err);
+          return null;
+        });
+        if (renamedId) {
+          if (fighter1Id) fighter2Id = renamedId;
+          else fighter1Id = renamedId;
+          fighterNameToId.set(normalizeName(missingName).toLowerCase(), renamedId);
+        }
+      }
 
       const gender = detectGender(fightData);
 
