@@ -108,7 +108,9 @@ export async function dispatchBookedNotification(args: {
   await sendPushNotifications([userId], {
     title,
     body,
-    data: { fightId, screen: 'fight-detail', lane: 'booked' },
+    // screen: 'notifications' sends the tap to the in-app inbox (2026-07-10);
+    // fightId stays so pre-OTA clients that ignore `screen` still deep-link.
+    data: { fightId, screen: 'notifications', lane: 'booked' },
     persist: { type: 'FIGHTER_FIGHTING_SOON', linkType: 'fight', linkId: fightId },
   });
 

@@ -45,6 +45,13 @@ export function NotificationHandler() {
         }
         if (!isInitial) setPreEventMessage(body || '');
         router.push('/(tabs)/events');
+      } else if (data.screen === 'notifications') {
+        // Inbox-style notifications (e.g. follow-fighter "just got booked").
+        // Land on the notifications inbox; the tapped item sits at the top and
+        // links through to its fight. Go via the Profile tab so back returns
+        // to Profile, matching how the inbox is normally reached.
+        router.navigate('/(tabs)/profile' as any);
+        router.push('/notifications' as any);
       } else if (data.fightId) {
         // Fight-scoped notifications (fight_start / walkout / comment_liked).
         // Switch the active tab to live-events first so a single back tap from
