@@ -53,7 +53,7 @@ Be wary of "free UFC 329 live stream" sites. They are almost always illegal, rid
 
 ## What time does UFC 329 start?
 
-The card is built around US prime time. Expected start times for the broadcast segments:
+The card is built around US prime time. The confirmed start times for the broadcast segments:
 
 - **Early prelims:** 5 p.m. ET / 2 p.m. PT
 - **Prelims:** 7 p.m. ET / 4 p.m. PT

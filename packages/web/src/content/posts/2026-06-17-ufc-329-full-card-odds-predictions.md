@@ -2,7 +2,7 @@
 title: "UFC 329 Full Card, Odds, and Predictions: Every Fight on McGregor vs Holloway 2"
 slug: "ufc-329-full-card-odds-predictions"
 date: "2026-06-17"
-updated: "2026-07-09"
+updated: "2026-07-10"
 author: "Good Fights"
 excerpt: "The complete UFC 329 fight card for McGregor vs Holloway 2 on July 11 in Las Vegas: every bout, the latest betting odds, the favorites and underdogs, and our honest prediction for each fight on the card, from the main event down to the prelims."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-card", "ufc-329-odds", "predictions", "ufc"]
@@ -25,25 +25,32 @@ McGregor's return is the reason the world is tuning in, but **UFC 329 on Saturda
 
 ## What is the full UFC 329 fight card?
 
-Here is the confirmed lineup. Card placement and matchups can still change before fight week, so treat the undercard order as provisional:
+The card is final. Weigh-ins wrapped up on Friday morning, July 10, and all 28 fighters made weight, with McGregor at 170.5 pounds and Holloway at an even 170 for his welterweight debut. Here is the official lineup by broadcast segment:
 
-**Main card**
+**Main card (9 p.m. ET)**
 
 - Conor McGregor vs Max Holloway (Welterweight, main event)
 - Benoit Saint-Denis vs Paddy Pimblett (Lightweight, co-main)
 - Cory Sandhagen vs Mario Bautista (Bantamweight, rematch)
-- Robert Whittaker vs Nikita Krylov (Light Heavyweight)
 - Brandon Royval vs Lone'er Kavanagh (Flyweight)
+- King Green vs Terrance McKinney (Lightweight)
+
+**Prelims (7 p.m. ET)**
+
+- Robert Whittaker vs Nikita Krylov (Light Heavyweight)
 - Gable Steveson vs Elisha Ellison (Heavyweight)
-
-**Prelims and undercard (provisional)**
-
 - Cody Garbrandt vs Adrian Yanez (Bantamweight)
-- Tracy Cortez vs Wang Cong (Flyweight)
-- Damian Pinas vs Cesar Almeida (Middleweight)
 - Kai Kamaka III vs Luke Riley (Featherweight)
+
+**Early prelims (5 p.m. ET)**
+
+- Tracy Cortez vs Wang Cong (Women's Flyweight)
+- Damian Pinas vs Cesar Almeida (Middleweight)
+- Farid Basharat vs John Garza (Bantamweight)
 - Ryan Gandra vs Zachary Reese (Middleweight)
-- Ode' Osbourne vs Cody Durden (Flyweight)
+- Alessandro Costa vs Cody Durden (Flyweight)
+
+Two late changes were resolved during fight week: promotional newcomer John Garza (6-1) stepped in on six days' notice to face the unbeaten Farid Basharat after Ethyn Ewing withdrew injured, and Alessandro Costa replaced Ode' Osbourne against Cody Durden. Note that Whittaker vs Krylov and Steveson vs Ellison landed on the prelims, which makes the 7 p.m. window unusually stacked.
 
 ## What are the betting odds for the UFC 329 main card?
 
@@ -52,11 +59,12 @@ Here are the latest lines across major sportsbooks. Odds vary by book and will k
 ![UFC 329 betting odds: Max Holloway is the favorite and Conor McGregor the underdog in the main event](/blog/ufc-329-betting-odds.png)
 
 - **McGregor vs Holloway:** Holloway is the favorite and McGregor the underdog. The current consensus line and how it has moved since the fight was announced are in the live chart below.
-- **Saint-Denis vs Pimblett:** Saint-Denis favored around -200, Pimblett +170
-- **Sandhagen vs Bautista:** close to a pick'em, with Bautista a slight favorite near -150 and Sandhagen around +130
-- **Royval vs Kavanagh:** Kavanagh favored around -170, Royval +145
-- **Steveson vs Ellison:** Steveson a massive favorite near -1800, Ellison +900
-- **Whittaker vs Krylov:** Whittaker favored, lines firming up as fight week nears
+- **Saint-Denis vs Pimblett:** Saint-Denis favored around -145, Pimblett +120. This line has tightened considerably from the -200 it sat at earlier in the buildup, with real money coming in on Pimblett.
+- **Sandhagen vs Bautista:** the line has flipped. Bautista opened as a slight favorite, but Sandhagen is now favored around -135.
+- **Royval vs Kavanagh:** Kavanagh has firmed up as a solid favorite around -218, Royval roughly +180
+- **Green vs McKinney:** McKinney favored around -148, Green +124
+- **Steveson vs Ellison (prelims):** Steveson a massive favorite near -1800, Ellison +900
+- **Whittaker vs Krylov (prelims):** Whittaker favored around -135 after opening as high as -213
 
 ## How have the McGregor vs Holloway odds moved?
 
@@ -82,15 +90,9 @@ This is a terrific co-main and a real crossroads fight for both. Paddy Pimblett 
 
 ## Who wins Sandhagen vs Bautista 2?
 
-A rematch between two of the slickest bantamweights in the division, and the closest fight on the main card to a coin flip. Cory Sandhagen is the more proven, more creative striker, while Mario Bautista has surged up the rankings on a long win streak and edges the betting line. Styles make this one competitive wherever it goes.
+A rematch between two of the slickest bantamweights in the division, and the closest fight on the main card to a coin flip. Cory Sandhagen is the more proven, more creative striker, while Mario Bautista has surged up the rankings on a long win streak. Bautista opened as the slight favorite, but the money has come in on Sandhagen, who now edges the line at around -135. Styles make this one competitive wherever it goes.
 
 **Prediction: a close, high-level decision that could genuinely go either way. Slight lean to Sandhagen's experience in the championship rounds.**
-
-## Who wins Whittaker vs Krylov?
-
-Robert Whittaker, a former middleweight champion, moving to light heavyweight to face the rugged veteran Nikita Krylov is a fascinating size-versus-speed test. Whittaker's hand speed, footwork, and fight IQ are elite, but Krylov is dangerous everywhere and carries real power up at 205.
-
-**Prediction: Whittaker's speed and craft win the exchanges. Whittaker by decision, with live finishing danger from Krylov if it hits the mat.**
 
 ## Who wins Royval vs Kavanagh?
 
@@ -98,15 +100,27 @@ Brandon Royval is an action-first, all-or-nothing flyweight who is always in ent
 
 **Prediction: whoever wins, the fans win. Lean Kavanagh by decision, but Royval's scramble-heavy style gives him a finish path at any moment.**
 
+## Who wins Green vs McKinney? (Main card opener)
+
+The late addition to the main card is a lightweight fan-service matchup. King Green is the ageless entertainer with slick boxing and an iron will, while Terrance McKinney is one of the most explosive first-round finishers in the division. McKinney's fights almost never see a second round in either direction, which is exactly why the UFC put this one in the opening slot.
+
+**Prediction: McKinney early or Green late. The books lean McKinney around -148, and the safest bet on the whole card is that this one does not go the distance.**
+
+## Who wins Whittaker vs Krylov? (Prelim headliner)
+
+Robert Whittaker, a former middleweight champion, moving to light heavyweight to face the rugged veteran Nikita Krylov is a fascinating size-versus-speed test, and it is somehow on the prelims. Whittaker's hand speed, footwork, and fight IQ are elite, but Krylov is dangerous everywhere and carries real power up at 205. The line has drifted hard toward Krylov during fight week, from Whittaker -213 down to about -135.
+
+**Prediction: Whittaker's speed and craft win the exchanges. Whittaker by decision, with live finishing danger from Krylov if it hits the mat.**
+
 ## Who wins Steveson vs Ellison?
 
-Olympic gold medalist wrestler Gable Steveson is one of the most heavily favored fighters on the entire card, and for good reason: his pedigree and athleticism are off the charts. Elisha Ellison is a sizable underdog. The question is less who wins and more whether Steveson's still-developing striking gets tested.
+Olympic gold medalist wrestler Gable Steveson is the most heavily favored fighter on the entire card, and for good reason: his pedigree and athleticism are off the charts. Elisha Ellison is a sizable underdog. The question is less who wins and more whether Steveson's still-developing striking gets tested. Like Whittaker vs Krylov, this one sits on the prelims.
 
 **Prediction: Steveson by stoppage or dominant decision. The interest is in how he looks, not whether he wins.**
 
 ## Which UFC 329 prelim fight should I watch?
 
-A few undercard bouts are worth showing up early for. **Cody Garbrandt vs Adrian Yanez** is a pure-violence bantamweight matchup between two knockout artists with shaky chins, which is a recipe for a highlight-reel finish in either direction. **Tracy Cortez vs Wang Cong** is a meaningful flyweight ranking fight. And **Cesar Almeida** brings legitimate kickboxing power to the middleweight prelims.
+This is the rare card where the answer is "all of them." The 7 p.m. ET prelim window has a former middleweight champion (**Whittaker vs Krylov**), an Olympic gold medalist (**Steveson vs Ellison**), and a pure-violence bantamweight matchup between two knockout artists in **Cody Garbrandt vs Adrian Yanez**, which is a recipe for a highlight-reel finish in either direction. On the early prelims, **Tracy Cortez vs Wang Cong** is a meaningful flyweight ranking fight, **Cesar Almeida** brings legitimate kickboxing power, and the unbeaten **Farid Basharat** welcomes late-notice newcomer John Garza.
 
 If you only catch one prelim, make it Garbrandt vs Yanez. It rarely goes the distance.
 
@@ -125,7 +139,7 @@ McGregor himself is the headline upset pick as a sizable underdog, and the whole
 - **Main event:** Conor McGregor vs Max Holloway, welterweight, non-title
 - **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
 - **Biggest favorite:** Gable Steveson (around -1800)
-- **Closest fight:** Sandhagen vs Bautista (near pick'em)
+- **Closest fights:** Sandhagen vs Bautista and Whittaker vs Krylov (both near -135)
 - **Main event favorite:** Max Holloway (current line and movement in the chart above)
 - **Our main-event pick:** Holloway by late stoppage or decision
 

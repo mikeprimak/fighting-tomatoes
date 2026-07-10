@@ -2,7 +2,7 @@
 title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-07-09"
+updated: "2026-07-10"
 author: "Good Fights"
 excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
@@ -67,21 +67,36 @@ Paramount+ is the UFC's home in the United States, but the rest of the world is 
 
 ## What is the full UFC 329 fight card?
 
-UFC 329 is a stacked card. The confirmed main card lineup:
+UFC 329 is a stacked card, and the lineup is now final. Here is the official card by broadcast segment:
+
+**Main card (9 p.m. ET)**
 
 - Conor McGregor vs Max Holloway 2 (Welterweight, main event)
 - Benoit Saint-Denis vs Paddy Pimblett (Lightweight, co-main)
 - Cory Sandhagen vs Mario Bautista 2 (Bantamweight)
 - Brandon Royval vs Lone'er Kavanagh (Flyweight)
+- King Green vs Terrance McKinney (Lightweight)
+
+**Prelims (7 p.m. ET)**
+
 - Robert Whittaker vs Nikita Krylov (Light Heavyweight)
+- Gable Steveson vs Elisha Ellison (Heavyweight)
 - Cody Garbrandt vs Adrian Yanez (Bantamweight)
-- Luke Riley vs Kai Kamaka III (Featherweight)
+- Kai Kamaka III vs Luke Riley (Featherweight)
+
+**Early prelims (5 p.m. ET)**
+
 - Tracy Cortez vs Wang Cong (Women's Flyweight)
 - Damian Pinas vs Cesar Almeida (Middleweight)
+- Farid Basharat vs John Garza (Bantamweight)
 - Ryan Gandra vs Zachary Reese (Middleweight)
-- Bobby Green vs Terrance McKinney (Lightweight)
+- Alessandro Costa vs Cody Durden (Flyweight)
 
-Three changes from the original card: Gable Steveson vs Elisha Ellison has been moved to the prelims, and the flyweight opener between Ode' Osbourne and Cody Durden was canceled after Osbourne withdrew. Bobby Green vs Terrance McKinney stepped in to open the main card. A prelim bantamweight bout between Ethyn Ewing and Farid Basharat was also removed after Ewing withdrew with an undisclosed injury; the UFC is searching for a replacement.
+The late shake-ups all resolved during fight week. King Green vs Terrance McKinney stepped in to open the main card, while Whittaker vs Krylov and Steveson vs Ellison landed on an unusually loaded prelim segment. After Ode' Osbourne withdrew, Alessandro Costa stepped in to face Cody Durden. And when Ethyn Ewing pulled out injured, promotional newcomer John Garza (6-1) took the fight against the unbeaten Farid Basharat on six days' notice.
+
+## Did everyone make weight for UFC 329?
+
+Yes. All 28 fighters made weight at Friday morning's official weigh-ins on July 10. McGregor came in at 170.5 pounds for his first fight in five years, and Holloway hit an even 170 for his welterweight debut. Saint-Denis and Pimblett both weighed 156 for the co-main. No fights were lost or changed at the scale, so the card you see above is exactly what you will get on Saturday night.
 
 ## Who is on the UFC 329 co-main event?
 
@@ -215,7 +230,8 @@ A trilogy is entirely possible, and it depends on what happens July 11. If the f
 - **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
 - **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
 - **Main card start:** 9 p.m. ET / 6 p.m. PT
-- **Favorite:** Max Holloway (around -210 to -230 at most books; McGregor the underdog near +160 to +215, trending his way - see the live chart above)
+- **Favorite:** Max Holloway (around -225 on the consensus; McGregor the underdog near +185 - see the live chart above)
+- **Weigh-ins:** all 28 fighters made weight on July 10 (McGregor 170.5, Holloway 170)
 - **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 
