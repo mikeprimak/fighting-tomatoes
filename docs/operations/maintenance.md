@@ -112,6 +112,11 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 
 ## As-needed (event-triggered)
 
+### GitHub PAT renewal (next due: before 2026-11-11)
+- **What:** The classic PAT in `github-key.txt` (scopes `repo, workflow`) expires **2026-11-11**, and Render's `GITHUB_TOKEN` is the same token. Generate a fresh PAT, update `github-key.txt` locally AND `GITHUB_TOKEN` on Render `fightcrewapp-backend`, then verify with an admin-panel scraper trigger (a `workflow_dispatch` run should appear on the dispatched workflow within seconds).
+- **Why:** When it expires, the blog Publish button, admin scraper triggers, and the eventLifecycle GitHub Actions live-tracker fallback all silently 401 (this exact failure went unnoticed from ~2026-06-26 to 2026-07-10).
+- **Time:** ~10 min.
+
 ### Pre-event marketing prep (per major card)
 - **What:** Per the 90-day plan, prep card-specific Reddit posts + Twitter Hype Index card + paid promo (if budgeted). UTM-tag every link.
 - **When:** ~7 days before any of the named target cards (UFC PPVs, Netflix events, etc.).
