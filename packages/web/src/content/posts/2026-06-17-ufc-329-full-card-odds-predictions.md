@@ -69,7 +69,7 @@ Here are the latest lines across major sportsbooks. Odds vary by book and will k
 ## How have the McGregor vs Holloway odds moved?
 
 <!--ODDS-SNAPSHOT-->
-As of July 9, 2026, Max Holloway is the favorite at around -225, roughly a 69% implied chance, and Conor McGregor is the underdog at about +185, roughly 35%. McGregor has gained ground since the line opened in May.
+As of July 10, 2026, Max Holloway is the favorite at around -227, roughly a 69% implied chance, and Conor McGregor is the underdog at about +185, roughly 35%. McGregor has gained ground since the line opened in May.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
