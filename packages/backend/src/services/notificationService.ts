@@ -177,7 +177,7 @@ export async function notifyFightStartViaRules(
   // the guard is re-evaluated on each dispatch, so a CANCELLED fight stays muted.
   const fightStatusRow = await prisma.fight.findUnique({
     where: { id: fightId },
-    select: { fightStatus: true },
+    select: { fightStatus: true, eventId: true },
   });
   if (fightStatusRow?.fightStatus === 'CANCELLED') {
     console.log(`[Notifications] Skipping cancelled fight ${fightId}`);
@@ -277,7 +277,9 @@ export async function notifyFightStartViaRules(
     {
       title: '🥊 Fight Up Next!',
       body: matchup,
-      data: { fightId, screen: 'fight-detail' },
+      // Walkout taps land on the event details screen (2026-07-10); fightId
+      // stays so pre-OTA clients that ignore eventId still deep-link.
+      data: { fightId, eventId: fightStatusRow?.eventId, screen: 'event-detail' },
       persist: { type: 'FIGHT_STARTING', linkType: 'fight', linkId: fightId },
     }
   );

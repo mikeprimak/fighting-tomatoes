@@ -328,10 +328,12 @@ async function dispatchLaneGroup(group: PendingDispatch[]): Promise<void> {
   await sendPushNotifications([user.id], {
     title,
     body,
-    // Multiple fighters → land on the event; a single fighter → their fight.
+    // Both lanes land on the event details screen (2026-07-10). The single-
+    // fighter payload keeps fightId so pre-OTA clients still deep-link to the
+    // fight instead of dead-ending.
     data:
       group.length === 1
-        ? { fightId: fight.id, screen: 'fight-detail', lane: lane.toLowerCase() }
+        ? { eventId: fight.event.id, fightId: fight.id, screen: 'event-detail', lane: lane.toLowerCase() }
         : { eventId: fight.event.id, screen: 'event-detail', lane: lane.toLowerCase() },
     persist:
       group.length === 1

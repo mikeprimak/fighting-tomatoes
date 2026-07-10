@@ -52,8 +52,15 @@ export function NotificationHandler() {
         // to Profile, matching how the inbox is normally reached.
         router.navigate('/(tabs)/profile' as any);
         router.push('/notifications' as any);
+      } else if (data.eventId) {
+        // Event-scoped notifications (3-day / morning-of / walkout / section-start).
+        // Land on the event details screen via the live-events tab so back
+        // returns to Live Events. Checked before fightId: these payloads may
+        // also carry a fightId purely for pre-OTA clients.
+        router.navigate('/(tabs)/live-events' as any);
+        router.push(`/event/${data.eventId}` as any);
       } else if (data.fightId) {
-        // Fight-scoped notifications (fight_start / walkout / comment_liked).
+        // Fight-scoped notifications (e.g. comment_liked).
         // Switch the active tab to live-events first so a single back tap from
         // the fight detail returns the user to the Live Events screen.
         router.navigate('/(tabs)/live-events' as any);
