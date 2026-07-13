@@ -27,11 +27,11 @@ Conor McGregor came back after five years away, and it lasted 69 seconds. At **U
 
 **Max Holloway won by first-round TKO, but not in any way anyone wanted.** McGregor came flying out of the gate with a switch kick in the opening seconds, landed it, and landed awkwardly on his right leg. The knee buckled underneath him. His balance was instantly gone, and he slipped to the canvas twice. To his credit, Holloway did not tee off on a hurt man, instead looking to referee Mike Beltran to ask whether to step in. After a brief restart and a single Holloway kick, McGregor could not put weight on the leg, and Beltran waved it off at **1:09 of the first round**. McGregor walked out of the cage under his own power but visibly limping, and UFC president Dana White said afterward that doctors suspected a **torn ACL**.
 
-It is a cruel echo of history. This is the third straight McGregor fight to end with a catastrophic leg injury: he tore his ACL winning the very first Holloway fight back in 2013 and gutted out the decision anyway, he snapped his leg against Dustin Poirier in 2021, and now the knee gave out on the opening exchange of his return. The one constant in the McGregor story of the last decade has become his own body failing at the worst moment.
+It is a cruel echo of history. McGregor has now suffered three catastrophic leg injuries in the defining fights of his career: he tore his ACL during the very first Holloway fight back in 2013 and gutted out the decision anyway, he snapped his leg against Dustin Poirier in 2021, and now the knee gave out on the opening exchange of his return. The one constant in the McGregor story of the last decade has become his own body failing at the worst moment.
 
 ## The most hyped fight we ever tracked, and one of the lowest-rated
 
-Here is the number that captures the whole night. On Good Fights, McGregor vs Holloway 2 carried a pre-fight **hype score of 9.5 out of 10**, one of the three highest we have ever recorded for any fight. The entire fan base was electric for it. Then the injury ended it, and the post-fight rating collapsed to roughly **1.3 out of 10**, one of the lowest scores on the platform. That gap between anticipation and payoff is the largest we have seen, and it is exactly how the McGregor faithful felt walking out: a fight they had dreamed about for months was over in 69 seconds without a meaningful punch landed.
+Here is the number that captures the whole night. On Good Fights, McGregor vs Holloway 2 carried a pre-fight **hype score of 9.5 out of 10**, one of the highest we have ever recorded for any fight. The entire fan base was electric for it. Then the injury ended it, and the post-fight rating collapsed to roughly **1.3 out of 10**, one of the lowest scores on the platform. That gap between anticipation and payoff is the largest we have seen, and it is exactly how the McGregor faithful felt walking out: a fight they had dreamed about for months was over in 69 seconds without a meaningful punch landed.
 
 ## What did we predict, and how did it hold up?
 
@@ -41,7 +41,7 @@ In the end the prediction is almost beside the point, because the fight never go
 
 ## What is next for McGregor and Holloway?
 
-For McGregor, the question is bigger than any single fight. This was the third catastrophic leg injury of his recent career, he is 37, and he now faces another long rehab from a suspected torn ACL. He reportedly had a second bout booked for **April 2027** on his current UFC contract, but that timeline now depends entirely on the knee and the recovery. Before anyone talks about what is next, he has to get healthy and decide he still wants this at all.
+For McGregor, the question is bigger than any single fight. This was the third catastrophic leg injury of his career, he is 37, and he now faces another long rehab from a suspected torn ACL. He has one fight left on his current UFC contract, reportedly targeted for **April 2027**, but that timeline now depends entirely on the knee and the recovery. Before anyone talks about what is next, he has to get healthy and decide he still wants this at all.
 
 For Holloway, the win goes on his record and he handled a strange, ugly moment with real class, but he did not get the signature performance he came for either. He is still one of the best and most beloved fighters alive, with bigger and fresher options waiting at welterweight and beyond. As for a **McGregor vs Holloway 3**, the injury ending paradoxically keeps a crack in the door that a clean loss would have shut, since nothing was actually settled in the cage. But a trilogy is now a hypothetical hanging on a 37-year-old's recovery, not a fight anyone can book today.
 
@@ -51,7 +51,7 @@ For Holloway, the win goes on his record and he handled a strange, ugly moment w
 - **Date and venue:** Saturday, July 11, 2026, T-Mobile Arena, Las Vegas
 - **Main event:** Conor McGregor vs Max Holloway 2, welterweight, non-title
 - **Co-main result:** Paddy Pimblett submitted Benoit Saint-Denis in Round 1
-- **Good Fights hype score:** 9.5/10 pre-fight (top three ever); post-fight rating about 1.3/10
+- **Good Fights hype score:** 9.5/10 pre-fight (among the highest ever); post-fight rating about 1.3/10
 - **Closing odds:** Holloway favored around -285; McGregor the underdog near +227
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
 - **Full card results:** [every UFC 329 result here](/blog/ufc-329-full-card-odds-predictions)
