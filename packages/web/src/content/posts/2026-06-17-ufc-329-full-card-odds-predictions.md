@@ -21,7 +21,7 @@ event:
     - "Max Holloway"
 ---
 
-UFC 329 is in the books, and it did not go the way the McGregor faithful wanted. **Max Holloway stopped Conor McGregor in the first round** of the welterweight main event on Saturday, July 11, 2026 at T-Mobile Arena in Las Vegas, closing the book on the biggest comeback story the sport had to offer. And it was not just the main event: the underdogs ran the entire main card. Here are the complete UFC 329 results, the method and round for every fight, and an honest look back at how our predictions held up. *You can rate every fight on the card and log how you felt about the night on [Good Fights](https://goodfights.app).*
+UFC 329 is in the books, and Conor McGregor's comeback ended almost the moment it began. **McGregor blew out his right knee about 69 seconds into the fight**, opening with a flying switch kick and buckling the leg on the landing, and referee Mike Beltran waved it off at 1:09 of the first round. The official result is a **Max Holloway TKO**, but there was barely a fight to speak of. And below the main event, the underdogs ran the entire main card. Here are the complete UFC 329 results, the method and round for every fight, and an honest look back at how our predictions held up. *You can rate every fight on the card and log how you felt about the night on [Good Fights](https://goodfights.app).*
 
 ## Who won UFC 329? Full results
 
@@ -29,7 +29,7 @@ Here is every UFC 329 result, from the main event down to the first fight of the
 
 **Main card**
 
-- **Max Holloway def. Conor McGregor** by TKO, Round 1 (Welterweight, main event)
+- **Max Holloway def. Conor McGregor** by TKO, Round 1 at 1:09 (McGregor knee injury) (Welterweight, main event)
 - **Paddy Pimblett def. Benoit Saint-Denis** by submission, Round 1 (Lightweight, co-main)
 - **Mario Bautista def. Cory Sandhagen** by unanimous decision (Bantamweight)
 - **Brandon Royval def. Lone'er Kavanagh** by submission, Round 3 (Flyweight)
@@ -54,9 +54,11 @@ The theme of the night is right there in the results: nine of the fourteen fight
 
 ## What happened in McGregor vs Holloway 2?
 
-The rematch that took thirteen years to make lasted a single round. **Holloway stopped McGregor by TKO in the first**, and the manner of it was exactly the nightmare scenario for a fighter coming off a five-year layoff: McGregor came out hunting for the early left hand, Holloway weathered it, and once the fight settled the gulf in activity and timing showed immediately. Holloway got to McGregor before the deep water we all assumed would decide it ever arrived.
+The rematch that took thirteen years to make barely got started. McGregor came flying out of the gate, literally, launching a flying switch kick in the opening seconds. He landed it, but he also landed awkwardly on his right leg, and the knee buckled underneath him. You could see the reaction instantly. His balance was gone, and he slipped to the canvas twice in the space of the next few seconds.
 
-It is a brutal, clarifying result. The puncher's chance was real, and for a few minutes the building believed. But the version of Max Holloway that walked into T-Mobile Arena is one of the best fighters alive, and five years away from the cage is five years away from the cage. Holloway avenged the only blemish their shared history held, and he did it emphatically.
+To his credit, Holloway did not pounce on a hurt man. He looked to referee Mike Beltran and asked whether to intervene rather than teeing off on an opponent who could not stand. The fight briefly restarted, Holloway threw a single kick, McGregor took an unsteady step back and could not put weight on the leg, and **Beltran waved it off at 1:09 of the first round**. The official verdict is a Holloway TKO in 69 seconds. McGregor left the cage under his own power, visibly limping, and UFC president Dana White told reporters afterward that doctors suspected a **torn ACL**.
+
+It is a cruel result, and an eerily familiar one. This is the third straight time a McGregor fight has ended with a catastrophic leg injury: he tore his ACL during the very first Holloway fight back in 2013 and won anyway, he snapped his leg against Dustin Poirier in 2021, and now the knee gave out again on the opening exchange of his comeback. Holloway gets the win on his record, and he handled a strange moment with real class, but nobody, least of all Max, got the fight they came for.
 
 ## The most hyped fight we have ever tracked, and one of the lowest-rated
 
@@ -64,7 +66,7 @@ Here is the number that tells the whole story. Heading into UFC 329, McGregor vs
 
 ## Did our UFC 329 predictions hold up?
 
-We picked Holloway, so the headline landed, though we had him winning "by late stoppage or decision" and he did it early and violently instead. The rest of the main card is where we, and the oddsmakers, got humbled. Here is the honest scorecard.
+We picked Holloway, so the name at the top of the result is the one we called, but nobody really gets credit for a fight that ends on a freak knee injury inside 70 seconds. We had him winning "by late stoppage or decision," and instead the matchup we spent months breaking down never actually happened. The rest of the main card is where the real humbling came, for us and the oddsmakers. Here is the honest scorecard.
 
 ## Who won Saint-Denis vs Pimblett? (Co-main event)
 
@@ -108,11 +110,13 @@ Max Holloway closed as roughly a -285 favorite, near a 74% implied chance, with 
 
 ## Is there going to be a McGregor vs Holloway 3?
 
-Probably not, at least not off this. A one-sided, one-round finish is the surest way to cool trilogy talk, and this was one-sided. McGregor still has a second fight reportedly booked for April 2027 on his current UFC contract, but a first-round loss reframes that slot as a legacy or spectacle booking rather than a title-track fight. Holloway, meanwhile, has bigger and fresher options at welterweight and beyond. The rematch answered the question the first fight left open thirteen years ago, and it did not leave much to argue about.
+It is complicated, because this settled nothing in the cage. An injury ending is exactly the kind of unsatisfying finish that can fuel a rematch, since neither man landed anything meaningful and the question everyone bought the fight to answer is still open. In a vacuum, that argues for a trilogy.
+
+The problem is bigger than the matchup. This was the third catastrophic leg injury of McGregor's recent career, and he is 37 years old and now facing another long rehab. Before any trilogy talk is serious, the real question is whether McGregor fights again at all. He reportedly had a second bout booked for April 2027 on his current UFC contract, but a suspected torn ACL puts even that in doubt until we know the extent of the damage and the recovery timeline. For now, a third fight is a hypothetical hanging entirely on his knee.
 
 ## Quick answers: UFC 329 results
 
-- **Main event:** Max Holloway def. Conor McGregor by TKO, Round 1
+- **Main event:** Max Holloway def. Conor McGregor by TKO, Round 1 (1:09, McGregor knee injury)
 - **Co-main:** Paddy Pimblett def. Benoit Saint-Denis by submission, Round 1
 - **Biggest upsets:** Pimblett, Bautista, Royval, and King Green all won as main-card underdogs
 - **Only chalk main-card-caliber favorite to deliver:** Robert Whittaker (TKO, Round 3, on the prelims)

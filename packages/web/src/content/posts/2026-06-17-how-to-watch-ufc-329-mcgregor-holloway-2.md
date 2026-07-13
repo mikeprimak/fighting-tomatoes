@@ -21,7 +21,7 @@ event:
     - "Max Holloway"
 ---
 
-**Update (July 13): UFC 329 is over. Max Holloway stopped Conor McGregor by first-round TKO.** If you are here for the replay rather than the live stream, skip to [can I watch a replay of UFC 329](#watch-replay), and see the [full UFC 329 results](/blog/ufc-329-full-card-odds-predictions) for how every fight finished. The rest of this guide still covers where the card streamed and what it cost, market by market.
+**Update (July 13): UFC 329 is over. Conor McGregor blew out his knee 69 seconds in, handing Max Holloway a first-round TKO.** If you are here for the replay rather than the live stream, skip to [can I watch a replay of UFC 329](#watch-replay), and see the [full UFC 329 results](/blog/ufc-329-full-card-odds-predictions) for how every fight finished. The rest of this guide still covers where the card streamed and what it cost, market by market.
 
 Conor McGregor's return against Max Holloway headlined **UFC 329 on Saturday, July 11, 2026**, and the way you watched it had changed. In the United States there was no longer a hundred-dollar pay-per-view to buy. UFC numbered events now stream on **Paramount+**, included with a subscription. This guide answers every question about how to watch the fight, live or on replay: the plan you need, what it costs, whether there is a free way in, start times, devices, and where to find it in every major country. *You can rate this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
 
@@ -102,7 +102,7 @@ It varies by country. **DAZN** is the UFC's home across much of the continent, i
 
 ## Can I watch a replay of UFC 329 if I miss it live?
 
-Yes. On Paramount+ in the US, the event is available on demand after airing, so you can watch the full card back or jump straight to the main event. If you have managed to avoid the result, know that the ending comes fast: Holloway stopped McGregor in the first round, so the main event is a short one. In other markets, replay availability depends on the broadcaster (TNT Sports and HBO Max offer replays in the UK, for example).
+Yes. On Paramount+ in the US, the event is available on demand after airing, so you can watch the full card back or jump straight to the main event. Fair warning if you have avoided the result: the main event is a brief and unhappy watch, ending on a McGregor knee injury inside the first 70 seconds. The undercard is where the real action was. In other markets, replay availability depends on the broadcaster (TNT Sports and HBO Max offer replays in the UK, for example).
 
 ## What is the cheapest way to watch McGregor vs Holloway 2?
 
