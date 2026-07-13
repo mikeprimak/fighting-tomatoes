@@ -1,11 +1,11 @@
 ---
-title: "McGregor vs Holloway 2 at UFC 329: Everything You Need to Know"
+title: "McGregor vs Holloway 2 Result: What Happened at UFC 329"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-07-11"
+updated: "2026-07-13"
 author: "Good Fights"
-excerpt: "Conor McGregor returns after five years to rematch Max Holloway in the welterweight main event of UFC 329 on July 11 in Las Vegas. Date, start times, how to watch on Paramount+, the full card, betting odds, the story of their 2013 fight, and an honest prediction. Everything in one place."
-tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-tickets", "ufc", "preview"]
+excerpt: "Max Holloway stopped Conor McGregor by first-round TKO at UFC 329 on July 11 in Las Vegas, ending McGregor's five-year comeback in a single round. Here is the result, how the fight went, the full card, the story of their 2013 first fight, and what happens next for both men."
+tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-result", "ufc", "results"]
 image: "/blog/mcgregor-holloway-banner.png"
 draft: false
 featured: false
@@ -21,11 +21,17 @@ event:
     - "Max Holloway"
 ---
 
-Conor McGregor is coming back, and he picked a brutal way to do it. After five years away from the Octagon, the biggest star the sport has ever produced returns at **UFC 329 on Saturday, July 11, 2026** to rematch Max Holloway, a man he beat as a 21-year-old kid back in 2013 and who has since become one of the greatest fighters alive. This is the full guide: when it is, where to watch, the whole card, the odds, the history, and who we think wins. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
+Conor McGregor came back after five years away, and it lasted one round. At **UFC 329 on Saturday, July 11, 2026**, Max Holloway stopped McGregor by first-round TKO, ending the biggest comeback story the sport had to offer almost as soon as it began. This is the full story: the result, how the fight went, the card, the odds that called it, the history of their 2013 first meeting, and what comes next for both men. *You can rate this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
 
-## When is McGregor vs Holloway 2?
+## Who won McGregor vs Holloway 2?
 
-McGregor vs Holloway 2 takes place on **Saturday, July 11, 2026**. It headlines UFC 329 during International Fight Week, the UFC's biggest annual weekend in Las Vegas. The main card is expected to begin at 9 p.m. ET, with the McGregor-Holloway walkouts landing later in the night, likely around 11:30 p.m. Eastern or later depending on how the earlier fights play out.
+**Max Holloway won, by TKO in the first round.** McGregor came out hunting the early left hand, as everyone expected, but Holloway weathered the opening surge and took over almost immediately. Once the fight settled and the puncher's-chance window closed, the gulf in activity and timing was decisive, and Holloway got the stoppage before the deep water we all thought would decide it ever arrived. It was emphatic. Holloway avenged the only blemish their shared history held, and he did it in a single round.
+
+This was, by the numbers, one of the most anticipated fights we have ever tracked. On Good Fights it carried a pre-fight **hype score of 9.5 out of 10**, among the three highest we have ever recorded. Then the result landed and the fan rating collapsed to roughly **1.3 out of 10**, one of the lowest on the platform, the widest gap between hype and payoff we have seen. A fight the whole sport dreamed about for months was over almost before it began.
+
+## When was McGregor vs Holloway 2?
+
+McGregor vs Holloway 2 took place on **Saturday, July 11, 2026**, headlining UFC 329 during International Fight Week, the UFC's biggest annual weekend in Las Vegas. The main card began at 9 p.m. ET, with the McGregor-Holloway walkouts landing late in the night as the main event.
 
 ## Where is UFC 329 being held?
 
@@ -157,10 +163,10 @@ McGregor owns the power and a small reach edge. Holloway owns activity, output, 
 
 ## What are the betting odds for McGregor vs Holloway 2?
 
-The odds tell the whole story of how the fight is viewed. **Max Holloway is the favorite and Conor McGregor the underdog on every book**, which is reported to be the longest underdog stretch of his entire UFC career. One telling pattern in the betting: the public is piling onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large wagers are overwhelmingly on Holloway. That sharp-versus-public split has kept the line from swinging hard, though McGregor has gained significant ground since opening. The fight is tonight, so check current prices before placing anything.
+The odds told the whole story before the fight even started. **Max Holloway was the favorite and Conor McGregor the underdog on every book**, reportedly the longest underdog stretch of McGregor's entire UFC career. One telling pattern in the betting foreshadowed the result: the public piled onto McGregor, with some books reporting over 90 percent of individual tickets on the Irishman, but the large, sharp wagers were overwhelmingly on Holloway. The sharp money was right.
 
 <!--ODDS-SNAPSHOT-->
-As of July 11, 2026, Max Holloway is the favorite at around -285, roughly a 74% implied chance, and Conor McGregor is the underdog at about +227, roughly 31%. McGregor has gained ground since the line opened in May.
+Max Holloway closed as roughly a -285 favorite, near a 74% implied chance, and Conor McGregor was the underdog around +227, roughly a 31% implied chance. The line opened with Holloway as high as -550 back in May, and McGregor gained ground through the buildup on heavy public money before Holloway settled it in the cage.
 <!--/ODDS-SNAPSHOT-->
 
 ![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
@@ -181,11 +187,11 @@ It is not only about the early blitz, though. McGregor has shown he can fight a 
 
 Holloway's path is to make it a long fight. His volume, footwork, and relentless output tend to break opponents down over five rounds, and he has the cardio and the chin to wade through McGregor's early power and then take over. If Holloway weathers the opening exchanges, pressures McGregor into the championship rounds, and turns it into a pace fight, the numbers and the history of late-career McGregor both point his way.
 
-## Who wins McGregor vs Holloway 2? Our prediction
+## What did we predict, and how did it hold up?
 
-Honestly, the smart money is on Holloway, and we are not going to pretend otherwise. A five-year layoff, a surgically repaired leg, and the wrong stylistic matchup against a fighter at the peak of his craft is a very hard ask, even for the greatest draw the sport has ever had. The most likely outcome is Holloway weathering an early McGregor surge and taking over as the fight gets deep.
+We picked Holloway, and we said so plainly: the smart money was on him, and a five-year layoff, a surgically repaired leg, and the wrong stylistic matchup against a fighter at the peak of his craft was a very hard ask even for the greatest draw the sport has ever had. Our exact call was Holloway "by late stoppage or decision, with a genuine asterisk for McGregor's power early."
 
-But this is McGregor, and the one thing he has always had is the puncher's chance. He needs roughly one clean left hand in the first ten minutes. That is a real, live path, and it is exactly why the whole world will be watching. Prediction: Holloway by late stoppage or decision, with a genuine asterisk for McGregor's power early.
+Holloway won, so the headline landed, but the fight was more decisive than we, or almost anyone, expected. We pictured Holloway taking over in the deep water. Instead he never let it get there, closing the show in the first round. The puncher's chance we flagged flickered and went out fast. Right result, wrong texture: this was not a hard-fought overtaking, it was an early stoppage.
 
 ## What are the stakes for Conor McGregor?
 
@@ -222,20 +228,20 @@ Tickets for UFC 329 are sold through the official UFC ticketing channels (genera
 
 ## Could there be a McGregor vs Holloway 3?
 
-A trilogy is entirely possible, and it depends on what happens July 11. If the fight is close, controversial, or a barnburner, a third fight sells itself, especially given the 13-year gap that already makes this rematch a novelty. If it is one-sided, the appetite cools quickly. For now it is a fun hypothetical, but a competitive, dramatic UFC 329 main event is the surest way to guarantee we get a McGregor vs Holloway 3 down the line.
+Almost certainly not off this. A trilogy needed a close, controversial, or dramatic UFC 329 to sell itself. Instead the fight was one-sided and over in a round, which is exactly the outcome that cools trilogy talk fast. McGregor reportedly still has a fight booked for April 2027 on his current UFC contract, but a first-round loss reframes that slot as a legacy or spectacle booking rather than a title-track fight, and Holloway has bigger, fresher options ahead of a third meeting with a 37-year-old coming off a knockout loss. The rematch settled the question the first fight left hanging for thirteen years, and it did not leave much room for a part three.
 
 ## Quick answers about UFC 329
 
+- **Result:** Max Holloway def. Conor McGregor by TKO, Round 1
 - **Date:** Saturday, July 11, 2026
 - **Venue:** T-Mobile Arena, Las Vegas
 - **Main event:** Conor McGregor vs Max Holloway 2, welterweight, non-title
-- **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
-- **Where to watch:** Paramount+ (US); Sportsnet+ PPV (Canada); TNT Sports / discovery+ (UK and Ireland); Main Event PPV (Australia); DAZN (much of Europe)
-- **Main card start:** 9 p.m. ET / 6 p.m. PT
-- **Favorite:** Max Holloway (around -220 on the consensus; McGregor the underdog near +165 - see the live chart above)
+- **Co-main result:** Paddy Pimblett submitted Benoit Saint-Denis in Round 1
+- **Good Fights hype score:** 9.5/10 pre-fight (top three ever); post-fight rating about 1.3/10
+- **Closing odds:** Holloway favored around -285; McGregor the underdog near +227
 - **Weigh-ins:** all 28 fighters made weight on July 10 (McGregor 170.5, Holloway 170)
-- **Tickets:** presale sold out in minutes; resale running into the tens of thousands per seat
 - **First fight:** McGregor won by unanimous decision in Boston, August 2013
+- **Full card results:** [every UFC 329 result here](/blog/ufc-329-full-card-odds-predictions)
 
 ## Related reading
 

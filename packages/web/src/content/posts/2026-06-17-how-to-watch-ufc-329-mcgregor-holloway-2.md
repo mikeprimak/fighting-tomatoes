@@ -2,8 +2,9 @@
 title: "How to Watch UFC 329: Is McGregor vs Holloway 2 on Paramount+? (Free Options, Price, By Country)"
 slug: "how-to-watch-ufc-329-mcgregor-holloway-2"
 date: "2026-06-17"
+updated: "2026-07-13"
 author: "Good Fights"
-excerpt: "Conor McGregor vs Max Holloway 2 streams on Paramount+ in the US, with no separate pay-per-view fee. Here is exactly how to watch UFC 329: which Paramount+ plan you need, what it costs, whether there is a free way, start times, devices, and how to watch in Canada, the UK, Ireland, Australia, and Europe."
+excerpt: "UFC 329 is over: Max Holloway stopped Conor McGregor by first-round TKO on July 11. Missed it live? Here is how to watch the UFC 329 replay on Paramount+ in the US and by country, plus what the card cost and where it streamed, if you still want to catch McGregor vs Holloway 2 back."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "how-to-watch", "paramount-plus", "ufc"]
 image: "https://cms-assets.webediamovies.pro/cdn-cgi/image/dpr=1,fit=scale-down,gravity=auto,metadata=none,quality=85,width=2500/production/2/21ef954958666f9f0f8e581aba1e2447.jpg"
 draft: false
@@ -20,7 +21,9 @@ event:
     - "Max Holloway"
 ---
 
-Conor McGregor's return against Max Holloway headlines **UFC 329 on Saturday, July 11, 2026**, and the way you watch it has changed. In the United States there is no longer a hundred-dollar pay-per-view to buy. UFC numbered events now stream on **Paramount+**, included with a subscription. This guide answers every question about how to actually watch the fight: the plan you need, what it costs, whether there is a free way in, start times, devices, and where to find it in every major country. *You can rate how hyped you are for this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
+**Update (July 13): UFC 329 is over. Max Holloway stopped Conor McGregor by first-round TKO.** If you are here for the replay rather than the live stream, skip to [can I watch a replay of UFC 329](#watch-replay), and see the [full UFC 329 results](/blog/ufc-329-full-card-odds-predictions) for how every fight finished. The rest of this guide still covers where the card streamed and what it cost, market by market.
+
+Conor McGregor's return against Max Holloway headlined **UFC 329 on Saturday, July 11, 2026**, and the way you watched it had changed. In the United States there was no longer a hundred-dollar pay-per-view to buy. UFC numbered events now stream on **Paramount+**, included with a subscription. This guide answers every question about how to watch the fight, live or on replay: the plan you need, what it costs, whether there is a free way in, start times, devices, and where to find it in every major country. *You can rate this fight, and every fight on the card, on [Good Fights](https://goodfights.app).*
 
 ## How can I watch McGregor vs Holloway 2 in the US?
 
@@ -95,9 +98,11 @@ Australia keeps the pay-per-view model too. The main card is a **pay-per-view th
 
 It varies by country. **DAZN** is the UFC's home across much of the continent, including Germany, Austria, Italy, Spain, and Portugal, and there the event is included with a subscription rather than sold as a separate pay-per-view. In markets without a local rights holder, **UFC Fight Pass** is the worldwide fallback. Check your specific country's listing closer to fight night, since rights shift.
 
+<a id="watch-replay"></a>
+
 ## Can I watch a replay of UFC 329 if I miss it live?
 
-Yes. On Paramount+ in the US, the event is available on demand after it airs, so you can watch the full card or jump to the main event later. Just steer clear of social media and search until you do, because McGregor's return will be spoiled everywhere within minutes. In other markets, replay availability depends on the broadcaster (TNT Sports and HBO Max offer replays in the UK, for example).
+Yes. On Paramount+ in the US, the event is available on demand after airing, so you can watch the full card back or jump straight to the main event. If you have managed to avoid the result, know that the ending comes fast: Holloway stopped McGregor in the first round, so the main event is a short one. In other markets, replay availability depends on the broadcaster (TNT Sports and HBO Max offer replays in the UK, for example).
 
 ## What is the cheapest way to watch McGregor vs Holloway 2?
 
@@ -118,8 +123,8 @@ In the US, the cheapest legal route is **one month of Paramount+ Essential at ar
 
 ## Related reading
 
-- [McGregor vs Holloway 2 at UFC 329: everything you need to know](/blog/mcgregor-holloway-2-ufc-329) - the complete guide: card, odds, history, and our prediction.
-- [The full UFC 329 fight card, odds, and predictions](/blog/ufc-329-full-card-odds-predictions) - every fight on the card, the betting lines, and who we think wins.
+- [McGregor vs Holloway 2 result: what happened at UFC 329](/blog/mcgregor-holloway-2-ufc-329) - the complete story, the history, and how the rematch finished.
+- [Full UFC 329 results](/blog/ufc-329-full-card-odds-predictions) - every fight on the card, the method and round, and which predictions held up.
 - [Conor McGregor's long road back: why he hasn't fought since 2021](/blog/conor-mcgregor-return-five-years) - the broken leg, the cancelled comeback, and five years away.
 
 *However you watch it, this is a fight you will want to remember exactly how you felt about. Rate McGregor vs Holloway 2, log your prediction, and track every fight on the card on [Good Fights](https://goodfights.app). Never miss a Good Fight.*

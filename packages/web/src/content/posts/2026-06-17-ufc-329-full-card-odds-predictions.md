@@ -1,11 +1,11 @@
 ---
-title: "UFC 329 Full Card, Odds, and Predictions: Every Fight on McGregor vs Holloway 2"
+title: "UFC 329 Results: Holloway Stops McGregor, and the Underdogs Ran the Whole Card"
 slug: "ufc-329-full-card-odds-predictions"
 date: "2026-06-17"
-updated: "2026-07-11"
+updated: "2026-07-13"
 author: "Good Fights"
-excerpt: "The complete UFC 329 fight card for McGregor vs Holloway 2 on July 11 in Las Vegas: every bout, the latest betting odds, the favorites and underdogs, and our honest prediction for each fight on the card, from the main event down to the prelims."
-tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-card", "ufc-329-odds", "predictions", "ufc"]
+excerpt: "Full UFC 329 results from McGregor vs Holloway 2 in Las Vegas: Max Holloway stopped Conor McGregor in the first round, Paddy Pimblett submitted Benoit Saint-Denis, and underdogs swept the main card. Every result, the method and round for each fight, and an honest look back at which predictions we got right."
+tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-results", "ufc-329-card", "ufc-329-odds", "results", "ufc"]
 image: "https://www.ufc.com/images/styles/background_image_sm/s3/2026-06/071126-ufc-329-mcgregor-vs-holloway-2-EVENT-ART.jpg?h=d1cb525d&itok=xqaVyV38"
 draft: false
 featured: false
@@ -21,132 +21,109 @@ event:
     - "Max Holloway"
 ---
 
-McGregor's return is the reason the world is tuning in, but **UFC 329 on Saturday, July 11, 2026** is a genuinely deep card from top to bottom. Here is the full lineup, the latest betting odds, and an honest prediction for every fight, from the welterweight main event down to the prelims. *Odds move constantly, so we refresh this page as fight week approaches. You can rate how hyped you are for each of these fights on [Good Fights](https://goodfights.app).*
+UFC 329 is in the books, and it did not go the way the McGregor faithful wanted. **Max Holloway stopped Conor McGregor in the first round** of the welterweight main event on Saturday, July 11, 2026 at T-Mobile Arena in Las Vegas, closing the book on the biggest comeback story the sport had to offer. And it was not just the main event: the underdogs ran the entire main card. Here are the complete UFC 329 results, the method and round for every fight, and an honest look back at how our predictions held up. *You can rate every fight on the card and log how you felt about the night on [Good Fights](https://goodfights.app).*
 
-## What is the full UFC 329 fight card?
+## Who won UFC 329? Full results
 
-The card is final. Weigh-ins wrapped up on Friday morning, July 10, and all 28 fighters made weight, with McGregor at 170.5 pounds and Holloway at an even 170 for his welterweight debut. Here is the official lineup by broadcast segment:
+Here is every UFC 329 result, from the main event down to the first fight of the night:
 
-**Main card (9 p.m. ET)**
+**Main card**
 
-- Conor McGregor vs Max Holloway (Welterweight, main event)
-- Benoit Saint-Denis vs Paddy Pimblett (Lightweight, co-main)
-- Cory Sandhagen vs Mario Bautista (Bantamweight, rematch)
-- Brandon Royval vs Lone'er Kavanagh (Flyweight)
-- King Green vs Terrance McKinney (Lightweight)
+- **Max Holloway def. Conor McGregor** by TKO, Round 1 (Welterweight, main event)
+- **Paddy Pimblett def. Benoit Saint-Denis** by submission, Round 1 (Lightweight, co-main)
+- **Mario Bautista def. Cory Sandhagen** by unanimous decision (Bantamweight)
+- **Brandon Royval def. Lone'er Kavanagh** by submission, Round 3 (Flyweight)
+- **King Green def. Terrance McKinney** by TKO, Round 1 (Lightweight)
 
-**Prelims (7 p.m. ET)**
+**Prelims**
 
-- Robert Whittaker vs Nikita Krylov (Light Heavyweight)
-- Gable Steveson vs Elisha Ellison (Heavyweight)
-- Cody Garbrandt vs Adrian Yanez (Bantamweight)
-- Kai Kamaka III vs Luke Riley (Featherweight)
+- **Robert Whittaker def. Nikita Krylov** by TKO, Round 3 (Light Heavyweight)
+- **Gable Steveson def. Elisha Ellison** by TKO, Round 1 (Heavyweight)
+- **Adrian Yanez def. Cody Garbrandt** by TKO, Round 1 (Bantamweight)
+- **Luke Riley def. Kai Kamaka III** by TKO, Round 1 (Featherweight)
 
-**Early prelims (5 p.m. ET)**
+**Early prelims**
 
-- Tracy Cortez vs Wang Cong (Women's Flyweight)
-- Damian Pinas vs Cesar Almeida (Middleweight)
-- Farid Basharat vs John Garza (Bantamweight)
-- Ryan Gandra vs Zachary Reese (Middleweight)
-- Alessandro Costa vs Cody Durden (Flyweight)
+- **Wang Cong def. Tracy Cortez** by unanimous decision (Women's Flyweight)
+- **Damian Pinas def. Cesar Almeida** by TKO, Round 1 (Middleweight)
+- **Farid Basharat def. John Garza** by unanimous decision (Bantamweight)
+- **Ryan Gandra def. Zachary Reese** by TKO, Round 1 (Middleweight)
+- **Alessandro Costa def. Cody Durden** by submission, Round 2 (Flyweight)
 
-Two late changes were resolved during fight week: promotional newcomer John Garza (6-1) stepped in on six days' notice to face the unbeaten Farid Basharat after Ethyn Ewing withdrew injured, and Alessandro Costa replaced Ode' Osbourne against Cody Durden. Note that Whittaker vs Krylov and Steveson vs Ellison landed on the prelims, which makes the 7 p.m. window unusually stacked.
+The theme of the night is right there in the results: nine of the fourteen fights ended inside the distance, and every single main-card favorite except one lost. It was chaos, and it was fun.
 
-## What are the betting odds for the UFC 329 main card?
+## What happened in McGregor vs Holloway 2?
 
-Here are the latest lines across major sportsbooks. Odds vary by book and will keep moving as money comes in, so use these as a snapshot rather than a fixed number:
+The rematch that took thirteen years to make lasted a single round. **Holloway stopped McGregor by TKO in the first**, and the manner of it was exactly the nightmare scenario for a fighter coming off a five-year layoff: McGregor came out hunting for the early left hand, Holloway weathered it, and once the fight settled the gulf in activity and timing showed immediately. Holloway got to McGregor before the deep water we all assumed would decide it ever arrived.
 
-![UFC 329 betting odds: Max Holloway is the favorite and Conor McGregor the underdog in the main event](/blog/ufc-329-betting-odds.png)
+It is a brutal, clarifying result. The puncher's chance was real, and for a few minutes the building believed. But the version of Max Holloway that walked into T-Mobile Arena is one of the best fighters alive, and five years away from the cage is five years away from the cage. Holloway avenged the only blemish their shared history held, and he did it emphatically.
 
-- **McGregor vs Holloway:** Holloway is the favorite and McGregor the underdog. The current consensus line and how it has moved since the fight was announced are in the live chart below.
-- **Saint-Denis vs Pimblett:** Saint-Denis favored around -145, Pimblett +120. This line has tightened considerably from the -200 it sat at earlier in the buildup, with real money coming in on Pimblett.
-- **Sandhagen vs Bautista:** the line has flipped. Bautista opened as a slight favorite, but Sandhagen is now favored around -135.
-- **Royval vs Kavanagh:** Kavanagh has firmed up as a solid favorite around -218, Royval roughly +180
-- **Green vs McKinney:** McKinney favored around -148, Green +124
-- **Steveson vs Ellison (prelims):** Steveson a massive favorite near -1800, Ellison +900
-- **Whittaker vs Krylov (prelims):** Whittaker favored around -135 after opening as high as -213
+## The most hyped fight we have ever tracked, and one of the lowest-rated
 
-## How have the McGregor vs Holloway odds moved?
+Here is the number that tells the whole story. Heading into UFC 329, McGregor vs Holloway 2 carried a pre-fight **hype score of 9.5 out of 10** on Good Fights, one of the three highest we have ever recorded for any fight. The entire fan base was electric for it. Then the fight happened, and the post-fight rating cratered to roughly **1.3 out of 10**, one of the lowest scores on the platform. That gap between anticipation and payoff is the largest we have seen, and it captures exactly how the McGregor faithful felt walking out: a fight they had dreamed about for months was over almost before it started. Hype and payoff are two different things, and this is the sport reminding everyone of that in the harshest way possible.
+
+## Did our UFC 329 predictions hold up?
+
+We picked Holloway, so the headline landed, though we had him winning "by late stoppage or decision" and he did it early and violently instead. The rest of the main card is where we, and the oddsmakers, got humbled. Here is the honest scorecard.
+
+## Who won Saint-Denis vs Pimblett? (Co-main event)
+
+**Paddy Pimblett submitted Benoit Saint-Denis in the first round**, and it is the biggest statement win of his career. We leaned Saint-Denis "by stoppage or hard-fought decision" and warned that Pimblett's durability and finishing instinct kept it live. Pimblett did not just survive the Frenchman's pressure, he ended it early on the mat. The UK star walks away with the best result on his resume and a real case for a spot in the lightweight rankings' top tier.
+
+## Who won Sandhagen vs Bautista 2?
+
+**Mario Bautista beat Cory Sandhagen by unanimous decision.** We called this the closest fight on the main card to a coin flip and gave a slight lean to Sandhagen's championship-rounds experience. Bautista had other ideas, extending his long win streak against the most accomplished name he has faced and forcing the bantamweight division to take him seriously as a title threat.
+
+## Who won Royval vs Kavanagh?
+
+**Brandon Royval submitted Lone'er Kavanagh in the third round.** The books favored Kavanagh around -218 and we leaned that way too, while noting Royval's scramble-heavy style gives him a finish path at any moment. That is exactly how it played out: Royval dragged the rising favorite into deep, chaotic waters and found the finish. The Fight of the Night machine did it again.
+
+## Who won Green vs McKinney? (Main card opener)
+
+**King Green knocked out Terrance McKinney in the first round.** We wrote that the safest bet on the card was that this one would not go the distance, and that McKinney's fights almost never see a second round in either direction. The direction just went the other way: the ageless entertainer got there first, adding another highlight to one of the sport's most durable careers.
+
+## Who won Whittaker vs Krylov? (Prelim headliner)
+
+**Robert Whittaker stopped Nikita Krylov by TKO in the third round**, and he was the lone main-card-caliber favorite to deliver. We had Whittaker's speed and craft winning the exchanges, and that is what happened, though he did it with a late stoppage rather than a decision. A former middleweight champion looked sharp in his light heavyweight test, and it is genuinely strange that this fight was on the prelims.
+
+## Who won Steveson vs Ellison?
+
+**Gable Steveson stopped Elisha Ellison by TKO in the first round.** The Olympic gold medalist was the biggest favorite on the card near -1800, and he handled business exactly as expected. As we noted, the interest was never whether he would win but how he would look, and a first-round finish is a clean answer.
+
+## Which UFC 329 prelim fight stole the show?
+
+We told you to make it **Garbrandt vs Yanez** if you only caught one prelim, and it paid off: **Adrian Yanez knocked out Cody Garbrandt in the first round** in the kind of highlight-reel finish two knockout artists promise. The rest of the prelims delivered too, with first-round TKOs from Luke Riley, Damian Pinas, and Ryan Gandra, plus a slick second-round submission from Alessandro Costa. The 7 p.m. window earned its billing.
+
+## How did the McGregor vs Holloway odds close?
+
+Holloway went into fight night as the clear favorite, and the result validated the sharp money that had backed him the whole way. Here is how the line moved from the May announcement through fight week.
 
 <!--ODDS-SNAPSHOT-->
-As of July 11, 2026, Max Holloway is the favorite at around -285, roughly a 74% implied chance, and Conor McGregor is the underdog at about +227, roughly 31%. McGregor has gained ground since the line opened in May.
+Max Holloway closed as roughly a -285 favorite, near a 74% implied chance, with Conor McGregor the underdog around +227, roughly a 31% implied chance. The line opened with Holloway as high as -550 back in May, and McGregor gained ground through the buildup on heavy public money before Holloway settled it in the cage.
 <!--/ODDS-SNAPSHOT-->
 
-![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through June](/blog/ufc-329-odds-graph.svg)
+![Line graph showing the implied win probability for Conor McGregor and Max Holloway at UFC 329 moving over time, from the fight announcement in May 2026 through fight week](/blog/ufc-329-odds-graph.svg)
 
-*We update this chart daily as the lines move. The percentage next to each fighter is their latest implied win probability, with the moneyline in parentheses.*
+*The chart tracks the implied win probability for each fighter through the buildup. The favorite was right.*
 
-## Who wins McGregor vs Holloway 2? Our prediction
+## Is there going to be a McGregor vs Holloway 3?
 
-The smart money is on Holloway, and we are not going to pretend otherwise. A five-year layoff, a surgically repaired leg, and the wrong stylistic matchup against a fighter at the peak of his craft is a very hard ask. The most likely outcome is Holloway weathering an early McGregor surge and taking over as the fight gets deep.
+Probably not, at least not off this. A one-sided, one-round finish is the surest way to cool trilogy talk, and this was one-sided. McGregor still has a second fight reportedly booked for April 2027 on his current UFC contract, but a first-round loss reframes that slot as a legacy or spectacle booking rather than a title-track fight. Holloway, meanwhile, has bigger and fresher options at welterweight and beyond. The rematch answered the question the first fight left open thirteen years ago, and it did not leave much to argue about.
 
-But McGregor always has the puncher's chance. He needs roughly one clean left hand in the first ten minutes, and that is a real, live path. **Prediction: Holloway by late stoppage or decision, with a genuine asterisk for McGregor's early power.** For the full breakdown of this fight, see our [complete McGregor vs Holloway 2 guide](/blog/mcgregor-holloway-2-ufc-329).
+## Quick answers: UFC 329 results
 
-## Who wins Saint-Denis vs Pimblett? (Co-main event)
-
-This is a terrific co-main and a real crossroads fight for both. Paddy Pimblett is one of the UFC's biggest draws and has improved every time out, but Benoit Saint-Denis is a relentless, high-pace finisher who pressures and grinds. The oddsmakers lean Saint-Denis, and the logic is sound: his volume and toughness test Pimblett's defense and cardio in ways few of Paddy's previous opponents have.
-
-**Prediction: Saint-Denis by stoppage or hard-fought decision, but Pimblett's durability and finishing instinct make this live until the final horn.**
-
-## Who wins Sandhagen vs Bautista 2?
-
-A rematch between two of the slickest bantamweights in the division, and the closest fight on the main card to a coin flip. Cory Sandhagen is the more proven, more creative striker, while Mario Bautista has surged up the rankings on a long win streak. Bautista opened as the slight favorite, but the money has come in on Sandhagen, who now edges the line at around -135. Styles make this one competitive wherever it goes.
-
-**Prediction: a close, high-level decision that could genuinely go either way. Slight lean to Sandhagen's experience in the championship rounds.**
-
-## Who wins Royval vs Kavanagh?
-
-Brandon Royval is an action-first, all-or-nothing flyweight who is always in entertaining fights, while Lone'er Kavanagh is a rising talent the books currently favor. This is a stylistic treat: Royval's chaos against Kavanagh's poise.
-
-**Prediction: whoever wins, the fans win. Lean Kavanagh by decision, but Royval's scramble-heavy style gives him a finish path at any moment.**
-
-## Who wins Green vs McKinney? (Main card opener)
-
-The late addition to the main card is a lightweight fan-service matchup. King Green is the ageless entertainer with slick boxing and an iron will, while Terrance McKinney is one of the most explosive first-round finishers in the division. McKinney's fights almost never see a second round in either direction, which is exactly why the UFC put this one in the opening slot.
-
-**Prediction: McKinney early or Green late. The books lean McKinney around -148, and the safest bet on the whole card is that this one does not go the distance.**
-
-## Who wins Whittaker vs Krylov? (Prelim headliner)
-
-Robert Whittaker, a former middleweight champion, moving to light heavyweight to face the rugged veteran Nikita Krylov is a fascinating size-versus-speed test, and it is somehow on the prelims. Whittaker's hand speed, footwork, and fight IQ are elite, but Krylov is dangerous everywhere and carries real power up at 205. The line has drifted hard toward Krylov during fight week, from Whittaker -213 down to about -135.
-
-**Prediction: Whittaker's speed and craft win the exchanges. Whittaker by decision, with live finishing danger from Krylov if it hits the mat.**
-
-## Who wins Steveson vs Ellison?
-
-Olympic gold medalist wrestler Gable Steveson is the most heavily favored fighter on the entire card, and for good reason: his pedigree and athleticism are off the charts. Elisha Ellison is a sizable underdog. The question is less who wins and more whether Steveson's still-developing striking gets tested. Like Whittaker vs Krylov, this one sits on the prelims.
-
-**Prediction: Steveson by stoppage or dominant decision. The interest is in how he looks, not whether he wins.**
-
-## Which UFC 329 prelim fight should I watch?
-
-This is the rare card where the answer is "all of them." The 7 p.m. ET prelim window has a former middleweight champion (**Whittaker vs Krylov**), an Olympic gold medalist (**Steveson vs Ellison**), and a pure-violence bantamweight matchup between two knockout artists in **Cody Garbrandt vs Adrian Yanez**, which is a recipe for a highlight-reel finish in either direction. On the early prelims, **Tracy Cortez vs Wang Cong** is a meaningful flyweight ranking fight, **Cesar Almeida** brings legitimate kickboxing power, and the unbeaten **Farid Basharat** welcomes late-notice newcomer John Garza.
-
-If you only catch one prelim, make it Garbrandt vs Yanez. It rarely goes the distance.
-
-## What is the most likely Fight of the Night at UFC 329?
-
-Beyond the main event, the strongest barnburner candidates are **Saint-Denis vs Pimblett** (two fighters who refuse to take a step back), **Garbrandt vs Yanez** (two finishers with thin margins for error), and **Royval vs Kavanagh** (Royval is a Fight of the Night machine). Our pick for the likeliest fireworks outside the McGregor fight is Saint-Denis vs Pimblett.
-
-## What is the most likely upset on the card?
-
-McGregor himself is the headline upset pick as a sizable underdog, and the whole world is hoping for it. On the undercard, watch **Sandhagen vs Bautista**, which is close enough that calling either man an "upset" is generous, and **Royval over Kavanagh**, where Royval's finishing chaos could overturn the favorite. The cleanest pure-underdog dart throw is McGregor, for obvious reasons.
-
-## Quick answers: UFC 329 card and odds
-
-- **Date:** Saturday, July 11, 2026
-- **Venue:** T-Mobile Arena, Las Vegas
-- **Main event:** Conor McGregor vs Max Holloway, welterweight, non-title
-- **Co-main:** Benoit Saint-Denis vs Paddy Pimblett
-- **Biggest favorite:** Gable Steveson (around -1800)
-- **Closest fights:** Sandhagen vs Bautista and Whittaker vs Krylov (both near -135)
-- **Main event favorite:** Max Holloway (current line and movement in the chart above)
-- **Our main-event pick:** Holloway by late stoppage or decision
+- **Main event:** Max Holloway def. Conor McGregor by TKO, Round 1
+- **Co-main:** Paddy Pimblett def. Benoit Saint-Denis by submission, Round 1
+- **Biggest upsets:** Pimblett, Bautista, Royval, and King Green all won as main-card underdogs
+- **Only chalk main-card-caliber favorite to deliver:** Robert Whittaker (TKO, Round 3, on the prelims)
+- **Finishes:** nine of fourteen fights ended inside the distance
+- **Date and venue:** Saturday, July 11, 2026, T-Mobile Arena, Las Vegas
+- **Prelim highlight:** Adrian Yanez KO'd Cody Garbrandt in Round 1
 
 ## Related reading
 
-- [McGregor vs Holloway 2 at UFC 329: everything you need to know](/blog/mcgregor-holloway-2-ufc-329) - the complete guide: history, tale of the tape, and our prediction.
-- [How to watch UFC 329: is it on Paramount+?](/blog/how-to-watch-ufc-329-mcgregor-holloway-2) - plans, price, free options, start times, and how to watch by country.
-- [Every Conor McGregor fight, ranked](/blog/conor-mcgregor-fights-ranked) - from the forgettable to the unforgettable, his whole career in order.
+- [McGregor vs Holloway 2 at UFC 329: the full story and result](/blog/mcgregor-holloway-2-ufc-329) - the complete guide, the history, and how the rematch finished.
+- [How to watch a UFC 329 replay](/blog/how-to-watch-ufc-329-mcgregor-holloway-2) - where to stream the full card back after the fact.
+- [Every Conor McGregor fight, ranked](/blog/conor-mcgregor-fights-ranked) - the whole career in order, now with one more chapter.
 
-*Make your own picks count. Rate every fight on the UFC 329 card and log your predictions on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
+*You watched it happen. Now log it. Rate every fight on the UFC 329 card and lock in how you felt about McGregor's comeback on [Good Fights](https://goodfights.app). Never miss a Good Fight.*
