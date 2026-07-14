@@ -40,11 +40,12 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~5 min.
 - **Output:** Nothing unless the top-10 looks wrong (then daily-doc it).
 
-### SEO indexing health check (GSC)
-- **What:** From `packages/backend`, run `node scripts/gsc.js sitemaps` (submitted vs indexed per sitemap, errors) and `node scripts/gsc.js query 28 page` (clicks/impressions by page). Watch: indexed counts climbing toward submitted (~5.6k URLs), slug URLs replacing UUID URLs in results, and whether fighter/fight/best-of-year pages are earning impressions.
-- **Why:** The programmatic SEO corpus (steps 1–6, shipped 2026-07-01) only pays off if Google actually indexes it — a silent gate regression, sitemap error, or Helpful-Content demotion shows up here first.
-- **Time:** ~10 min.
-- **Note:** run biweekly through the initial rollout (Jul–Sep 2026), then settle to monthly. Setup details in `docs/daily/2026-07-03.md`.
+### SEO indexing health check (GSC) — AUTOMATED 2026-07-14
+- **What:** The GSC Weekly Report workflow (`.github/workflows/gsc-weekly-report.yml`, Mondays 12:00 UTC) commits a report to `docs/operations/gsc-reports/YYYY-MM-DD.md`: WoW clicks/impressions, striking-distance queries (pos 5-15), top pages/queries, new queries, sitemap errors. **The human job is reading the latest report** (~5 min): pick 1-2 striking-distance queries and improve those pages (title, on-page copy, internal links).
+- **Why:** The programmatic SEO corpus only pays off if Google indexes it — a gate regression, sitemap error, or Helpful-Content demotion shows up here first. Striking-distance queries are where cheap ranking wins live.
+- **Manual fallback:** `node scripts/gscWeeklyReport.js` from `packages/backend/` (or `gsc.js sitemaps|query` for ad-hoc digging).
+- **Time:** ~5 min reading.
+- **Note:** if a Monday report is missing from `docs/operations/gsc-reports/`, the workflow failed — check Actions tab. Setup details in `docs/daily/2026-07-03.md` + `docs/daily/2026-07-14.md`.
 
 ### AI enrichment — cost + coverage audit
 - **What:** Check actuals against the `<$300/year` ceiling. Verify coverage on the past month's cards (how many fights got `aiPreviewShort` populated, average confidence, missing-source events).

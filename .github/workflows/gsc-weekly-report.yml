@@ -1,0 +1,62 @@
+name: GSC Weekly Report
+
+# Operation "Own The SERPs" measurement loop. Every Monday, pulls Search
+# Console data and commits a dated markdown report to
+# docs/operations/gsc-reports/ (WoW totals, striking-distance queries,
+# top pages/queries, new queries). This replaces the manual weekly GSC
+# review in docs/operations/maintenance.md — the human job is now reading
+# the report, not producing it.
+#
+# Secret: GA_SERVICE_ACCOUNT_JSON = contents of packages/backend/ga-service-account.json
+
+on:
+  schedule:
+    - cron: "0 12 * * 1" # Mondays 12:00 UTC
+  workflow_dispatch:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install backend deps
+        run: |
+          cd packages/backend
+          pnpm install
+
+      - name: Generate report
+        env:
+          GA_SERVICE_ACCOUNT_JSON: ${{ secrets.GA_SERVICE_ACCOUNT_JSON }}
+        run: |
+          cd packages/backend
+          node scripts/gscWeeklyReport.js
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/operations/gsc-reports/
+          if git diff --cached --quiet; then
+            echo "No report changes."
+            exit 0
+          fi
+          git commit -m "docs(ops): weekly GSC report"
+          git pull --rebase origin main
+          git push origin main
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=gsc-report&org=fights" || true
