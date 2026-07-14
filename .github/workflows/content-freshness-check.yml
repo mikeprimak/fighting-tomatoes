@@ -1,0 +1,39 @@
+name: Content Freshness Check
+
+# Daily canary for the silent failure modes that starve the SEO corpus
+# without any single workflow obviously breaking: results not landing,
+# AI enrichment quietly stopping (dead cron OR exhausted API credits),
+# two consecutive failures of a critical scheduled workflow, or the site/
+# sitemaps not serving. Public-API only — no DB or Google secrets.
+#
+# When this goes red, read the job log: it prints exactly which check
+# failed and what to look at first.
+
+on:
+  schedule:
+    - cron: "30 13 * * *" # daily 13:30 UTC
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run freshness check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node packages/backend/scripts/contentFreshnessCheck.js
+
+      - name: Report failure
+        if: failure()
+        run: |
+          curl -s "https://fightcrewapp-backend.onrender.com/api/admin/test-alert?key=fightcrew-test-2026&type=content-freshness&org=fights" || true

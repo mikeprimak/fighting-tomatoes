@@ -47,6 +47,10 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~5 min reading.
 - **Note:** if a Monday report is missing from `docs/operations/gsc-reports/`, the workflow failed — check Actions tab. Setup details in `docs/daily/2026-07-03.md` + `docs/daily/2026-07-14.md`.
 
+### Content-freshness canary — AUTOMATED 2026-07-14 (action only when red)
+- **What:** `.github/workflows/content-freshness-check.yml` runs daily (13:30 UTC): recent completed events have winners, near-term upcoming events have enrichment attempts, critical workflows aren't failing twice in a row, site + sitemaps serve 200. On failure GitHub emails + admin alert fires.
+- **When red:** read the job log — it names the failing check. Enrichment failures: check Anthropic credit balance FIRST (ran dry 2026-07-14). Results failures: check VPS live trackers + results-backfill. Manual run: `node packages/backend/scripts/contentFreshnessCheck.js`.
+
 ### AI enrichment — cost + coverage audit
 - **What:** Check actuals against the `<$300/year` ceiling. Verify coverage on the past month's cards (how many fights got `aiPreviewShort` populated, average confidence, missing-source events).
 - **Why:** Cost can creep silently if cron mis-fires or sources change shape. Coverage gaps mean users see empty cards.
