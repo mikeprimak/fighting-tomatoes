@@ -14,6 +14,7 @@ import { FighterAvatar } from '@/components/FighterAvatar';
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/events/live', label: 'Live', icon: Radio },
+  { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/events/upcoming', label: 'Upcoming', icon: Flame },
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },

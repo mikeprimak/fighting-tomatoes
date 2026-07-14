@@ -6,6 +6,8 @@ export function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col items-center gap-3 px-4 text-xs text-text-secondary sm:flex-row sm:justify-between">
         <p>&copy; {new Date().getFullYear()} Good Fights. All rights reserved.</p>
         <div className="flex flex-wrap items-center justify-center gap-4">
+          <Link href="/schedule" className="hover:text-foreground">Schedule</Link>
+          <Link href="/schedule/tonight" className="hover:text-foreground">Fights Tonight</Link>
           <Link href="/fighters" className="hover:text-foreground">Fighters</Link>
           <Link href="/events" className="hover:text-foreground">Events</Link>
           <Link href="/fights/best" className="hover:text-foreground">Best Fights</Link>

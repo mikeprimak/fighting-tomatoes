@@ -14,6 +14,11 @@ import { fetchBestYears, indexableYears } from '@/lib/bestFights';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${SITE_URL}`, changeFrequency: 'daily', priority: 1 },
+    // lastModified moves on every regeneration so Google sees the schedule
+    // hubs as the living pages they are ("tonight" only works if crawled often).
+    { url: `${SITE_URL}/schedule`, changeFrequency: 'daily', priority: 0.9, lastModified: new Date() },
+    { url: `${SITE_URL}/schedule/tonight`, changeFrequency: 'hourly', priority: 0.9, lastModified: new Date() },
+    { url: `${SITE_URL}/schedule/this-weekend`, changeFrequency: 'daily', priority: 0.9, lastModified: new Date() },
     { url: `${SITE_URL}/events`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/live`, changeFrequency: 'always', priority: 0.9 },
     { url: `${SITE_URL}/events/upcoming`, changeFrequency: 'daily', priority: 0.8 },
