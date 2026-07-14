@@ -6,7 +6,7 @@ author: "Good Fights"
 excerpt: "Islam Makhachev defends the welterweight title against Ian Machado Garry, and Mackenzie Dern defends her strawweight belt against Gillian Robertson, when UFC 330 lands in Philadelphia on August 15, 2026. The full card, the latest odds, start times, how to watch on Paramount+, and an honest prediction for the main event."
 tags: ["ufc-330", "islam-makhachev", "ian-garry", "mackenzie-dern", "ufc", "preview"]
 image: "/blog/ufc-330-makhachev-garry-banner.png"
-draft: true
+draft: false
 featured: false
 event:
   name: "UFC 330: Makhachev vs Machado Garry"
@@ -24,7 +24,7 @@ The UFC brings a numbered card back to Philadelphia for the first time in over a
 
 ## When is UFC 330?
 
-UFC 330 takes place on **Saturday, August 15, 2026**. It is the UFC's first numbered event in Philadelphia since UFC 133 back in 2011, and its first trip to the city of any kind since 2019, so the local demand is real. The main card headlines a big night of two title fights.
+UFC 330 takes place on **Saturday, August 15, 2026**, with the main card starting at **9 p.m. ET / 6 p.m. PT**. It is the UFC's first numbered event in Philadelphia since UFC 133 back in 2011, and its first trip to the city of any kind since 2019, so the local demand is real. The main card headlines a big night of two title fights.
 
 ## Where is UFC 330 being held?
 
@@ -32,7 +32,7 @@ UFC 330 is at the **Xfinity Mobile Arena in Philadelphia, Pennsylvania**, the do
 
 ## What time does UFC 330 start?
 
-UFC 330 follows the standard numbered-card structure across three broadcast segments. Exact times firm up closer to the event, but plan for the early prelims in the late afternoon Eastern, the prelims in the early evening, and the main card in prime time, with the Makhachev walkout as the final fight of the night. Check the confirmed schedule the week of the fight before you plan around it.
+The **main card starts at 9 p.m. ET / 6 p.m. PT**, with the Makhachev walkout as the final fight of the night. UFC 330 follows the standard numbered-card structure across three broadcast segments, so expect the prelims in the early evening and the early prelims in the late afternoon Eastern. The exact prelim times firm up closer to the event, so check the confirmed schedule the week of the fight before you plan around it.
 
 ## How do I watch UFC 330?
 
@@ -44,7 +44,9 @@ In the US, no. UFC numbered events like UFC 330 are now bundled into a **Paramou
 
 ## Who is fighting at UFC 330? The full card
 
-Here is the UFC 330 lineup. The main card is set, with the rest of the undercard still filling in as fight week approaches:
+Here is the UFC 330 lineup. The main card is set, with the rest of the undercard still filling in as fight week approaches. Tap any fight to log your own hype score, and see how hyped the rest of the fanbase is:
+
+<div class="gf-event-fights" data-event-id="ufc-330-makhachev-vs-garry"></div>
 
 **Main card**
 
@@ -109,6 +111,7 @@ Paramount+ is the UFC's US home, but the rest of the world is a patchwork. Confi
 ## Quick answers: UFC 330
 
 - **Date:** Saturday, August 15, 2026
+- **Main card start:** 9 p.m. ET / 6 p.m. PT
 - **Venue:** Xfinity Mobile Arena, Philadelphia
 - **Main event:** Islam Makhachev vs Ian Machado Garry, welterweight title
 - **Co-main:** Mackenzie Dern vs Gillian Robertson, women's strawweight title

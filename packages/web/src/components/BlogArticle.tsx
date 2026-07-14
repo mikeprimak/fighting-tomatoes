@@ -7,6 +7,7 @@ import { ShareButtons } from '@/components/ShareButtons';
 import { TweetEmbeds } from '@/components/TweetEmbeds';
 import { FacebookEmbeds } from '@/components/FacebookEmbeds';
 import { BlogFightCards } from '@/components/BlogFightCards';
+import { BlogEventFights } from '@/components/BlogEventFights';
 
 function formatDate(date: string): string {
   if (!date) return '';
@@ -71,6 +72,7 @@ export function BlogArticle({ post }: { post: Post }) {
       <TweetEmbeds />
       <FacebookEmbeds />
       <BlogFightCards />
+      <BlogEventFights />
 
       <ShareButtons url={`${SITE_URL}/blog/${post.slug}`} title={post.title} />
 

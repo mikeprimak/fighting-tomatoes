@@ -6,7 +6,7 @@ author: "Good Fights"
 excerpt: "Former middleweight champion Dricus du Plessis faces former welterweight king Kamaru Usman in a middleweight main event when the UFC returns to Oklahoma City on July 18, 2026. Two ex-champs, one crossroads. The full card, the odds, start times, how to watch on Paramount+, and our prediction."
 tags: ["dricus-du-plessis", "kamaru-usman", "ufc-oklahoma-city", "ufc-fight-night", "ufc", "preview"]
 image: "/blog/du-plessis-usman-banner.png"
-draft: true
+draft: false
 featured: false
 event:
   name: "UFC Fight Night: Du Plessis vs Usman"
@@ -36,7 +36,9 @@ In the United States, the entire card streams on **Paramount+**, prelims and mai
 
 ## Who is fighting? The full card
 
-Here is the UFC Oklahoma City lineup:
+Here is the UFC Oklahoma City lineup. Tap any fight to log your own hype score, and see how hyped the rest of the fanbase is:
+
+<div class="gf-event-fights" data-event-id="ufc-fight-night-plessis-vs-usman"></div>
 
 **Main card (8 p.m. ET)**
 
@@ -56,9 +58,18 @@ Here is the UFC Oklahoma City lineup:
 
 More bouts round out the early portion of the card. We refresh this page as the lineup is finalized.
 
+## Who else is worth watching on this card?
+
+Beyond the two former champions on top, a few names deserve your attention:
+
+- **Fatima Kline vs Tabatha Ricci** is the best fight on the prelims, a meeting of two top-15 strawweights. Kline went a perfect 3-0 in 2025, fought her way into the rankings, and is one of the fastest-rising women on the roster. Ricci is the kind of tough, grinding veteran test that tells you whether a prospect is real.
+- **Austin Bashi vs Jose Miguel Delgado** is a legitimate featherweight prospect collision. Bashi is an undefeated Michigan wrestler coming off a first-round submission, and Delgado is a 10-2 finisher who has already beaten Andre Fili, Hyder Amil, and Connor Matthews, with every career win coming inside the distance. One of these two leaves Oklahoma City as a name to circle in the 145 rankings conversation.
+- **Chase Hooper vs Mitch Ramirez** carries real stakes for Hooper, who built a nice lightweight run with wins over Clay Guida and Jim Miller but has been stopped in the first round in two straight. The grappling wizard needs this one to stop the slide.
+- **Jared Cannonier**, in the co-main, is fighting to hold his place in the middleweight rankings against Christian Leroy Duncan, a slick, athletic striker the UFC has been building. It is the classic veteran-versus-riser setup, and the books lean toward the riser.
+
 ## What are the betting odds for Du Plessis vs Usman?
 
-Dricus du Plessis is the favorite, around **-270**, with Kamaru Usman the underdog near **+220**. That is roughly a 73% implied chance for du Plessis, which reflects both his size at the natural weight and the fact that Usman is moving up a division to take the fight. In the co-main, Christian Leroy Duncan is favored over the veteran Jared Cannonier. Odds move all week, so treat these as a snapshot.
+Dricus du Plessis is the favorite, around **-270**, with Kamaru Usman the underdog near **+220**. That is roughly a 73% implied chance for du Plessis, which reflects his size at the natural weight, the fact that Usman is moving up a division to take the fight, and how little Usman has fought lately. After his welterweight title reign ended, Usman dropped three straight from 2022 to 2023, two title losses to Leon Edwards and a short-notice decision against Khamzat Chimaev, and he has fought just once in the last three years, a decision win over Joaquin Buckley in June 2025. Du Plessis, by contrast, has looked strong against everyone except Chimaev, who took his belt on the scorecards last August. In the co-main, Christian Leroy Duncan is favored over the veteran Jared Cannonier. Odds move all week, so treat these as a snapshot.
 
 ## Why is this a big fight?
 
@@ -66,11 +77,11 @@ Because it is a collision of two men who not long ago sat on top of the sport. D
 
 ## Who is Dricus du Plessis?
 
-Du Plessis is the awkward, relentless South African who ground his way to the middleweight title with a style nobody enjoys facing: unorthodox, high-pressure, and impossible to time. He is 23-3, and even in defeat he has been in the championship mix for years. This is his first fight since losing the belt, and he is the naturally bigger man at 185, which is a big part of why the books favor him here.
+Du Plessis is the awkward, relentless South African who ground his way to the middleweight title with a style nobody enjoys facing: unorthodox, high-pressure, and impossible to time. He is 23-3 with stoppages in 20 of those wins, and his championship run included victories over Sean Strickland, Israel Adesanya, and Robert Whittaker. The one blemish on an otherwise excellent stretch is the loss that took his belt: Khamzat Chimaev outwrestled him for five rounds last August and won a wide decision. This is his first fight since that night, and he is the naturally bigger man at 185, which is a big part of why the books favor him here.
 
 ## Who is Kamaru Usman?
 
-Usman, 21-4, is one of the greatest welterweights in UFC history, a former champion with a long title reign built on smothering wrestling and steadily improving boxing. Moving up to middleweight is a real gamble at this stage of his career, but a win over a former champion in his new division would put a two-division story back on the table and prove he still belongs at the very top. The size and the layoff are the questions; the pedigree is not.
+Usman, 21-4, is one of the greatest welterweights in UFC history, a former champion with a long title reign built on smothering wrestling and steadily improving boxing. The recent years have been rough, though. After the title reign ended he lost three in a row from 2022 to 2023, the two Leon Edwards fights and a short-notice middleweight decision against Khamzat Chimaev, and since then he has fought exactly once: a unanimous decision over Joaquin Buckley in June 2025, his first win since 2021. Moving up to middleweight full time is a real gamble for a 39-year-old coming off that kind of stretch, but a win over a former champion in his new division would put a two-division story back on the table and prove he still belongs at the very top. The size, the age, and the inactivity are the questions; the pedigree is not.
 
 ## Who wins Du Plessis vs Usman? Our prediction
 

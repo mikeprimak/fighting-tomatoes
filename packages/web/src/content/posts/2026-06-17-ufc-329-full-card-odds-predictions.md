@@ -25,7 +25,9 @@ UFC 329 is in the books, and Conor McGregor's comeback ended almost the moment i
 
 ## Who won UFC 329? Full results
 
-Here is every UFC 329 result, from the main event down to the first fight of the night:
+Here is every UFC 329 result, from the main event down to the first fight of the night. You can rate any fight right here, and see what the rest of the fanbase scored it:
+
+<div class="gf-event-fights" data-event-id="ufc-329-mcgregor-vs-holloway"></div>
 
 **Main card**
 
@@ -59,6 +61,29 @@ The rematch that took thirteen years to make barely got started. McGregor came f
 To his credit, Holloway did not pounce on a hurt man. He looked to referee Mike Beltran and asked whether to intervene rather than teeing off on an opponent who could not stand. The fight briefly restarted, Holloway threw a single kick, McGregor took an unsteady step back and could not put weight on the leg, and **Beltran waved it off at 1:09 of the first round**. The official verdict is a Holloway TKO in 69 seconds. McGregor left the cage under his own power, visibly limping, and UFC president Dana White told reporters afterward that doctors suspected a **torn ACL**.
 
 It is a cruel result, and an eerily familiar one. It is the third catastrophic leg injury McGregor has suffered in a fight: he tore his ACL during the very first Holloway fight back in 2013 and won anyway, he snapped his leg against Dustin Poirier in 2021, and now the knee gave out again on the opening exchange of his comeback. Holloway gets the win on his record, and he handled a strange moment with real class, but nobody, least of all Max, got the fight they came for.
+
+## How did McGregor respond after UFC 329?
+
+McGregor broke his silence on X in the hours after the fight, and he did not dress it up. "My head gasket is gone. Destroyed," he wrote, insisting the knee gave out with no warning: "I had no injury going into the fight. I was throwing kicks, planted and jumping, all throughout camp as well as backstage before the fight. This came out of nowhere." He described his mental state as "beyond dark" and said he could "only describe it as hell," and he pushed back on fans who claimed he looked off during the walkout, calling that talk "nonsense."
+
+Then came the part that matters for his future. On Instagram, McGregor laid out his plan in five short beats: "Surgery. Prehab. Return to martial arts practice. Go again. Final fight of the contract." So as of now, no retirement. He has confirmed he will undergo knee surgery, and he intends to come back for the last fight on his UFC deal.
+
+## What did Holloway say after the fight?
+
+Holloway spent his post-fight press conference doing what he did in the cage: refusing to celebrate a hurt opponent. He revealed he kept telling referee Mike Beltran to stop the fight while McGregor kept shouting "Fight!" back at him. "I'm just praying for the guy, all jokes aside, as a human being," he said. He also made it clear he wants the trilogy, floating 2027 as a timeline once McGregor's knee is rebuilt. A win is a win, but Max clearly wants one with an ending.
+
+## How did the MMA world react?
+
+The reactions rolled in fast, and they ran the full range from sympathy to opportunism:
+
+- **Dana White** told reporters doctors suspected a torn ACL, the same injury from the first Holloway fight in 2013.
+- **Islam Makhachev** kept it short and cutting: "Conor beat Conor. Congrats Max."
+- **Paddy Pimblett**, fresh off his own first-round submission win on the same card, wasted no time planting a flag: "McGregor's done already. Well, he's finished. The new boy is in town. I can become the face of the organization now."
+- **Ryan Garcia** summed up the casual fan reaction: "That may have been the worst ending to anything that ever ended."
+- **Terence Crawford** was less charitable, sending a brutal message McGregor's way rather than sympathy. The two have traded barbs across the boxing-MMA divide for years.
+- Former rivals **Dustin Poirier** and **Jorge Masvidal** broke the injury down at length on Poirier's show, two men who know better than most what McGregor's body has been through.
+
+The tone across the sport was strange and a little mournful. Nobody got to find out whether McGregor still has it, and that unanswered question hung over every reaction.
 
 ## The most hyped fight we have ever tracked, and one of the lowest-rated
 
