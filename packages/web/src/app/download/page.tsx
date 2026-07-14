@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Apple, Smartphone } from 'lucide-react';
+import { StoreButtons } from './StoreButtons';
 
 const APP_STORE_URL = 'https://apps.apple.com/us/app/good-fights/id6757172609';
 const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.fightcrewapp.mobile';
@@ -30,22 +30,7 @@ export default async function DownloadPage() {
           Pick your phone to download. Never miss a Good Fight.
         </p>
 
-        <div className="mt-6 flex flex-col gap-3">
-          <a
-            href={APP_STORE_URL}
-            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 font-bold text-text-on-accent transition hover:opacity-90"
-          >
-            <Apple size={20} className="shrink-0" />
-            Download on the App Store
-          </a>
-          <a
-            href={PLAY_STORE_URL}
-            className="flex items-center justify-center gap-2 rounded-lg border border-border px-5 py-3 font-bold text-foreground transition hover:bg-background-secondary"
-          >
-            <Smartphone size={20} className="shrink-0" />
-            Get it on Google Play
-          </a>
-        </div>
+        <StoreButtons appStoreUrl={APP_STORE_URL} playStoreUrl={PLAY_STORE_URL} />
 
         <Link
           href="/"

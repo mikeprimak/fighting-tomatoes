@@ -6,6 +6,7 @@ import { Providers } from "./providers";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { AppDownloadBanner } from "@/components/layout/AppDownloadBanner";
+import { DownloadClickTracker } from "@/components/layout/DownloadClickTracker";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
             into <head>. */}
         <meta {...({ name: 'impact-site-verification', value: 'f2b859d9-9488-40d9-afe1-e3eed6306156' } as Record<string, string>)} />
         <Providers>
+          <DownloadClickTracker />
           <AppDownloadBanner />
           <Navbar />
           <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-4">

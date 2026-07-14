@@ -1,3 +1,5 @@
+import { trackEvent } from './analytics';
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
 export { API_BASE_URL };
@@ -221,10 +223,14 @@ export async function getFight(fightId: string) {
 }
 
 export async function rateFight(fightId: string, rating: number) {
-  return makeRequest<{ rating: any; message: string }>(`/fights/${fightId}/rate`, {
+  const result = await makeRequest<{ rating: any; message: string }>(`/fights/${fightId}/rate`, {
     method: 'POST',
     body: JSON.stringify({ rating }),
   });
+  // Instrumented here (not per-surface) so every rating path — modal, resumed
+  // pending action, future surfaces — counts as the flywheel conversion.
+  trackEvent('rating_submitted', { fight_id: fightId, rating });
+  return result;
 }
 
 export async function deleteFightRating(fightId: string) {
@@ -309,10 +315,12 @@ export async function removeAllFightData(fightId: string) {
 export async function createFightPrediction(fightId: string, data: {
   predictedRating?: number;
 }) {
-  return makeRequest<{ prediction: any; averageHype: number; totalHypePredictions: number; message: string }>(
+  const result = await makeRequest<{ prediction: any; averageHype: number; totalHypePredictions: number; message: string }>(
     `/fights/${fightId}/prediction`,
     { method: 'POST', body: JSON.stringify(data) },
   );
+  trackEvent('hype_submitted', { fight_id: fightId, hype: data.predictedRating });
+  return result;
 }
 
 export async function deleteFightPrediction(fightId: string) {
