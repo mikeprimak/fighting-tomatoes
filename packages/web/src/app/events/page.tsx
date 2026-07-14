@@ -33,13 +33,58 @@ function formatDate(date: string) {
   });
 }
 
+// Same promotion → logo mapping used by weekly-hype / fight-of-the-night.
+function getPromoLogoUrl(promo: string): string | null {
+  if (!promo) return null;
+  const upper = promo.toUpperCase();
+  if (upper.includes('UFC')) return '/promo-logos/ufc.png';
+  if (upper.includes('PFL')) return '/promo-logos/pfl.png';
+  if (upper.includes('BKFC')) return '/promo-logos/bkfc.png';
+  if (upper.includes('ONE')) return '/promo-logos/one.png';
+  if (upper.includes('OKTAGON')) return '/promo-logos/oktagon.png';
+  if (upper.includes('RIZIN')) return '/promo-logos/rizin.png';
+  if (upper.includes('KARATE COMBAT')) return '/promo-logos/karate-combat.png';
+  if (upper.includes('DIRTY BOXING')) return '/promo-logos/dirtyboxing.png';
+  if (upper.includes('MATCHROOM') || upper.includes('DAZN')) return '/promo-logos/matchroom.png';
+  if (upper.includes('TOP RANK')) return '/promo-logos/toprank.png';
+  if (upper.includes('GOLDEN BOY')) return '/promo-logos/golden-boy.png';
+  if (upper.includes('ZUFFA')) return '/promo-logos/zuffa-boxing.png';
+  if (upper.includes('MVP') || upper.includes('MOST VALUABLE')) return '/promo-logos/mvp.png';
+  if (upper.includes('PREMIER BOXING') || upper.includes('PBC')) return '/promo-logos/pbc.png';
+  return null;
+}
+
+function EventThumb({ event }: { event: any }) {
+  const src = event.bannerImage || getPromoLogoUrl(event.promotion || '');
+  if (src) {
+    return (
+      <div className="h-10 w-16 shrink-0 overflow-hidden rounded-md bg-background">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className={`h-full w-full ${event.bannerImage ? 'object-cover' : 'object-contain p-1'}`}
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded-md bg-background text-xs font-bold text-text-secondary">
+      {(event.promotion || event.name || '?').slice(0, 3).toUpperCase()}
+    </div>
+  );
+}
+
 function EventRow({ event }: { event: any }) {
   return (
     <Link
       href={`/events/${event.slug || event.id}`}
       className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-background/40"
     >
-      <div className="min-w-0">
+      <EventThumb event={event} />
+      <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-foreground">{event.name}</p>
         <p className="mt-0.5 truncate text-xs text-text-secondary">
           {[event.promotion, [event.venue, event.location].filter(Boolean).join(', ')]

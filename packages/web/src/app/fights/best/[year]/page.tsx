@@ -3,7 +3,9 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SITE_URL } from '@/lib/site';
 import { fetchBestFights, fetchBestYears, indexableYears, MIN_YEAR_FIGHTS } from '@/lib/bestFights';
+import { BEST_FIGHT_YEAR_NOTES } from '@/lib/bestFightYearNotes';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
+import { FightColumnHeader } from '@/components/fight-cards/FightSectionList';
 
 type Props = { params: Promise<{ year: string }> };
 
@@ -69,9 +71,48 @@ export default async function BestFightsYearPage({ params }: Props) {
   const linkedYears = indexableYears(allYears);
   const jsonLd = buildListJsonLd(year, fights, `${SITE_URL}/fights/best/${year}`);
 
+  const top = fights[0];
+  // Editorial retrospective, falling back to a data-driven line so every year
+  // page has real prose above the list.
+  const yearNote =
+    BEST_FIGHT_YEAR_NOTES[year] ||
+    (top
+      ? `Fans on Good Fights have rated ${fights.length} fights from ${year}, and ${fightName(top)} leads the year at ${top.averageRating.toFixed(1)}/10.`
+      : null);
+
+  const faqs = [
+    ...(top
+      ? [
+          {
+            q: `What was the best fight of ${year}?`,
+            a: `By fan rating, the best fight of ${year} is ${fightName(top)}${top.event?.name ? ` at ${top.event.name}` : ''}, scored ${top.averageRating.toFixed(1)}/10 across ${top.totalRatings} fan ratings on Good Fights.`,
+          },
+        ]
+      : []),
+    {
+      q: 'How are these rankings decided?',
+      a: `No editors, no algorithm, no promoter input: every fight here is ranked purely by the average score fans gave it after watching, on a 1-10 scale. A fight needs a minimum number of ratings to qualify, so one enthusiastic voter can't put an obscure fight on top.`,
+    },
+  ];
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  };
+
+  // Adjacent-year links for the bottom of the page (the chip nav is at the top).
+  const yearIdx = linkedYears.findIndex((y) => y.year === year);
+  const prevYear = yearIdx >= 0 ? linkedYears[yearIdx + 1]?.year : undefined; // list is newest-first
+  const nextYear = yearIdx > 0 ? linkedYears[yearIdx - 1]?.year : undefined;
+
   return (
     <div className="mx-auto max-w-3xl">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <header className="mb-4">
         <h1 className="text-2xl font-bold">Best Fights of {year}</h1>
@@ -81,6 +122,10 @@ export default async function BestFightsYearPage({ params }: Props) {
             : `No rated fights found for ${year} yet.`}
         </p>
       </header>
+
+      {yearNote && (
+        <p className="mb-5 text-sm leading-relaxed text-text-secondary">{yearNote}</p>
+      )}
 
       {linkedYears.length > 0 && (
         <nav className="mb-5 flex flex-wrap gap-2" aria-label="Best fights by year">
@@ -101,11 +146,43 @@ export default async function BestFightsYearPage({ params }: Props) {
       )}
 
       {fights.length > 0 && (
-        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {fights.map((fight: any, index: number) => (
-            <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} showEvent />
-          ))}
-        </div>
+        <>
+          <FightColumnHeader variant="rating" />
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {fights.map((fight: any, index: number) => (
+              <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} showEvent />
+            ))}
+          </div>
+        </>
+      )}
+
+      {faqs.length > 0 && (
+        <section className="mt-8">
+          <h2 className="mb-3 text-lg font-bold">FAQ: the best fights of {year}</h2>
+          <div className="space-y-4">
+            {faqs.map((f) => (
+              <div key={f.q}>
+                <h3 className="text-sm font-semibold">{f.q}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-text-secondary">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {(prevYear || nextYear) && (
+        <nav className="mt-8 flex items-center justify-between text-sm" aria-label="Adjacent years">
+          {prevYear ? (
+            <Link href={`/fights/best/${prevYear}`} className="text-primary hover:underline">
+              ← Best fights of {prevYear}
+            </Link>
+          ) : <span />}
+          {nextYear ? (
+            <Link href={`/fights/best/${nextYear}`} className="text-primary hover:underline">
+              Best fights of {nextYear} →
+            </Link>
+          ) : <span />}
+        </nav>
       )}
 
       <p className="mt-6 text-sm text-text-secondary">

@@ -56,32 +56,6 @@ function cardRating(fights: any[]): { avg: number; count: number } | null {
   return count > 0 ? { avg: sum / count, count } : null;
 }
 
-function methodLabel(method: string | null | undefined, round?: number | null) {
-  if (!method) return '';
-  const upper = method.toUpperCase();
-  let label = method;
-  if (upper === 'KO_TKO' || upper === 'KO/TKO' || upper === 'KO' || upper === 'TKO') label = 'KO/TKO';
-  else if (upper === 'DECISION' || upper.startsWith('DECISION')) label = 'Decision';
-  else if (upper === 'SUBMISSION') label = 'Submission';
-  const showRound = round && !upper.includes('DECISION');
-  return `${label}${showRound ? ` R${round}` : ''}`;
-}
-
-// One plain-text line per finished fight ("Gaethje def. Poirier — KO/TKO R2").
-// Rendered inside a collapsed <details> so results stay spoiler-safe for
-// browsing users while still being real, indexable HTML.
-function resultLine(fight: any): string | null {
-  if (!fight.winner || !fight.fighter1 || !fight.fighter2) return null;
-  const n1 = `${fight.fighter1.firstName} ${fight.fighter1.lastName}`;
-  const n2 = `${fight.fighter2.firstName} ${fight.fighter2.lastName}`;
-  if (fight.winner === 'draw') return `${n1} vs ${n2} — Draw`;
-  if (fight.winner === 'nc') return `${n1} vs ${n2} — No Contest`;
-  const winnerFirst = fight.winner === fight.fighter1.id;
-  if (!winnerFirst && fight.winner !== fight.fighter2.id) return null;
-  const method = methodLabel(fight.method, fight.round);
-  return `${winnerFirst ? n1 : n2} def. ${winnerFirst ? n2 : n1}${method ? ` — ${method}` : ''}`;
-}
-
 function groupFightsBySection(fights: any[]) {
   const sections: Record<string, any[]> = {};
   for (const fight of fights) {
@@ -155,13 +129,6 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
         .filter((f: any) => typeof f.averageRating === 'number' && f.averageRating > 0 && f.totalRatings > 0 && f.fighter1 && f.fighter2)
         .sort((a: any, b: any) => b.averageRating - a.averageRating || b.totalRatings - a.totalRatings)[0]
     : undefined;
-  const resultLines = isPast
-    ? [...fights]
-        .sort((a: any, b: any) => (a.orderOnCard ?? 0) - (b.orderOnCard ?? 0))
-        .map(resultLine)
-        .filter((l): l is string => !!l)
-    : [];
-
   const sections = groupFightsBySection(fights);
   const sortedSectionKeys = Object.keys(sections).sort((a, b) => {
     const ai = SECTION_ORDER.indexOf(a);
@@ -227,19 +194,6 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
           .
         </p>
       )}
-      {isPast && resultLines.length > 0 && (
-        <details className="mb-6 rounded-lg border border-border bg-card">
-          <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">
-            Full results (spoilers)
-          </summary>
-          <ul className="space-y-1.5 px-4 pb-4 text-sm text-text-secondary">
-            {resultLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </details>
-      )}
-
       {/* Whole-event How to Watch — not shown for past events */}
       {!isPast && <HowToWatch eventId={event.id} />}
 

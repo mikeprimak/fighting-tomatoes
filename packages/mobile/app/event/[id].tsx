@@ -39,6 +39,8 @@ interface EventDetails {
   earlyPrelimStartTime?: string | null;
   prelimStartTime?: string | null;
   mainStartTime?: string | null;
+  aiEventSummary?: string | null;
+  aiEventConfidence?: number | null;
 }
 
 type Fight = any;
@@ -359,6 +361,14 @@ export default function EventDetailScreen() {
           )
         )}
 
+        {/* AI event overview — gated on the same confidence floor the home
+            screen uses (>= 0.5) so low-confidence summaries never render. */}
+        {event?.aiEventConfidence != null && event.aiEventConfidence >= 0.5 && event.aiEventSummary ? (
+          <Text style={[styles.aiSummary, { color: colors.textSecondary }]}>
+            {event.aiEventSummary}
+          </Text>
+        ) : null}
+
         {/* How to Watch — whole event */}
         {event?.id && (
           <View style={styles.howToWatchWrapper}>
@@ -556,6 +566,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: undefined,
     marginBottom: 0,
+  },
+  aiSummary: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    fontSize: 13,
+    lineHeight: 19,
   },
   placeholderBanner: {
     backgroundColor: '#1a1a2e',

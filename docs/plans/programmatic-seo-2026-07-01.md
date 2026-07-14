@@ -10,8 +10,9 @@
 > growth lever that (a) compounds — a ranked page earns traffic every fight week
 > forever, (b) is a *coding* problem, not a marketing one (fits a solo introvert
 > founder), and (c) feeds all three goals at once: installs (web→app CTA), income
-> now (web ad/affiliate RPM), and the sale narrative ("web traffic is a
-> separately-sellable asset" — `docs/areas/sale-value.md` Posture, 2026-06-17).
+> now (web ad/affiliate RPM), and the sale narrative (2026-07-14 framing: web
+> traffic grows the ONE combined asset — brand+web+app+users+data — not a
+> separate carve-out; see `docs/areas/sale-value.md` Posture).
 
 ## The core insight
 

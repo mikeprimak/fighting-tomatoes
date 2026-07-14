@@ -39,7 +39,7 @@ export default function FighterDetailScreen() {
   const router = useRouter();
 
   // State
-  const [sortBy, setSortBy] = useState<SortOption>('highest-rating');
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
   // Collapse the long About body (paragraphs + love/hate) behind a "See more"

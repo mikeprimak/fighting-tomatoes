@@ -18,7 +18,7 @@ interface FightSectionListProps {
 // own value (right flame/star). Mirrors the mobile app's HYPE / MY HYPE and
 // RATING / MY RATING headers. Geometry matches the cards' left/right w-12
 // columns so the labels sit over the squares they describe.
-function FightColumnHeader({ variant }: { variant: 'hype' | 'rating' }) {
+export function FightColumnHeader({ variant }: { variant: 'hype' | 'rating' }) {
   const left = variant === 'hype' ? 'Hype' : 'Rating';
   const right = variant === 'hype' ? 'My Hype' : 'My Rating';
   return (

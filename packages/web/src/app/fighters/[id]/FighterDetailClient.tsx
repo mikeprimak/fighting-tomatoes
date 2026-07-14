@@ -214,8 +214,29 @@ function FighterAbout({ fighter }: { fighter: any }) {
   const fanSubject = fanPronoun || fighter.lastName || 'them';
   const loveLabel = `Why fans love ${fanSubject}`;
   const hateLabel = `Why some fans hate ${fanSubject}`;
-  // Everything past the short tldr is the long body.
-  const hasMore = paragraphs.length > 0 || !!profile.whyFansLove || !!profile.whyFansHate;
+  // Everything past the short tldr is the long body. Why-fans-love/hate sits
+  // ABOVE the See more fold so it's visible unexpanded.
+  const hasMore = paragraphs.length > 0;
+  const loveHate = (profile.whyFansLove || profile.whyFansHate) && (
+    <div className="mb-4 grid gap-4 sm:grid-cols-2">
+      {profile.whyFansLove && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-primary">
+            {loveLabel}
+          </h3>
+          <p className="text-sm leading-relaxed">{profile.whyFansLove}</p>
+        </div>
+      )}
+      {profile.whyFansHate && (
+        <div className="rounded-lg border border-border bg-card p-3">
+          <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+            {hateLabel}
+          </h3>
+          <p className="text-sm leading-relaxed">{profile.whyFansHate}</p>
+        </div>
+      )}
+    </div>
+  );
   // Body stays in the DOM (SEO); <details> just collapses it visually behind
   // "See more" when there's a tldr to lead with — no client JS needed.
   const body = (
@@ -225,32 +246,13 @@ function FighterAbout({ fighter }: { fighter: any }) {
           {p}
         </p>
       ))}
-      {(profile.whyFansLove || profile.whyFansHate) && (
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {profile.whyFansLove && (
-            <div className="rounded-lg border border-border bg-card p-3">
-              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-primary">
-                {loveLabel}
-              </h3>
-              <p className="text-sm leading-relaxed">{profile.whyFansLove}</p>
-            </div>
-          )}
-          {profile.whyFansHate && (
-            <div className="rounded-lg border border-border bg-card p-3">
-              <h3 className="mb-1 text-[11px] font-bold uppercase tracking-wider text-text-secondary">
-                {hateLabel}
-              </h3>
-              <p className="text-sm leading-relaxed">{profile.whyFansHate}</p>
-            </div>
-          )}
-        </div>
-      )}
     </>
   );
   return (
     <section className="mb-6">
       <h2 className="mb-2 text-lg font-bold">About</h2>
       {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
+      {loveHate}
       {hasMore && profile.tldr ? (
         <details className="group">
           <summary className="mb-3 cursor-pointer list-none font-semibold text-primary [&::-webkit-details-marker]:hidden">

@@ -89,57 +89,64 @@ Ordered roughly by (volume × our ability to win):
   SEO page carries a rate-this-fight CTA; ratings deepen the moat that ranks
   the pages.
 
-## Phasing (multi-year)
+## Timeline philosophy (revised 2026-07-14, Mike)
 
-### Phase 1 — Index & Playbook (now → end 2026)
+"Multi-year" describes how long RANKINGS take to mature, not how long we take
+to build. Google's trust curve is the slow part — a new page can take 3-9
+months to rank for anything competitive no matter how good it is. So the plan
+is: **front-load ALL the build work now** (next ~90 days), then run a light
+ongoing rhythm while the authority compounds on its own clock. We should never
+be waiting on ourselves; only on Google.
 
-Goal: the shipped corpus actually indexed, ranking on tail terms, and an
-event-week routine that runs like clockwork.
+### The front-load (now → ~October 2026, roughly in order)
 
-- Monitor GSC weekly: coverage, what indexed, what got excluded and why. Fix
-  crawl waste, orphans, duplicate titles as they surface.
-- **Ship `/schedule` + "fights this weekend/tonight" hub pages** (gap #2 above).
-- Run the **event-week playbook** for every major card: preview post (T-14),
-  how-to-watch (T-7), odds refresh (T-2), results swap (T+0), reactions section
-  (T+1). UFC 329→331 are the template reps.
-- Per-event blog posts embed live fight cards (`gf-fight-card` placeholders) so
-  search readers see ratings and rate in place.
-- KPIs: indexed pages (target: >80% of gated corpus), GSC clicks/week trend,
-  first page-1 rankings on `[fighter] record` and org-tail queries.
+1. **Schedule hubs** — `/schedule`, "MMA fights tonight / this weekend"
+   auto-updating pages (biggest current gap; weak competition, high volume).
+2. **Explainer library, batched** — the top ~25 evergreen questions (category
+   7) written in focused batches, not dripped weekly. These age like wine;
+   every month they're not live is compounding lost.
+3. **Underserved-org hubs** — BKFC / Oktagon / Karate Combat / DBX / PFL /
+   RIZIN org pages (schedule + results + ratings per org). We already have the
+   data; nobody competes editorially for these queries.
+4. **Best-of engine expansion** — per-division, per-org, per-method (best KOs,
+   best submissions, best title fights), all-time. DB-driven, auto-updating.
+5. **Fighter page blocks** — next-fight / last-fight SSR sections ("who is X
+   fighting next" is a huge recurring query family).
+6. **Event-week playbook, systematized** — preview (T-14) → how-to-watch (T-7)
+   → odds refresh (T-2) → results swap (T+0) → reactions (T+1), run for every
+   major card. UFC 329/330/OKC are the template reps.
+7. **GSC hygiene** — weekly review; fix coverage exclusions, thin pages,
+   duplicate titles as they surface.
 
-### Phase 2 — Coverage & Authority (2027)
+### The ongoing rhythm (after the front-load)
 
-Goal: no query category unserved; goodfights.app recognized (by Google's
-entity graph) as a combat sports authority.
+- **Every fight week:** run the event playbook (2-4 hrs/card).
+- **Weekly:** GSC striking-distance review — pages at positions 5-15 get
+  on-page attention first; that's where the cheap wins live.
+- **Monthly:** one template audit (rotate fighter/event/fight), one new
+  explainer or best-of variant.
+- **Quarterly:** a digital-PR data story from our proprietary ratings (e.g.
+  "hype vs payoff by promotion, 2026") pitched for links, plus a strategy
+  review against this doc.
 
-- **Explainer library**: 30–50 evergreen posts across category 7, one per week
-  at a sustainable solo pace.
-- **Underserved-org domination**: org hub pages (BKFC/Oktagon/KC/DBX/PFL/RIZIN)
-  with schedules, results, ratings; editorial for their majors.
-- **Best-of engine expansion**: per-division, per-org, per-method, all-time
-  lists — all DB-driven, all auto-updating.
-- **Digital PR with rating data**: quarterly data stories (e.g. "the most
-  overhyped fights of 2027", "hype vs payoff by promotion") pitched to MMA
-  media for links. Our data is genuinely novel; links are the currency Phase 3
-  needs.
-- Fighter pages: next-fight/last-fight SSR blocks; "who is X fighting next"
-  coverage.
-- KPIs: 100k organic visits/mo by end 2027 (stretch), Mediavine Journey
-  threshold crossed, 50+ referring domains from data stories.
+### What to expect while it compounds (SEO physics, not work phases)
 
-### Phase 3 — Head Terms & Harvest (2028+)
+- **Months 0-3:** indexing consolidates; long-tail wins appear (org-tail
+  queries, `[fighter] record`, old best-of years).
+- **Months 3-9:** middle terms move (event previews rank during fight week,
+  schedule hubs get pulled into "fights tonight" results).
+- **Months 9-18:** authority terms contested (`best fights of 2026`, org
+  hubs, explainers outranking forums).
+- **18+ months:** head terms become winnable (`ufc schedule`, `ufc rankings`)
+  IF the link/authority work landed. Milestones: Mediavine Journey threshold →
+  100k organic visits/mo → 250k+/mo and $3k+/mo web revenue.
 
-Goal: compete for the big ones and convert the traffic asset.
-
-- Contest head terms: `ufc schedule`, `ufc rankings`, `mma news adjacent`
-  formats, `best fights of all time`. Only winnable after Phase 2's authority.
-- Internationalization assessment (UK/AU/CA spellings and rights pages first —
-  same language, different broadcast answers).
-- Monetization at scale: display ads (Mediavine/Monumetric), affiliate
-  re-approach (networks that rejected at small scale — `project_affiliate_too_small_revisit`),
-  and the sale narrative: **organic search traffic is a separately-sellable
-  asset with public GSC receipts** (`docs/areas/sale-value.md`).
-- KPIs: 250k+ organic visits/mo, $3k+/mo web revenue, top-3 on ≥5 head terms.
+Monetization at scale (display ads, affiliate re-approach —
+`project_affiliate_too_small_revisit`) turns traffic into income, and the
+traffic itself strengthens the ONE asset we are building: brand + web + app +
+users + data, grown and sold together (`docs/areas/sale-value.md` Posture,
+2026-07-14 — traffic is never framed as a separate carve-out; its GSC/GA4
+history is a receipt that makes the whole asset more credible).
 
 ## Operating cadence
 

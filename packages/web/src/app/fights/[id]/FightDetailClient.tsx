@@ -8,7 +8,7 @@ import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAuth } from '@/lib/auth';
-import { Flame, Star, MessageSquare, Loader2, BookOpen, Target, Award } from 'lucide-react';
+import { Flame, Star, MessageSquare, Loader2, BookOpen, Target, Award, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
@@ -30,6 +30,38 @@ interface Props {
 }
 
 /** "WELTERWEIGHT" -> "Welterweight", "WOMEN'S STRAWWEIGHT" -> "Women's Strawweight" */
+// Plain-English read of an American odds line so newcomers can tell who the
+// books favor and by how much. "-235" → "Favorite", "+450" → "Heavy underdog".
+function oddsLabel(odds: string | null | undefined): string | null {
+  if (!odds) return null;
+  const n = parseInt(String(odds).replace(/[^0-9+-]/g, ''), 10);
+  if (Number.isNaN(n)) return null;
+  if (Math.abs(n) === 100) return 'Even money';
+  if (n < 0) {
+    if (n <= -300) return 'Heavy favorite';
+    if (n <= -150) return 'Favorite';
+    return 'Slight favorite';
+  }
+  if (n >= 300) return 'Heavy underdog';
+  if (n >= 150) return 'Underdog';
+  return 'Slight underdog';
+}
+
+// Big filled star/flame with the score inside — the same treatment the
+// hype/rate modals and fight cards use, heatmap-colored (8 = orange, 10 = red).
+function BigScoreIcon({ kind, score, size = 42 }: { kind: 'star' | 'flame'; score: number; size?: number }) {
+  const color = getHypeHeatmapColor(score);
+  const Icon = kind === 'star' ? Star : Flame;
+  return (
+    <span className="relative inline-flex shrink-0 items-center justify-center">
+      <Icon size={size} fill={color} color={color} strokeWidth={1.5} />
+      <span className={`absolute inset-0 flex items-center justify-center ${kind === 'flame' ? 'pt-1' : ''} text-base font-bold text-white [text-shadow:_0_1px_2px_rgb(0_0_0_/_70%)]`}>
+        {Math.round(score)}
+      </span>
+    </span>
+  );
+}
+
 function toTitleCase(value: string): string {
   return value
     .toLowerCase()
@@ -179,14 +211,26 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
 
       {/* Odds (upcoming) */}
       {isUpcoming && (fight.fighter1Odds || fight.fighter2Odds) && (
-        <div className="mb-4 flex justify-center gap-8 rounded-lg border border-border bg-card p-3">
-          <div className="text-center">
-            <p className="text-xs text-text-secondary">{fight.fighter1.lastName}</p>
-            <p className="text-sm font-bold">{fight.fighter1Odds || '—'}</p>
-          </div>
-          <div className="text-center">
-            <p className="text-xs text-text-secondary">{fight.fighter2.lastName}</p>
-            <p className="text-sm font-bold">{fight.fighter2Odds || '—'}</p>
+        <div className="mb-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <TrendingUp size={16} className="text-primary" />
+            Odds
+          </h3>
+          <div className="flex justify-center gap-10 rounded-lg border border-border bg-card p-4">
+            <div className="text-center">
+              <p className="text-xs text-text-secondary">{fight.fighter1.lastName}</p>
+              <p className="text-lg font-bold">{fight.fighter1Odds || '—'}</p>
+              {oddsLabel(fight.fighter1Odds) && (
+                <p className="text-[11px] font-medium text-text-secondary">{oddsLabel(fight.fighter1Odds)}</p>
+              )}
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-text-secondary">{fight.fighter2.lastName}</p>
+              <p className="text-lg font-bold">{fight.fighter2Odds || '—'}</p>
+              {oddsLabel(fight.fighter2Odds) && (
+                <p className="text-[11px] font-medium text-text-secondary">{oddsLabel(fight.fighter2Odds)}</p>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -334,6 +378,12 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
             {stats.hypeDistribution && Object.keys(stats.hypeDistribution).length > 0 && (
               <VerticalDistributionChart distribution={stats.hypeDistribution} label="Hype" maxBarHeight={80} />
             )}
+            {stats.userHypeScore != null && stats.userHypeScore > 0 && (
+              <div className="mt-3 flex items-center justify-center gap-2 border-t border-border pt-3 text-sm">
+                <span className="text-text-secondary">Your hype</span>
+                <BigScoreIcon kind="flame" score={stats.userHypeScore} />
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -362,10 +412,9 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
               <VerticalDistributionChart distribution={stats.ratingDistribution} label="Rating" maxBarHeight={80} />
             )}
             {fight.userRating != null && (
-              <div className="mt-3 flex items-center justify-center gap-1.5 border-t border-border pt-3 text-sm">
-                <span className="text-text-secondary">Your rating:</span>
-                <Star size={16} style={{ color: getHypeHeatmapColor(fight.userRating) }} fill={getHypeHeatmapColor(fight.userRating)} />
-                <span className="font-bold" style={{ color: getHypeHeatmapColor(fight.userRating) }}>{fight.userRating}</span>
+              <div className="mt-3 flex items-center justify-center gap-2 border-t border-border pt-3 text-sm">
+                <span className="text-text-secondary">Your rating</span>
+                <BigScoreIcon kind="star" score={fight.userRating} />
               </div>
             )}
           </div>
@@ -389,22 +438,42 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
       {/* Action buttons */}
       <div className="mb-6 flex justify-center gap-3">
         {isCompleted && (
-          <button
-            onClick={() => isAuthenticated ? setRateModalOpen(true) : undefined}
-            className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-semibold text-text-on-accent transition-colors hover:bg-primary/90"
-          >
-            <Star size={16} />
-            {fight.userRating ? `Your Rating: ${fight.userRating}` : 'Rate Fight'}
-          </button>
+          fight.userRating ? (
+            <button
+              onClick={() => isAuthenticated ? setRateModalOpen(true) : undefined}
+              className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-5 py-2 font-semibold transition-colors hover:border-primary"
+            >
+              <BigScoreIcon kind="star" score={fight.userRating} size={36} />
+              Your Rating
+            </button>
+          ) : (
+            <button
+              onClick={() => isAuthenticated ? setRateModalOpen(true) : undefined}
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-semibold text-text-on-accent transition-colors hover:bg-primary/90"
+            >
+              <Star size={16} />
+              Rate Fight
+            </button>
+          )
         )}
         {isUpcoming && (
-          <button
-            onClick={() => isAuthenticated ? setHypeModalOpen(true) : undefined}
-            className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-semibold text-text-on-accent transition-colors hover:bg-primary/90"
-          >
-            <Flame size={16} />
-            {stats?.userHypeScore ? `Your Hype: ${stats.userHypeScore}` : 'Rate Hype'}
-          </button>
+          stats?.userHypeScore ? (
+            <button
+              onClick={() => isAuthenticated ? setHypeModalOpen(true) : undefined}
+              className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-5 py-2 font-semibold transition-colors hover:border-primary"
+            >
+              <BigScoreIcon kind="flame" score={stats.userHypeScore} size={36} />
+              Your Hype
+            </button>
+          ) : (
+            <button
+              onClick={() => isAuthenticated ? setHypeModalOpen(true) : undefined}
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 font-semibold text-text-on-accent transition-colors hover:bg-primary/90"
+            >
+              <Flame size={16} />
+              Rate Hype
+            </button>
+          )
         )}
         {!isAuthenticated && (
           <Link href="/login" className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/10">
