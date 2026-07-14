@@ -67,8 +67,12 @@ never to our build pace. We wait on Google, not on ourselves.**
 6. **Event-week playbook, every major card.** T-14 preview → T-7 how-to-watch
    → T-2 odds refresh → T+0 results swap (same URL!) → T+1 reactions. The
    UFC 329/330/OKC trio is the template. Always embed gf-event-fights.
-7. **GSC hygiene weekly.** Coverage report: what's excluded and why; fix as
-   found. Positions 5-15 = striking distance; improve those pages first.
+7. **Internal-linking pass.** Fight page → fighter pages → division hub →
+   best-of lists; event page → org hub → schedule hub. Template work, one-time.
+8. **GSC hygiene weekly — AUTOMATED 2026-07-14.** `gsc-weekly-report.yml`
+   commits Monday reports to `docs/operations/gsc-reports/`; read the latest,
+   improve 1-2 striking-distance pages. Daily `content-freshness-check.yml`
+   canary guards the silent failure modes (enrichment credits, dead results).
 
 ## Rules that bind this workstream
 

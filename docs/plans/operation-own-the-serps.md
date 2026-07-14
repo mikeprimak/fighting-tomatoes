@@ -25,9 +25,12 @@ data.
   fights) + hubs (`/fighters`, division facets, `/events`, `/fights/best/[year]`)
   + ~24 blog posts. Sitemaps chunked per type; `shouldIndex` gate enforced;
   JSON-LD (Person / SportsEvent / AggregateRating) server-rendered.
-- GSC: sitemaps submitted 2026-07-03; indexing being monitored (weekly review in
-  `docs/operations/maintenance.md`).
-- Analytics: GA4 (`G-WV5RKCMJSB`) + PostHog live.
+- GSC: sitemaps submitted 2026-07-03; weekly automated report since 2026-07-14
+  (`docs/operations/gsc-reports/`). First fight-week proof: UFC 329 week drove
+  5,194 clicks / 848k impressions (how-to-watch post alone: 4,123 clicks).
+- Analytics: GA4 (`G-WV5RKCMJSB`) + PostHog live. Flywheel conversions
+  instrumented 2026-07-14: `rating_submitted`, `hype_submitted`,
+  `app_download_click` fire to both (P5 is now measurable).
 
 ## The query universe (what "all of them" means)
 
@@ -102,9 +105,16 @@ be waiting on ourselves; only on Google.
 
 1. **Schedule hubs** — `/schedule`, "MMA fights tonight / this weekend"
    auto-updating pages (biggest current gap; weak competition, high volume).
+   Freshness must be machine-visible: sitemap `lastmod` moves when content
+   changes, dynamic dates in titles/descriptions, visible updated stamps —
+   Google only treats a "tonight" page as live if it can see it changing.
 2. **Explainer library, batched** — the top ~25 evergreen questions (category
    7) written in focused batches, not dripped weekly. These age like wine;
    every month they're not live is compounding lost.
+   **Kill criterion (added 2026-07-14):** ship the first ~10, then checkpoint —
+   if none crack the top 20 within 6 months of publication, stop at 10 and
+   reallocate the effort to best-of variants (where the ratings moat defends
+   us) instead of grinding out 15 more against Wikipedia/Reddit/MMA media.
 3. **Underserved-org hubs** — BKFC / Oktagon / Karate Combat / DBX / PFL /
    RIZIN org pages (schedule + results + ratings per org). We already have the
    data; nobody competes editorially for these queries.
@@ -112,10 +122,15 @@ be waiting on ourselves; only on Google.
    best submissions, best title fights), all-time. DB-driven, auto-updating.
 5. **Fighter page blocks** — next-fight / last-fight SSR sections ("who is X
    fighting next" is a huge recurring query family).
-6. **Event-week playbook, systematized** — preview (T-14) → how-to-watch (T-7)
+6. **Internal-linking pass (added 2026-07-14)** — template work that makes
+   Google discover and weigh the 5,500-page corpus: fight page → both fighter
+   pages → division hub → relevant best-of lists; event page → org hub →
+   schedule hub; blog posts → programmatic pages. One-time template change,
+   compounding crawl benefit, zero marginal cost.
+7. **Event-week playbook, systematized** — preview (T-14) → how-to-watch (T-7)
    → odds refresh (T-2) → results swap (T+0) → reactions (T+1), run for every
    major card. UFC 329/330/OKC are the template reps.
-7. **GSC hygiene** — weekly review; fix coverage exclusions, thin pages,
+8. **GSC hygiene** — weekly review; fix coverage exclusions, thin pages,
    duplicate titles as they surface.
 
 ### The ongoing rhythm (after the front-load)
@@ -150,8 +165,13 @@ history is a receipt that makes the whole asset more credible).
 
 ## Operating cadence
 
-- **Weekly**: GSC review (already in maintenance.md) — indexing, new queries,
-  striking-distance terms (positions 5–15 get on-page attention first).
+- **Weekly**: GSC review — AUTOMATED 2026-07-14: `gsc-weekly-report.yml`
+  commits a report to `docs/operations/gsc-reports/` every Monday (WoW totals,
+  striking-distance list, new queries). The human job is reading it and
+  picking 1-2 striking-distance pages to improve.
+- **Daily (automated)**: `content-freshness-check.yml` canary — results
+  landing, enrichment attempting, critical workflows green, sitemaps serving.
+  Red = GitHub email; act same day (silent decay is this plan's main enemy).
 - **Every fight week**: run the event playbook.
 - **Monthly**: template audit (one of fighter/event/fight per month, rotating);
   refresh best-of pages sanity check.
