@@ -378,12 +378,6 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
             {stats.hypeDistribution && Object.keys(stats.hypeDistribution).length > 0 && (
               <VerticalDistributionChart distribution={stats.hypeDistribution} label="Hype" maxBarHeight={80} />
             )}
-            {stats.userHypeScore != null && stats.userHypeScore > 0 && (
-              <div className="mt-3 flex items-center justify-center gap-2 border-t border-border pt-3 text-sm">
-                <span className="text-text-secondary">Your hype</span>
-                <BigScoreIcon kind="flame" score={stats.userHypeScore} />
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -410,12 +404,6 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
             )}
             {stats.ratingDistribution && Object.keys(stats.ratingDistribution).length > 0 && (
               <VerticalDistributionChart distribution={stats.ratingDistribution} label="Rating" maxBarHeight={80} />
-            )}
-            {fight.userRating != null && (
-              <div className="mt-3 flex items-center justify-center gap-2 border-t border-border pt-3 text-sm">
-                <span className="text-text-secondary">Your rating</span>
-                <BigScoreIcon kind="star" score={fight.userRating} />
-              </div>
             )}
           </div>
         </div>

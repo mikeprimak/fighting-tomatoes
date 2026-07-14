@@ -77,7 +77,7 @@ export default async function BestFightsYearPage({ params }: Props) {
   const yearNote =
     BEST_FIGHT_YEAR_NOTES[year] ||
     (top
-      ? `Fans on Good Fights have rated ${fights.length} fights from ${year}, and ${fightName(top)} leads the year at ${top.averageRating.toFixed(1)}/10.`
+      ? `Fans on Good Fights have rated ${fights.length} fights from ${year}, and the wars at the top of this list, like ${fightName(top)}, all scored ${Math.floor(top.averageRating)}/10 or close to it. The order shifts as more fans rate.`
       : null);
 
   const faqs = [
@@ -85,7 +85,7 @@ export default async function BestFightsYearPage({ params }: Props) {
       ? [
           {
             q: `What was the best fight of ${year}?`,
-            a: `By fan rating, the best fight of ${year} is ${fightName(top)}${top.event?.name ? ` at ${top.event.name}` : ''}, scored ${top.averageRating.toFixed(1)}/10 across ${top.totalRatings} fan ratings on Good Fights.`,
+            a: `There is no single right answer, which is why fans vote. Right now ${fightName(top)}${top.event?.name ? ` at ${top.event.name}` : ''} leads the ${year} fan ratings at ${top.averageRating.toFixed(1)}/10 across ${top.totalRatings} ratings on Good Fights, but the order shifts as more fans weigh in, and everything near the top of this list has a real claim.`,
           },
         ]
       : []),

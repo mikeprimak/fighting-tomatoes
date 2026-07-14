@@ -256,7 +256,7 @@ function FighterAbout({ fighter }: { fighter: any }) {
       {hasMore && profile.tldr ? (
         <details className="group">
           <summary className="mb-3 cursor-pointer list-none font-semibold text-primary [&::-webkit-details-marker]:hidden">
-            <span className="group-open:hidden">See more</span>
+            <span className="group-open:hidden">Read more about {fighter.lastName || 'this fighter'}</span>
             <span className="hidden group-open:inline">See less</span>
           </summary>
           {body}
