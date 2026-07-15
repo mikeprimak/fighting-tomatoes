@@ -13,6 +13,11 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**→ MANUAL TODO (Mike, ~2 min): mark GA4 key events** — `rating_submitted`,
+`hype_submitted`, `app_download_click`. Steps in
+`docs/HANDOFF-ga4-key-events-2026-07-14.md`. Code shipped 2026-07-14; GA4
+UI step not done yet.
+
 **✅ DONE (2026-06-30) — Home-reorder OTA published.** The held OTA for the Home-screen reorder (`d4095d05`) was published after the 2.1.3 store builds went live: iOS runtime `2.1.3` (group `bca2b1d2…`), Android runtime `1.0.0` (group `54a94c8d…`). The 2.1.3 native builds were cut *before* the reorder commit, so this OTA is what delivers the reorder to them. See `docs/daily/2026-06-30.md`.
 
 **→ `docs/HANDOFF-web-qa-evening-2026-05-22.md`** — read first. Eight web app commits shipped 2026-05-22 evening (modal/cache parity sweep, nullify hype/rating, event detail layout + fights-load fix, search auth race). **Nothing tested live yet.** Handoff has the 8-step test plan. Backend + Vercel deploys were in flight when the session ended.

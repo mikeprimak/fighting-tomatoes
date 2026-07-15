@@ -15,7 +15,23 @@ JSON-LD, hubs, ~5,500 indexable pages) shipped 2026-07-01→03 and is LIVE.
 days, then light ongoing rhythm. Multi-year refers to Google's ranking clock,
 never to our build pace. We wait on Google, not on ourselves.**
 
-## State as of 2026-07-14
+## State as of end of 2026-07-14 (evening execution sprint)
+
+Shipped and live (see `docs/daily/2026-07-14.md` session 2): schedule hubs
+(`/schedule`, `/schedule/tonight`, `/schedule/this-weekend` — backlog item 1
+DONE), automated Monday GSC report (`docs/operations/gsc-reports/`), daily
+content-freshness canary, web conversion events (`rating_submitted`,
+`hype_submitted`, `app_download_click`). Root sitemap resubmitted to GSC.
+
+**→ OPEN MANUAL STEP: `docs/HANDOFF-ga4-key-events-2026-07-14.md`** — Mike
+marks the 3 events as GA4 key events (~2 min, Viewer-only SA can't). Not
+done yet as of 2026-07-14.
+
+Next build items in order: explainer library batch 1 (~5 drafts for review),
+underserved-org hubs, best-of expansion, fighter next/last-fight blocks,
+internal-linking pass.
+
+## State as of 2026-07-14 (morning, pre-sprint)
 
 - Sitemaps live and serving (fighters 1,130 URLs incl. division hubs; ~640
   events; 3,879 fights; 18 best-of years). Submitted to GSC 2026-07-03.
