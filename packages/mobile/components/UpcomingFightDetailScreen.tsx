@@ -234,10 +234,14 @@ export default function UpcomingFightDetailScreen({
     staleTime: 30 * 1000,
   });
 
-  // Set initial comment from user's existing comment
+  // Set initial comment from user's existing comment. A deleted comment must
+  // sync too (null → '') so stale text doesn't survive a delete made
+  // elsewhere (e.g. in the hype modal). Gated on loaded data; while the user
+  // drafts a brand-new comment the dep stays undefined, so typing is never
+  // clobbered.
   useEffect(() => {
-    if (preFightCommentsData?.userComment?.content) {
-      setPreFightComment(preFightCommentsData.userComment.content);
+    if (preFightCommentsData) {
+      setPreFightComment(preFightCommentsData.userComment?.content ?? '');
     }
   }, [preFightCommentsData?.userComment?.content]);
 
@@ -1784,7 +1788,12 @@ export default function UpcomingFightDetailScreen({
                 fighter2Id={fight.fighter2.id}
                 fighter1Name={fight.fighter1.lastName}
                 fighter2Name={fight.fighter2.lastName}
-                onEdit={isPreFightLocked ? undefined : () => setIsEditingComment(true)}
+                onEdit={isPreFightLocked ? undefined : () => {
+                  // Seed from the authoritative comment so the textarea never
+                  // opens empty/stale if local state diverged.
+                  setPreFightComment(preFightCommentsData?.userComment?.content ?? '');
+                  setIsEditingComment(true);
+                }}
                 onUpvote={() => handleUpvoteComment(preFightCommentsData.userComment.id)}
                 isUpvoting={upvotingCommentId === preFightCommentsData.userComment.id}
                 isAuthenticated={isAuthenticated}

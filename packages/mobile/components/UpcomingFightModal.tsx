@@ -219,22 +219,31 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
 
   // Populate comment from existing user comment, or reset when modal opens
   const prevFightIdRef = useRef<string | null>(null);
+  const commentWasVisibleRef = useRef<boolean>(false);
   const initialCommentRef = useRef<string>('');
   useEffect(() => {
     if (fight && visible) {
-      // Reset when opening for a new fight
-      if (prevFightIdRef.current !== fight.id) {
+      // Reset on a new fight OR a fresh open of the same fight — text left
+      // over from a previous session must not survive (e.g. the comment was
+      // deleted from the detail screen between opens).
+      if (prevFightIdRef.current !== fight.id || !commentWasVisibleRef.current) {
         prevFightIdRef.current = fight.id;
+        commentWasVisibleRef.current = true;
         setPreFightComment('');
         preFightCommentRef.current = '';
         initialCommentRef.current = '';
       }
-      // Populate with existing user comment once loaded
-      if (preFightCommentsData?.userComment?.content) {
-        setPreFightComment(preFightCommentsData.userComment.content);
-        preFightCommentRef.current = preFightCommentsData.userComment.content;
-        initialCommentRef.current = preFightCommentsData.userComment.content;
+      // Populate once loaded. A deleted comment must sync too (null → '') so
+      // initialCommentRef stays honest — handleDone's changed-check compares
+      // against it to decide whether to save.
+      if (preFightCommentsData) {
+        const content = preFightCommentsData.userComment?.content ?? '';
+        setPreFightComment(content);
+        preFightCommentRef.current = content;
+        initialCommentRef.current = content;
       }
+    } else if (!visible) {
+      commentWasVisibleRef.current = false;
     }
   }, [fight?.id, visible, preFightCommentsData?.userComment?.content]);
 

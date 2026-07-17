@@ -129,9 +129,12 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
     reviewCommentRef.current = text;
   }, []);
 
-  // Fetch fight details to get existing user review
+  // Fetch fight details to get existing user review. The key must match the
+  // fight-detail screen's (['fight', id, isAuthenticated]) — with a different
+  // key this modal reads a separate cache entry and never sees the detail
+  // screen's optimistic updates (e.g. a deleted review kept showing here).
   const { data: fightDetailData } = useQuery({
-    queryKey: ['fight', fight?.id],
+    queryKey: ['fight', fight?.id, isAuthenticated],
     queryFn: () => apiService.getFight(fight!.id),
     enabled: !!fight?.id && visible,
   });
@@ -192,9 +195,12 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
         committedStatsRef.current = null;
       }
       wasVisibleRef.current = true;
-      // Populate with existing user review once loaded from API
-      const fetchedReview = fightDetailData?.fight?.userReview?.content;
-      if (fetchedReview) {
+      // Populate with existing user review once loaded from API. A deleted
+      // review must sync too (null → '') — otherwise stale text lingers and
+      // Done's changed-check compares against a stale initialCommentRef and
+      // skips the resave.
+      if (fightDetailData?.fight) {
+        const fetchedReview = fightDetailData.fight.userReview?.content ?? '';
         setReviewComment(fetchedReview);
         reviewCommentRef.current = fetchedReview;
         initialCommentRef.current = fetchedReview;

@@ -495,6 +495,18 @@ export default function CompletedFightDetailScreen({
     }
   }, [fight.id, fight.userRating, fight.userReview?.rating]);
 
+  // Sync comment state when the fight's userReview arrives or changes. The
+  // fight query resolves after mount (same auth race as the rating sync
+  // above), and the review can be edited/deleted from the rating modal. An
+  // unsynced `comment` here is dangerous: debouncedSave and the unmount
+  // flush send `review: comment.trim() || null`, so a stale-empty comment
+  // silently deletes the user's review on a rating-only change. Never
+  // clobber text the user is actively editing.
+  useEffect(() => {
+    if (isEditingComment || showCommentForm) return;
+    setComment(fight.userReview?.content ?? '');
+  }, [fight.id, fight.userReview?.content, isEditingComment, showCommentForm]);
+
   // Animation values for My Rating
   const myRatingScaleAnim = useRef(new Animated.Value(1)).current;
   const myRatingGlowAnim = useRef(new Animated.Value(0)).current;
@@ -2209,7 +2221,12 @@ export default function CompletedFightDetailScreen({
                   fighter2Id={fight.fighter2.id}
                   fighter1Name={fight.fighter1.lastName}
                   fighter2Name={fight.fighter2.lastName}
-                  onEdit={() => setIsEditingComment(true)}
+                  onEdit={() => {
+                    // Seed from the authoritative review so the textarea never
+                    // opens empty/stale if local state diverged.
+                    setComment(fight.userReview?.content ?? '');
+                    setIsEditingComment(true);
+                  }}
                   onUpvote={() => handleUpvoteReview(fight.userReview.id)}
                   isUpvoting={upvoteMutation.isPending}
                   isAuthenticated={isAuthenticated}
