@@ -7,6 +7,7 @@ import { getTopComments, toggleReviewUpvote } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { CommentCard } from '@/components/CommentCard';
 import { SectionHeading } from './SectionHeading';
+import { maskOffensiveWords } from '@/utils/contentFilter';
 
 const TOP_COMMENTS_KEY = ['home', 'top-comments'] as const;
 
@@ -92,7 +93,7 @@ export function TopCommentsSection() {
         {comments.map((c: any) => (
           <CommentCard
             key={c.id}
-            item={c}
+            item={{ ...c, content: maskOffensiveWords(c.content) }}
             onUpvote={isAuthenticated ? () => onUpvote(c) : undefined}
             meta={<FightMeta fight={c.fight} />}
           />
@@ -114,7 +115,7 @@ export function ClassicCommentsSection() {
     <section className="mb-8">
       <SectionHeading title="Classic Comments" icon={Hourglass} />
       <CommentCard
-        item={throwback}
+        item={{ ...throwback, content: maskOffensiveWords(throwback.content) }}
         onUpvote={isAuthenticated ? () => onUpvote(throwback) : undefined}
         meta={<FightMeta fight={throwback.fight} />}
       />

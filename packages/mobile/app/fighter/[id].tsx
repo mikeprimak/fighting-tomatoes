@@ -261,7 +261,18 @@ export default function FighterDetailScreen() {
             <View style={styles.aboutSection}>
               <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 8 }]}>About</Text>
               {profile.tldr ? (
-                <Text style={[styles.aboutTldr, { color: colors.text }]}>{profile.tldr}</Text>
+                <Text style={[styles.aboutTldr, { color: colors.text }]}>
+                  {profile.tldr}
+                  {/* Inline "See more" rides the end of the summary text. */}
+                  {hasMore && !showFullAbout ? (
+                    <Text
+                      onPress={() => setShowFullAbout(true)}
+                      style={{ color: colors.primary, fontWeight: '600' }}
+                    >
+                      {'  See more'}
+                    </Text>
+                  ) : null}
+                </Text>
               ) : null}
               {(showFullAbout || !profile.tldr) ? (
                 <>
@@ -286,16 +297,14 @@ export default function FighterDetailScreen() {
                   ) : null}
                 </>
               ) : null}
-              {/* Only offer a toggle when there's a tldr to collapse behind. */}
-              {hasMore && profile.tldr ? (
+              {/* Collapse control once expanded ("See more" is inline above). */}
+              {hasMore && profile.tldr && showFullAbout ? (
                 <TouchableOpacity
-                  onPress={() => setShowFullAbout((v) => !v)}
+                  onPress={() => setShowFullAbout(false)}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   style={{ marginTop: 10 }}
                 >
-                  <Text style={{ color: colors.primary, fontWeight: '600' }}>
-                    {showFullAbout ? 'See less' : 'See more'}
-                  </Text>
+                  <Text style={{ color: colors.primary, fontWeight: '600' }}>See less</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -439,6 +448,7 @@ export default function FighterDetailScreen() {
         visible={!!modalFight}
         fight={modalFight}
         onClose={() => setModalFight(null)}
+        showNotificationBell={(modalFight as any)?.event?.notificationsAllowed === true}
       />
     </SafeAreaView>
   );

@@ -23,6 +23,7 @@ import { PromotionLogo } from '../../components/PromotionLogo';
 import { normalizeEventName, getFighterImage, getFighterName, getFighterDisplayName, getFighterPrimaryName, formatWeightClass } from '../../components/fight-cards/shared/utils';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { getHypeHeatmapColor } from '../../utils/heatmap';
+import { maskOffensiveWords } from '../../utils/contentFilter';
 import { LinearGradient } from 'expo-linear-gradient';
 import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import CompletedFightCard from '../../components/fight-cards/CompletedFightCard';
@@ -236,10 +237,14 @@ function EventRow({
 
   // Real start instant lives in mainStartTime (event.date is a UTC-hour
   // placeholder) — only show a time when we actually have one, in the user's
-  // local zone with its abbreviation (e.g. "8:00 PM ET").
+  // local zone with its abbreviation. Labeled so users know WHICH start it is:
+  // "Main @ 8:00 PM ET" (main card) vs "Event @ 6:00 PM ET" (prelims/doors).
+  const eventStart = (event as any).prelimStartTime || (event as any).earlyPrelimStartTime;
   const startTime = event.mainStartTime
-    ? `${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
-    : null;
+    ? `Main @ ${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
+    : eventStart
+      ? `Event @ ${formatEventTime(eventStart)} ${getTimezoneAbbreviation(new Date(eventStart))}`
+      : null;
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches mainStartTime), then a whole-event one.
@@ -1088,7 +1093,7 @@ export default function HomeScreen() {
             {comments.map((comment: any) => (
               <CommentCard
                 key={comment.id}
-                comment={comment}
+                comment={{ ...comment, content: maskOffensiveWords(comment.content) }}
                 onPress={() => comment.fight && router.push(`/fight/${comment.fight.id}` as any)}
                 onUpvote={() =>
                   comment.fight &&

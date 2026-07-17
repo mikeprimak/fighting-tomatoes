@@ -52,9 +52,9 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 - [ ] `S` 🟢 **Bottom nav spacing (2026-07-17)** → add ~2px more vertical space between the tab icons and their labels by moving the icons up 2px (`TabBar`).
 - [ ] `S` 🟢 **Remove "Notifications" row from Profile screen (2026-07-17)** → the envelope tab-bar icon covers it; the Profile row is redundant.
 - [ ] `S` 🟢 **Soften Delete Account styling (2026-07-17)** → current styling is too severe; bring it in line with the rest of the Profile screen.
-- [ ] `S` 🟢 **Hype modal from fighter detail missing notification bell (2026-07-17)** → tapping an `UpcomingFightCard` on the fighter detail screen opens the hype modal, but the notification-bell button doesn't render there. It should match the modal opened from other surfaces.
-- [ ] `S` 🟢 **Fighter detail "See more" inline (2026-07-17)** → mobile + web: the "See more" toggle should sit inline at the end of the summary text, not on its own line.
-- [ ] `S` 🟢 **Home event card time label (2026-07-17)** → event cards on Home should say **"Main @ 5:00 PM ET"** (or **"Event @ …"** when only the event start is known), not a bare time. Mobile + web.
+- [x] `S` 🟢 **Hype modal from fighter detail missing notification bell** → DONE (2026-07-17 evening). `fighter/[id].tsx` never passed `showNotificationBell`; now gated on `event.notificationsAllowed === true` like the event screens (the fights payload already carried it).
+- [x] `S` 🟢 **Fighter detail "See more" inline** → DONE (2026-07-17 evening). Mobile: nested pressable Text rides the end of the tldr; "See less" appears below when expanded. Web: the tldr is now the `<details>` `<summary>` with the toggle inline at its end (body stays in DOM for SEO; love/hate cards stay outside the fold).
+- [x] `S` 🟢 **Home event card time label** → DONE (2026-07-17 evening). Mobile home: "Main @ 8:00 PM ET" (falls back to "Event @ prelim/early-prelim time" when no main time). Web home day cards: labels the earliest known bell "Event @" (or "Main @" when the main-card time is all we have).
 
 ## 4. Web app
 
@@ -91,7 +91,7 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
   - Allow deleting pre-fight comments after the fight (delete logic exists; confirm it's reachable post-completion).
 - [ ] `M` 🟢 **Comment edit/delete bug** → deleting on the details screen still shows in the modal; "Done" doesn't resave; re-editing opens an empty textarea. Modal vs details-screen state diverge — reproduce and fix the shared state in `UpcomingFightDetailScreen.tsx` / `CompletedFightDetailScreen.tsx`.
 - [ ] `S` 🟢 **CommentCard: mark own comments "(me)" (2026-07-17)** → anywhere the logged-in user's own comment renders, append "(me)" after the username. Mobile + web.
-- [ ] `M` 🟢 **Content filter on surfaced comments (2026-07-17)** → a comment containing "rapist" was algorithmically surfaced on Mike's home screen. Add a display-time profanity/slur filter that masks matched words with `******` on the home page/screen comment surfaces (mobile + web). Word-list based; start with slurs + violent/sexual-crime terms, not general profanity.
+- [x] `M` 🟢 **Content filter on surfaced comments** → DONE (2026-07-17 evening). `utils/contentFilter.ts` (mirrored mobile + web): word-boundary regex masks slurs + violent/sexual-crime terms with `******` at display time on the home comment bands (web Top Comments + Classic Comments, mobile home Top Comments). Regex tested: "rapid"/"therapist"/"rapport" untouched. Stored comments unmodified; fight-detail renders unmasked. Extend the list in one place per platform.
 - [ ] `M` 🟢 **Shared-link deep link routing (2026-07-17)** → sharing from the post-rating modal produces a link that opens the **browser** on the **upcoming** fight detail page. It should (a) detect the app and deep-link into it when installed (universal links / app links), and (b) route by fight status — completed fights open the completed fight detail screen, not upcoming.
 
 ## 8. Back catalog / legacy data

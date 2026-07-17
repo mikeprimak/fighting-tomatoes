@@ -215,7 +215,7 @@ function FighterAbout({ fighter }: { fighter: any }) {
   const loveLabel = `Why fans love ${fanSubject}`;
   const hateLabel = `Why some fans hate ${fanSubject}`;
   // Everything past the short tldr is the long body. Why-fans-love/hate sits
-  // ABOVE the See more fold so it's visible unexpanded.
+  // OUTSIDE the See more fold so it's visible unexpanded.
   const hasMore = paragraphs.length > 0;
   const loveHate = (profile.whyFansLove || profile.whyFansHate) && (
     <div className="mb-4 grid gap-4 sm:grid-cols-2">
@@ -251,19 +251,24 @@ function FighterAbout({ fighter }: { fighter: any }) {
   return (
     <section className="mb-6">
       <h2 className="mb-2 text-lg font-bold">About</h2>
-      {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
-      {loveHate}
       {hasMore && profile.tldr ? (
+        // The tldr doubles as the <summary>, so the See more/less toggle sits
+        // inline at the end of the summary text instead of on its own line.
         <details className="group">
-          <summary className="mb-3 cursor-pointer list-none font-semibold text-primary [&::-webkit-details-marker]:hidden">
-            <span className="group-open:hidden">Read more about {fighter.lastName || 'this fighter'}</span>
-            <span className="hidden group-open:inline">See less</span>
+          <summary className="mb-3 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <span className="font-semibold">{profile.tldr}</span>{' '}
+            <span className="font-semibold text-primary group-open:hidden">See more</span>
+            <span className="hidden font-semibold text-primary group-open:inline">See less</span>
           </summary>
           {body}
         </details>
       ) : (
-        body
+        <>
+          {profile.tldr && <p className="mb-3 font-semibold">{profile.tldr}</p>}
+          {body}
+        </>
       )}
+      {loveHate}
     </section>
   );
 }

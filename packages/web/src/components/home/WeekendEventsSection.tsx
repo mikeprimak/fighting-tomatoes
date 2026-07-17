@@ -266,8 +266,12 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
   }, [broadcastsData]);
 
   // Meta line: start time (or LIVE pill) then the broadcast channel. Hidden for
-  // past cards like "Event Last Night", where neither is meaningful.
-  const timeText = !live && firstStart ? formatTime(firstStart) : null;
+  // past cards like "Event Last Night", where neither is meaningful. Labeled so
+  // users know WHICH start it is: "Main @" when the only known bell is the main
+  // card, "Event @" when it's the prelims/doors time.
+  const timeText = !live && firstStart
+    ? `${firstStart === event.mainStartTime ? 'Main' : 'Event'} @ ${formatTime(firstStart)}`
+    : null;
   const metaText = hideMeta ? '' : [timeText, channel].filter(Boolean).join(' · ');
 
   return (
