@@ -54,7 +54,7 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 - [ ] `S` 🟢 **Soften Delete Account styling (2026-07-17)** → current styling is too severe; bring it in line with the rest of the Profile screen.
 - [x] `S` 🟢 **Hype modal from fighter detail missing notification bell** → DONE (2026-07-17 evening). `fighter/[id].tsx` never passed `showNotificationBell`; now gated on `event.notificationsAllowed === true` like the event screens (the fights payload already carried it).
 - [x] `S` 🟢 **Fighter detail "See more" inline** → DONE (2026-07-17 evening). Mobile: nested pressable Text rides the end of the tldr; "See less" appears below when expanded. Web: the tldr is now the `<details>` `<summary>` with the toggle inline at its end (body stays in DOM for SEO; love/hate cards stay outside the fold).
-- [x] `S` 🟢 **Home event card time label** → DONE (2026-07-17 evening). Mobile home: "Main @ 8:00 PM ET" (falls back to "Event @ prelim/early-prelim time" when no main time). Web home day cards: labels the earliest known bell "Event @" (or "Main @" when the main-card time is all we have).
+- [x] `S` 🟢 **Home event card time label** → DONE (2026-07-17 evening, refined per Mike). Section-aware on both homes: "Main @ \<main time\>" only when the card genuinely has multiple sections (distinct fight `cardType`s — "Main Event"+"Main Card" collapse into one bucket, tapology quirk — or a distinct prelim start time); single-section events (RAF, ONE, boxing cards) say "Event @ \<start\>". Verified against prod upcoming events.
 
 ## 4. Web app
 

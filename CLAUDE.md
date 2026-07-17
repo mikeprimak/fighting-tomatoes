@@ -13,6 +13,8 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**✅ DONE (2026-07-17 evening) — backlog intake + 11 quick wins shipped + 3 production OTAs.** ~17 new items added to `docs/BACKLOG.md` (triage there). Shipped: web review self-upvote (backend POST /review), "(me)" comment labels, sidebar rec rated-fight filter, tab-bar spacing, profile notifications-row removal, delete-account restyle, home-comment content filter (`utils/contentFilter.ts`, both platforms), fighter hype-modal bell, inline See more, section-aware "Main @"/"Event @" home card labels. OTAs delivered taste engine + all mobile fixes (latest groups: iOS `502a78f2`, Android `6ff106fc`). See `docs/daily/2026-07-17.md`.
+
 **✅ DONE (2026-07-17) — GA4 conversion tracking fully live.** Key events
 marked, MP API secret created and set on Render, and the root cause of the
 zero-events mystery fixed: gtag batches ~5s and drops queued events on
