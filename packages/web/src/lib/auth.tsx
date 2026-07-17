@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import posthog from 'posthog-js';
 import { setAccessToken, getAccessToken, refreshSession, logout as apiLogout, login as apiLogin, register as apiRegister, loginWithGoogle as apiLoginWithGoogle, loginWithApple as apiLoginWithApple } from './api';
 
 interface User {
@@ -100,7 +101,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const id = user?.id ?? null;
     if (id === lastUserIdRef.current) return;
+    const prevId = lastUserIdRef.current;
     lastUserIdRef.current = id;
+    // PostHog identity: tie web events to the account so web + mobile sessions
+    // correlate (mobile identifies with the same user.id). Reset only on a
+    // genuine logout transition — resetting on the initial null would rotate
+    // the anonymous distinct_id on every logged-out page load.
+    try {
+      if ((posthog as { __loaded?: boolean }).__loaded) {
+        if (id && user) {
+          posthog.identify(id, { email: user.email, displayName: user.displayName ?? undefined });
+        } else if (prevId) {
+          posthog.reset();
+        }
+      }
+    } catch {
+      // Analytics must never break auth.
+    }
     queryClient.invalidateQueries({ queryKey: ['events'] });
     queryClient.invalidateQueries({ queryKey: ['event'] });
     queryClient.invalidateQueries({ queryKey: ['eventFights'] });
