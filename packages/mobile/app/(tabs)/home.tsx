@@ -237,14 +237,26 @@ function EventRow({
 
   // Real start instant lives in mainStartTime (event.date is a UTC-hour
   // placeholder) — only show a time when we actually have one, in the user's
-  // local zone with its abbreviation. Labeled so users know WHICH start it is:
-  // "Main @ 8:00 PM ET" (main card) vs "Event @ 6:00 PM ET" (prelims/doors).
-  const eventStart = (event as any).prelimStartTime || (event as any).earlyPrelimStartTime;
-  const startTime = event.mainStartTime
-    ? `Main @ ${formatEventTime(event.mainStartTime)} ${getTimezoneAbbreviation(new Date(event.mainStartTime))}`
-    : eventStart
-      ? `Event @ ${formatEventTime(eventStart)} ${getTimezoneAbbreviation(new Date(eventStart))}`
-      : null;
+  // local zone with its abbreviation. "Main @" only means something when the
+  // card HAS a separate main card; single-section events (e.g. RAF) say
+  // "Event @". Sections are detected from distinct fight cardTypes — main-ish
+  // labels ("Main Event" vs "Main Card", a tapology-parser quirk) collapse
+  // into one bucket — falling back to distinct prelim-vs-main start times.
+  const cardSections = new Set(
+    ((event as any).fights || [])
+      .map((f: any) => f.cardType)
+      .filter(Boolean)
+      .map((ct: string) => (/main/i.test(ct) ? 'main' : ct.toLowerCase())),
+  );
+  const prelimStart = (event as any).prelimStartTime || (event as any).earlyPrelimStartTime;
+  const hasSections =
+    cardSections.size > 1 ||
+    (!!event.mainStartTime && !!prelimStart && prelimStart !== event.mainStartTime);
+  const isMainLabel = hasSections && !!event.mainStartTime;
+  const shownStart = isMainLabel ? event.mainStartTime : event.mainStartTime || prelimStart;
+  const startTime = shownStart
+    ? `${isMainLabel ? 'Main' : 'Event'} @ ${formatEventTime(shownStart)} ${getTimezoneAbbreviation(new Date(shownStart))}`
+    : null;
 
   // Main-card broadcast channel for the user's region, shown beside the time.
   // Prefer the MAIN_CARD entry (matches mainStartTime), then a whole-event one.

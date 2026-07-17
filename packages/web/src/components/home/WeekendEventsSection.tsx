@@ -70,6 +70,24 @@ function firstFightStart(event: any): string | null {
   return event.earlyPrelimStartTime ?? event.prelimStartTime ?? event.mainStartTime ?? null;
 }
 
+/** Whether the event actually has multiple card sections. "Main @" only means
+ *  something when there IS a separate main card — single-section events (e.g.
+ *  RAF) get "Event @" instead. Detected from distinct fight cardTypes —
+ *  main-ish labels ("Main Event" vs "Main Card", a tapology-parser quirk)
+ *  collapse into one bucket — falling back to distinct prelim-vs-main start
+ *  times. */
+function hasCardSections(event: any): boolean {
+  const sections = new Set(
+    (event.fights ?? [])
+      .map((f: any) => f.cardType)
+      .filter(Boolean)
+      .map((ct: string) => (/main/i.test(ct) ? 'main' : ct.toLowerCase())),
+  );
+  if (sections.size > 1) return true;
+  const prelim = event.prelimStartTime ?? event.earlyPrelimStartTime;
+  return !!(event.mainStartTime && prelim && prelim !== event.mainStartTime);
+}
+
 /** Promotion label for display — some are stored with underscores (e.g.
  *  "TOP_RANK"); show them with spaces. */
 function promotionLabel(promotion: string | null | undefined): string {
@@ -280,11 +298,13 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
   }, [broadcastsData]);
 
   // Meta line: start time (or LIVE pill) then the broadcast channel. Hidden for
-  // past cards like "Event Last Night", where neither is meaningful. Labeled so
-  // users know WHICH start it is: "Main @" when the only known bell is the main
-  // card, "Event @" when it's the prelims/doors time.
-  const timeText = !live && firstStart
-    ? `${firstStart === event.mainStartTime ? 'Main' : 'Event'} @ ${formatTime(firstStart)}`
+  // past cards like "Event Last Night", where neither is meaningful. Multi-
+  // section cards show the MAIN card time as "Main @"; single-section cards
+  // (e.g. RAF) show their one start as "Event @".
+  const isMainLabel = hasCardSections(event) && !!event.mainStartTime;
+  const shownStart = isMainLabel ? event.mainStartTime : firstStart;
+  const timeText = !live && shownStart
+    ? `${isMainLabel ? 'Main' : 'Event'} @ ${formatTime(shownStart)}`
     : null;
   const metaText = hideMeta ? '' : [timeText, channel].filter(Boolean).join(' · ');
 
