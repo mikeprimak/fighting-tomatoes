@@ -790,6 +790,20 @@ export default function HomeScreen() {
     return Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate());
   };
   const isUFC = (e: Event) => (e.promotion || '').toUpperCase() === 'UFC';
+  // The start time the card displays: main card first, else prelims/doors
+  // (mirrors EventRow's "Main @" / "Event @" logic).
+  const displayStart = (e: Event): string | null =>
+    e.mainStartTime || (e as any).prelimStartTime || (e as any).earlyPrelimStartTime || null;
+  // Within a day, order follows the local wall clock of the displayed start,
+  // NOT the absolute instant — an Asia card's "9 PM" start is an early-UTC
+  // instant that would otherwise sort above a "1 PM" card in the same day
+  // bucket. Pre-6 AM clock times wrap to the end of the day (late-night
+  // spillovers read as "late", not "first thing").
+  const clockMinutes = (iso: string): number => {
+    const d = new Date(iso);
+    const mins = d.getHours() * 60 + d.getMinutes();
+    return mins < 360 ? mins + 1440 : mins;
+  };
   // "This week" = the upcoming weekend chunk, from today through the coming Monday
   // (inclusive). Fights cluster Fri–Sun, so this keeps the band focused on the
   // immediate weekend instead of bleeding a full 7 days ahead (which surfaced
@@ -820,6 +834,15 @@ export default function HomeScreen() {
       const bLive = b.eventStatus === 'LIVE';
       if (aLive !== bLive) return aLive ? -1 : 1;
       if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
+      // Known start times first, then local-clock order; date placeholder as
+      // the final tiebreak.
+      const aStart = displayStart(a);
+      const bStart = displayStart(b);
+      if (!aStart !== !bStart) return aStart ? -1 : 1;
+      if (aStart && bStart) {
+        const diff = clockMinutes(aStart) - clockMinutes(bStart);
+        if (diff !== 0) return diff;
+      }
       return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 

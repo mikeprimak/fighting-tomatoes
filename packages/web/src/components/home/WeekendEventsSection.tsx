@@ -142,8 +142,22 @@ export function WeekendEventsSection() {
   // Keep LIVE events in the band (badged "LIVE" on the card) alongside the
   // upcoming ones — mirrors the mobile home, where a card that just went live
   // shouldn't vanish. Sorted by day, then live-first within a day (happening
-  // now), then UFC above other promotions (matches mobile), then soonest-start.
+  // now), then UFC above other promotions (matches mobile), then by the ET
+  // clock time shown on the card.
   const isUFC = (e: any) => (e.promotion ?? '').toUpperCase() === 'UFC';
+  // Within a day, order follows the ET wall clock of the time the card actually
+  // shows (firstFightStart), NOT the absolute instant — an Asia card's "9 PM ET"
+  // is an early-UTC instant that would otherwise sort above a "1 PM ET" card in
+  // the same day bucket. Pre-6 AM clock times wrap to the end of the day
+  // (late-night spillovers read as "late", not "first thing").
+  const etClockMinutes = (iso: string): number => {
+    const [h, m] = new Date(iso)
+      .toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' })
+      .split(':')
+      .map(Number);
+    const mins = h * 60 + m;
+    return mins < 360 ? mins + 1440 : mins;
+  };
   const events = (data?.events ?? [])
     .filter((e: any) => {
       const k = eventDayKey(e.date);
@@ -156,13 +170,13 @@ export function WeekendEventsSection() {
       const bLive = isEventLiveNow(b);
       if (aLive !== bLive) return aLive ? -1 : 1;
       if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
-      // Known start times ascending; unknown-start cards after them (a null
-      // would otherwise fall back to the 00:00Z date placeholder and jump the
-      // whole day).
-      if (!a.mainStartTime !== !b.mainStartTime) return a.mainStartTime ? -1 : 1;
-      const at = new Date(a.mainStartTime ?? a.date).getTime();
-      const bt = new Date(b.mainStartTime ?? b.date).getTime();
-      return at - bt;
+      // Known start times first (a null would otherwise fall back to the
+      // 00:00Z date placeholder and jump the whole day), then ET-clock order.
+      const aStart = firstFightStart(a);
+      const bStart = firstFightStart(b);
+      if (!aStart !== !bStart) return aStart ? -1 : 1;
+      if (aStart && bStart) return etClockMinutes(aStart) - etClockMinutes(bStart);
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
     });
 
   // Most-recent UFC card that ran in the last day — UFC only (not other
