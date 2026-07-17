@@ -19,7 +19,7 @@ import { getBiometricLabel } from '../utils/biometricAuth';
 import { useCustomAlert } from '../hooks/useCustomAlert';
 import { CustomAlert } from '../components/CustomAlert';
 import { api } from '../services/api';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Application from 'expo-application';
 import * as Updates from 'expo-updates';
 
@@ -165,17 +165,16 @@ export default function AdvancedSettingsScreen() {
             </View>
           )}
 
-          {/* Danger Zone */}
-          <View style={[styles.section, styles.dangerSection]}>
-            <Text style={[styles.sectionTitle, { color: '#DC2626' }]}>Danger Zone</Text>
+          {/* Account */}
+          <View style={[styles.section, { borderColor: colors.border, backgroundColor: colors.card }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Account</Text>
             <Text style={[styles.dangerDescription, { color: colors.textSecondary }]}>
               Permanently delete your account. Your ratings and reviews will be anonymized but preserved.
             </Text>
             <TouchableOpacity
-              style={styles.deleteButton}
+              style={[styles.deleteButton, { borderColor: colors.border }]}
               onPress={() => setShowDeleteModal(true)}
             >
-              <FontAwesome name="trash" size={16} color="#FFFFFF" />
               <Text style={styles.deleteButtonText}>Delete Account</Text>
             </TouchableOpacity>
           </View>
@@ -332,10 +331,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
   },
-  dangerSection: {
-    borderColor: '#DC2626',
-    backgroundColor: 'rgba(220, 38, 38, 0.05)',
-  },
   biometricRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -359,16 +354,14 @@ const createStyles = (colors: any) => StyleSheet.create({
     lineHeight: 20,
   },
   deleteButton: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#DC2626',
+    borderWidth: 1,
     padding: 14,
     borderRadius: 8,
   },
   deleteButtonText: {
-    color: '#FFFFFF',
+    color: '#DC2626',
     fontSize: 16,
     fontWeight: '600',
   },

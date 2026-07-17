@@ -2,6 +2,7 @@
 
 import { Star, Flame, ThumbsUp } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
+import { useAuth } from '@/lib/auth';
 
 /** Comment card matching the mobile layout: upvote rail on the left, rating/flame
  *  inline next to the username. Shared between the fight detail screen and the
@@ -31,6 +32,9 @@ export function CommentCard({
    *  fight matchup + event on the My Activity screen). */
   meta?: React.ReactNode;
 }) {
+  const { user: authUser } = useAuth();
+  const mine = isMine || (!!authUser?.id && item.user?.id === authUser.id);
+
   const upvoteRail = (
     <>
       <ThumbsUp size={18} fill={item.userHasUpvoted ? '#F5C518' : 'none'} />
@@ -41,7 +45,7 @@ export function CommentCard({
   );
 
   return (
-    <div className={`flex gap-3 rounded-lg border bg-card p-3 ${isMine ? 'border-primary/50' : 'border-border'}`}>
+    <div className={`flex gap-3 rounded-lg border bg-card p-3 ${mine ? 'border-primary/50' : 'border-border'}`}>
       {/* Upvote rail (left of everything, like mobile) */}
       {onUpvote ? (
         <button
@@ -64,7 +68,10 @@ export function CommentCard({
       {/* Content */}
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-center gap-2">
-          <span className="text-xs font-bold text-text-secondary">{item.user?.displayName || (isMine ? 'You' : 'Anonymous')}</span>
+          <span className="text-xs font-bold text-text-secondary">
+            {item.user?.displayName || (mine ? 'You' : 'Anonymous')}
+            {mine && item.user?.displayName ? ' (me)' : ''}
+          </span>
           {item.rating != null && (
             <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: getHypeHeatmapColor(item.rating) }}>
               <Star size={13} style={{ color: getHypeHeatmapColor(item.rating) }} fill={getHypeHeatmapColor(item.rating)} />
@@ -82,7 +89,7 @@ export function CommentCard({
         <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-secondary">
           <span>{new Date(item.createdAt).toLocaleDateString()}</span>
           {meta}
-          {isMine && onEdit && (
+          {mine && onEdit && (
             <button onClick={onEdit} className="font-semibold uppercase tracking-wide hover:text-primary">
               Edit
             </button>

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { getMyRatings, getTopRecentFights } from '@/lib/api';
+import { getTopRecentFights } from '@/lib/api';
 import { Telescope } from 'lucide-react';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 
@@ -17,24 +17,14 @@ function fighterLast(
 export function SpotlightBlock() {
   const { user, isAuthenticated } = useAuth();
 
-  const { data: topRecent, isFetched: topRecentFetched } = useQuery({
-    queryKey: ['topRecentFights', 'month'],
+  // The endpoint is auth-aware: each fight carries userRating for the current
+  // user, so keying on the user id refetches after login/logout.
+  const { data: topRecent, isFetched: queriesSettled } = useQuery({
+    queryKey: ['topRecentFights', 'month', user?.id ?? null],
     queryFn: () => getTopRecentFights('month'),
     enabled: isAuthenticated,
     staleTime: 30 * 60 * 1000,
   });
-
-  const { data: myRatings, isFetched: myRatingsFetched } = useQuery({
-    queryKey: ['myRatings', 'sidebar-spotlight'],
-    queryFn: () =>
-      getMyRatings({ page: '1', limit: '20', filterType: 'ratings', sortBy: 'newest' }),
-    enabled: isAuthenticated,
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Hold rendering until both queries settle so we don't flash an empty card
-  // before deciding whether to render at all.
-  const queriesSettled = topRecentFetched && myRatingsFetched;
 
   if (!isAuthenticated || !user) return null;
   if (!queriesSettled) {
@@ -46,12 +36,11 @@ export function SpotlightBlock() {
   }
 
   // Pick the highest community-rated fight in the last month the user hasn't
-  // rated. Need >= 7 avg to feel worth recommending.
-  const ratedFightIds = new Set<string>(
-    (myRatings?.fights ?? []).map((f: any) => f.id),
-  );
+  // rated (userRating comes from the backend, covering the user's FULL rating
+  // history — a recent-ratings-page check here misses old ratings). Need >= 7
+  // avg to feel worth recommending.
   const candidates = (topRecent?.data ?? [])
-    .filter((f: any) => !ratedFightIds.has(f.id))
+    .filter((f: any) => f.userRating == null)
     .sort((a: any, b: any) => (b.averageRating ?? 0) - (a.averageRating ?? 0));
   const f = candidates[0];
   if (!f || (f.averageRating ?? 0) < 7) return null;

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, useColorScheme } from 'react-
 import { FontAwesome } from '@expo/vector-icons';
 import { Colors } from '../constants/Colors';
 import { getHypeHeatmapColor } from '../utils/heatmap';
+import { useAuth } from '../store/AuthContext';
 
 // Helper to format method for display
 const formatMethod = (method: string | null | undefined): string => {
@@ -25,6 +26,7 @@ interface CommentCardProps {
     predictedWinner?: string | null;
     predictedMethod?: string | null;
     user: {
+      id?: string;
       displayName: string;
     };
     fight?: {
@@ -67,6 +69,8 @@ export function CommentCard({
 }: CommentCardProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const { user: authUser } = useAuth();
+  const isMine = showMyReview || (!!authUser?.id && comment.user?.id === authUser.id);
 
   const CardWrapper = onPress ? TouchableOpacity : View;
   const wrapperProps = onPress ? { onPress, activeOpacity: 0.7 } : {};
@@ -107,9 +111,9 @@ export function CommentCard({
           <View style={styles.topInfoRow}>
             <View style={showMyReview ? { borderBottomWidth: 2, borderBottomColor: '#F5C518' } : undefined}>
               <Text style={[styles.reviewAuthor, { color: colors.textSecondary }]}>
-                {comment.user.displayName && comment.user.displayName !== 'null null' && comment.user.displayName.trim() !== ''
+                {(comment.user.displayName && comment.user.displayName !== 'null null' && comment.user.displayName.trim() !== ''
                   ? comment.user.displayName
-                  : 'Anonymous'}
+                  : 'Anonymous') + (isMine ? ' (me)' : '')}
               </Text>
             </View>
             <View style={styles.inlineRating}>

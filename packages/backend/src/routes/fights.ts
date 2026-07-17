@@ -1174,7 +1174,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
           },
         });
       } else {
-        // Create new top-level review
+        // Create new top-level review with auto-upvote
         review = await fastify.prisma.fightReview.create({
           data: {
             userId: currentUserId,
@@ -1184,6 +1184,16 @@ export async function fightRoutes(fastify: FastifyInstance) {
             articleUrl,
             articleTitle,
             parentReviewId: null,
+            upvotes: 1, // Auto-upvote on creation
+          },
+        });
+
+        // Create auto-upvote
+        await fastify.prisma.reviewVote.create({
+          data: {
+            userId: currentUserId,
+            reviewId: review.id,
+            isUpvote: true,
           },
         });
       }

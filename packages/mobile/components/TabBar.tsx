@@ -56,7 +56,7 @@ function TabBarIcon(props: {
   name: React.ComponentProps<typeof FontAwesome>['name'];
   color: string;
 }) {
-  return <FontAwesome size={24} style={{ marginBottom: -3 }} {...props} />;
+  return <FontAwesome size={24} style={{ marginTop: -2, marginBottom: -1 }} {...props} />;
 }
 
 /**
@@ -250,7 +250,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
         options={{
           title: 'Home',
           tabBarIcon: ({ color }) => (
-            <FontAwesome name="home" size={26} style={{ marginBottom: -3 }} color={color} />
+            <FontAwesome name="home" size={26} style={{ marginTop: -2, marginBottom: -1 }} color={color} />
           ),
           tabBarLabel: ({ color }) => (
             <Text style={{ fontSize: 10, color, textAlign: 'center' }}>
@@ -267,7 +267,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           href: '/(tabs)/live-events', // Always show live events tab
           title: 'Live Events',
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: 24, height: 24, marginBottom: -3 }}>
+            <View style={{ width: 24, height: 24, marginTop: -2, marginBottom: -1 }}>
               <FontAwesome
                 name="podcast"
                 size={24}
@@ -308,7 +308,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
             <FontAwesome6
               name="fire-flame-curved"
               size={24}
-              style={{ marginBottom: -3 }}
+              style={{ marginTop: -2, marginBottom: -1 }}
               color={color}
             />
           ),
@@ -330,7 +330,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
               Past Events
             </Text>
           ),
-          tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginBottom: -3 }} color={color} />,
+          tabBarIcon: ({ color }) => <FontAwesome name="star" size={24} style={{ marginTop: -2, marginBottom: -1 }} color={color} />,
           headerTitle: () => <HeaderLogo title="Past Events" />,
           headerRight: headerActions,
         }}
@@ -347,7 +347,7 @@ export function FightCrewAppTabBar({ skipHeaderSafeArea }: { skipHeaderSafeArea?
           tabBarIcon: ({ color }) => (
             <Image
               source={require('../assets/tab-icon-hand.png')}
-              style={{ width: 24, height: 24, marginBottom: -3, tintColor: color }}
+              style={{ width: 24, height: 24, marginTop: -2, marginBottom: -1, tintColor: color }}
               resizeMode="contain"
             />
           ),
