@@ -26,7 +26,7 @@ export function PopularFightersBlock() {
     <div className="rounded-lg border border-border bg-card p-4">
       <h3 className="mb-3 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
         <Sparkles size={11} className="text-primary" />
-        Popular on Good Fights
+        Most followed
       </h3>
 
       {entries.length === 0 ? (

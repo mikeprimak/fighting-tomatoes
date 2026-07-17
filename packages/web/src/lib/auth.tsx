@@ -22,6 +22,9 @@ interface User {
   hypeDistribution?: Record<string, number>;
   points?: number;
   level?: number;
+  // Upvotes received across both comment types (post-fight reviews +
+  // pre-fight comments), summed live by /auth/profile.
+  totalUpvotesReceived?: number;
   // True when this account has a push token registered (i.e. uses the mobile app).
   // Only populated by /auth/profile; undefined on the minimal login/register response.
   hasApp?: boolean;

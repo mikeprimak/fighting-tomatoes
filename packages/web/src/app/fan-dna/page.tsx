@@ -1,31 +1,34 @@
 'use client';
 
+/**
+ * Fan DNA — the full-page mirror (web).
+ *
+ * Revamped 2026-07-04 onto the taste-profile engine: ranked insights + the
+ * rotating identity noun, same data and same daily salt as the mobile
+ * screen. The old trait-card list and frozen personalityType card are gone
+ * (single-label engine shelved per the locked rotating-signature decision,
+ * identity-platform.md 2026-06-09).
+ *
+ * Voice per Good_Fights_Voice_Guide: header is the friend talking; the
+ * plumbing (loading, error, empty) stays plain. Silence > filler.
+ */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
-import { getFanDNAProfile, type FanDNACard } from '@/lib/api';
+import { getTasteProfile } from '@/lib/api';
 import { Dna, LogIn } from 'lucide-react';
 
-const FAMILY_LABELS: Record<string, string> = {
-  affinity: 'Affinity',
-  behaviour: 'Behaviour',
-  prediction: 'Prediction',
-  identity: 'Identity',
-};
-
-const FAMILY_COLORS: Record<string, string> = {
-  affinity: '#F87171',
-  behaviour: '#60A5FA',
-  prediction: '#34D399',
-  identity: '#F59E0B',
-};
+const MAX_INSIGHTS = 12;
 
 export default function FanDNAPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
 
+  // Same day-salt as mobile so both surfaces say the same thing today.
+  const todaySalt = new Date().toISOString().slice(0, 10);
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ['fanDNAProfile', user?.id ?? null],
-    queryFn: getFanDNAProfile,
+    queryKey: ['tasteProfile', 'fullScreen', user?.id ?? null, todaySalt],
+    queryFn: () => getTasteProfile({ max: MAX_INSIGHTS, salt: todaySalt }),
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
@@ -54,109 +57,90 @@ export default function FanDNAPage() {
     );
   }
 
-  const cards = data?.cards ?? [];
-  const personalityType = data?.personalityType ?? null;
+  const insights = data?.insights ?? [];
+  const identity = data?.identity ?? null;
+  const ratedCount = data?.baseline?.count ?? 0;
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="mb-6 flex flex-col items-center gap-2 text-center">
-        <Dna size={28} style={{ color: FAMILY_COLORS.affinity }} />
-        <h1 className="text-2xl font-bold">Your Fan DNA</h1>
-        <p className="max-w-md text-sm text-text-secondary">
-          Patterns <i>Good Fights</i> has learned from your ratings and hypes.
-        </p>
-      </div>
-
-      {personalityType && (
-        <div
-          className="mb-4 rounded-xl border p-5"
-          style={{
-            backgroundColor: 'rgba(248, 113, 113, 0.18)',
-            borderColor: 'rgba(248, 113, 113, 0.45)',
-          }}
-        >
-          <p className="text-[11px] font-bold uppercase tracking-wide" style={{ color: '#F87171' }}>
-            Your Type
-          </p>
-          <p className="mt-1 text-xl font-extrabold text-foreground">{personalityType.label}</p>
-          <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
-            {personalityType.body}
-          </p>
-          {personalityType.primaryStat ? (
-            <div className="mt-2.5 flex items-baseline gap-2">
-              <span className="text-2xl font-extrabold" style={{ color: '#F87171' }}>
-                {personalityType.primaryStat}
-              </span>
-              {personalityType.secondaryStat ? (
-                <span className="text-xs text-text-secondary">{personalityType.secondaryStat}</span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-      )}
-
       {isLoading ? (
         <div className="flex flex-col items-center gap-3 py-12">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-text-secondary">Computing your DNA…</p>
+          <p className="text-sm text-text-secondary">Reading your ratings…</p>
         </div>
       ) : error ? (
         <div className="rounded-lg border border-danger/30 bg-danger/10 p-4 text-center text-sm text-danger">
           Couldn&apos;t load Fan DNA. Please try again.
         </div>
-      ) : cards.length === 0 ? (
+      ) : insights.length === 0 ? (
         <div className="rounded-lg border border-border bg-card p-8 text-center">
-          <p className="mb-2 text-base font-semibold text-foreground">No DNA yet</p>
+          <p className="mb-2 text-base font-semibold text-foreground">
+            Nothing to read yet
+          </p>
           <p className="text-sm text-text-secondary">
-            Rate and hype more fights — patterns will surface here as the data builds.
+            Rate some fights. The patterns show up on their own.
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          {cards.map((card, i) => (
-            <DNACard key={`${card.traitId}-${i}`} card={card} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DNACard({ card }: { card: FanDNACard }) {
-  const familyColor = FAMILY_COLORS[card.family] ?? '#888';
-  const familyLabel = FAMILY_LABELS[card.family] ?? card.family;
-
-  return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="flex items-start gap-3">
-        {card.primaryStat ? (
-          <div
-            className="flex shrink-0 flex-col items-center justify-center rounded-lg px-3 py-2 text-center"
-            style={{ backgroundColor: `${familyColor}22`, minWidth: 64 }}
-          >
-            <span className="text-lg font-extrabold" style={{ color: familyColor }}>
-              {card.primaryStat}
-            </span>
-            {card.secondaryStat ? (
-              <span className="mt-0.5 text-[10px] text-text-secondary">{card.secondaryStat}</span>
-            ) : null}
+        <>
+          {/* Hero: rotating identity noun + what it means + the fights
+              behind it. No identity = plain header. */}
+          <div className="mb-6">
+            {identity ? (
+              <>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-text-secondary">
+                  This week you&apos;re a
+                </p>
+                <h1 className="mt-1 text-3xl font-extrabold text-primary">
+                  {identity.label}
+                </h1>
+                <p className="mt-2 text-sm text-foreground">
+                  {identity.explanation}
+                </p>
+                {identity.evidence ? (
+                  <p className="mt-1 text-xs italic text-text-secondary">
+                    {identity.evidence}
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <h1 className="text-2xl font-bold text-foreground">Your Fan DNA</h1>
+                <p className="mt-2 text-sm text-text-secondary">
+                  Here&apos;s what your ratings gave away.
+                </p>
+              </>
+            )}
           </div>
-        ) : null}
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-foreground">{card.headline}</p>
-            <span
-              className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-              style={{ backgroundColor: `${familyColor}33`, color: familyColor }}
-            >
-              {familyLabel}
-            </span>
+
+          <div className="space-y-3">
+            {insights.map((insight) => (
+              <div
+                key={insight.key}
+                className="rounded-lg border border-border border-l-[3px] border-l-primary bg-card p-4"
+              >
+                <p className="text-base font-bold leading-snug text-foreground">
+                  {insight.headline}
+                </p>
+                <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">
+                  {insight.subline}
+                </p>
+                {insight.evidence ? (
+                  <p className="mt-1.5 text-xs italic text-text-secondary/85">
+                    {insight.evidence}
+                  </p>
+                ) : null}
+              </div>
+            ))}
           </div>
-          {card.body ? (
-            <p className="mt-1 text-xs leading-relaxed text-text-secondary">{card.body}</p>
+
+          {ratedCount > 0 ? (
+            <p className="mt-6 text-center text-xs text-text-secondary">
+              {ratedCount.toLocaleString()} {ratedCount === 1 ? 'fight' : 'fights'} rated
+            </p>
           ) : null}
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

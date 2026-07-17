@@ -1,0 +1,643 @@
+CARD-PLACEMENT POWER RANKINGS  (UFC)  — as of 2026-06-22  [metric: avg card slot (1.0 = main event, lower = higher)]
+recency: last 3 fights, decay 0.6 | active ≤ 18mo
+events scanned: 788 | inverted-order events corrected on the fly: 11 | ranked fighters: 615 (division inferred from opponents for 214, marked ~) | skipped (no division): 24
+
+
+━━━ HEAVYWEIGHT ━━━  (42 ranked)
+ 1. Tom Aspinall ~                1.49  [1/13P 2/14P 2/13P]  last 2025-10-25
+ 2. Alex Pereira                  1.51  [2/7o 1/14P 1/10P]  last 2026-06-14
+ 3. Ciryl Gane                    1.88  [2/7o 1/13P 3/14o]  last 2026-06-14
+ 4. Curtis Blaydes                2.82  [3/12P 3/12n 2/14P]  last 2026-04-11
+ 5. Justin Tafa ~                 2.88  [3/12P 2/13n 4/10P]  last 2025-02-08
+ 6. Tallison Teixeira             2.94  [3/16n 4/13P 1/12n]  last 2026-05-30
+ 7. Jairzinho Rozenstruik ~       2.94  [3/11n 4/12P 1/11n]  last 2025-02-01
+ 8. Rizvan Kuniev                 3.00  [3/13n 3/12n]  last 2026-02-07
+ 9. Sergei Pavlovich              3.00  [3/16n 3/12n 3/11n]  last 2026-05-30
+10. Derrick Lewis                 3.14  [4/7o 3/11P 1/12n]  last 2026-06-14
+11. Alexander Volkov              3.31  [3/14P 4/13P 3/14o]  last 2026-05-09
+12. Waldo Cortes-Acosta ~         3.43  [3/11P 5/14n 2/13n]  last 2026-01-24
+13. Jailton Almeida ~             3.49  [3/13n 4/13P 4/13P]  last 2026-02-07
+14. Ante Delija                   4.12  [4/14n 2/13n 8/13n]  last 2026-02-22
+15. Aleksandar Rakic              4.57  [5/13P 3/13P 6/13P]  last 2025-10-25
+16. Josh Hokit                    4.80  [4/7o 3/12P 10/11P]  last 2026-06-14
+17. Shamil Gaziev                 5.37  [5/14n 5/14n 7/11n]  last 2026-05-02
+18. Tai Tuivasa                   5.43  [5/14n 7/14n 4/13P]  last 2026-05-02
+19. Sergey Spivak ~               5.49  [8/13P 4/13P 1/10n]  last 2025-06-07
+20. Tanner Boser                  6.86  [9/14n 5/12o 4/14n]  last 2026-04-18
+21. Sean Sharaf                   6.96  [5/14n 9/12n 9/12n]  last 2026-05-02
+22. Vitor Petrino                 7.45  [8/14n 8/12n 5/12n]  last 2026-03-14
+23. Marcus Buchecha               7.82  [8/16n 5/12n 12/12n]  last 2026-04-25
+24. Jhonata Diniz                 7.84  [9/15n 4/12n 11/11P]  last 2026-06-20
+25. Brando Pericic                7.94  [5/14n 11/15n 11/12n]  last 2026-05-02
+26. Kennedy Nzechukwu ~           8.18  [5/12n 10/12n 14/14o]  last 2025-12-13
+27. Steven Asplund                8.37  [8/14n 9/12n]  last 2026-03-14
+28. Louie Sutherland              8.59  [7/14n 11/15n 9/13P]  last 2026-05-02
+29. Mario Pinto                   8.69  [9/15n 11/15n 4/12n]  last 2026-03-21
+30. Thomas Peterson               8.73  [8/12n 11/12n 7/11n]  last 2025-10-11
+31. Marcin Tybura                 8.82  [9/16n 9/16n 8/13n]  last 2026-03-28
+32. Ryan Spann                    9.04  [8/16n 12/14P 7/13n]  last 2026-04-25
+33. Valter Walker                 9.18  [9/16n 9/13P 10/12n]  last 2026-03-28
+34. Chris Barnett ~              10.33  [11/13P 10/13P 9/13P]  last 2025-10-25
+35. Guilherme Pat                10.38  [10/16n 11/12n]  last 2026-04-04
+36. Don'tale Mayes ~             10.63  [11/12n 11/12n 9/13n]  last 2025-05-03
+37. Mick Parkin                  10.76  [11/15n 9/13n 13/14P]  last 2026-03-21
+38. Jamal Pogues ~               11.43  [11/11n 13/13n 10/15n]  last 2025-02-01
+39. Denzel Freeman ~             11.50  [10/11P 14/14n]  last 2026-01-24
+40. Martin Buday                 11.51  [12/12n 11/12n 11/13P]  last 2025-07-26
+41. Mohammed Usman ~             11.88  [12/12n 11/11n 13/13n]  last 2025-06-21
+42. Lukasz Brzeski ~             12.80  [12/14P 14/14o 13/14P]  last 2025-07-19
+
+━━━ LIGHT HEAVYWEIGHT ━━━  (41 ranked)
+ 1. Carlos Ulberg                 1.18  [1/12P 1/12n 2/13n]  last 2026-04-11
+ 2. Robert Whittaker              1.31  [1/12n 2/13P 1/11n]  last 2025-07-26
+ 3. Magomed Ankalaev              1.37  [1/14P 1/10P 3/13P]  last 2025-10-04
+ 4. Jamahal Hill ~                1.61  [1/12n 3/13P 1/13P]  last 2025-06-21
+ 5. Zhang Mingyang                1.69  [2/16n 1/12n 2/14n]  last 2026-05-30
+ 6. Jiri Prochazka                1.98  [1/12P 3/14P 3/13P]  last 2026-04-11
+ 7. Paulo Costa                   2.00  [2/12P 2/14P 2/12P]  last 2026-04-11
+ 8. Khalil Rountree Jr.           2.02  [3/14P 1/12n 1/12P]  last 2025-10-04
+ 9. Alonzo Menifield              3.04  [2/16n 3/14n 6/13n]  last 2026-05-30
+10. Dominick Reyes                3.27  [4/12P 1/12n 5/13P]  last 2026-04-11
+11. Johnny Walker                 3.27  [4/12P 1/12n 5/11n]  last 2026-04-11
+12. Anthony Smith ~               3.41  [2/14n 6/14o 3/13P]  last 2025-04-26
+13. Azamat Murzakanov             3.84  [2/12P 5/13P 7/13P]  last 2026-04-11
+14. Volkan Oezdemir ~             3.98  [3/14n 5/13n 5/11n]  last 2025-11-22
+15. Ion Cutelaba                  4.02  [2/15n 5/14n 8/12P]  last 2026-06-20
+16. Paul Craig ~                  4.22  [3/13n 7/13n 3/12P]  last 2025-09-06
+17. Austen Lane                   4.67  [4/15n 5/12n 6/10n]  last 2026-03-21
+18. Dustin Jacoby                 4.71  [6/13n 3/9n 4/13n]  last 2026-02-07
+19. Modestas Bukauskas            4.73  [4/16n 4/16n 8/11P]  last 2026-05-16
+20. Jan Blachowicz                4.96  [6/14P 5/14P 2/13n]  last 2026-05-09
+21. Brendson Ribeiro              4.96  [3/16n 7/13n 7/13P]  last 2026-04-04
+22. Jim Crute ~                   5.12  [2/12n 11/14P 4/12P]  last 2025-09-27
+23. Bogdan Guskov                 5.51  [6/14P 5/14P 5/12n]  last 2026-05-09
+24. Iwo Baraniewski               5.63  [6/16n 6/16n 4/15n]  last 2026-06-06
+25. Navajo Stirling               5.80  [2/15n 12/16n 6/12n]  last 2026-06-20
+26. Oumar Sy                      5.80  [5/14n 7/13n 6/13n]  last 2026-03-14
+27. Julius Walker                 6.12  [6/13n 7/12n 5/12n]  last 2026-02-07
+28. Billy Elekana                 6.18  [6/16n 6/13P 7/13n]  last 2026-06-06
+29. Nikita Krylov                 6.53  [8/11P 5/12n 5/13P]  last 2026-01-24
+30. Ivan Erslan                   6.86  [9/16n 2/12n 9/12P]  last 2026-05-16
+31. Junior Tafa                   6.92  [6/16n 9/14n 6/13P]  last 2026-06-06
+32. Tuco Tokkos                   7.53  [9/16n 6/12n 6/13n]  last 2026-05-16
+33. Rodolfo Bellato               7.73  [4/16n 15/16P 6/12n]  last 2026-05-16
+34. Kevin Christian               8.25  [9/14n 7/13n]  last 2026-05-02
+35. Raffael Cerqueira ~           8.35  [7/12n 12/12n 6/13P]  last 2025-08-09
+36. Bruno Lopes                   9.24  [12/16n 3/9n 12/14n]  last 2026-03-28
+37. Ibo Aslan ~                  10.29  [12/14P 10/12n 6/12n]  last 2025-12-06
+38. Marcin Prachnio ~            10.82  [11/14P 11/14P 10/14n]  last 2025-07-19
+39. Diyar Nurgozhay              11.22  [13/16P 12/12n 5/13n]  last 2026-03-07
+40. Magomed Gadzhiyasulov ~      11.33  [12/14n 11/12n 10/11n]  last 2025-01-11
+41. Uran Satybaldiev             11.63  [12/12n 11/12n]  last 2025-08-23
+
+━━━ MIDDLEWEIGHT ━━━  (75 ranked)
+ 1. Dricus Du Plessis             1.00  [1/12P 1/12P 1/12P]  last 2025-08-16
+ 2. Sean Strickland               1.00  [1/14P 1/14n 1/12P]  last 2026-05-09
+ 3. Israel Adesanya               1.00  [1/16n 1/11n 1/12P]  last 2026-03-28
+ 4. Khamzat Chimaev               1.18  [1/14P 1/12P 2/13P]  last 2026-05-09
+ 5. Anthony Hernandez             1.18  [1/14n 1/12n 2/12n]  last 2026-02-22
+ 6. Nassourdine Imavov ~          1.18  [1/13n 1/11n 2/14n]  last 2025-09-06
+ 7. Reinier De Ridder ~           1.18  [1/13n 1/12n 2/12n]  last 2025-10-18
+ 8. Kamaru Usman                  1.31  [1/13n 2/13P 1/15P]  last 2025-06-14
+ 9. Caio Borralho                 1.51  [2/16P 1/13n 1/11n]  last 2026-03-07
+10. Jared Cannonier               2.53  [4/12P 1/12n 1/11n]  last 2025-08-16
+11. Joe Pyfer                     2.59  [1/16n 5/14P 3/13P]  last 2026-03-28
+12. Brendan Allen                 2.61  [2/16n 1/13n 7/14P]  last 2026-06-06
+13. Cesar Almeida                 3.00  [3/12n 3/14n 3/12n]  last 2025-12-13
+14. Roman Dolidze                 3.04  [5/15n 1/12n 1/13n]  last 2026-03-21
+15. Sharabutdin Magomedov ~       3.06  [3/12n 2/11n 5/13P]  last 2025-07-26
+16. Abdul Razak Alhassan ~        3.55  [3/14n 3/12n 6/12n]  last 2025-01-11
+17. Dustin Stoltzfus ~            3.88  [4/14n 3/11n 5/10n]  last 2025-09-13
+18. Jack Hermansson ~             4.06  [4/14n 6/11P 1/14n]  last 2025-11-22
+19. Edmen Shahbazyan              4.20  [2/16n 5/16n 9/14P]  last 2026-06-06
+20. Julian Marquez ~              4.20  [2/10n 5/14n 9/14P]  last 2025-03-01
+21. Marc-Andre Barriault          4.80  [4/13n 3/12n 10/12P]  last 2026-02-07
+22. Christian Leroy Duncan        5.18  [5/15n 5/12n 6/12n]  last 2026-03-21
+23. Nursulton Ruziboev            5.27  [3/11n 11/12n 2/12n]  last 2025-05-17
+24. Bo Nickal                     5.27  [6/7o 6/14P 2/12n]  last 2026-06-14
+25. Michal Oleksiejczuk           5.47  [4/13n 10/13P 2/13n]  last 2026-02-07
+26. Abus Magomedov                5.53  [4/14n 9/12n 4/11n]  last 2025-04-26
+27. Ikram Aliskerov               5.59  [7/13P 6/14n 1/11n]  last 2025-10-25
+28. Ozzy Diaz                     6.00  [6/14P 6/13n]  last 2026-05-09
+29. Armen Petrosyan ~             6.20  [7/10P 5/13P 6/14n]  last 2025-03-08
+30. Gregory Rodrigues             6.31  [6/16P 7/14P 6/11P]  last 2026-03-07
+31. Jun Yong Park ~               6.39  [7/13P 8/12n 2/12n]  last 2025-10-25
+32. Abusupiyan Magomedov ~        6.50  [5/14P 9/13P]  last 2025-10-04
+33. Michel Pereira                6.55  [6/14n 9/12n 4/14n]  last 2026-02-22
+34. Dylan Budka ~                 6.92  [3/12n 11/12n 11/12n]  last 2025-02-15
+35. Cameron Rowston ~             7.00  [7/13P 7/12n]  last 2026-01-31
+36. Jose Daniel Medina            7.00  [7/14n 7/14n 7/12n]  last 2026-02-28
+37. Ateba Abega Gautier ~         7.06  [7/11P 6/14P 9/14P]  last 2026-01-24
+38. Dusko Todorovic               7.14  [8/16P 7/14n 5/9n]  last 2026-03-07
+39. Torrez Finney ~               7.25  [8/13P 6/12n]  last 2026-01-31
+40. Andre Muniz ~                 7.35  [9/14P 6/14n 5/11n]  last 2025-10-04
+41. Kelvin Gastelum               7.39  [11/12P 4/14n 3/13P]  last 2026-04-11
+42. Marvin Vettori                7.43  [10/14P 7/14P 1/13n]  last 2025-12-06
+43. Robert Valentin               7.43  [7/14n 9/14P 6/12n]  last 2026-04-18
+44. Mansur Abdul-Malik            7.45  [5/16n 13/14P 5/13n]  last 2026-03-28
+45. Vicente Luque                 7.45  [11/12P 3/12n 5/13P]  last 2026-04-11
+46. Yousri Belgaroui              7.62  [5/16n 12/13n]  last 2026-03-28
+47. Kyle Daukaus                  7.78  [6/7o 10/14P 9/12n]  last 2026-06-14
+48. Rodolfo Vieira                7.90  [9/16n 6/14P 8/12n]  last 2026-04-25
+49. Robert Bryczek                8.00  [8/14n 11/13n 3/14n]  last 2026-05-02
+50. Zach Reese                    8.02  [6/14n 12/12n 7/13P]  last 2026-02-22
+51. Roman Kopylov                 8.12  [11/14P 7/14P 2/14P]  last 2026-05-09
+52. Andrey Pulyaev                8.16  [7/11P 9/12n 10/13n]  last 2026-01-24
+53. Donte Johnson                 8.18  [8/16P 8/16P 9/13n]  last 2026-03-07
+54. Ihor Potieria ~               8.18  [8/14n 8/12n 9/12P]  last 2025-01-11
+55. Gilbert Urbina                8.41  [10/12n 6/13n 8/12n]  last 2025-08-09
+56. Brunno Ferreira               8.51  [6/16P 10/14P 13/14P]  last 2026-03-07
+57. Nick Klein ~                  8.63  [9/12n 8/12n]  last 2025-08-02
+58. Zachary Reese                 8.75  [11/14n 5/9n]  last 2025-09-13
+59. Ryan Loder ~                  9.12  [12/14n 8/12n 3/11n]  last 2025-11-22
+60. Eryk Anders                   9.29  [11/14n 6/12n 10/14o]  last 2026-03-14
+61. Andre Petroski                9.33  [13/16n 7/12n 3/13n]  last 2026-05-16
+62. Marco Tulio                   9.35  [11/14P 5/12n 12/13P]  last 2026-05-09
+63. Gerald Meerschaert            9.45  [10/14n 10/14P 7/12P]  last 2026-05-02
+64. Brad Tavares                  9.71  [11/14n 11/13n 4/12n]  last 2026-03-14
+65. Sedriques Dumas               9.88  [10/16n 9/13n 11/14n]  last 2026-04-25
+66. Jacob Malkoun                 9.94  [10/14n 8/13P 13/14n]  last 2026-05-02
+67. Cody Brundage                10.37  [13/16n 8/16P 7/13P]  last 2026-05-16
+68. Eric McConico                10.78  [9/16n 13/14P 12/12n]  last 2026-04-25
+69. Ismail Naurdiev              10.78  [12/14n 8/12n 12/13P]  last 2025-11-22
+70. Antonio Trocoli              10.92  [10/15n 13/14P 10/11n]  last 2026-03-21
+71. Jackson McVey                11.16  [10/16n 12/12n 13/14P]  last 2026-04-25
+72. Tresean Gore                 11.80  [14/16n 8/12n 12/13P]  last 2026-04-04
+73. Azamat Bekoev                12.29  [14/16n 12/13n 8/12n]  last 2026-04-04
+74. Wes Schultz                  12.75  [12/14n 14/14n]  last 2026-05-02
+75. Baisangur Susurkaev          13.00  [13/14P 13/14P]  last 2026-05-09
+
+━━━ WELTERWEIGHT ━━━  (65 ranked)
+ 1. Islam Makhachev               1.00  [1/14P 1/13P 1/12P]  last 2025-11-15
+ 2. Jack Della Maddalena          1.00  [1/14n 1/14P 1/12P]  last 2026-05-02
+ 3. Gilbert Burns                 1.00  [1/14n 1/11n 1/12n]  last 2026-04-18
+ 4. Gabriel Bonfim                1.18  [1/16n 1/12n 2/12n]  last 2026-06-06
+ 5. Belal Muhammad                1.31  [1/16n 2/14n 1/12P]  last 2026-06-06
+ 6. Ian Garry ~                   1.69  [2/14n 1/14n 2/14o]  last 2025-11-22
+ 7. Mike Malott                   2.22  [1/14n 2/13n 6/12P]  last 2026-04-18
+ 8. Carlos Prates                 2.29  [1/14n 4/14P 3/12P]  last 2026-05-02
+ 9. Santiagio Ponzinibbio ~       2.51  [3/12n 2/14n 2/12n]  last 2025-05-03
+10. Leon Edwards ~                2.53  [4/14P 1/13n 1/14P]  last 2025-11-15
+11. Joaquin Buckley               2.53  [4/14P 1/16n 1/13n]  last 2026-05-09
+12. Michael Morales ~             2.76  [3/14P 1/11n 5/11n]  last 2025-11-15
+13. Sean Brady                    2.90  [4/14P 1/16n 3/14P]  last 2026-05-09
+14. Michael Page                  3.12  [3/15n 4/12P 2/11n]  last 2026-03-21
+15. Gunnar Nelson ~               3.18  [3/13n 3/15P 4/12n]  last 2025-03-22
+16. Geoff Neal                    3.22  [2/14n 3/12P 7/13P]  last 2026-02-22
+17. Daniel Rodriguez              3.37  [3/14P 3/12n 5/12n]  last 2025-07-19
+18. Stephen Thompson ~            3.41  [2/12n 6/12P 3/12P]  last 2025-07-12
+19. Carlston Harris               3.53  [5/16n 2/14n 2/12n]  last 2026-05-30
+20. Uros Medic                    3.78  [2/14n 3/12n 10/12n]  last 2026-02-22
+21. Elizeu Zaleski dos Santos ~   4.45  [5/12n 2/13n 7/11n]  last 2025-08-02
+22. Kevin Holland                 4.73  [7/12P 2/13n 3/14P]  last 2026-04-11
+23. Muslim Salikhov               4.76  [5/16n 3/12n 7/12n]  last 2026-05-30
+24. Randy Brown                   4.80  [7/12P 1/12n 5/14n]  last 2026-04-11
+25. Jake Matthews                 4.82  [5/16n 5/16n 4/12n]  last 2026-05-30
+26. Sam Patterson                 5.51  [3/15n 10/13n 5/10n]  last 2026-03-21
+27. Niko Price                    5.82  [3/16n 8/13n 10/11P]  last 2026-03-28
+28. Charlie Radtke ~              5.86  [5/13n 6/12P 8/11n]  last 2025-11-01
+29. Michael Chiesa                6.18  [3/16n 8/13n 12/14o]  last 2026-03-28
+30. Neil Magny ~                  6.22  [8/12n 4/12n 5/12n]  last 2025-12-13
+31. Chidi Njokuani                6.39  [7/14n 8/12n 2/13n]  last 2026-02-22
+32. Chris Curtis                  6.45  [7/14n 7/12n 4/14n]  last 2026-03-14
+33. Joel Alvarez                  6.47  [8/14P 3/12n 8/13n]  last 2026-05-09
+34. Jeremiah Wells                6.51  [7/16n 3/13n 11/14n]  last 2026-05-16
+35. Aalon Cruz ~                  6.82  [1/1o 14/15P 11/12n]  last 2025-01-04
+36. Nicolas Dalby                 6.94  [7/16n 8/14n 5/14n]  last 2026-05-16
+37. Alex Morono ~                 6.94  [7/13n 8/10P 5/12n]  last 2026-02-07
+38. Carlos Leal                   7.18  [7/14n 7/12n 8/10P]  last 2026-02-22
+39. Danny Barlow ~                7.18  [10/13n 5/10n 3/10n]  last 2025-10-18
+40. Jacobe Smith                  7.45  [5/14n 10/11P 10/14n]  last 2026-02-22
+41. Kiefer Crosbie ~              7.62  [5/12n 12/14P]  last 2025-08-23
+42. Ange Loosa ~                  7.71  [12/13n 4/12n 2/13n]  last 2025-06-14
+43. Nikolay Veretennikov          7.86  [7/16n 8/13n 10/14P]  last 2026-05-16
+44. Kevin Jousset ~               7.94  [11/12P 4/14n 6/11n]  last 2025-02-08
+45. Khaos Williams                7.98  [7/16n 9/13P 9/12n]  last 2026-05-16
+46. Yaroslav Amosov               8.00  [8/14P 8/12n]  last 2026-05-09
+47. Jose Souza                    8.63  [9/16n 8/16n]  last 2026-05-30
+48. Oban Elliott                  8.76  [9/13P 7/12n 11/12P]  last 2026-01-31
+49. Themba Gorimbo                8.84  [13/14n 3/13n 7/14o]  last 2026-05-02
+50. Court McGee ~                 8.86  [8/13n 12/12P 6/12n]  last 2025-06-14
+51. Preston Parsons ~             9.27  [10/14n 10/14P 6/11n]  last 2025-01-11
+52. Trey Waters ~                 9.27  [10/13n 10/12n 6/11n]  last 2025-09-06
+53. Francisco Prado               9.49  [12/12P 8/14P 5/12P]  last 2026-04-11
+54. Daniil Donchenko              9.63  [7/13n 14/14n]  last 2026-02-07
+55. Punahele Soriano              9.78  [11/14n 10/14P 6/14n]  last 2026-02-22
+56. Adam Fugitt ~                 9.78  [11/11P 10/14P 6/11n]  last 2026-01-24
+57. Ramiz Brahimaj                9.96  [11/14n 13/14P 2/9n]  last 2026-02-22
+58. Ko Seok-hyun ~               10.12  [12/13n 7/12n]  last 2025-11-01
+59. Charles Radtke               10.50  [12/12P 8/16n]  last 2026-04-11
+60. Andreas Gustafsson           10.87  [12/13n 9/13P]  last 2025-09-06
+61. Jonathan Micallef            11.41  [13/14n 9/13P 11/12P]  last 2026-05-02
+62. Philip Rowe ~                11.45  [12/13n 12/13n 9/12P]  last 2025-11-01
+63. Rinat Fakhretdinov ~         11.57  [12/13n 13/13P 8/11n]  last 2025-09-06
+64. Austin Vanderford ~          11.88  [13/14P 10/12n]  last 2025-10-04
+65. Max Griffin                  12.00  [15/16n 7/12n 12/14o]  last 2026-04-25
+
+━━━ LIGHTWEIGHT ━━━  (92 ranked)
+ 1. Max Holloway                  1.00  [1/16P 1/14P 1/13P]  last 2026-03-07
+ 2. Charles Oliveira              1.00  [1/16P 1/12n 1/11P]  last 2026-03-07
+ 3. Ilia Topuria                  1.00  [1/7o 1/11P 1/13P]  last 2026-06-14
+ 4. Dustin Poirier ~              1.18  [1/14P 1/12P 2/14P]  last 2025-07-19
+ 5. Justin Gaethje                1.18  [1/7o 1/11P 2/10P]  last 2026-06-14
+ 6. Paddy Pimblett                1.67  [1/11P 2/13P 3/14P]  last 2026-01-24
+ 7. Dan Hooker ~                  1.88  [2/13P 1/14n 3/12P]  last 2026-01-31
+ 8. Arman Tsarukyan ~             1.92  [1/14n 4/13P 1/12n]  last 2025-11-22
+ 9. Renato Moicano                2.16  [1/16n 3/16P 4/11P]  last 2026-04-04
+10. Rafael Fiziev                 2.51  [3/13P 2/12n 2/10P]  last 2026-01-31
+11. Brian Ortega                  2.69  [3/16P 2/12n 3/10P]  last 2026-03-07
+12. Benoit St. Denis ~            2.92  [2/13P 5/14P 2/13n]  last 2026-01-31
+13. Chris Duncan                  3.02  [1/16n 7/14P 2/12n]  last 2026-04-04
+14. Beneil Dariush                3.29  [2/14n 5/14P 4/11P]  last 2026-05-02
+15. Michael Chandler              3.53  [5/7o 2/13P 2/12P]  last 2026-06-14
+16. Quillan Salkilld              3.65  [2/14n 5/13P 6/13P]  last 2026-05-02
+17. Daniel Zellhuber              3.80  [3/14n 5/14P 4/10P]  last 2026-02-28
+18. Mauricio Ruffy                3.84  [5/7o 3/13P 2/13n]  last 2026-06-14
+19. King Green                    4.25  [5/14P 3/14n]  last 2026-05-09
+20. Manuel Torres                 4.27  [2/12n 7/10P 6/13n]  last 2025-03-29
+21. Tom Nolan                     4.35  [3/16n 5/12n 7/12P]  last 2026-06-06
+22. Tofiq Musayev                 4.41  [3/16n 7/16n 4/12n]  last 2026-04-04
+23. Mateusz Gamrot                4.57  [8/12P 1/12n 1/9n]  last 2026-04-11
+24. Ignacio Bahamondes            4.73  [7/16n 2/12n 3/10P]  last 2026-03-28
+25. Myktybek Orolbai Uulu ~       4.73  [4/14n 4/12n 8/13P]  last 2025-11-22
+26. Rafa Garcia                   4.80  [4/16n 3/14n 10/12n]  last 2026-04-25
+27. Elves Brenner ~               4.84  [3/12n 6/13n 8/13P]  last 2025-08-02
+28. Jeremy Stephens               4.94  [5/14P 6/12n 3/10n]  last 2026-05-09
+29. Drew Dober                    5.06  [5/16P 7/13n 2/12n]  last 2026-03-07
+30. Nasrat Haqparast ~            5.08  [6/13P 3/10n 6/11n]  last 2025-10-25
+31. Bobby Green ~                 5.14  [6/12n 5/10P 3/14P]  last 2025-12-13
+32. Fares Ziam                    5.20  [3/16n 9/14P 5/11n]  last 2026-06-06
+33. Alexander Hernandez           5.22  [4/16n 5/14n 9/12P]  last 2026-04-25
+34. Michael Johnson               5.37  [5/16P 5/14P 7/13n]  last 2026-03-07
+35. Kyle Nelson                   5.45  [6/16n 6/13n 3/12n]  last 2026-03-28
+36. Ismael Bonfim                 5.47  [4/12n 4/12n 12/13P]  last 2025-11-08
+37. Esteban Ribovics              5.55  [8/12P 3/12n 3/10n]  last 2026-04-11
+38. Matt Frevola ~                5.63  [6/13n 6/14n 4/13P]  last 2025-10-18
+39. Gauge Young                   5.86  [5/14n 6/12n 8/14n]  last 2026-04-18
+40. Jai Herbert                   5.88  [3/14n 7/13n 12/13n]  last 2026-04-18
+41. Mason Jones                   5.90  [7/15n 4/13n 6/12n]  last 2026-03-21
+42. Charlie Campbell ~            5.92  [5/12n 5/12n 10/11n]  last 2025-09-27
+43. Carlos Diego Ferreira ~       6.04  [5/14n 9/13P 4/12n]  last 2025-09-13
+44. Ludovit Klein                 6.04  [8/13P 1/9n 9/14n]  last 2025-10-25
+45. Thiago Moises                 6.04  [5/14n 6/11n 9/14n]  last 2026-04-18
+46. Rhys McKee ~                  6.10  [5/13n 8/12n 6/14n]  last 2025-09-06
+47. Axel Sola                     6.25  [7/15n 5/13n]  last 2026-03-21
+48. Jamie Mullarkey ~             6.84  [5/13P 8/12n 10/13P]  last 2026-01-31
+49. Terrance McKinney             6.86  [6/16n 7/14P 9/11P]  last 2026-03-28
+50. Nazim Sadykhov                6.86  [9/14P 5/12n 4/12n]  last 2025-12-06
+51. Jordan Vucenic ~              6.88  [5/13n 10/13n]  last 2025-03-22
+52. Gabriel Green ~               6.90  [5/11n 10/11n 7/12P]  last 2025-05-17
+53. Jared Gordon                  7.12  [10/14P 3/14n 6/11n]  last 2026-05-09
+54. Kyle Prepolec ~               7.31  [7/13n 5/12P 12/12n]  last 2025-10-18
+55. Mateusz Rebecki               7.41  [9/14P 8/13P 2/12n]  last 2026-05-09
+56. Chris Padilla                 7.61  [10/12P 4/12n 7/13n]  last 2026-04-11
+57. Bolaji Oki                    7.80  [10/14n 4/13n 8/9n]  last 2026-03-14
+58. Claudio Puelles ~             8.06  [8/14n 10/13n 5/14P]  last 2025-09-13
+59. Grant Dawson                  8.08  [9/14P 6/14P 9/13P]  last 2026-05-09
+60. Rong Zhu ~                    8.24  [8/12n 10/12P 6/12n]  last 2025-08-23
+61. Chase Hooper                  8.31  [8/16n 9/12P 8/13P]  last 2026-03-28
+62. Jalin Turner ~                8.37  [11/14P 3/10P 10/13P]  last 2025-12-06
+63. Nikolas Motta ~               8.37  [5/12n 13/13n 10/11n]  last 2025-06-21
+64. Mike Davis ~                  8.43  [11/12n 5/11n 7/13n]  last 2025-07-12
+65. Timothy Cuamba ~              8.61  [8/13n 13/14n 3/11n]  last 2025-11-01
+66. AJ Cunningham ~               8.75  [8/13n 10/11n]  last 2025-03-15
+67. Jim Miller                    8.84  [10/14P 8/13P 7/12P]  last 2026-05-09
+68. Edson Barboza                 8.86  [11/14P 10/12P 1/12n]  last 2025-12-06
+69. Damir Hadzovic ~              8.92  [8/11n 8/14n 13/13n]  last 2025-02-01
+70. Drakkar Klose ~               9.20  [10/12P 8/13n 9/13P]  last 2025-08-16
+71. Austin Hubbard ~              9.22  [8/12n 12/12n 8/12P]  last 2025-08-23
+72. Mairon Santos ~               9.41  [14/14P 2/11n 9/10P]  last 2025-12-06
+73. Hayisaer Maheshate ~          9.43  [6/12n 13/13n 13/13n]  last 2025-08-23
+74. Trey Ogden                    9.51  [10/16n 9/14n 9/12n]  last 2026-05-16
+75. Evan Elder ~                  9.59  [8/14n 12/12n 10/13n]  last 2025-04-26
+76. Rolando Bedoya ~              9.59  [8/12n 12/13n 10/13n]  last 2025-09-27
+77. Vinc Pichel ~                 9.69  [10/12n 12/13P 5/12P]  last 2025-03-29
+78. Tommy Gantt                  10.00  [10/16n 10/16n]  last 2026-05-16
+79. Matheus Camilo               10.00  [13/14P 5/11n]  last 2025-11-15
+80. Yanal Ashmoz ~               10.04  [12/13P 5/12n 13/15n]  last 2025-06-07
+81. Lando Vannata                10.22  [12/16n 11/14n 4/11n]  last 2026-04-04
+82. Anshul Jubli ~               10.29  [12/12P 10/13P 6/12n]  last 2025-02-08
+83. Viacheslav Borshchev ~       10.67  [13/14P 9/11P 7/12P]  last 2025-11-15
+84. Darrius Flowers              10.71  [12/16n 12/12n 5/14n]  last 2026-04-04
+85. Joe Solecki ~                11.24  [14/14n 8/12P 9/12n]  last 2025-01-11
+86. Mitch Ramirez                11.37  [11/12n 12/13n]  last 2025-07-12
+87. Guram Kutateladze ~          11.53  [13/13n 10/13n 10/12n]  last 2025-03-22
+88. Kai Kamaka III               11.59  [16/16n 7/10n 7/11n]  last 2026-04-04
+89. Abdul-Kareem Al-Selwady      12.25  [13/15n 11/11n]  last 2026-03-21
+90. Kody Steele                  12.50  [14/14n 10/12P]  last 2026-05-02
+91. Francis Marshall             12.78  [14/16n 13/14n 9/10P]  last 2026-04-25
+92. Dom Mar Fan                  12.88  [14/14n 11/13P]  last 2026-05-02
+
+━━━ FEATHERWEIGHT ━━━  (73 ranked)
+ 1. Alexander Volkanovski ~       1.00  [1/13P 1/13P 1/12P]  last 2026-01-31
+ 2. Lerone Murphy                 1.31  [1/15n 2/12P 1/12n]  last 2026-03-21
+ 3. Youssef Zalal                 2.10  [1/16n 4/14P 2/12n]  last 2026-04-25
+ 4. Melquizael Costa              2.16  [1/16n 3/14n 4/12n]  last 2026-05-16
+ 5. Kevin Vallejos                2.22  [1/14n 2/12n 6/12n]  last 2026-03-14
+ 6. Yair Rodriguez ~              2.33  [3/13P 2/13n 1/13P]  last 2025-04-12
+ 7. Aljamain Sterling             2.59  [1/16n 2/12n 8/14o]  last 2026-04-25
+ 8. Giga Chikadze                 2.69  [3/15n 2/12n 3/14n]  last 2026-06-20
+ 9. David Onama ~                 2.90  [1/13n 3/14n 8/12P]  last 2025-11-01
+10. Arnold Allen                  2.96  [1/16n 5/11P 5/14P]  last 2026-05-16
+11. Cortavious Romious ~          3.00  [3/12n 3/11n]  last 2025-04-05
+12. Josh Emmet ~                  3.27  [4/14P 1/12n 5/12P]  last 2025-10-04
+13. Calvin Kattar ~               3.43  [3/12n 2/12n 7/13P]  last 2025-07-12
+14. Vinicius Oliveira             3.55  [3/15n 6/15n 1/13n]  last 2026-06-20
+15. Jean Silva ~                  3.59  [5/11P 1/14n 4/13P]  last 2026-01-24
+16. Dan Ige                       3.86  [3/14n 4/14P 6/13P]  last 2026-02-22
+17. Luke Riley                    3.88  [2/15n 7/14n]  last 2026-03-21
+18. Movsar Evloev                 3.88  [1/15n 8/14o 5/12P]  last 2026-03-21
+19. Sodiq Yusuff ~                3.96  [2/11n 9/13P 1/11n]  last 2025-05-17
+20. Marwan Rahiki                 4.00  [4/14n 4/14n]  last 2026-05-02
+21. Diego Lopes                   4.06  [7/7o 1/13P 1/14n]  last 2026-06-14
+22. Christian Rodriguez           4.22  [3/15n 4/12n 8/12n]  last 2026-06-20
+23. Morgan Charriere ~            4.37  [4/12n 4/12n 6/13n]  last 2025-12-13
+24. Steve Garcia                  4.43  [7/7o 1/13n 3/12n]  last 2026-06-14
+25. Cub Swanson                   4.45  [5/12P 2/13n 7/13P]  last 2026-04-11
+26. Aaron Pico                    4.50  [6/12P 2/12P]  last 2026-04-11
+27. Hyder Amil                    4.65  [3/15n 6/12n 7/11P]  last 2026-06-20
+28. Nate Landwehr                 4.69  [5/12P 4/12n 5/14o]  last 2026-04-11
+29. Andre Fili                    4.71  [6/15n 3/14n 4/12n]  last 2026-06-20
+30. Patricio Pitbull              4.84  [6/12P 4/14P 3/13P]  last 2026-04-11
+31. Isaac Dulgarian ~             4.92  [4/13n 7/12n 4/13n]  last 2025-11-01
+32. Julian Erosa                  4.92  [4/16n 4/11n 9/13P]  last 2026-03-28
+33. Kurt Holobaugh ~              5.04  [7/9n 3/13n 3/11n]  last 2025-05-31
+34. Melsik Baghdasaryan           5.06  [5/15n 4/12n 7/13n]  last 2026-06-20
+35. Daniel Santos                 5.18  [2/16n 7/14P 11/12P]  last 2026-05-16
+36. Harry Hardwick                5.87  [4/14n 9/13n]  last 2026-03-14
+37. Jose Miguel Delgado           5.88  [3/14n 10/13P 7/11P]  last 2026-03-14
+38. Ricardo Ramos ~               5.98  [5/12n 7/10n 7/12P]  last 2025-10-11
+39. Seung Woo Choi ~              6.06  [6/13n 2/11n 13/13n]  last 2025-03-15
+40. Lucas Almeida ~               6.06  [6/12n 8/10n 3/11n]  last 2025-10-11
+41. Danny Silva                   6.37  [6/15n 6/12n 8/10n]  last 2026-03-21
+42. Gabriel Santos ~              6.55  [6/12P 9/12n 4/14n]  last 2025-02-08
+43. Manolo Zecchini               6.62  [7/16n 6/11n]  last 2026-04-04
+44. Sean Woodson ~                6.73  [6/13P 9/13n 5/12n]  last 2025-04-12
+45. Dennis Buzukja                7.04  [6/14n 7/11n 10/14n]  last 2026-04-18
+46. Douglas Silva de Andrade      7.18  [10/14n 2/11n 8/11n]  last 2026-02-28
+47. Darren Elkins ~               7.22  [9/13P 5/11n 6/11n]  last 2025-04-12
+48. Bogdan Grad                   7.24  [7/14n 6/12n 10/11n]  last 2025-11-22
+49. Robert Ruchala                7.25  [8/16n 6/13n]  last 2026-04-04
+50. Patrick Sabatini ~            7.51  [11/14P 2/12n 7/12n]  last 2025-11-15
+51. Jamall Emmers ~               7.71  [6/12n 11/12n 7/14n]  last 2025-11-08
+52. Kaan Ofli                     7.73  [10/13P 5/12n 6/11n]  last 2026-01-31
+53. Connor Matthews ~             7.76  [8/11n 6/12n 10/14n]  last 2025-05-17
+54. Nathaniel Wood                8.24  [8/15n 10/13P 6/13n]  last 2026-03-21
+55. Yoo Joo-sang ~                8.50  [7/14P 11/13P]  last 2025-10-04
+56. William Gomis                 8.69  [12/14P 6/13n 4/10n]  last 2026-05-09
+57. Michael Aswell                8.92  [11/15n 6/12n 8/9n]  last 2026-06-20
+58. Lee Jeong-yeong ~             9.29  [11/12P 6/11n 10/13n]  last 2025-05-10
+59. Ricky Turcios                 9.33  [10/16P 12/13P 3/14n]  last 2026-03-07
+60. Westin Wilson ~               9.51  [10/12n 9/11n 9/11n]  last 2025-08-23
+61. Joanderson Brito              9.65  [14/16n 7/12n 2/12n]  last 2026-06-06
+62. Marcio Barbosa                9.75  [6/14n 16/16n]  last 2026-04-18
+63. Lucas Alexander ~             9.76  [10/11n 11/14n 7/10n]  last 2025-02-01
+64. Yi Zha ~                      9.82  [10/13P 10/12n 9/12n]  last 2026-01-31
+65. Kaue Fernandes ~             10.04  [9/13n 13/13n 8/13n]  last 2025-09-06
+66. Muhammad Naimov ~            10.08  [14/14P 6/12n 6/11n]  last 2025-12-06
+67. Bernardo Sopaj ~             10.12  [12/13P 7/11n]  last 2025-01-18
+68. Steven Nguyen ~              10.63  [11/12n 10/13n]  last 2025-07-26
+69. Ramon Taveras                12.29  [14/16n 12/13n 8/12P]  last 2026-05-30
+70. Gaston Bolanos               12.35  [11/15n 13/16P 15/16P]  last 2026-06-20
+71. Jordan Leavitt               12.41  [14/16n 13/14n 7/9n]  last 2026-06-06
+72. Erik Silva                   12.63  [13/14n 13/13n 11/12P]  last 2026-02-28
+73. Zhu Kangjie                  14.37  [14/16n 14/16n 16/16n]  last 2026-05-30
+
+━━━ BANTAMWEIGHT ━━━  (77 ranked)
+ 1. Merab Dvalishvili ~           1.31  [1/14P 2/14P 1/13P]  last 2025-12-06
+ 2. Petr Yan ~                    1.31  [1/14P 2/12n 1/13n]  last 2025-12-06
+ 3. Song Yadong                   1.31  [1/16n 2/11P 1/12n]  last 2026-05-30
+ 4. Cory Sandhagen                1.51  [2/14P 1/12n 1/13n]  last 2025-10-04
+ 5. Mario Bautista                2.16  [1/13n 3/13P 4/13P]  last 2026-02-07
+ 6. Sean O'Malley                 2.33  [3/7o 2/11P 1/13P]  last 2026-06-14
+ 7. Marlon Vera                   2.49  [2/14n 3/13n 3/13n]  last 2026-02-28
+ 8. David Martinez                2.55  [2/14n 2/14n 5/12n]  last 2026-02-28
+ 9. Rob Font                      2.69  [3/16P 2/14n 3/12n]  last 2026-03-07
+10. Deiveson Figueiredo           2.71  [1/16n 6/11P 2/12n]  last 2026-05-30
+11. Jose Aldo ~                   2.82  [3/12P 3/12P 2/13P]  last 2025-05-10
+12. Aiemann Zahabi                3.00  [3/7o 3/13n 3/12P]  last 2026-06-14
+13. Henry Cejudo ~                3.08  [4/14P 1/12n 4/12P]  last 2025-12-06
+14. Kyler Phillips                3.22  [2/14n 6/14P 2/11n]  last 2026-04-18
+15. Kai Asakura                   3.76  [4/16n 5/12P 1/14o]  last 2026-05-30
+16. Charles Jourdain              4.02  [2/14n 5/13n 8/10n]  last 2026-04-18
+17. Umar Nurmagomedov             4.35  [6/11P 3/13P 2/13P]  last 2026-01-24
+18. Bryce Mitchell                4.37  [4/16n 4/16n 6/12n]  last 2026-06-06
+19. Raul Rosas Jr.                4.59  [3/16P 4/12n 10/10P]  last 2026-03-07
+20. Jean Matsumoto                4.63  [5/13n 5/12n 3/12n]  last 2026-02-07
+21. Payton Talbott ~              4.67  [4/14P 5/11P 6/13P]  last 2025-12-06
+22. Montel Jackson                4.92  [7/16n 2/12n 4/12n]  last 2026-04-25
+23. Santiago Luna                 4.98  [4/16n 6/14n 6/14n]  last 2026-06-06
+24. Davey Grant                   5.00  [5/16n 5/16n 5/13n]  last 2026-04-25
+25. Said Nurmagomedov ~           5.20  [6/12n 4/11n 5/13P]  last 2025-07-26
+26. Malcolm Wellmaker             5.94  [3/16n 9/14P 9/13n]  last 2026-05-16
+27. Serhiy Sidey ~                6.13  [5/12n 8/12P]  last 2025-05-03
+28. Cameron Smotherman            6.33  [4/16n 11/13n 5/12n]  last 2026-05-30
+29. Raoni Barcelos                6.45  [7/16n 7/12n 4/13n]  last 2026-04-25
+30. Patchy Mix ~                  6.50  [8/14P 4/13P]  last 2025-10-04
+31. Victor Henry                  6.57  [4/16n 10/12n 8/10n]  last 2026-06-06
+32. Lee Chang-ho ~                7.02  [8/13n 3/12n 11/11n]  last 2025-11-01
+33. Cody Garbrandt                7.18  [7/16P 4/13n 13/13P]  last 2026-03-07
+34. Rafael Estevam                7.39  [5/16n 11/12n 8/12n]  last 2026-04-04
+35. Toshiomi Kazama ~             7.39  [8/12n 6/10n 8/13n]  last 2025-08-09
+36. Austin Bashi ~                7.55  [10/12n 5/14n 5/12n]  last 2025-08-02
+37. Cameron Saaiman ~             7.76  [11/14n 4/13n 5/11n]  last 2025-04-26
+38. Daniel Marcos ~               7.76  [11/12n 4/12n 5/13n]  last 2025-11-08
+39. Da'Mon Blackshear ~           7.88  [8/12n 10/14n 4/13n]  last 2025-07-26
+40. Cristian Quinonez             8.20  [9/14n 7/13n 8/12n]  last 2026-02-28
+41. Quang Le ~                    8.33  [6/14n 10/12n 12/13n]  last 2025-09-13
+42. Marcus McGhee                 8.53  [10/16n 10/16n 2/12n]  last 2026-06-06
+43. Carlos Vera ~                 8.63  [9/13n 8/12P]  last 2025-03-15
+44. Vince Morales                 8.67  [11/14n 4/12n 10/12n]  last 2026-05-02
+45. Elijah Smith                  8.88  [9/14n 8/12n 10/12n]  last 2026-03-14
+46. Adrian Yanez                  8.90  [13/16n 5/13n 4/12n]  last 2026-03-28
+47. Miles Johns ~                 8.98  [11/12n 5/12n 10/13n]  last 2025-11-08
+48. Josias Musasa                 9.00  [9/12n 9/13n]  last 2025-09-27
+49. Angel Pacheco                 9.00  [6/14n 14/14n]  last 2026-02-28
+50. Xiao Long                     9.14  [7/16P 11/12n 12/13n]  last 2026-03-07
+51. Ethyn Ewing                   9.31  [12/15n 5/16n 9/14P]  last 2026-06-20
+52. Javid Basharat ~              9.33  [10/13n 9/12n 8/11n]  last 2026-02-07
+53. You Su-young ~                9.35  [11/12n 8/13n 7/13n]  last 2025-08-23
+54. Chris Gutierrez ~             9.61  [12/14P 9/14n 4/10n]  last 2025-10-04
+55. Pedro Falcao ~                9.62  [10/12n 9/12n]  last 2025-04-05
+56. Qileng Aori ~                 9.71  [8/13n 10/10P 14/14n]  last 2025-10-18
+57. Kris Moutinho                 9.73  [9/14n 9/13n 13/14n]  last 2026-02-28
+58. Jesus Santos-Aguilar ~        9.76  [10/14n 8/12n 12/12P]  last 2025-09-13
+59. Farid Basharat                9.86  [12/15n 5/13n 12/14P]  last 2026-06-20
+60. Brad Katona ~                 9.92  [12/12P 7/11n 9/14n]  last 2025-05-10
+61. Colby Thicknesse             10.02  [11/14n 9/12n 9/12P]  last 2026-05-02
+62. Bekzat Almakhan              10.02  [11/14n 12/12P 4/11n]  last 2025-11-22
+63. Rei Tsuruya                  10.08  [11/16n 11/16n 6/10P]  last 2026-05-30
+64. Jakub Wiklacz                10.24  [10/16n 12/13n 8/14P]  last 2026-06-06
+65. Aleksandre Topuria ~         10.25  [11/14n 9/12P]  last 2025-11-22
+66. Cody Haddon                  10.38  [10/16n 11/12n]  last 2026-05-30
+67. Saimon Oliveira ~            10.41  [12/12n 5/12n 15/15P]  last 2025-10-11
+68. Ricky Simon                  10.80  [13/16n 7/12n 11/13n]  last 2026-03-28
+69. Cody Durden                  11.10  [13/16n 11/16P 6/13n]  last 2026-04-25
+70. Caolan Loughran ~            11.14  [12/13n 8/14P 14/14n]  last 2025-03-22
+71. Muin Gafurov ~               11.14  [12/13n 11/13P 9/11n]  last 2026-02-07
+72. John Yannis                  11.22  [10/16n 14/14n 10/12n]  last 2026-06-06
+73. Jesus Aguilar                11.37  [11/16n 12/16P]  last 2026-05-30
+74. John Castaneda               11.41  [13/14n 9/14n 11/14n]  last 2026-04-18
+75. Ivana Petrovic               11.82  [12/12n 12/13n 11/12n]  last 2025-05-03
+76. Luis Gurule                  11.86  [11/16n 15/16n 9/14n]  last 2026-05-30
+77. Luan Lacerda                 12.51  [13/14n 12/12n 12/13n]  last 2026-03-14
+
+━━━ FLYWEIGHT ━━━  (49 ranked)
+ 1. Manel Kape                    1.00  [1/15n 1/12n 1/10n]  last 2026-06-20
+ 2. Amir Albazi ~                 1.51  [2/13n 1/10n 1/13n]  last 2026-02-07
+ 3. Brandon Moreno                1.61  [1/14n 3/14P 1/12n]  last 2026-02-28
+ 4. Brandon Royval                1.61  [1/12n 3/11P 1/12n]  last 2025-12-13
+ 5. Alexandre Pantoja ~           1.82  [2/14P 2/11P 1/14o]  last 2025-12-06
+ 6. Kai Kara-France ~             1.82  [2/11P 2/12P 1/13n]  last 2025-06-28
+ 7. Tatsuro Taira                 2.12  [2/14P 3/14P 1/12n]  last 2026-05-09
+ 8. Joshua Van                    2.18  [2/14P 2/14P 3/11P]  last 2026-05-09
+ 9. Kyoji Horiguchi               2.22  [1/15n 2/13n 6/14n]  last 2026-06-20
+10. Steve Erceg                   2.33  [3/14n 2/12n 1/12n]  last 2026-05-02
+11. Ode Osbourne                  3.47  [2/12n 5/12n 5/10P]  last 2025-08-09
+12. Tim Elliott                   3.80  [3/14n 5/12P 4/11n]  last 2026-05-02
+13. Ronaldo Rodriguez ~           5.63  [6/12n 5/10P]  last 2025-03-29
+14. CJ Vergara ~                  5.76  [3/12n 6/12n 13/14P]  last 2025-03-29
+15. Kevin Borjas                  5.84  [7/15n 5/14n 4/12n]  last 2026-06-20
+16. Su Mudaerji ~                 5.96  [4/12n 11/13P 3/11n]  last 2025-08-23
+17. Asu Almabayev                 6.00  [9/14n 4/12n 1/10n]  last 2025-11-22
+18. Jose Johnson ~                6.63  [7/14n 7/12n 5/11n]  last 2025-01-11
+19. Felipe Bunes                  6.69  [4/14n 11/12n 7/14n]  last 2026-02-28
+20. Joseph Morales ~              6.71  [2/12n 12/12P 11/12n]  last 2025-11-08
+21. Park Hyun-sung ~              6.73  [9/13n 1/12n 10/11n]  last 2025-10-18
+22. Imanol Rodriguez              6.88  [8/16n 5/14n]  last 2026-06-06
+23. Matt Schnell                  6.90  [8/16n 8/16n 2/12n]  last 2026-06-06
+24. Bruno Gustavo da Silva ~      6.98  [9/13n 6/13P 3/13n]  last 2025-10-18
+25. Charles Johnson               7.10  [6/14n 9/11P 7/12n]  last 2026-03-14
+26. Andre Lima                    7.73  [7/15n 7/14n 11/13n]  last 2026-06-20
+27. Edgar Chairez                 7.90  [12/16n 4/14n 3/12n]  last 2026-06-06
+28. Jimmy Flick ~                 7.92  [7/14n 7/11n 12/12P]  last 2025-04-26
+29. Alex Perez                    7.98  [7/16n 9/11P 9/14n]  last 2026-05-30
+30. Lone'er Kavanagh ~            8.04  [7/12n 8/13n 11/13n]  last 2025-08-23
+31. Ramazan Temirov               8.50  [10/10n 6/12n]  last 2025-03-01
+32. Felipe dos Santos ~           8.73  [8/13n 8/12n 12/13n]  last 2025-03-22
+33. Tagir Ulanbekov ~             8.82  [6/14n 11/12n 13/13P]  last 2025-11-22
+34. Sumudaerji                    8.87  [7/16n 12/16P]  last 2026-05-30
+35. Allan Nascimento              9.06  [9/15n 11/14n 6/13n]  last 2026-06-20
+36. Alibi Idiris                  9.50  [8/14n 12/12P]  last 2026-02-22
+37. Alessandro Costa              9.65  [8/16n 11/16n 12/14n]  last 2026-06-06
+38. Bruno Silva                   9.80  [12/16n 6/14n 10/12P]  last 2026-06-06
+39. Alden Coria                  10.12  [9/14n 12/14n]  last 2026-02-22
+40. Mitch Raposo                 10.16  [9/15n 11/14n 12/13P]  last 2026-06-20
+41. Jose Ochoa                   10.20  [14/14P 4/12n 10/13n]  last 2026-05-09
+42. Jafel Filho                  10.37  [10/16n 13/16n 7/12n]  last 2026-04-25
+43. Lucas Rocha                  10.37  [10/16n 10/12n 12/12n]  last 2026-04-25
+44. Carlos Hernandez ~           10.37  [10/11n 10/13n 12/13P]  last 2025-05-17
+45. Nyamjargal Tumendemberel     10.63  [11/16P 10/13n]  last 2026-03-07
+46. Stewart Nicoll               10.88  [11/16n 10/12n 12/12P]  last 2026-04-04
+47. Azat Maksum ~                10.96  [12/13P 11/12n 8/13n]  last 2025-10-25
+48. Clayton Carpenter            11.67  [14/14P 7/12n 13/13P]  last 2026-05-09
+49. Daniel Barez                 13.22  [15/16n 11/13n 12/14n]  last 2026-05-16
+
+━━━ WOMENS BANTAMWEIGHT ━━━  (28 ranked)
+ 1. Kayla Harrison ~              3.71  [2/13P 4/12P 8/13P]  last 2025-06-07
+ 2. Norma Dumont                  5.69  [3/16n 10/13n 6/10P]  last 2026-04-25
+ 3. Joselyne Edwards              6.24  [3/16n 10/14n 9/12n]  last 2026-04-25
+ 4. Miesha Tate ~                 6.82  [7/12n 7/12n 6/12n]  last 2025-05-03
+ 5. Macy Chiasson                 8.18  [8/14n 11/14P 4/9n]  last 2026-02-28
+ 6. Yana Kunitskaya ~             8.67  [11/14P 7/12n 5/10n]  last 2025-10-04
+ 7. Nora Cornolle                 8.71  [10/14n 4/12n 13/13P]  last 2026-02-22
+ 8. Ailin Perez                   9.16  [8/14n 10/13P 11/14n]  last 2026-02-28
+ 9. Bia Mesquita                  9.50  [8/15n 12/14n]  last 2026-06-20
+10. Daria Zheleznyakova ~         9.75  [9/12n 11/14n]  last 2025-06-21
+11. Ketlen Vieira                 9.92  [12/16n 10/13n 4/9n]  last 2026-05-16
+12. Tainara Lisboa ~             10.06  [13/13n 7/11n 7/11n]  last 2025-10-18
+13. Karol Rosa                   10.20  [14/15n 4/12n 10/13P]  last 2026-06-20
+14. Mayra Bueno Silva            10.22  [12/16n 8/12n 9/11n]  last 2026-04-25
+15. Julia Avila ~                10.29  [12/12n 7/12n 11/13n]  last 2025-02-15
+16. Melissa Mullins              10.33  [8/15n 15/15n 9/12n]  last 2026-06-20
+17. Melissa Croden               10.55  [10/14n 10/12n 13/13n]  last 2026-04-18
+18. Josiane Nunes ~              10.65  [12/13n 10/11n 8/13n]  last 2025-03-15
+19. Jacqueline Cavalcanti        10.78  [12/16n 8/12n 12/12n]  last 2026-05-16
+20. Michelle Montague            11.25  [12/16n 10/12n]  last 2026-04-25
+21. Luana Santos                 11.49  [14/15n 10/12n 7/11n]  last 2026-06-20
+22. Klaudia Sygula ~             11.71  [13/13n 10/12n 11/11n]  last 2026-02-07
+23. Chelsea Chandler             11.84  [13/16n 14/14n 5/10n]  last 2026-06-06
+24. Montserrat Rendon ~          12.02  [13/14n 11/13n 11/11n]  last 2025-09-13
+25. Priscila Cachoeira           12.27  [13/16n 13/13n 9/12n]  last 2026-06-06
+26. Luana Carolina               12.55  [15/15n 10/12n 10/11n]  last 2026-03-21
+27. Hailey Cowan                 12.63  [13/16n 13/13P 11/11n]  last 2026-04-04
+28. Alice Pereira                13.00  [13/16n 13/14n]  last 2026-04-04
+
+━━━ WOMENS FLYWEIGHT ━━━  (29 ranked)
+ 1. Valentina Shevchenko ~        2.00  [2/14P 2/12P 2/10P]  last 2025-11-15
+ 2. Alexa Grasso                  2.61  [2/16n 4/12P 2/10P]  last 2026-03-28
+ 3. Manon Fiorot ~                2.84  [4/13n 2/12P 1/14n]  last 2025-10-18
+ 4. Rose Namajunas ~              3.02  [4/11P 2/13n 2/10n]  last 2026-01-24
+ 5. Natalia Silva ~               3.63  [4/11P 4/12P 2/12n]  last 2026-01-24
+ 6. Jasmine Jasudavicius          4.55  [4/14n 4/13n 7/12P]  last 2026-04-18
+ 7. Maycee Barber                 4.76  [2/16n 8/14P 7/14P]  last 2026-03-28
+ 8. Erin Blanchfield              4.88  [8/14P 2/10n 1/14n]  last 2025-11-15
+ 9. Miranda Maverick ~            5.86  [2/13n 11/13n 8/11n]  last 2025-06-14
+10. Viviane Araujo ~              6.04  [8/11P 4/12P 4/13n]  last 2025-06-28
+11. Karine Silva                  6.51  [4/14n 8/14P 11/12P]  last 2026-04-18
+12. Jessica Andrade ~             6.59  [8/12P 7/12P 2/12n]  last 2025-08-16
+13. Tracy Cortez                  6.71  [8/14P 8/11P 1/12n]  last 2025-11-15
+14. Diana Belbita ~               7.00  [7/12n 7/13n 7/11n]  last 2025-04-05
+15. Brogan Walker-Sanchez ~       9.10  [14/14P 4/11n 4/10n]  last 2025-10-04
+16. Julija Stoliarenko ~          9.35  [11/12n 11/13n 2/15n]  last 2025-08-09
+17. Gabriella Fernandes           9.71  [11/16n 11/12n 4/13n]  last 2026-03-28
+18. Andrea Lee ~                  9.86  [9/10n 10/14n 12/12P]  last 2025-03-01
+19. JJ Aldrich                   10.57  [11/14n 9/10n 12/12n]  last 2026-04-18
+20. Ernesta Kareckaite           11.00  [11/14n 11/14n 11/14n]  last 2026-02-28
+21. Tereza Bleda ~               11.20  [12/12n 10/12n 11/11n]  last 2025-12-13
+22. Jamey-Lyn Horth              11.67  [11/14n 12/12n 13/13n]  last 2026-04-18
+23. Vanessa Demopoulos ~         12.14  [13/13n 12/12n 10/12n]  last 2025-06-14
+24. Dione Barbosa                12.31  [15/16n 11/12P 7/12n]  last 2026-04-04
+25. Melissa Gatto                12.31  [15/16n 8/12n 12/14n]  last 2026-04-04
+26. Veronica Macedo ~            13.02  [14/14P 12/12P 12/12n]  last 2025-10-04
+27. Juliana Miller               13.20  [14/14n 12/12n 13/13n]  last 2026-02-22
+28. Carli Judice                 13.82  [14/14n 14/14P 13/13n]  last 2026-02-22
+29. Yuneisy Duben                14.25  [15/16n 13/13n]  last 2026-06-06
+
+━━━ WOMENS STRAWWEIGHT ━━━  (44 ranked)
+ 1. Mackenzie Dern                1.51  [2/13P 1/14n 1/12n]  last 2025-10-25
+ 2. Zhang Weili ~                 2.00  [2/14P 2/12P 2/13P]  last 2025-11-15
+ 3. Virna Jandiroba               2.92  [2/16n 2/13P 7/13P]  last 2026-04-04
+ 4. Iasmin Lucindo ~              4.04  [3/12n 4/10P 7/12P]  last 2025-08-09
+ 5. Tabatha Ricci                 4.14  [2/16n 9/12n 2/13n]  last 2026-04-04
+ 6. Amanda Lemos                  4.51  [2/14n 9/14n 4/10P]  last 2026-03-14
+ 7. Gillian Robertson             4.51  [2/14n 9/12n 4/11n]  last 2026-03-14
+ 8. Yan Xiaonan ~                 4.55  [7/13P 2/13n 2/13P]  last 2025-04-12
+ 9. Amanda Ribas                  5.08  [9/12n 1/14n 1/12n]  last 2025-07-26
+10. Molly McCann ~                5.47  [4/13n 7/14P 7/13n]  last 2025-03-22
+11. Tatiana Suarez                7.71  [9/12P 9/14n 2/12P]  last 2026-04-11
+12. Lupita Godinez ~              7.76  [8/12P 9/12n 5/13n]  last 2025-08-16
+13. Luana Pinheiro ~              7.76  [11/11n 4/11n 5/12n]  last 2025-05-17
+14. Elise Reed ~                  8.45  [9/11n 9/11n 6/11n]  last 2025-05-17
+15. Karolina Kowalkiewicz ~       8.73  [11/12n 6/11n 7/13P]  last 2025-10-11
+16. Marina Rodriguez ~            8.76  [9/12n 7/12P 11/13P]  last 2025-05-03
+17. Denise Gomes ~                8.96  [10/12n 9/11n 6/11n]  last 2025-11-08
+18. Istela Nunes ~                9.61  [9/12n 8/13n 14/14n]  last 2025-04-05
+19. Cong Wang ~                  10.14  [11/13n 10/13P 8/12P]  last 2026-02-07
+20. Tecia Torres ~               10.49  [10/12n 11/11n 11/12P]  last 2025-11-08
+21. Montserrat Ruiz ~            10.69  [11/13n 10/11n 11/13n]  last 2025-11-01
+22. Mizuki Inoue ~               10.80  [13/13P 10/11n 6/9n]  last 2025-10-25
+23. Angela Hill                  10.86  [13/16n 12/14P 3/12n]  last 2026-05-30
+24. Rayanne dos Santos ~         10.90  [9/9n 14/14n 11/11n]  last 2025-05-31
+25. Melissa Martinez ~           11.39  [12/12n 10/11n 12/13P]  last 2025-07-12
+26. Ravena Oliveira              11.80  [14/15n 11/13n 7/11n]  last 2026-03-21
+27. Stephanie Luciano            11.84  [13/16n 11/13n 10/13n]  last 2026-03-28
+28. Bruna Brasil                 11.88  [15/16n 9/13n 8/12P]  last 2026-03-28
+29. Alexia Thainara              12.06  [15/16n 12/12n 4/13n]  last 2026-03-28
+30. Puja Tomar ~                 12.12  [11/13n 14/14n]  last 2025-03-22
+31. Alice Ardelean               12.16  [14/16n 11/13n 9/9n]  last 2026-05-16
+32. Fatima Kline                 12.18  [12/14P 12/12n 13/14n]  last 2025-11-15
+33. Victoria Dudakova ~          12.33  [13/14n 12/12n 11/13n]  last 2025-01-11
+34. Polyana Viana                12.47  [14/16n 12/14n 9/12P]  last 2026-05-16
+35. Sam Hughes                   12.96  [14/14n 13/13n 10/13n]  last 2026-03-14
+36. Ketlen Souza                 13.12  [16/16n 9/13n 12/12n]  last 2026-06-06
+37. Julia Polastri               13.18  [16/16n 11/12n 9/12n]  last 2026-04-25
+38. Piera Rodriguez              13.20  [14/14n 12/12n 13/13n]  last 2026-03-14
+39. Loma Lookboonmee             13.49  [16/16n 12/12n 9/12n]  last 2026-05-30
+40. Ariane Carnelossi            13.98  [16/16n 13/13n 10/12n]  last 2026-06-06
+41. Shauna Bannon                14.16  [16/16n 13/13n 11/13n]  last 2026-05-16
+42. Jaqueline Amorim             14.35  [16/16n 13/13P 12/14n]  last 2026-05-30
+43. Talita Alencar               14.35  [16/16n 13/13n 12/12n]  last 2026-04-25
+44. Nicolle Caliari              14.47  [16/16n 14/14P 11/14n]  last 2026-05-16
+
+legend: number = avg card slot (1.0 = main event, 2.0 = co-main, lower is higher up)  |  [pos/cardSize  P=numbered PPV  n=fight night  o=other]  |  ~ = division inferred from opponents

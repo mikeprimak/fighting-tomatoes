@@ -764,6 +764,89 @@ export async function getFanDNAProfile() {
   return makeRequest<FanDNAProfile>('/fan-dna/profile');
 }
 
+// Taste-profile engine (services/fanDNA/tasteProfile) — the ranked-insight
+// system behind the Fan DNA surfaces. Replaces the trait cards + frozen
+// personalityType on identity surfaces (the single "you are X" label is
+// shelved per the locked rotating-signature decision).
+export interface TasteProfileInsight {
+  key: string;
+  kind: string;
+  dimension: string;
+  token: string;
+  headline: string;
+  subline: string;
+  /** Receipts: "Because you liked Max Holloway vs Justin Gaethje". */
+  evidence?: string | null;
+  score: number;
+}
+
+/** Rotating identity noun + plain-language meaning + receipts. */
+export interface TasteIdentity {
+  label: string;
+  explanation: string;
+  evidence?: string | null;
+}
+
+export interface TasteProfileResponse {
+  insights: TasteProfileInsight[];
+  /** Rotating identity; null = render nothing (silence > filler). */
+  identity?: TasteIdentity | null;
+  /** Back-compat noun ("KO Lover"); null = render nothing. */
+  identityLabel?: string | null;
+  baseline: { count: number; avg: number; tensCount: number };
+  coverage: { withCharacter: number; total: number };
+}
+
+export async function getTasteProfile(opts?: {
+  max?: number;
+  salt?: string;
+}): Promise<TasteProfileResponse> {
+  const params = new URLSearchParams();
+  if (opts?.max) params.set('max', String(opts.max));
+  if (opts?.salt) params.set('salt', opts.salt);
+  const qs = params.toString();
+  return makeRequest<TasteProfileResponse>(
+    `/fan-dna/taste-profile${qs ? `?${qs}` : ''}`,
+  );
+}
+
+// Home mirror urgency rail — live/today events the user cares about +
+// hyped/followed fights over the next week. Spoiler-safe by construction
+// (backend queries UPCOMING/LIVE only, selects no result fields).
+export interface HomeMirrorEventCard {
+  eventId: string;
+  name: string;
+  promotion: string;
+  date: string;
+  mainStartTime: string | null;
+  prelimStartTime: string | null;
+  hypedFightCount: number;
+  followedFighterNames: string[];
+}
+
+export interface HomeMirrorPinnedFight {
+  fightId: string;
+  eventId: string;
+  eventName: string;
+  promotion: string;
+  eventDate: string;
+  isTitle: boolean;
+  fighter1: { name: string; profileImage: string | null };
+  fighter2: { name: string; profileImage: string | null };
+  hype: number | null;
+  followedFighterNames: string[];
+}
+
+export interface HomeMirrorResponse {
+  liveEvents: HomeMirrorEventCard[];
+  todayEvents: HomeMirrorEventCard[];
+  pinnedFights: HomeMirrorPinnedFight[];
+}
+
+export async function getHomeMirror(): Promise<HomeMirrorResponse> {
+  return makeRequest<HomeMirrorResponse>('/home/mirror');
+}
+
 // ==================== ME / RECENCY ====================
 
 export interface UpcomingFollowedFight {

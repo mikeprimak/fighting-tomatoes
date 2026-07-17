@@ -206,30 +206,14 @@ export default function ProfileScreen() {
   }>({ comments: [], totalWithUpvotes: 0 });
   const [upvotingPreflightId, setUpvotingPreflightId] = useState<string | null>(null);
 
-  // Fan DNA trait cards — ordered by weight, populated lazily by the
-  // backend's batchCompute path. Empty array = either no traits met their
-  // floor yet or the fetch failed (silent — section just stays hidden).
-  type FanDNACard = {
-    traitId: string;
-    family: 'affinity' | 'behaviour' | 'prediction' | 'identity';
-    headline: string;
-    body?: string;
-    primaryStat?: string;
-    secondaryStat?: string;
-    weight: number;
-    confidence: number;
-    computedAt: string;
-  };
-  const [fanDNACards, setFanDNACards] = useState<FanDNACard[]>([]);
+  // Fan DNA row — taste-profile engine (2026-07-04 revamp). The frozen
+  // personalityType label is gone per the locked rotating-signature decision
+  // (identity-platform.md 2026-06-09): the rotating identity noun leads, the
+  // top insight headline stands in when no noun qualifies, and both null
+  // hides the row (silence > filler).
   const [fanDNALoading, setFanDNALoading] = useState<boolean>(false);
-  type FanDNAPersonalityType = {
-    id: string;
-    label: string;
-    body: string;
-    primaryStat?: string;
-    secondaryStat?: string;
-  };
-  const [fanDNAType, setFanDNAType] = useState<FanDNAPersonalityType | null>(null);
+  const [fanDNAIdentity, setFanDNAIdentity] = useState<string | null>(null);
+  const [fanDNAHeadline, setFanDNAHeadline] = useState<string | null>(null);
 
   // Time filter state - default to 'allTime' to show all predictions
   const [timeFilter, setTimeFilter] = useState<string>('allTime');
@@ -306,21 +290,24 @@ export default function ProfileScreen() {
     }, [user?.id])
   );
 
-  // Fetch Fan DNA. First call after login triggers a lazy batchCompute on the
-  // backend, so it can take a few seconds for users with lots of ratings —
-  // hence the separate loading flag and the silent on-error path.
+  // Fetch the Fan DNA row content from the taste-profile engine. Same daily
+  // salt as the other surfaces so the noun agrees everywhere today.
+  // Silent on error — the row just stays hidden.
   useEffect(() => {
     const fetchFanDNA = async () => {
       if (!user) return;
       setFanDNALoading(true);
       try {
-        const data = await apiService.getFanDNAProfile();
-        setFanDNACards(data.cards ?? []);
-        setFanDNAType(data.personalityType ?? null);
+        // max 4 (not 1): the identity noun rotates across the top eligible
+        // insights, and matching the full screen's args keeps the nouns equal.
+        const todaySalt = new Date().toISOString().slice(0, 10);
+        const taste = await apiService.getTasteProfile(4, false, todaySalt);
+        setFanDNAIdentity(taste.identityLabel ?? null);
+        setFanDNAHeadline(taste.insights?.[0]?.headline ?? null);
       } catch (error) {
         console.log('Fan DNA fetch failed (silent):', error);
-        setFanDNACards([]);
-        setFanDNAType(null);
+        setFanDNAIdentity(null);
+        setFanDNAHeadline(null);
       } finally {
         setFanDNALoading(false);
       }
@@ -666,7 +653,7 @@ export default function ProfileScreen() {
               Hype fights on{' '}
               <Text
                 style={{ color: colors.primary, fontWeight: '600' }}
-                onPress={() => router.push('/(tabs)')}
+                onPress={() => router.push('/(tabs)/events')}
               >
                 Upcoming Events
               </Text>
@@ -726,22 +713,28 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Your Fan DNA — condensed to title + personality type line. */}
-        {(fanDNALoading || fanDNAType) && (
+        {/* Your Fan DNA — rotating identity noun (matches the full DNA
+            screen), top taste insight as fallback. Voice: the claim stands on
+            its own, no "Your Type:" scaffolding. */}
+        {(fanDNALoading || fanDNAIdentity || fanDNAHeadline) && (
           <ActivitySection
             bgColor={SECTION_BG_ODD}
-            onPress={fanDNAType ? () => router.push('/activity/fan-dna' as any) : undefined}
+            onPress={fanDNAIdentity || fanDNAHeadline ? () => router.push('/activity/fan-dna' as any) : undefined}
             title={<Text style={[styles.settingsRowLabel, { color: colors.text }]}>Your Fan DNA</Text>}
-            headerRight={fanDNAType ? (
+            headerRight={fanDNAIdentity || fanDNAHeadline ? (
               <FontAwesome name="chevron-right" size={14} color={colors.textSecondary} />
             ) : undefined}
           >
-            {fanDNAType ? (
+            {fanDNAIdentity ? (
               <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>
-                Your Type: <Text style={{ color: colors.text, fontWeight: '600' }}>{fanDNAType.label}</Text>
+                This week: <Text style={{ color: colors.text, fontWeight: '600' }}>{fanDNAIdentity}</Text>
+              </Text>
+            ) : fanDNAHeadline ? (
+              <Text style={[styles.settingsRowValue, { color: colors.text, fontWeight: '600' }]}>
+                {fanDNAHeadline}
               </Text>
             ) : (
-              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>Computing your DNA…</Text>
+              <Text style={[styles.settingsRowValue, { color: colors.textSecondary }]}>Reading your ratings…</Text>
             )}
           </ActivitySection>
         )}

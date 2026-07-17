@@ -20,6 +20,7 @@ import broadcastsRoutes from './broadcasts';
 import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
+import homeMirrorRoutes from './homeMirror';
 import sitemapRoutes from './sitemap';
 import trackRoutes from './track';
 import { isIndexable, fighterIndexWhere } from '../lib/seoIndex';
@@ -2261,6 +2262,11 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Register Fan DNA routes under /api/fan-dna prefix
   await fastify.register(fanDNARoutes, { prefix: '/api/fan-dna' });
+
+  // Home mirror — the "what you care about this week" urgency rail
+  // (live/today events + pinned hyped/followed fights). Feeds the web
+  // sidebar; spoiler-safe by construction.
+  await fastify.register(homeMirrorRoutes, { prefix: '/api/home' });
 
   // Bulk sitemap data for goodfights.app (paths carry their own /api prefix)
   await fastify.register(sitemapRoutes);

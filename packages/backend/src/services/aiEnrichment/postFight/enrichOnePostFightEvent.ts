@@ -41,6 +41,10 @@ export interface EnrichOnePostFightOptions {
   dryRun?: boolean;
   browserHandle?: PreviewBrowserHandle;
   editorialTopN?: number;
+  /** Brave freshness for the editorial recap search. The T+5d cron keeps the
+   *  default ('pm'); the historic backfill passes 'all' because its recaps are
+   *  years old. */
+  editorialFreshness?: 'pd' | 'pw' | 'pm' | 'py' | 'all';
 }
 
 export interface EnrichOnePostFightResult {
@@ -136,6 +140,7 @@ export async function enrichOnePostFightEvent(
   const editorial = await fetchEditorialPreviews(event.name, undefined, {
     topN: editorialTopN,
     mode: 'recap',
+    freshness: opts.editorialFreshness,
   });
   for (const s of editorial) {
     sources.push({ url: s.url, text: s.text, label: s.domain });

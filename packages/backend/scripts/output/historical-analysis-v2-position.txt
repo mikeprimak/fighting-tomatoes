@@ -1,0 +1,122 @@
+metric: avg card slot (1.0 = main event, lower = higher up)
+events used: 788 | order-inverted (corrected): 129 | fighters: 2887
+
+═══ MOST CAREER UFC MAIN EVENTS (top-of-the-card leaders) ═══
+ 1. Anderson Silva           fights= 25 main=18 co= 3 ppvMain=14 avgSlot= 2.20  2006–2020
+ 2. Jon Jones                fights= 24 main=17 co= 0 ppvMain=17 avgSlot= 2.83  2008–2024
+ 3. Israel Adesanya          fights= 19 main=15 co= 1 ppvMain=12 avgSlot= 1.68  2018–2026
+ 4. Max Holloway             fights= 32 main=15 co= 5 ppvMain=10 avgSlot= 2.94  2012–2026
+ 5. Stipe Miocic             fights= 19 main=13 co= 1 ppvMain= 9 avgSlot= 2.89  2011–2024
+ 6. Derrick Lewis            fights= 32 main=13 co= 5 ppvMain= 2 avgSlot= 3.28  2014–2026
+ 7. Dustin Poirier           fights= 32 main=13 co= 3 ppvMain= 8 avgSlot= 3.47  2011–2025
+ 8. Rafael Dos Anjos         fights= 36 main=12 co= 8 ppvMain= 2 avgSlot= 3.39  2008–2024
+ 9. Justin Gaethje           fights= 16 main=11 co= 2 ppvMain= 5 avgSlot= 1.69  2017–2026
+10. Conor McGregor           fights= 14 main=11 co= 0 ppvMain= 9 avgSlot= 2.29  2013–2021
+11. Lyoto Machida            fights= 24 main=11 co= 5 ppvMain= 4 avgSlot= 3.25  2007–2018
+12. Frankie Edgar            fights= 30 main=11 co= 6 ppvMain= 5 avgSlot= 3.27  2007–2022
+13. Chan Sung Jung           fights= 12 main=10 co= 0 ppvMain= 2 avgSlot= 1.58  2011–2023
+14. Glover Teixeira          fights= 23 main=10 co= 7 ppvMain= 3 avgSlot= 2.09  2012–2023
+15. Demetrious Johnson       fights= 18 main=10 co= 4 ppvMain= 3 avgSlot= 2.56  2011–2018
+16. Nate Diaz                fights= 27 main=10 co= 4 ppvMain= 4 avgSlot= 2.96  2007–2022
+17. Kamaru Usman             fights= 19 main=10 co= 2 ppvMain= 7 avgSlot= 3.26  2015–2025
+18. Sean Strickland          fights= 25 main=10 co= 1 ppvMain= 4 avgSlot= 4.32  2014–2026
+19. Daniel Cormier           fights= 15 main= 9 co= 5 ppvMain= 9 avgSlot= 1.47  2013–2020
+20. Robert Whittaker         fights= 24 main= 9 co= 6 ppvMain= 4 avgSlot= 2.46  2012–2025
+21. Mauricio Rua             fights= 24 main= 9 co= 8 ppvMain= 4 avgSlot= 2.79  2007–2023
+22. Charles Oliveira         fights= 37 main= 9 co= 9 ppvMain= 6 avgSlot= 3.86  2010–2026
+23. Georges St-Pierre        fights= 22 main= 9 co= 2 ppvMain= 9 avgSlot= 4.14  2004–2017
+24. Vitor Belfort            fights= 26 main= 9 co= 4 ppvMain= 5 avgSlot= 4.15  1997–2018
+25. Junior Dos Santos        fights= 23 main= 9 co= 2 ppvMain= 2 avgSlot= 4.83  2008–2020
+26. Alex Pereira             fights= 12 main= 8 co= 2 ppvMain= 8 avgSlot= 1.75  2022–2026
+27. Holly Holm               fights= 16 main= 8 co= 5 ppvMain= 3 avgSlot= 2.00  2015–2024
+28. Mark Hunt                fights= 18 main= 8 co= 6 ppvMain= 2 avgSlot= 2.00  2010–2018
+29. Jose Aldo                fights= 23 main= 8 co= 8 ppvMain= 7 avgSlot= 2.04  2011–2025
+30. Alistair Overeem         fights= 20 main= 8 co= 6 ppvMain= 2 avgSlot= 2.20  2011–2021
+
+═══ MOST CAREER PPV MAIN EVENTS (numbered-card headliners) ═══
+ 1. Jon Jones                fights= 24 main=17 co= 0 ppvMain=17 avgSlot= 2.83  2008–2024
+ 2. Anderson Silva           fights= 25 main=18 co= 3 ppvMain=14 avgSlot= 2.20  2006–2020
+ 3. Israel Adesanya          fights= 19 main=15 co= 1 ppvMain=12 avgSlot= 1.68  2018–2026
+ 4. Max Holloway             fights= 32 main=15 co= 5 ppvMain=10 avgSlot= 2.94  2012–2026
+ 5. Daniel Cormier           fights= 15 main= 9 co= 5 ppvMain= 9 avgSlot= 1.47  2013–2020
+ 6. Conor McGregor           fights= 14 main=11 co= 0 ppvMain= 9 avgSlot= 2.29  2013–2021
+ 7. Stipe Miocic             fights= 19 main=13 co= 1 ppvMain= 9 avgSlot= 2.89  2011–2024
+ 8. Georges St-Pierre        fights= 22 main= 9 co= 2 ppvMain= 9 avgSlot= 4.14  2004–2017
+ 9. Alex Pereira             fights= 12 main= 8 co= 2 ppvMain= 8 avgSlot= 1.75  2022–2026
+10. Alexander Volkanovski    fights= 17 main= 8 co= 3 ppvMain= 8 avgSlot= 2.94  2017–2026
+11. Dustin Poirier           fights= 32 main=13 co= 3 ppvMain= 8 avgSlot= 3.47  2011–2025
+12. Jose Aldo                fights= 23 main= 8 co= 8 ppvMain= 7 avgSlot= 2.04  2011–2025
+13. Amanda Nunes             fights= 18 main= 7 co= 4 ppvMain= 7 avgSlot= 2.94  2013–2023
+14. Kamaru Usman             fights= 19 main=10 co= 2 ppvMain= 7 avgSlot= 3.26  2015–2025
+15. Ronda Rousey             fights=  8 main= 6 co= 2 ppvMain= 6 avgSlot= 1.25  2013–2016
+16. Nick Diaz                fights= 15 main= 6 co= 3 ppvMain= 6 avgSlot= 2.80  2003–2021
+17. Islam Makhachev          fights= 18 main= 8 co= 1 ppvMain= 6 avgSlot= 3.78  2015–2025
+18. Charles Oliveira         fights= 37 main= 9 co= 9 ppvMain= 6 avgSlot= 3.86  2010–2026
+19. Justin Gaethje           fights= 16 main=11 co= 2 ppvMain= 5 avgSlot= 1.69  2017–2026
+20. Robbie Lawler            fights= 25 main= 8 co= 2 ppvMain= 5 avgSlot= 2.84  2002–2023
+
+═══ LOWEST AVG CARD SLOT (min 12 fights) — the perennial top-billers ═══
+ 1. Daniel Cormier           fights= 15 main= 9 co= 5 ppvMain= 9 avgSlot= 1.47  2013–2020
+ 2. Chan Sung Jung           fights= 12 main=10 co= 0 ppvMain= 2 avgSlot= 1.58  2011–2023
+ 3. Israel Adesanya          fights= 19 main=15 co= 1 ppvMain=12 avgSlot= 1.68  2018–2026
+ 4. Justin Gaethje           fights= 16 main=11 co= 2 ppvMain= 5 avgSlot= 1.69  2017–2026
+ 5. Alex Pereira             fights= 12 main= 8 co= 2 ppvMain= 8 avgSlot= 1.75  2022–2026
+ 6. Holly Holm               fights= 16 main= 8 co= 5 ppvMain= 3 avgSlot= 2.00  2015–2024
+ 7. Mark Hunt                fights= 18 main= 8 co= 6 ppvMain= 2 avgSlot= 2.00  2010–2018
+ 8. Jose Aldo                fights= 23 main= 8 co= 8 ppvMain= 7 avgSlot= 2.04  2011–2025
+ 9. Glover Teixeira          fights= 23 main=10 co= 7 ppvMain= 3 avgSlot= 2.09  2012–2023
+10. Anderson Silva           fights= 25 main=18 co= 3 ppvMain=14 avgSlot= 2.20  2006–2020
+11. Alistair Overeem         fights= 20 main= 8 co= 6 ppvMain= 2 avgSlot= 2.20  2011–2021
+12. Conor McGregor           fights= 14 main=11 co= 0 ppvMain= 9 avgSlot= 2.29  2013–2021
+13. Ronaldo Souza            fights= 16 main= 4 co= 7 ppvMain= 0 avgSlot= 2.31  2013–2021
+14. Alexander Volkov         fights= 19 main= 7 co= 4 ppvMain= 0 avgSlot= 2.32  2016–2026
+15. Gegard Mousasi           fights= 12 main= 5 co= 6 ppvMain= 0 avgSlot= 2.33  2013–2017
+16. Rose Namajunas           fights= 19 main= 5 co=10 ppvMain= 1 avgSlot= 2.37  2014–2026
+17. Tyron Woodley            fights= 16 main= 5 co= 8 ppvMain= 3 avgSlot= 2.38  2013–2021
+18. Robert Whittaker         fights= 24 main= 9 co= 6 ppvMain= 4 avgSlot= 2.46  2012–2025
+19. Demetrious Johnson       fights= 18 main=10 co= 4 ppvMain= 3 avgSlot= 2.56  2011–2018
+20. Yair Rodriguez           fights= 16 main= 7 co= 3 ppvMain= 1 avgSlot= 2.56  2014–2025
+21. Francis Ngannou          fights= 14 main= 6 co= 3 ppvMain= 3 avgSlot= 2.64  2015–2022
+22. Ciryl Gane               fights= 14 main= 8 co= 1 ppvMain= 4 avgSlot= 2.64  2019–2026
+23. Alexander Gustafsson     fights= 18 main= 8 co= 3 ppvMain= 3 avgSlot= 2.67  2009–2022
+24. Valentina Shevchenko     fights= 19 main= 5 co=10 ppvMain= 1 avgSlot= 2.68  2015–2025
+25. Mauricio Rua             fights= 24 main= 9 co= 8 ppvMain= 4 avgSlot= 2.79  2007–2023
+26. Alexa Grasso             fights= 15 main= 2 co= 9 ppvMain= 0 avgSlot= 2.80  2016–2026
+27. Nick Diaz                fights= 15 main= 6 co= 3 ppvMain= 6 avgSlot= 2.80  2003–2021
+28. Jan Blachowicz           fights= 23 main= 7 co= 7 ppvMain= 3 avgSlot= 2.83  2014–2026
+29. Jon Jones                fights= 24 main=17 co= 0 ppvMain=17 avgSlot= 2.83  2008–2024
+30. Robbie Lawler            fights= 25 main= 8 co= 2 ppvMain= 5 avgSlot= 2.84  2002–2023
+
+═══ STEEPEST CAREER DECLINE (first-third → last-third, min 12 fights) ═══
+ 1. Keith Jardine             2.3 →  8.8  (Δ6.5)  13 fights  2005–2010
+ 2. Sean Sherk                2.8 →  8.0  (Δ5.3)  12 fights  2001–2010
+ 3. Yves Edwards              2.6 →  7.7  (Δ5.1)  21 fights  2001–2014
+ 4. Karolina Kowalkiewicz     3.2 →  8.2  (Δ5.0)  19 fights  2015–2025
+ 5. Matt Serra                4.3 →  9.3  (Δ5.0)  14 fights  2001–2010
+ 6. Maryna Moroz              5.5 → 10.3  (Δ4.8)  12 fights  2015–2024
+ 7. Andrea Lee                5.8 → 10.5  (Δ4.8)  14 fights  2018–2025
+ 8. Bethe Correia             4.5 →  9.3  (Δ4.8)  12 fights  2013–2021
+ 9. Rustam Khabilov           4.0 →  8.8  (Δ4.8)  13 fights  2012–2019
+10. Rich Franklin             5.0 →  9.7  (Δ4.7)  20 fights  2003–2012
+11. Cynthia Calvillo          3.3 →  7.8  (Δ4.5)  13 fights  2017–2023
+12. Ricky Simon               5.0 →  9.3  (Δ4.3)  18 fights  2017–2026
+13. Renan Barao               3.2 →  7.4  (Δ4.2)  17 fights  2011–2019
+14. Royce Gracie              5.5 →  9.5  (Δ4.0)  13 fights  1993–2006
+15. Chris Lytle               3.5 →  7.3  (Δ3.8)  20 fights  2000–2011
+
+═══ STEEPEST CAREER RISE (first-third → last-third, min 12 fights) ═══
+ 1. Mario Bautista           11.5 →  2.8  (Δ8.8)  14 fights  2019–2026
+ 2. Sean Brady               10.8 →  2.3  (Δ8.5)  12 fights  2019–2026
+ 3. Colby Covington           9.0 →  1.0  (Δ8.0)  17 fights  2014–2024
+ 4. Merab Dvalishvili         9.0 →  1.4  (Δ7.6)  17 fights  2017–2025
+ 5. Cory Sandhagen            8.4 →  1.2  (Δ7.2)  16 fights  2018–2025
+ 6. Islam Makhachev           8.0 →  1.0  (Δ7.0)  18 fights  2015–2025
+ 7. Alexandre Pantoja         8.3 →  1.7  (Δ6.7)  18 fights  2017–2025
+ 8. Al Iaquinta               9.0 →  2.4  (Δ6.6)  15 fights  2012–2021
+ 9. Sean Strickland           7.6 →  1.1  (Δ6.5)  25 fights  2014–2026
+10. Giga Chikadze             9.8 →  3.3  (Δ6.5)  13 fights  2019–2026
+11. Khabib Nurmagomedov       7.5 →  1.0  (Δ6.5)  13 fights  2012–2020
+12. Kamaru Usman              7.5 →  1.2  (Δ6.3)  19 fights  2015–2025
+13. Stephen Thompson          8.7 →  2.4  (Δ6.3)  22 fights  2012–2025
+14. Junior Dos Santos         8.1 →  1.9  (Δ6.3)  23 fights  2008–2020
+15. Kai Kara-France           8.0 →  1.8  (Δ6.3)  13 fights  2018–2025

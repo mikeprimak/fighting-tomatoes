@@ -726,6 +726,7 @@ export async function authRoutes(fastify: FastifyInstance) {
                 level: { type: 'integer' },
                 broadcastRegion: { type: ['string', 'null'] },
                 hasApp: { type: 'boolean' },
+                totalUpvotesReceived: { type: 'integer' },
               },
             },
           },
@@ -905,6 +906,23 @@ export async function authRoutes(fastify: FastifyInstance) {
         ? (correctMethodCount / completedMethodPredictionsCount) * 100
         : 0;
 
+      // Upvotes received across BOTH comment types, summed live. The
+      // User.upvotesReceived counter only tracks review (post-fight) upvotes
+      // — pre-fight comment upvotes never increment it — so aggregating the
+      // per-row counts is the honest number.
+      const [reviewUpvotes, preFightUpvotes] = await Promise.all([
+        fastify.prisma.fightReview.aggregate({
+          where: { userId: decoded.userId },
+          _sum: { upvotes: true },
+        }),
+        fastify.prisma.preFightComment.aggregate({
+          where: { userId: decoded.userId },
+          _sum: { upvotes: true },
+        }),
+      ]);
+      const totalUpvotesReceived =
+        (reviewUpvotes._sum.upvotes ?? 0) + (preFightUpvotes._sum.upvotes ?? 0);
+
       // Return user without ratings/predictions arrays, but with calculated averages and distributions.
       // pushToken is a private credential — expose only its presence as hasApp (registered from the mobile app).
       const { ratings, predictions, pushToken, ...userWithoutArrays } = user;
@@ -933,7 +951,8 @@ export async function authRoutes(fastify: FastifyInstance) {
           completedMethodPredictions: completedMethodPredictionsCount,
           correctMethodPredictions: correctMethodCount,
           methodAccuracy: Number(methodAccuracy.toFixed(1)),
-          hasApp: !!pushToken
+          hasApp: !!pushToken,
+          totalUpvotesReceived,
         }
       });
 

@@ -89,6 +89,37 @@ export interface FanDNACommittedLine {
   isMeta?: boolean;
 }
 
+export interface TasteProfileInsight {
+  key: string;
+  kind: string;
+  dimension: string;
+  token: string;
+  /** Human, non-statistical headline ("You love wars"). */
+  headline: string;
+  /** Plain-language elaboration, no numbers. */
+  subline: string;
+  /** Receipts: "Because you liked Max Holloway vs Justin Gaethje". */
+  evidence?: string | null;
+  score: number;
+}
+
+/** Rotating identity noun + plain-language meaning + receipts. */
+export interface TasteIdentity {
+  label: string;
+  explanation: string;
+  evidence?: string | null;
+}
+
+export interface TasteProfileResponse {
+  insights: TasteProfileInsight[];
+  /** Rotating identity; null = render nothing (silence > filler). */
+  identity?: TasteIdentity | null;
+  /** Back-compat noun for the greeting pill ("KO Lover"); null = hide. */
+  identityLabel?: string | null;
+  baseline: { count: number; avg: number; tensCount: number };
+  coverage: { withCharacter: number; total: number };
+}
+
 interface Fight {
   id: string;
   orderOnCard: number;
@@ -1924,6 +1955,23 @@ class ApiService {
     count: number;
   }> {
     return this.makeRequest('/fan-dna/profile');
+  }
+
+  async getTasteProfile(
+    max?: number,
+    fresh?: boolean,
+    salt?: string,
+  ): Promise<TasteProfileResponse> {
+    // fresh=true bypasses the backend's 10-min input cache — for surfaces
+    // that load seconds after the ratings they should reflect. salt
+    // overrides the default weekly rotation (surfaces pass a daily salt so
+    // the copy changes every day but agrees across surfaces within one).
+    const params = new URLSearchParams();
+    if (max) params.append('max', String(max));
+    if (fresh) params.append('fresh', 'true');
+    if (salt) params.append('salt', salt);
+    const qs = params.toString();
+    return this.makeRequest(`/fan-dna/taste-profile${qs ? `?${qs}` : ''}`);
   }
 
   /**

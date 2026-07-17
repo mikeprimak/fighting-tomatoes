@@ -7,7 +7,7 @@ import { DistributionBlock } from './DistributionBlock';
 import { YourCommentsBlock } from './YourCommentsBlock';
 import { FollowedFightersStrip } from './FollowedFightersStrip';
 import { MightLikeFightersBlock } from './MightLikeFightersBlock';
-import { UpcomingHypedBlock } from './UpcomingHypedBlock';
+import { YourWeekBlock } from './YourWeekBlock';
 import { SpotlightBlock } from './SpotlightBlock';
 import { MightLikeBlock } from './MightLikeBlock';
 
@@ -29,7 +29,9 @@ export function ProfileSidebar() {
       <YourCommentsBlock />
       <FollowedFightersStrip />
       <MightLikeFightersBlock />
-      <UpcomingHypedBlock />
+      {/* Your week (home-mirror rail) supersedes the hype-only upcoming block:
+          same hyped fights plus followed-fighter pins and live/tonight events. */}
+      <YourWeekBlock />
       <SpotlightBlock />
       <MightLikeBlock />
     </aside>

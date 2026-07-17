@@ -39,7 +39,10 @@ function hasNarrative(rec: PostFightEnrichmentRecord): boolean {
     t.bonuses.length ||
     t.callouts.length ||
     t.aftermath.length ||
-    t.fotyConsideration
+    t.fotyConsideration ||
+    // Structured character tags are themselves worth persisting (they feed Fan DNA
+    // taste analytics), even when the model produced no prose for this fight.
+    t.character
   );
 }
 
