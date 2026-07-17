@@ -21,6 +21,7 @@ import adminBroadcastsRoutes from './adminBroadcasts';
 import adminBlogRoutes from './adminBlog';
 import fanDNARoutes from './fanDNA';
 import sitemapRoutes from './sitemap';
+import trackRoutes from './track';
 import { isIndexable, fighterIndexWhere } from '../lib/seoIndex';
 import { WeightClass } from '@prisma/client';
 import { authenticateUser, requireEmailVerification } from '../middleware/auth';
@@ -2263,6 +2264,9 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // Bulk sitemap data for goodfights.app (paths carry their own /api prefix)
   await fastify.register(sitemapRoutes);
+
+  // GA4 Measurement Protocol relay for web conversion beacons
+  await fastify.register(trackRoutes, { prefix: '/api/track' });
 
   // Register analytics routes under /api prefix - TEMPORARILY DISABLED
   // await fastify.register(async function(fastify) {

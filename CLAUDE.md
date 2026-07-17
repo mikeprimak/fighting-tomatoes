@@ -13,10 +13,12 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
-**→ MANUAL TODO (Mike, ~2 min): mark GA4 key events** — `rating_submitted`,
-`hype_submitted`, `app_download_click`. Steps in
-`docs/HANDOFF-ga4-key-events-2026-07-14.md`. Code shipped 2026-07-14; GA4
-UI step not done yet.
+**→ MANUAL TODO (Mike, ~3 min, one GA4 trip): mark GA4 key events + create
+MP API secret** — steps in `docs/HANDOFF-ga4-key-events-2026-07-14.md`.
+2026-07-17: found why zero events arrived — gtag drops queued events on
+navigation; fixed via sendBeacon → new backend relay `/api/track/ga`, which
+**no-ops until `GA4_MP_API_SECRET` is set on Render** (secret comes from the
+GA4 admin trip, step 2 of the handoff).
 
 **✅ DONE (2026-06-30) — Home-reorder OTA published.** The held OTA for the Home-screen reorder (`d4095d05`) was published after the 2.1.3 store builds went live: iOS runtime `2.1.3` (group `bca2b1d2…`), Android runtime `1.0.0` (group `54a94c8d…`). The 2.1.3 native builds were cut *before* the reorder commit, so this OTA is what delivers the reorder to them. See `docs/daily/2026-06-30.md`.
 

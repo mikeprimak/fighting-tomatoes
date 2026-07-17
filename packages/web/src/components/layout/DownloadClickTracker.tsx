@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { trackEvent } from '@/lib/analytics';
+import { trackEventBeacon } from '@/lib/analytics';
 
 /**
  * Captures every click on a link into the /download funnel, no matter where
@@ -22,7 +22,7 @@ export function DownloadClickTracker() {
       const href = anchor.getAttribute('href') || '';
       if (!href.startsWith('/download')) return;
       const params = new URLSearchParams(href.split('?')[1] || '');
-      trackEvent('app_download_click', {
+      trackEventBeacon('app_download_click', {
         placement: params.get('utm_medium') || 'unknown',
         href,
       });
