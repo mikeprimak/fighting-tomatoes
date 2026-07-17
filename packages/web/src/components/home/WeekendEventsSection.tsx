@@ -142,7 +142,8 @@ export function WeekendEventsSection() {
   // Keep LIVE events in the band (badged "LIVE" on the card) alongside the
   // upcoming ones — mirrors the mobile home, where a card that just went live
   // shouldn't vanish. Sorted by day, then live-first within a day (happening
-  // now), then soonest-start.
+  // now), then UFC above other promotions (matches mobile), then soonest-start.
+  const isUFC = (e: any) => (e.promotion ?? '').toUpperCase() === 'UFC';
   const events = (data?.events ?? [])
     .filter((e: any) => {
       const k = eventDayKey(e.date);
@@ -154,6 +155,11 @@ export function WeekendEventsSection() {
       const aLive = isEventLiveNow(a);
       const bLive = isEventLiveNow(b);
       if (aLive !== bLive) return aLive ? -1 : 1;
+      if (isUFC(a) !== isUFC(b)) return isUFC(a) ? -1 : 1;
+      // Known start times ascending; unknown-start cards after them (a null
+      // would otherwise fall back to the 00:00Z date placeholder and jump the
+      // whole day).
+      if (!a.mainStartTime !== !b.mainStartTime) return a.mainStartTime ? -1 : 1;
       const at = new Date(a.mainStartTime ?? a.date).getTime();
       const bt = new Date(b.mainStartTime ?? b.date).getTime();
       return at - bt;
