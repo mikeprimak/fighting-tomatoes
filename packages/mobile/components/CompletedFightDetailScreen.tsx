@@ -1248,6 +1248,34 @@ export default function CompletedFightDetailScreen({
     upvotePreFightCommentMutation.mutate(commentId);
   };
 
+  // Delete own pre-fight comment/reply after the fight. Editing is closed
+  // post-fight (backend FIGHT_STARTED guard), but deletion (empty content)
+  // is allowed.
+  const deletePreFightCommentMutation = useMutation({
+    mutationFn: async (commentId: string) => {
+      return apiService.updatePreFightComment(fight.id, commentId, '');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['preFightComments', fight.id] });
+      queryClient.invalidateQueries({ queryKey: ['topPreFightComments'] });
+      showSuccess('Comment deleted');
+    },
+    onError: (error: any) => {
+      showError(error?.error || error?.message || 'Failed to delete comment');
+    },
+  });
+
+  const handleDeletePreFightComment = (commentId: string) => {
+    showConfirm(
+      'Are you sure you want to delete your pre-fight comment?',
+      () => deletePreFightCommentMutation.mutate(commentId),
+      'Delete Comment',
+      'Delete',
+      'Cancel',
+      true // destructive style
+    );
+  };
+
   const handleUpvoteReview = (reviewId: string) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (!requireVerification('upvote a review')) return;
@@ -2686,6 +2714,7 @@ export default function CompletedFightDetailScreen({
                         isAuthenticated={isAuthenticated}
                         showMyComment={comment.userId === user?.id}
                         onUpvote={() => handleUpvoteComment(comment.id)}
+                        onDelete={() => handleDeletePreFightComment(comment.id)}
                         isUpvoting={upvotePreFightCommentMutation.isPending}
                       />
                     </View>
@@ -2720,6 +2749,7 @@ export default function CompletedFightDetailScreen({
                               isAuthenticated={isAuthenticated}
                               showMyComment={reply.userId === user?.id}
                               onUpvote={() => handleUpvoteComment(reply.id)}
+                              onDelete={() => handleDeletePreFightComment(reply.id)}
                               isUpvoting={upvotePreFightCommentMutation.isPending}
                             />
                           ))}

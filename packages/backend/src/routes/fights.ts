@@ -2028,8 +2028,11 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Check if fight has already started
-      if (fight.fightStatus !== 'UPCOMING') {
+      // Editing is locked once the fight starts, but deleting (empty content)
+      // stays allowed — users may remove their own pre-fight comment after
+      // the fight.
+      const isDeleteRequest = !content || content.trim().length === 0;
+      if (!isDeleteRequest && fight.fightStatus !== 'UPCOMING') {
         return reply.code(400).send({
           error: 'Cannot edit comment on a fight that has already started',
           code: 'FIGHT_STARTED',
@@ -2064,8 +2067,8 @@ export async function fightRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // If content is empty, delete the reply
-      if (!content || content.trim().length === 0) {
+      // If content is empty, delete the comment/reply
+      if (isDeleteRequest) {
         await fastify.prisma.preFightComment.delete({
           where: { id: commentId },
         });

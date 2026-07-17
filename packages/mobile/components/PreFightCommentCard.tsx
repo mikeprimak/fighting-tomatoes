@@ -42,6 +42,9 @@ interface PreFightCommentCardProps {
   onUpvote?: () => void;
   onFlag?: () => void;
   onEdit?: () => void;
+  // Delete-only affordance for surfaces where editing is closed but removal
+  // is still allowed (e.g. own pre-fight comment on a completed fight).
+  onDelete?: () => void;
   onReply?: () => void;
   isUpvoting?: boolean;
   isFlagging?: boolean;
@@ -59,6 +62,7 @@ export function PreFightCommentCard({
   onUpvote,
   onFlag,
   onEdit,
+  onDelete,
   onReply,
   isUpvoting = false,
   isFlagging = false,
@@ -196,6 +200,24 @@ export function PreFightCommentCard({
                   />
                   <Text style={[styles.editButtonText, { color: colors.textSecondary }]}>
                     Edit
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {showMyComment && onDelete && (
+                <TouchableOpacity
+                  onPress={(e) => {
+                    e?.stopPropagation?.();
+                    onDelete?.();
+                  }}
+                  style={styles.editButton}
+                >
+                  <FontAwesome
+                    name="trash-o"
+                    size={12}
+                    color={colors.textSecondary}
+                  />
+                  <Text style={[styles.editButtonText, { color: colors.textSecondary }]}>
+                    Delete
                   </Text>
                 </TouchableOpacity>
               )}
