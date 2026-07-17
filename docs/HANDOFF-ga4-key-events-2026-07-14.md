@@ -1,4 +1,11 @@
-# HANDOFF — GA4 key events + MP API secret (manual, ~3 min, NOT DONE YET)
+# HANDOFF — GA4 key events + MP API secret ✅ DONE 2026-07-17
+
+**All steps completed 2026-07-17.** Key events marked (via the redesigned
+"Create event → Create with code → Mark as key event" flow — the old
+standalone Key events page is gone from this property's UI), MP API secret
+`backend-relay` created and set as `GA4_MP_API_SECRET` on Render, pipeline
+verified end-to-end: headless click → sendBeacon → relay → MP →
+`app_download_click` visible in GA4 Realtime. Kept for reference.
 
 **Written:** 2026-07-14. **Updated 2026-07-17** after finding and fixing the
 reason zero events had arrived (see below). Claude cannot do the GA4 UI
