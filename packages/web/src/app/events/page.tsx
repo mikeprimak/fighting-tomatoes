@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { ORGS } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
@@ -159,6 +160,23 @@ export default async function EventsIndexPage() {
       {upcoming.length === 0 && past.length === 0 && (
         <p className="py-8 text-center text-sm text-text-secondary">No events found.</p>
       )}
+
+      {/* Org hub crawl entry (Own The SERPs front-load #3): the events index is
+          the natural parent for the per-promotion hub pages. */}
+      <nav aria-label="Browse by organization" className="mt-10 border-t border-border pt-6">
+        <h2 className="mb-3 text-center text-sm font-semibold uppercase tracking-wide text-text-secondary">
+          Browse by organization
+        </h2>
+        <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-text-secondary">
+          {ORGS.map((o) => (
+            <li key={o.slug}>
+              <Link href={`/orgs/${o.slug}`} className="underline-offset-2 hover:text-foreground hover:underline">
+                {o.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }

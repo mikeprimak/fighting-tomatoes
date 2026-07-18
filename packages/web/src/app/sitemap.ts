@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/posts';
+import { ORGS } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
 import { fetchBestYears, indexableYears } from '@/lib/bestFights';
 
@@ -29,6 +30,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
+  // Org hub pages (Own The SERPs front-load #3) — auto-updating schedule +
+  // results + ratings per promotion. lastModified moves each regeneration so
+  // the "next event" freshness is machine-visible.
+  const orgPages: MetadataRoute.Sitemap = ORGS.map((o) => ({
+    url: `${SITE_URL}/orgs/${o.slug}`,
+    changeFrequency: 'daily' as const,
+    priority: 0.8,
+    lastModified: new Date(),
+  }));
+
   // Best-of-year hubs — only years that clear the page-worthiness floor
   // (same gate the year pages use for their robots tag). NOTE: this fetch runs
   // at build time too — deploy the backend first or the baked sitemap holds an
@@ -46,5 +57,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...yearPages, ...postPages];
+  return [...staticPages, ...orgPages, ...yearPages, ...postPages];
 }

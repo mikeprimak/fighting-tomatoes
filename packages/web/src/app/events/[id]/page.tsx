@@ -2,6 +2,7 @@ import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { EventDetailClient } from './EventDetailClient';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
+import { orgByPromotion } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
@@ -180,13 +181,13 @@ export default async function EventDetailPage({ params }: Props) {
   const canonicalUrl = `${SITE_URL}/events/${initialEvent?.slug ?? id}`;
   const jsonLd = initialEvent ? buildEventJsonLd(initialEvent, initialFights, canonicalUrl) : null;
 
-  // Internal-linking pass (Own The SERPs, 2026-07-17): event page → schedule
-  // hub → events index → best-of-year, in SSR HTML. When per-org hub pages
-  // ship (front-load #3), the promotion link should move to /events/org/<org>.
-  const exploreLinks: ExploreLink[] = [
-    { href: '/schedule', label: 'Fight schedule' },
-    { href: '/events', label: 'All events' },
-  ];
+  // Internal-linking pass (Own The SERPs, 2026-07-17): event page → org hub →
+  // schedule hub → events index → best-of-year, in SSR HTML.
+  const exploreLinks: ExploreLink[] = [];
+  const org = orgByPromotion(initialEvent?.promotion);
+  if (org) exploreLinks.push({ href: `/orgs/${org.slug}`, label: `${org.name} events` });
+  exploreLinks.push({ href: '/schedule', label: 'Fight schedule' });
+  exploreLinks.push({ href: '/events', label: 'All events' });
   if (initialEvent?.eventStatus === 'COMPLETED') {
     const eventDate = initialEvent.mainStartTime || initialEvent.date;
     const year = eventDate ? new Date(eventDate).getUTCFullYear() : NaN;
