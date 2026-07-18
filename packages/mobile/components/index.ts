@@ -1,7 +1,6 @@
 export { default as FightDisplayCard } from './FightDisplayCardNew';
 export type { FightData } from './FightDisplayCardNew';
 export { default as FightDisplayCardMinimal } from './FightDisplayCardMinimal';
-export { default as RateFightModal } from './RateFightModal';
 export { default as TabBar, FightCrewAppTabBar } from './TabBar';
 export type { TabConfig, TabBarProps } from './TabBar';
 export { default as HeaderProfileButton } from './HeaderProfileButton';
