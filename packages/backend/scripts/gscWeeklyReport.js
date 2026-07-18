@@ -56,6 +56,86 @@ async function gscQuery(H, body) {
   return data.rows || [];
 }
 
+// --- Compounding-baseline metric (decided 2026-07-17) ---------------------
+// Almost every week is a fight week, so the durable-growth signal is not
+// "quiet weeks" — it's clicks to CATALOG pages (fighters, past events/fights,
+// hubs) from tier-1 countries, split away from current-event spike pages.
+// Free-stream/VPN traffic (the UFC 329 Singapore lesson) mostly lands outside
+// tier-1, so the country filter also discounts that.
+
+// GSC country dimension uses ISO-3166-1 alpha-3, lowercase.
+const TIER1_COUNTRIES = new Set([
+  'usa', 'can', 'gbr', 'irl', 'aus', 'nzl',
+  'deu', 'fra', 'nld', 'esp', 'ita', 'prt', 'bel', 'aut', 'che',
+  'swe', 'nor', 'dnk', 'fin', 'pol', 'cze',
+]);
+
+const API_BASE = process.env.GOODFIGHTS_API_URL || 'https://fightcrewapp-backend.onrender.com/api';
+
+// Events whose date falls inside [weekStart-7d, weekEnd+7d] are "current":
+// their pages ride the event's search wave (how-to-watch before, results
+// after) and must not be read as baseline growth.
+async function fetchCurrentEventKeys(weekStart, weekEnd) {
+  const keys = new Set();
+  const DAY = 86400000;
+  const lo = new Date(weekStart.getTime() - 7 * DAY);
+  const hi = new Date(weekEnd.getTime() + 7 * DAY);
+  try {
+    const [upcoming, past] = await Promise.all([
+      fetch(`${API_BASE}/events?type=upcoming&limit=100`).then((r) => r.json()),
+      fetch(`${API_BASE}/events?type=past&limit=100`).then((r) => r.json()),
+    ]);
+    for (const e of [...(upcoming.events || []), ...(past.events || [])]) {
+      const d = new Date(e.mainStartTime || e.date);
+      if (Number.isNaN(d.getTime()) || d < lo || d > hi) continue;
+      if (e.slug) keys.add(e.slug);
+      if (e.id) keys.add(e.id);
+    }
+  } catch (err) {
+    console.error(`current-event fetch failed (cohort split degrades to catalog/blog/other): ${err.message}`);
+  }
+  return keys;
+}
+
+function classifyPage(url, currentEventKeys) {
+  let p;
+  try {
+    p = new URL(url).pathname;
+  } catch {
+    p = url.replace(SITE, '/');
+  }
+  if (p.startsWith('/blog')) return 'blog';
+  if (p.startsWith('/events/')) {
+    const key = p.split('/')[2] || '';
+    return currentEventKeys.has(key) ? 'current' : 'catalog';
+  }
+  if (p.startsWith('/fighters') || p.startsWith('/fights') || p.startsWith('/schedule') || p.startsWith('/events')) {
+    return 'catalog';
+  }
+  return 'other';
+}
+
+function cohortTotals(pageCountryRows, currentEventKeys) {
+  const t = {
+    all: { clicks: 0, impressions: 0 },
+    catalog: { clicks: 0, impressions: 0 },
+    current: { clicks: 0, impressions: 0 },
+    blog: { clicks: 0, impressions: 0 },
+    other: { clicks: 0, impressions: 0 },
+  };
+  for (const row of pageCountryRows) {
+    const [page, country] = row.keys;
+    if (!TIER1_COUNTRIES.has(country)) continue;
+    t.all.clicks += row.clicks;
+    t.all.impressions += row.impressions;
+    const c = t[classifyPage(page, currentEventKeys)];
+    c.clicks += row.clicks;
+    c.impressions += row.impressions;
+  }
+  return t;
+}
+// --------------------------------------------------------------------------
+
 function mdTable(header, rows) {
   const lines = [
     `| ${header.join(' | ')} |`,
@@ -87,12 +167,15 @@ async function main() {
   const thisRange = { startDate: fmt(start), endDate: fmt(end) };
   const prevRange = { startDate: fmt(prevStart), endDate: fmt(prevEnd) };
 
-  const [sitemapsRes, daily, queries, pages, prevQueries] = await Promise.all([
+  const [sitemapsRes, daily, queries, pages, prevQueries, pageCountry, prevPageCountry, currentEventKeys] = await Promise.all([
     fetch(`${BASE}/sites/${encodeURIComponent(SITE)}/sitemaps`, { headers: H }).then((r) => r.json()),
     gscQuery(H, { startDate: prevRange.startDate, endDate: thisRange.endDate, dimensions: ['date'], rowLimit: 20 }),
     gscQuery(H, { ...thisRange, dimensions: ['query'], rowLimit: 1000 }),
     gscQuery(H, { ...thisRange, dimensions: ['page'], rowLimit: 1000 }),
     gscQuery(H, { ...prevRange, dimensions: ['query'], rowLimit: 1000 }),
+    gscQuery(H, { ...thisRange, dimensions: ['page', 'country'], rowLimit: 5000 }),
+    gscQuery(H, { ...prevRange, dimensions: ['page', 'country'], rowLimit: 5000 }),
+    fetchCurrentEventKeys(start, end),
   ]);
 
   // Week-over-week totals from the daily rows.
@@ -139,6 +222,23 @@ async function main() {
       ['Distinct queries (top 1000 cap)', queries.length, prevQueries.length, delta(queries.length, prevQueries.length)],
     ]
   ));
+  lines.push('');
+  lines.push('## Compounding baseline — tier-1 countries only (THE metric, decided 2026-07-17)');
+  lines.push('');
+  const coh = cohortTotals(pageCountry, currentEventKeys);
+  const prevCoh = cohortTotals(prevPageCountry, currentEventKeys);
+  lines.push(mdTable(
+    ['Cohort', 'Clicks', 'Prior', 'Change', 'Impressions', 'Prior'],
+    [
+      ['**Catalog (fighters / fights / past events / hubs)**', coh.catalog.clicks, prevCoh.catalog.clicks, delta(coh.catalog.clicks, prevCoh.catalog.clicks), coh.catalog.impressions, prevCoh.catalog.impressions],
+      ['Current-event pages (this week ±7d)', coh.current.clicks, prevCoh.current.clicks, delta(coh.current.clicks, prevCoh.current.clicks), coh.current.impressions, prevCoh.current.impressions],
+      ['Blog (mixed evergreen + event-week)', coh.blog.clicks, prevCoh.blog.clicks, delta(coh.blog.clicks, prevCoh.blog.clicks), coh.blog.impressions, prevCoh.blog.impressions],
+      ['Other (home, auth, misc)', coh.other.clicks, prevCoh.other.clicks, delta(coh.other.clicks, prevCoh.other.clicks), coh.other.impressions, prevCoh.other.impressions],
+      ['All pages (tier-1)', coh.all.clicks, prevCoh.all.clicks, delta(coh.all.clicks, prevCoh.all.clicks), coh.all.impressions, prevCoh.all.impressions],
+    ]
+  ));
+  lines.push('');
+  lines.push('_**Catalog tier-1 clicks** is the number that must grow month over month — it is the compounding back-catalog, immune to fight-week spikes and free-stream/VPN traffic. Current-event rows will always spike and decay; judge those per event, never as trend. Caveats: fight pages of current cards count as catalog (their click volume is tiny); blog is a mixed cohort._');
   lines.push('');
   lines.push('## Sitemaps');
   lines.push('');

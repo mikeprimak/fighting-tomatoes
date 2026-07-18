@@ -171,9 +171,17 @@ largest single slice was free-stream-intent traffic showing up as Singapore
 (2,373 users, exactly 1 session each — VPN-concentrated stream seekers), on
 top of a McGregor-sized card that won't recur often. So:
 
-- **Primary metric: weekly organic clicks in NON-fight weeks, from tier-1
-  countries** (US/CA/UK/AU/IE/EU). That's the baseline that has to grow.
-  Fight-week spikes are nice but never the yardstick.
+- **Primary metric: weekly CATALOG clicks from tier-1 countries**
+  (US/CA/UK/AU/IE/NZ/EU) — clicks to fighters, past events/fights, and hub
+  pages, i.e. everything except current-event pages and blog. **Corrected
+  2026-07-17 (Mike): there are very few non-fight weeks** — combat sports runs
+  nearly every weekend — so the split is by *page cohort*, not by calendar.
+  Catalog tier-1 clicks are the compounding back-catalog: immune to fight-week
+  spikes and free-stream/VPN traffic, and the number that must grow month over
+  month. Automated in the weekly report ("Compounding baseline" section,
+  `gscWeeklyReport.js`). **Starting line, measured 2026-07-17: ~6
+  catalog tier-1 clicks/week** (and only ~29% of all clicks were tier-1 during
+  UFC 329 week). Current-event pages are judged per event, never as trend.
 - **Secondary: flywheel conversions** — search visitors who `rating_submitted`
   / `hype_submitted` / `app_download_click` (instrumented, live in GA4+PostHog
   as of 2026-07-17).
@@ -189,7 +197,10 @@ top of a McGregor-sized card that won't recur often. So:
   (2) Front-load re-sequenced: internal-linking pass next, then org hubs;
   explainers demoted to last (kill criterion intact). (3) Event playbook
   upgraded: how-to-watch at T-14 + per-country sections. (4) Free-stream
-  searchers out of scope. (5) Success metrics fixed as above.
+  searchers out of scope. (5) Success metrics fixed as above — same evening,
+  Mike corrected "non-fight-week clicks" to the catalog-cohort definition
+  (there are almost no non-fight weeks); `gscWeeklyReport.js` now computes
+  the "Compounding baseline" section automatically every Monday.
 
 ### What to expect while it compounds (SEO physics, not work phases)
 
