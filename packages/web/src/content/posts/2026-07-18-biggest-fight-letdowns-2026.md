@@ -17,7 +17,7 @@ featured: false
 <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
 <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;">
 <li>Fans hyped McGregor vs Holloway 2 at <strong>9.5/10</strong>, then rated it <strong>1.3/10</strong>. 46 of 52 gave it a 1, the biggest hype collapse we have ever measured.</li>
-<li>The average 2026 fight pays a <strong>hype tax</strong>: fans expected 7.5, fights delivered 6.7.</li>
+<li>On average, fans expected <strong>7.5</strong> and fights delivered <strong>6.7</strong>.</li>
 <li><strong>UFC 326</strong> was the letdown card of the year, with four of the ten biggest letdowns.</li>
 <li>Of the ten most hyped fights of 2026, only one beat its hype: <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated).</li>
 </ul>
@@ -37,7 +37,7 @@ Good Fights users score every fight twice: a hype rating (1 to 10) before the fi
 
 The rules for this piece: every completed fight through July 17, 2026 qualified if it had at least 5 hype votes and 5 post-fight ratings. Only hype votes cast before the fight started count, so nobody gets to "predict" a stinker after watching it happen. We started collecting hype in mid-February, so the earliest weeks of the year aren't represented. Internal test accounts are excluded. 70 fights made the cut, and sample sizes are listed with every fight below.
 
-One finding before the list: across all 70 qualifying fights, the average hype score was 7.5 and the average post-fight rating was 6.7. Call it the hype tax. The typical 2026 fight delivered close to a point less than fans expected.
+One finding before the list: across all 70 qualifying fights, the average hype score was 7.5 and the average post-fight rating was 6.7. The typical 2026 fight delivered close to a point less than fans expected.
 
 ## The ten biggest letdowns of 2026
 
@@ -193,14 +193,14 @@ The gap runs both ways, and the overdeliveries are their own story.
 
 And then there is the unicorn. **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250 came in with a 9.2 hype score (28 votes) and fans rated it 9.7 (59 ratings). It is the highest-rated fight of 2026 on Good Fights, a four-round war in front of the White House that ended with Topuria unable to answer the fifth-round bell. Out of the ten most hyped fights of the year, it is the only one that outdelivered its hype.
 
-That is the quiet takeaway in this data. Hype is usually a debt the fight has to pay back, and most can't. The ones that can are why we keep watching.
+That is the quiet takeaway in this data. Most fights can't live up to their hype. The ones that do are why we keep watching.
 
 ## The full data
 
 Top tens invite cherry-picking, so here is everything. All 70 qualifying fights, sorted from biggest letdown to biggest overdelivery. Every fight links to its page, where the live numbers and every individual review are public.
 
-<details open style="margin:18px 0;">
-<summary style="cursor:pointer;font-weight:700;color:#F5C518;">The full table: all 70 qualifying fights, sorted by gap</summary>
+<div style="margin:18px 0;">
+<div style="font-weight:700;color:#F5C518;">The full table: all 70 qualifying fights, sorted by gap</div>
 <div style="overflow-x:auto;margin-top:10px;"><table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.4;">
 <thead><tr style="text-align:left;color:#9aa0a6;font-size:11px;text-transform:uppercase;letter-spacing:.05em;"><th style="padding:5px 8px;border-bottom:1px solid #222;">Fight</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Event</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Hype (votes)</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Rated (ratings)</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Gap</th></tr></thead><tbody>
 <tr><td style="padding:5px 8px;border-bottom:1px solid #222;"><a href="/fights/conor-mcgregor-vs-max-holloway-2">Conor McGregor vs Max Holloway</a></td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#9aa0a6;">UFC 329: McGregor vs. Holloway</td><td style="padding:5px 8px;border-bottom:1px solid #222;">9.5 (33)</td><td style="padding:5px 8px;border-bottom:1px solid #222;">1.3 (52)</td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#e5484d;font-weight:700;">-8.1</td></tr>
@@ -273,7 +273,7 @@ Top tens invite cherry-picking, so here is everything. All 70 qualifying fights,
 <tr><td style="padding:5px 8px;border-bottom:1px solid #222;"><a href="/fights/shamil-gaziev-vs-brando-pericic">Shamil Gaziev vs Brando Pericic</a></td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#9aa0a6;">UFC Fight Night Maddalena vs. Prates</td><td style="padding:5px 8px;border-bottom:1px solid #222;">6.2 (5)</td><td style="padding:5px 8px;border-bottom:1px solid #222;">8.3 (27)</td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#46a758;font-weight:700;">+2.1</td></tr>
 <tr><td style="padding:5px 8px;border-bottom:1px solid #222;"><a href="/fights/zhang-mingyang-vs-alonzo-menifield">Zhang Mingyang vs Alonzo Menifield</a></td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#9aa0a6;">UFC Fight Night Song vs. Figueiredo</td><td style="padding:5px 8px;border-bottom:1px solid #222;">6.0 (6)</td><td style="padding:5px 8px;border-bottom:1px solid #222;">8.5 (20)</td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#46a758;font-weight:700;">+2.5</td></tr>
 <tr><td style="padding:5px 8px;border-bottom:1px solid #222;"><a href="/fights/alexa-grasso-vs-maycee-barber">Alexa Grasso vs Maycee Barber</a></td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#9aa0a6;">UFC Fight Night Adesanya vs. Pyfer</td><td style="padding:5px 8px;border-bottom:1px solid #222;">4.6 (5)</td><td style="padding:5px 8px;border-bottom:1px solid #222;">8.6 (34)</td><td style="padding:5px 8px;border-bottom:1px solid #222;color:#46a758;font-weight:700;">+4.0</td></tr>
-</tbody></table></div></details>
+</tbody></table></div></div>
 
 ## What this data is and isn't
 
