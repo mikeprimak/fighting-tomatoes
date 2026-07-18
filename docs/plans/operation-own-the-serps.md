@@ -91,6 +91,18 @@ Ordered roughly by (volume × our ability to win):
 - **P5 — The flywheel: search visitor → rater → data → better pages.** Every
   SEO page carries a rate-this-fight CTA; ratings deepen the moat that ranks
   the pages.
+- **P6 — Earned links via proprietary-data stories (ADDED 2026-07-17).**
+  Links are the bottleneck for a young domain (5k+ pages sitting in Google's
+  discovered-not-crawled queue). Cadence: one original-data article per
+  quarter minimum ("Hype vs. reality: the most overhyped fights of 2026",
+  "worst card of the year by fan ratings", hype-vs-payoff by promotion) built
+  to be *cited* — clear stat callouts, embeddable charts watermarked with the
+  brand. **Distribution = direct email to MMA journalists, sent by Mike**
+  (Claude drafts the pitches; Mike presses send — one action at a time per
+  `feedback_marketing_handholding`). **Reddit is NOT a distribution channel:
+  everything Mike posts gets removed (confirmed 2026-07-17) — do not plan
+  around Reddit posts.** Expectations: a handful of links per story, ranking
+  benefit lags months; this is compounding, not instant.
 
 ## Timeline philosophy (revised 2026-07-14, Mike)
 
@@ -101,37 +113,44 @@ is: **front-load ALL the build work now** (next ~90 days), then run a light
 ongoing rhythm while the authority compounds on its own clock. We should never
 be waiting on ourselves; only on Google.
 
-### The front-load (now → ~October 2026, roughly in order)
+### The front-load (now → ~October 2026, in order — RE-SEQUENCED 2026-07-17)
 
-1. **Schedule hubs** — `/schedule`, "MMA fights tonight / this weekend"
-   auto-updating pages (biggest current gap; weak competition, high volume).
-   Freshness must be machine-visible: sitemap `lastmod` moves when content
-   changes, dynamic dates in titles/descriptions, visible updated stamps —
-   Google only treats a "tonight" page as live if it can see it changing.
-2. **Explainer library, batched** — the top ~25 evergreen questions (category
-   7) written in focused batches, not dripped weekly. These age like wine;
-   every month they're not live is compounding lost.
-   **Kill criterion (added 2026-07-14):** ship the first ~10, then checkpoint —
-   if none crack the top 20 within 6 months of publication, stop at 10 and
-   reallocate the effort to best-of variants (where the ratings moat defends
-   us) instead of grinding out 15 more against Wikipedia/Reddit/MMA media.
-3. **Underserved-org hubs** — BKFC / Oktagon / Karate Combat / DBX / PFL /
-   RIZIN org pages (schedule + results + ratings per org). We already have the
-   data; nobody competes editorially for these queries.
-4. **Best-of engine expansion** — per-division, per-org, per-method (best KOs,
-   best submissions, best title fights), all-time. DB-driven, auto-updating.
-5. **Fighter page blocks** — next-fight / last-fight SSR sections ("who is X
-   fighting next" is a huge recurring query family).
-6. **Internal-linking pass (added 2026-07-14)** — template work that makes
-   Google discover and weigh the 5,500-page corpus: fight page → both fighter
+Order revised in the 2026-07-17 design session: what the first fight-week of
+data validated (programmatic event pages + underserved orgs) gets doubled
+down on first; explainers — weakest evidence, strongest competition — demoted
+to last.
+
+1. ✅ **Schedule hubs** — SHIPPED 2026-07-14 (`/schedule`,
+   `/schedule/tonight`, `/schedule/this-weekend`). Young; watch positions in
+   the weekly GSC report before touching again.
+2. **Internal-linking pass** — NEXT UP. Template work that makes Google
+   discover and weigh the 5,500-page corpus: fight page → both fighter
    pages → division hub → relevant best-of lists; event page → org hub →
    schedule hub; blog posts → programmatic pages. One-time template change,
-   compounding crawl benefit, zero marginal cost.
-7. **Event-week playbook, systematized** — preview (T-14) → how-to-watch (T-7)
-   → odds refresh (T-2) → results swap (T+0) → reactions (T+1), run for every
-   major card. UFC 329/330/OKC are the template reps.
-8. **GSC hygiene** — weekly review; fix coverage exclusions, thin pages,
+   compounding crawl benefit, zero marginal cost. Directly attacks the
+   discovered-not-crawled backlog.
+3. **Underserved-org hubs** — BKFC / Oktagon / Karate Combat / DBX / PFL /
+   RIZIN org pages (schedule + results + ratings per org). We already have the
+   data; nobody competes editorially for these queries — and RAF Georgia
+   proved the thesis (~450 real clicks to a programmatic event page).
+4. **Best-of engine expansion** — per-division, per-org, per-method (best KOs,
+   best submissions, best title fights), all-time. DB-driven, auto-updating.
+   Doubles as the citable backbone for P6 data stories.
+5. **Fighter page blocks** — next-fight / last-fight SSR sections ("who is X
+   fighting next" is a huge recurring query family).
+6. **Event-week playbook, systematized** — **upgraded 2026-07-17: how-to-watch
+   moves to T-14 (was T-7) and gains per-country sections** (Canada/UK/Ireland
+   watch/price queries were all over the UFC 329 striking-distance list).
+   Full cycle: preview + how-to-watch (T-14) → odds refresh (T-2) → results
+   swap (T+0) → reactions (T+1), run for every major card. UFC 330 is the
+   first rep on the new template.
+7. **GSC hygiene** — weekly review; fix coverage exclusions, thin pages,
    duplicate titles as they surface.
+8. **Explainer library (DEMOTED to last, 2026-07-17)** — the top evergreen
+   questions, written in batches. No ratings moat, competes head-on with
+   Wikipedia/Reddit/MMA media, and nobody links to the 500th "what is a
+   catchweight". **Kill criterion stands:** ship ~10, checkpoint at 6 months,
+   stop if none crack the top 20.
 
 ### The ongoing rhythm (after the front-load)
 
@@ -139,10 +158,38 @@ be waiting on ourselves; only on Google.
 - **Weekly:** GSC striking-distance review — pages at positions 5-15 get
   on-page attention first; that's where the cheap wins live.
 - **Monthly:** one template audit (rotate fighter/event/fight), one new
-  explainer or best-of variant.
-- **Quarterly:** a digital-PR data story from our proprietary ratings (e.g.
-  "hype vs payoff by promotion, 2026") pitched for links, plus a strategy
+  best-of variant (explainers only after the front-load, per the demotion).
+- **Quarterly:** a P6 data story from our proprietary ratings (e.g.
+  "hype vs payoff by promotion, 2026") — Claude drafts article + journalist
+  pitch emails, Mike sends them directly (no Reddit) — plus a strategy
   review against this doc.
+
+## How we judge success (DECIDED 2026-07-17)
+
+The UFC 329 week taught us the headline numbers lie: of ~5.2k clicks, the
+largest single slice was free-stream-intent traffic showing up as Singapore
+(2,373 users, exactly 1 session each — VPN-concentrated stream seekers), on
+top of a McGregor-sized card that won't recur often. So:
+
+- **Primary metric: weekly organic clicks in NON-fight weeks, from tier-1
+  countries** (US/CA/UK/AU/IE/EU). That's the baseline that has to grow.
+  Fight-week spikes are nice but never the yardstick.
+- **Secondary: flywheel conversions** — search visitors who `rating_submitted`
+  / `hype_submitted` / `app_download_click` (instrumented, live in GA4+PostHog
+  as of 2026-07-17).
+- **Free-stream searchers are explicitly not a target** (decided 2026-07-17):
+  don't build for them, don't count them. Discount "free/stream/torrent"
+  query clicks and 1-session Singapore-style traffic when reading reports.
+
+## Decision log
+
+- **2026-07-17 (design session with Mike):** (1) P6 links workstream added —
+  quarterly original-data articles, distributed by Mike emailing MMA
+  journalists directly; Reddit dropped entirely (his posts get removed).
+  (2) Front-load re-sequenced: internal-linking pass next, then org hubs;
+  explainers demoted to last (kill criterion intact). (3) Event playbook
+  upgraded: how-to-watch at T-14 + per-country sections. (4) Free-stream
+  searchers out of scope. (5) Success metrics fixed as above.
 
 ### What to expect while it compounds (SEO physics, not work phases)
 
