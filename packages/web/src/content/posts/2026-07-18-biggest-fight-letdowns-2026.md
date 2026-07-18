@@ -6,6 +6,7 @@ author: "Mike Primak"
 excerpt: "Fight fans hyped McGregor vs Holloway 2 at 9.5 out of 10 before the cage door closed. Afterward they rated it 1.3. We measured the gap between hype and reality for every fight of 2026 so far. Here are the ten biggest letdowns, the card that disappointed the most, and the fights that saved the year."
 tags: ["by-the-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
 image: "/blog/conor-ufc329-arms-up.png"
+ogImage: "/blog/letdowns-2026-og.png"
 draft: true
 featured: false
 ---
@@ -150,9 +151,45 @@ The overdeliveries point the same way: nine of the ten biggest ended in a finish
 
 The gap runs both ways, and the overdeliveries are their own story.
 
+<div style="margin:18px 0 24px;padding:16px 18px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);">
+<div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">Hype vs. reality: the biggest overdeliveries of 2026</div>
+<div style="font-size:11px;color:#9aa0a6;margin-bottom:12px;"><span style="display:inline-block;width:9px;height:9px;background:#F5C518;border-radius:2px;margin-right:4px;"></span>fan hype before&nbsp;&nbsp;<span style="display:inline-block;width:9px;height:9px;background:#46a758;border-radius:2px;margin-right:4px;"></span>fan rating after</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Grasso vs Barber <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC Seattle</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:46.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">4.6</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:86.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">8.6</span></div>
+</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Zhang Mingyang vs Menifield <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC Fight Night</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:60.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">6.0</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:85.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">8.5</span></div>
+</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Gaziev vs Pericic <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC Fight Night</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:62.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">6.2</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:83.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">8.3</span></div>
+</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Burns vs Malott <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC Fight Night</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:55.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">5.5</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:72.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">7.2</span></div>
+</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Kopylov vs Tulio <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC 328</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:54.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">5.4</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:69.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">6.9</span></div>
+</div>
+<div style="margin-bottom:11px;">
+<div style="font-size:13px;color:#fff;font-weight:600;margin-bottom:3px;">Topuria vs Gaethje <span style="color:#9aa0a6;font-weight:400;font-size:12px;">UFC Freedom 250</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:92.0%;background:#F5C518;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#F5C518;">9.2</span></div>
+<div style="display:flex;align-items:center;gap:7px;margin-bottom:2px;"><div style="flex:1;background:#161616;border-radius:3px;overflow:hidden;"><div style="width:97.0%;background:#46a758;height:9px;border-radius:3px;"></div></div><span style="flex:none;width:26px;font-size:12px;font-weight:700;color:#46a758;">9.7</span></div>
+</div>
+<div style="font-size:11px;color:#9aa0a6;text-align:right;margin-top:6px;">goodfights.app &middot; fan scores, 2026 through Jul 17</div>
+</div>
+
 **[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) was the most slept-on fight of 2026: hyped 4.6 (5 votes), rated 8.6 (34 ratings) after Grasso starched Barber with a left hand and added a choke for insurance inside one round.
 
-**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Vegas, May 30) went from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) when Menifield dropped the rising star twice in four minutes.
+**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Fight Night, May 30) went from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) when Menifield dropped the rising star twice in four minutes.
 
 And then there is the unicorn. **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250 came in with a 9.2 hype score (28 votes) and fans rated it 9.7 (59 ratings). It is the highest-rated fight of 2026 on Good Fights, a four-round war in front of the White House that ended with Topuria unable to answer the fifth-round bell. Out of the ten most hyped fights of the year, it is the only one that outdelivered its hype.
 

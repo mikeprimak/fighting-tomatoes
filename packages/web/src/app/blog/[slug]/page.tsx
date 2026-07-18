@@ -47,7 +47,9 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = getPost(slug);
   if (!post) return {};
-  const image = post.image || DEFAULT_POST_IMAGE;
+  // Shares prefer the dedicated stat-card ogImage when a post provides one;
+  // the on-page hero stays `image`.
+  const image = post.ogImage || post.image || DEFAULT_POST_IMAGE;
   return {
     title: post.title,
     description: post.excerpt,

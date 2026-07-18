@@ -32,6 +32,9 @@ export type PostMeta = {
   event: PostEvent | null;
   /** Hero/share image path (e.g. /blog/my-slug.jpg). Empty string = use DEFAULT_POST_IMAGE. */
   image: string;
+  /** Optional social-share override (og:image / twitter:image). When set, the
+   *  hero keeps `image` but shares use this instead — e.g. a branded stat card. */
+  ogImage: string;
   /** How the hero image fills its frame. `cover` (default) crops to a 16:9 box;
    *  `contain` shows the whole image centered (use for tall portrait photos whose
    *  faces would otherwise be cropped). */
@@ -122,6 +125,7 @@ function parseFile(
     draft: data.draft === true,
     event: (data.event as PostEvent) || null,
     image: (data.image as string) || '',
+    ogImage: (data.ogImage as string) || '',
     imageFit: data.imageFit === 'contain' ? 'contain' : 'cover',
     featured: data.featured === true,
     hideFromHome: data.hideFromHome === true,
