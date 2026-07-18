@@ -462,25 +462,52 @@ export async function fightRoutes(fastify: FastifyInstance) {
   });
 
   // ---- Best fights of a calendar year (programmatic-SEO step 6) ----------
-  // Powers the /fights/best/[year] web hubs. Calendar-year buckets (not the
-  // rolling windows of /community/top-recent-fights) so the pages are
-  // permanent URLs that accumulate authority. Floor keeps one-vote 10s out.
+  // Powers the /fights/best/[list] web hubs (year, all-time, per-org,
+  // per-division, per-method — Own The SERPs front-load #4). Permanent URLs
+  // that accumulate authority. Floor keeps one-vote 10s out.
   const BEST_MIN_RATINGS = 10;
 
-  // Shared where-clause for a "best of year" qualifying fight.
-  function bestFightWhere(year?: number): any {
+  // method is free text from many scraper eras ("KO (punches)", "KO/TKO
+  // (Punch)", "TKO (doctor stoppage)", "SUB (Armbar)", "Technical Submission
+  // (...)"), so buckets match by prefix/substring, not exact value.
+  const BEST_METHOD_FILTERS: Record<string, any> = {
+    ko: {
+      OR: [
+        { method: { startsWith: 'KO', mode: 'insensitive' as const } },
+        { method: { startsWith: 'TKO', mode: 'insensitive' as const } },
+      ],
+    },
+    submission: { method: { contains: 'sub', mode: 'insensitive' as const } },
+    title: { isTitle: true },
+  };
+
+  interface BestFightFilter {
+    year?: number;
+    promotion?: string;
+    division?: string; // WeightClass enum value, validated by caller
+    method?: string; // key of BEST_METHOD_FILTERS
+    minRatings?: number;
+  }
+
+  // Shared where-clause for a qualifying "best fight". Without a year filter,
+  // the 1990 floor keeps legacy sentinel-dated events (e.g. 1899) out.
+  function bestFightWhere(filter: BestFightFilter = {}): any {
+    const { year, promotion, division, method, minRatings } = filter;
     return {
       fightStatus: 'COMPLETED',
       averageRating: { gt: 0 },
-      totalRatings: { gte: BEST_MIN_RATINGS },
+      totalRatings: { gte: minRatings ?? BEST_MIN_RATINGS },
+      ...(division ? { weightClass: division } : {}),
+      ...(method ? BEST_METHOD_FILTERS[method] ?? {} : {}),
       event: {
         isVisible: true,
         NOT: getHiddenPromotions().map(p => ({
           promotion: { contains: p, mode: 'insensitive' as const },
         })),
-        ...(year
-          ? { date: { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) } }
-          : {}),
+        ...(promotion ? { promotion: { equals: promotion, mode: 'insensitive' as const } } : {}),
+        date: year
+          ? { gte: new Date(Date.UTC(year, 0, 1)), lt: new Date(Date.UTC(year + 1, 0, 1)) }
+          : { gte: new Date(Date.UTC(1990, 0, 1)) },
       },
     };
   }
@@ -509,19 +536,98 @@ export async function fightRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // GET /api/fights/best?year=YYYY - top-rated fights of that calendar year.
+  // GET /api/fights/best-facets - qualifying-fight counts per org / division /
+  // method bucket + all-time, at the standard floor. The web layer's
+  // sitemap/indexing gate for the non-year /fights/best/[list] pages.
+  fastify.get('/fights/best-facets', async (request, reply) => {
+    try {
+      const [orgRows, divisionRows, methodCounts, allTime] = await Promise.all([
+        fastify.prisma.fight.findMany({
+          where: bestFightWhere(),
+          select: { event: { select: { promotion: true } } },
+        }),
+        fastify.prisma.fight.groupBy({
+          by: ['weightClass'],
+          where: { ...bestFightWhere(), weightClass: { not: null } },
+          _count: { _all: true },
+        }),
+        Promise.all(
+          Object.keys(BEST_METHOD_FILTERS).map(async method => ({
+            method,
+            count: await fastify.prisma.fight.count({ where: bestFightWhere({ method }) }),
+          })),
+        ),
+        fastify.prisma.fight.count({ where: bestFightWhere() }),
+      ]);
+
+      const orgCounts = new Map<string, number>();
+      for (const row of orgRows) {
+        const promotion = row.event.promotion;
+        if (!promotion) continue;
+        orgCounts.set(promotion, (orgCounts.get(promotion) ?? 0) + 1);
+      }
+
+      return reply.code(200).send({
+        allTime,
+        orgs: [...orgCounts.entries()]
+          .map(([promotion, count]) => ({ promotion, count }))
+          .sort((a, b) => b.count - a.count),
+        divisions: divisionRows
+          .map(d => ({ weightClass: d.weightClass, count: d._count._all }))
+          .sort((a, b) => b.count - a.count),
+        methods: Object.fromEntries(methodCounts.map(m => [m.method, m.count])),
+      });
+    } catch (error) {
+      console.error('Error in /fights/best-facets route:', error);
+      return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
+    }
+  });
+
+  // GET /api/fights/best - top-rated fights for one facet: ?year=YYYY,
+  // ?org=<promotion>, ?division=<WeightClass>, ?method=ko|submission|title,
+  // or no facet at all (all-time). minRatings can lower the floor for
+  // display-only surfaces (org hubs); the indexable pages keep the default.
   fastify.get('/fights/best', async (request, reply) => {
     try {
-      const { year: yearRaw, limit: limitRaw } = request.query as { year?: string; limit?: string };
-      const year = parseInt(yearRaw ?? '', 10);
+      const {
+        year: yearRaw,
+        limit: limitRaw,
+        org,
+        division,
+        method,
+        minRatings: minRatingsRaw,
+      } = request.query as {
+        year?: string;
+        limit?: string;
+        org?: string;
+        division?: string;
+        method?: string;
+        minRatings?: string;
+      };
+
       const currentYear = new Date().getUTCFullYear();
-      if (!Number.isInteger(year) || year < 1990 || year > currentYear) {
-        return reply.code(400).send({ error: 'Invalid year', code: 'INVALID_YEAR' });
+      let year: number | undefined;
+      if (yearRaw !== undefined) {
+        year = parseInt(yearRaw, 10);
+        if (!Number.isInteger(year) || year < 1990 || year > currentYear) {
+          return reply.code(400).send({ error: 'Invalid year', code: 'INVALID_YEAR' });
+        }
+      }
+      if (division !== undefined && !(division in WeightClass)) {
+        return reply.code(400).send({ error: 'Invalid division', code: 'INVALID_DIVISION' });
+      }
+      if (method !== undefined && !(method in BEST_METHOD_FILTERS)) {
+        return reply.code(400).send({ error: 'Invalid method', code: 'INVALID_METHOD' });
       }
       const limit = Math.min(100, Math.max(1, parseInt(limitRaw ?? '', 10) || 50));
+      // Callers may lower the floor (never raise past the default's intent):
+      // clamp to [1, BEST_MIN_RATINGS] so a typo can't produce an empty page.
+      const minRatings = minRatingsRaw
+        ? Math.min(BEST_MIN_RATINGS, Math.max(1, parseInt(minRatingsRaw, 10) || BEST_MIN_RATINGS))
+        : BEST_MIN_RATINGS;
 
       const fights = await fastify.prisma.fight.findMany({
-        where: bestFightWhere(year),
+        where: bestFightWhere({ year, promotion: org, division, method, minRatings }),
         orderBy: [{ averageRating: 'desc' }, { totalRatings: 'desc' }, { id: 'asc' }],
         take: limit,
         select: {
@@ -558,7 +664,7 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Shape for CompletedFightCard (reviewCount is a top-level field there).
       const shaped = fights.map(({ _count, ...f }) => ({ ...f, reviewCount: _count.reviews }));
-      return reply.code(200).send({ year, fights: shaped });
+      return reply.code(200).send({ year, org, division, method, fights: shaped });
     } catch (error) {
       console.error('Error in /fights/best route:', error);
       return reply.code(500).send({ error: 'Internal server error', code: 'INTERNAL_ERROR' });
