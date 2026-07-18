@@ -2,13 +2,25 @@
 title: "The Biggest Letdowns of 2026 So Far, According to Fight Fans"
 slug: "biggest-fight-letdowns-2026"
 date: "2026-07-18"
-author: "Good Fights"
+author: "Mike Primak"
 excerpt: "Fight fans hyped McGregor vs Holloway 2 at 9.5 out of 10 before the cage door closed. Afterward they rated it 1.3. We measured the gap between hype and reality for every fight of 2026 so far. Here are the ten biggest letdowns, the card that disappointed the most, and the fights that saved the year."
-tags: ["ufc", "rankings", "fan-ratings", "data", "feature"]
+tags: ["by-the-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
 image: "/blog/conor-ufc329-arms-up.png"
 draft: true
 featured: false
 ---
+
+<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F5C518;margin-bottom:14px;">By the Numbers <span style="color:#9aa0a6;font-weight:400;text-transform:none;letter-spacing:0;">&middot; data stories from combat sports</span></div>
+
+<div style="margin:0 0 24px;padding:14px 18px;border:1px solid #2b2b2b;border-left:3px solid #F5C518;border-radius:10px;background:#141414;">
+<div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
+<ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;">
+<li>Fans hyped McGregor vs Holloway 2 at <strong>9.5/10</strong>, then rated it <strong>1.3/10</strong>. 46 of 52 gave it a 1, the biggest hype collapse we have ever measured.</li>
+<li>The average 2026 fight pays a <strong>hype tax</strong>: fans expected 7.5, fights delivered 6.7.</li>
+<li><strong>UFC 326</strong> was the letdown card of the year, with four of the ten biggest letdowns.</li>
+<li>Of the ten most hyped fights of 2026, only one beat its hype: <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated).</li>
+</ul>
+</div>
 
 Before UFC 329, fans on Good Fights hyped Conor McGregor vs Max Holloway 2 at an average of 9.5 out of 10, the most hyped fight of the year, ahead of both White House title fights and Chimaev vs Strickland.
 
@@ -128,15 +140,21 @@ A middleweight contender bout that turned into a clinical 30-27 sweep. Borralho 
 
 One event shows up four times in the list above. UFC 326: Holloway vs Oliveira carried a 9.2-hype main event and produced four of the year's ten biggest letdowns, including that main event. If you felt flat leaving that card, the data says you were not alone.
 
+## How fights let fans down
+
+Look at the methods and the letdown list splits into two flavors. Eight of the ten went to a decision, most of them one-sided control wins or range-finding stalemates. The other two, McGregor's knee and Rousey's armbar, ended in a combined 86 seconds. Either nothing happened for fifteen minutes, or everything happened before the fight could become one.
+
+The overdeliveries point the same way: nine of the ten biggest ended in a finish. Fans will forgive an early ending they never saw coming. What they don't forgive is a fight that never starts.
+
 ## The fights that saved the year
 
 The gap runs both ways, and the overdeliveries are their own story.
 
-**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) was the most slept-on fight of 2026: hyped 4.6, rated 8.6 after Grasso starched Barber with a left hand and added a choke for insurance inside one round.
+**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) was the most slept-on fight of 2026: hyped 4.6 (5 votes), rated 8.6 (34 ratings) after Grasso starched Barber with a left hand and added a choke for insurance inside one round.
 
-**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Vegas, May 30) went from a 6.0 hype score to an 8.5 rating when Menifield dropped the rising star twice in four minutes.
+**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Vegas, May 30) went from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) when Menifield dropped the rising star twice in four minutes.
 
-And then there is the unicorn. **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250 came in with a 9.2 hype score and fans rated it 9.7. It is the highest-rated fight of 2026 on Good Fights, a four-round war in front of the White House that ended with Topuria unable to answer the fifth-round bell. Out of the ten most hyped fights of the year, it is the only one that outdelivered its hype.
+And then there is the unicorn. **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250 came in with a 9.2 hype score (28 votes) and fans rated it 9.7 (59 ratings). It is the highest-rated fight of 2026 on Good Fights, a four-round war in front of the White House that ended with Topuria unable to answer the fifth-round bell. Out of the ten most hyped fights of the year, it is the only one that outdelivered its hype.
 
 That is the quiet takeaway in this data. Hype is usually a debt the fight has to pay back, and most can't. The ones that can are why we keep watching.
 
@@ -144,7 +162,7 @@ That is the quiet takeaway in this data. Hype is usually a debt the fight has to
 
 Top tens invite cherry-picking, so here is everything. All 70 qualifying fights, sorted from biggest letdown to biggest overdelivery. Every fight links to its page, where the live numbers and every individual review are public.
 
-<details style="margin:18px 0;">
+<details open style="margin:18px 0;">
 <summary style="cursor:pointer;font-weight:700;color:#F5C518;">The full table: all 70 qualifying fights, sorted by gap</summary>
 <div style="overflow-x:auto;margin-top:10px;"><table style="width:100%;border-collapse:collapse;font-size:13px;line-height:1.4;">
 <thead><tr style="text-align:left;color:#9aa0a6;font-size:11px;text-transform:uppercase;letter-spacing:.05em;"><th style="padding:5px 8px;border-bottom:1px solid #222;">Fight</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Event</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Hype (votes)</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Rated (ratings)</th><th style="padding:5px 8px;border-bottom:1px solid #222;">Gap</th></tr></thead><tbody>
@@ -232,7 +250,7 @@ Some sample sizes are small, particularly from before our public launch in April
 
 ## Rate the fights yourself
 
-Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores are part of the next one of these.
+By the Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores are part of the next one of these.
 
 *Data notes: completed fights from January 1 to July 17, 2026. Only hype votes cast before the fight started count; Good Fights began collecting hype in mid-February 2026, so the earliest weeks of the year are not represented. Internal test accounts excluded. Fights qualified with at least 5 pre-fight hype votes and 5 post-fight ratings; 70 fights qualified. Hype and rating averages are unweighted means. Gaps are computed before rounding, which is why a displayed pair can differ from its displayed gap by 0.1.*
 
