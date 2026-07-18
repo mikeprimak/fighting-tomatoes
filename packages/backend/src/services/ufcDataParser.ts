@@ -98,7 +98,10 @@ export function extractUfcAthleteSlug(url: string | null | undefined): string | 
 /**
  * Parse fighter record string "W-L-D" into numbers
  */
-function parseRecord(record: string): { wins: number; losses: number; draws: number } {
+function parseRecord(record: string | null | undefined): { wins: number; losses: number; draws: number } {
+  if (!record) {
+    return { wins: 0, losses: 0, draws: 0 };
+  }
   const parts = record.split('-').map(n => parseInt(n, 10));
   return {
     wins: parts[0] || 0,
