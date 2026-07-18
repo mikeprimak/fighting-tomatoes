@@ -10,7 +10,7 @@ draft: true
 featured: false
 ---
 
-Before UFC 329, fans on Good Fights hyped Conor McGregor vs Max Holloway 2 at an average of 9.5 out of 10, higher than either of the White House title fights, higher than Chimaev vs Strickland, higher than anything else they scored this year.
+Before UFC 329, fans on Good Fights hyped Conor McGregor vs Max Holloway 2 at an average of 9.5 out of 10, the most hyped fight of the year, ahead of both White House title fights and Chimaev vs Strickland.
 
 Then McGregor blew out his knee throwing a kick in the very first exchange. He tried to fight on, went down twice more, and 69 seconds in the referee waved it off.
 
