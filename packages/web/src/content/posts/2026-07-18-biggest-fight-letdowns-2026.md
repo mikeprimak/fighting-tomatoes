@@ -4,14 +4,14 @@ slug: "biggest-fight-letdowns-2026"
 date: "2026-07-18"
 author: "Mike Primak"
 excerpt: "Fight fans hyped McGregor vs Holloway 2 at 9.5 out of 10 before the cage door closed. Afterward they rated it 1.3. We measured the gap between hype and reality for every fight of 2026 so far. Here are the ten biggest letdowns, the card that disappointed the most, and the fights that saved the year."
-tags: ["by-the-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
+tags: ["round-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
 image: "/blog/conor-ufc329-arms-up.png"
 ogImage: "/blog/letdowns-2026-og.png"
 draft: true
 featured: false
 ---
 
-<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F5C518;margin-bottom:14px;">By the Numbers <span style="color:#9aa0a6;font-weight:400;text-transform:none;letter-spacing:0;">&middot; data stories from combat sports</span></div>
+<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F5C518;margin-bottom:14px;">Round Numbers <span style="color:#9aa0a6;font-weight:400;text-transform:none;letter-spacing:0;">&middot; data stories from combat sports</span></div>
 
 <div style="margin:0 0 24px;padding:14px 18px;border:1px solid #2b2b2b;border-left:3px solid #F5C518;border-radius:10px;background:#141414;">
 <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
@@ -287,7 +287,7 @@ Some sample sizes are small, particularly from before our public launch in April
 
 ## Rate the fights yourself
 
-By the Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores are part of the next one of these.
+Round Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores are part of the next one of these.
 
 *Data notes: completed fights from January 1 to July 17, 2026. Only hype votes cast before the fight started count; Good Fights began collecting hype in mid-February 2026, so the earliest weeks of the year are not represented. Internal test accounts excluded. Fights qualified with at least 5 pre-fight hype votes and 5 post-fight ratings; 70 fights qualified. Hype and rating averages are unweighted means. Gaps are computed before rounding, which is why a displayed pair can differ from its displayed gap by 0.1.*
 
