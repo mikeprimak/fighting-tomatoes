@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { FighterDetailClient } from './FighterDetailClient';
+import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
+import { divisionLabel, divisionSlug } from '@/lib/divisions';
 import { formatRecord } from '@/lib/record';
 import { SITE_URL } from '@/lib/site';
 
@@ -105,6 +107,18 @@ export default async function FighterDetailPage({ params }: Props) {
     // Client will load
   }
 
+  // Internal-linking pass (Own The SERPs, 2026-07-17): fighter page →
+  // division hub → fighters hub → schedule, in SSR HTML.
+  const exploreLinks: ExploreLink[] = [];
+  if (initialFighter?.weightClass) {
+    exploreLinks.push({
+      href: `/fighters/division/${divisionSlug(initialFighter.weightClass)}`,
+      label: `${divisionLabel(initialFighter.weightClass)} fighters`,
+    });
+  }
+  exploreLinks.push({ href: '/fighters', label: 'All fighters' });
+  exploreLinks.push({ href: '/schedule', label: 'Fight schedule' });
+
   // Client data calls (follow, re-fetch) run on the real UUID — the slug is a
   // URL/SEO concern only, so client behavior is unchanged.
   return (
@@ -113,6 +127,7 @@ export default async function FighterDetailPage({ params }: Props) {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
       <FighterDetailClient fighterId={realId} initialFighter={initialFighter} initialFights={initialFights} />
+      <ExploreLinks links={exploreLinks} className="mx-auto mt-8 max-w-3xl" />
     </>
   );
 }

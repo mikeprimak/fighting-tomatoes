@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { FightDetailClient } from './FightDetailClient';
+import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
+import { divisionLabel, divisionSlug } from '@/lib/divisions';
 import { SITE_URL } from '@/lib/site';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
@@ -132,6 +134,33 @@ export default async function FightDetailPage({ params }: Props) {
     ? `${initialFight.fighter1.firstName} ${initialFight.fighter1.lastName} vs ${initialFight.fighter2.firstName} ${initialFight.fighter2.lastName}`
     : '';
 
+  // Internal-linking pass (Own The SERPs, 2026-07-17): fight page → both
+  // fighter pages → division hub → parent event → best-of-year list, all in
+  // SSR HTML so the 3.9k fight pages feed the crawl graph instead of being
+  // leaf nodes.
+  const exploreLinks: ExploreLink[] = [];
+  if (initialFight) {
+    const f = initialFight;
+    for (const fighter of [f.fighter1, f.fighter2]) {
+      if (fighter) {
+        exploreLinks.push({
+          href: `/fighters/${fighter.slug || fighter.id}`,
+          label: `${fighter.firstName} ${fighter.lastName}`.trim(),
+        });
+      }
+    }
+    if (f.event) exploreLinks.push({ href: `/events/${f.event.slug || f.eventId}`, label: f.event.name });
+    const wc = f.weightClass || f.fighter1?.weightClass;
+    if (wc) exploreLinks.push({ href: `/fighters/division/${divisionSlug(wc)}`, label: `${divisionLabel(wc)} fighters` });
+    const eventDate = f.event?.mainStartTime || f.event?.date;
+    if (f.fightStatus === 'COMPLETED' && eventDate) {
+      const year = new Date(eventDate).getUTCFullYear();
+      if (year >= 1990 && year <= new Date().getUTCFullYear()) {
+        exploreLinks.push({ href: `/fights/best/${year}`, label: `Best fights of ${year}` });
+      }
+    }
+  }
+
   // JSON-LD + a single semantic <h1> are server-rendered here so they are
   // guaranteed in the initial HTML regardless of client hydration. Client data
   // calls (rate, aggregate-stats, etc.) run on the real UUID — the slug is a
@@ -144,6 +173,7 @@ export default async function FightDetailPage({ params }: Props) {
       {title && (
         <header className="mx-auto mb-6 max-w-3xl text-center">
           <h1 className="text-2xl font-bold sm:text-3xl">{title}</h1>
+          <ExploreLinks links={exploreLinks} className="mt-2" />
         </header>
       )}
       <FightDetailClient fightId={initialFight?.id ?? id} initialFight={initialFight} />
