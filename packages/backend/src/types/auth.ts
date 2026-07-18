@@ -1,16 +1,10 @@
 // packages/backend/src/types/auth.ts
-import { Request } from 'express'
 
 export interface JWTPayload {
   userId: string
   email: string
   isEmailVerified: boolean
   tokenVersion?: number
-}
-
-// Extend Express Request type instead of creating conflicting interface
-export interface AuthRequest extends Request {
-  user?: JWTPayload
 }
 
 export interface RegisterRequest {

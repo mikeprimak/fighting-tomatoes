@@ -5,7 +5,6 @@ import { authRoutes } from './auth.fastify';
 import { crewRoutes } from './crews';
 import importRoutes from './import';
 import liveEventsRoutes from './liveEvents';
-import mockLiveEventsRoutes from './mockLiveEvents';
 import notificationsRoutes from './notifications';
 import notificationRulesRoutes from './notificationRules';
 import newsRoutes from './news';
@@ -2213,11 +2212,6 @@ export async function registerRoutes(fastify: FastifyInstance) {
     await liveEventsRoutes(fastify);
   }, { prefix: '/api/live-events' });
 
-  // Register mock live events routes under /api prefix
-  await fastify.register(async function(fastify) {
-    await mockLiveEventsRoutes(fastify);
-  }, { prefix: '/api/mock-live-events' });
-
   // Register notifications routes under /api/notifications prefix
   await fastify.register(notificationsRoutes, { prefix: '/api/notifications' });
 
@@ -2273,10 +2267,5 @@ export async function registerRoutes(fastify: FastifyInstance) {
 
   // GA4 Measurement Protocol relay for web conversion beacons
   await fastify.register(trackRoutes, { prefix: '/api/track' });
-
-  // Register analytics routes under /api prefix - TEMPORARILY DISABLED
-  // await fastify.register(async function(fastify) {
-  //   await analyticsRoutes(fastify);
-  // }, { prefix: '/api/analytics' });
 }
  

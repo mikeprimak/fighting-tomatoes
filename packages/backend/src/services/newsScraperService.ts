@@ -140,7 +140,7 @@ export class NewsScraperService {
   getStatus(): {
     isScrapingInProgress: boolean;
     lastScrapeTime: Date | null;
-    lastScrapeResults: typeof this.lastScrapeResults;
+    lastScrapeResults: NewsScraperService['lastScrapeResults'];
   } {
     return {
       isScrapingInProgress: this.isScrapingInProgress,

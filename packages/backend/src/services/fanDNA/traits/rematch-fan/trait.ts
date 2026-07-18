@@ -80,7 +80,7 @@ const trait: Trait = {
     if (!kind) return null;
 
     const tier = valueTier(ctx.value);
-    const valueVar =
+    const valueVar: Record<string, string | number> =
       ctx.action === 'rate' ? { rating: ctx.value } : { hype: ctx.value };
 
     return {

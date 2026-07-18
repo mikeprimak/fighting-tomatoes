@@ -60,7 +60,7 @@ export async function launchPreviewBrowser(): Promise<PreviewBrowserHandle> {
   );
   await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
   await page.setRequestInterception(true);
-  page.on('request', (req) => {
+  page.on('request', (req: any) => {
     const type = req.resourceType();
     if (type === 'image' || type === 'font' || type === 'media' || type === 'stylesheet') {
       req.abort();

@@ -71,7 +71,7 @@ const trait: Trait = {
     if (!styleTag) return null;
 
     const tier = valueTier(ctx.value);
-    const valueVar =
+    const valueVar: Record<string, string | number> =
       ctx.action === 'rate' ? { rating: ctx.value } : { hype: ctx.value };
 
     return {
