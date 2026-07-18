@@ -5,7 +5,7 @@ date: "2026-07-18"
 author: "Mike Primak"
 excerpt: "Fight fans hyped McGregor vs Holloway 2 at 9.5 out of 10 before the cage door closed. Afterward they rated it 1.3. We measured the gap between hype and reality for every fight of 2026 so far. Here are the ten biggest letdowns, the card that disappointed the most, and the fights that saved the year."
 tags: ["round-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
-image: "/blog/conor-ufc329-arms-up.png"
+image: "/blog/letdowns-2026-hero.png"
 ogImage: "/blog/letdowns-2026-og.png"
 draft: true
 featured: false
