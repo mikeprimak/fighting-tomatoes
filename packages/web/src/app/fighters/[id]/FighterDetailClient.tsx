@@ -33,9 +33,11 @@ interface Props {
   fighterId: string;
   initialFighter: any;
   initialFights?: any[];
+  /** Server-rendered next/last-fight answer blocks (see FighterFightStatus). */
+  fightStatusBlock?: React.ReactNode;
 }
 
-export function FighterDetailClient({ fighterId, initialFighter, initialFights = [] }: Props) {
+export function FighterDetailClient({ fighterId, initialFighter, initialFights = [], fightStatusBlock }: Props) {
   const [sortBy, setSortBy] = useState<'rating' | 'date'>('date');
 
   const { data: fighterData, isLoading } = useQuery({
@@ -139,6 +141,10 @@ export function FighterDetailClient({ fighterId, initialFighter, initialFights =
           )}
         </div>
       )}
+
+      {/* Next/last-fight SSR answer blocks (Own The SERPs #5) — server-rendered,
+          passed through as a slot so they sit inside the page column. */}
+      {fightStatusBlock}
 
       {/* About — AI-enriched fighter profile (Phase 5). Confidence-gated; also SEO content. */}
       <FighterAbout fighter={fighter} />

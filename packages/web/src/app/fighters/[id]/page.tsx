@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { FighterDetailClient } from './FighterDetailClient';
+import { FighterFightStatus, nextFightSentence, pickNextAndLastFight } from './FighterFightStatus';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
 import { divisionLabel, divisionSlug } from '@/lib/divisions';
 import { formatRecord } from '@/lib/record';
@@ -22,9 +23,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const conf = fighter.aiProfileConfidence ?? 0;
     const tldr = conf >= 0.5 ? (fighter.aiProfile?.tldr as string | undefined) : undefined;
     const record = formatRecord(fighter);
-    const description = tldr
+    let description = tldr
       ? `${name}: ${tldr} Fight ratings and reviews on Good Fights.`
       : `${name}${record ? ` (${record})` : ''}. See fight ratings and reviews on Good Fights.`;
+    // Lead the SERP snippet with the next-fight answer when one is booked —
+    // the "who is X fighting next" query family this page targets. Same fetch
+    // URL + options as the page body, so Next dedupes it within the request.
+    try {
+      const fightsRes = await fetch(`${API_BASE_URL}/fights?fighterId=${fighter.id}&limit=50`, { next: { revalidate: 60 } });
+      if (fightsRes.ok) {
+        const { next: nextFight } = pickNextAndLastFight((await fightsRes.json()).fights || []);
+        const sentence = nextFightSentence(fighter, nextFight);
+        if (sentence) description = `${sentence} ${description}`;
+      }
+    } catch {
+      // Description stands without the next-fight lead.
+    }
     return {
       title: name,
       description,
@@ -126,7 +140,12 @@ export default async function FighterDetailPage({ params }: Props) {
       {jsonLd && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       )}
-      <FighterDetailClient fighterId={realId} initialFighter={initialFighter} initialFights={initialFights} />
+      <FighterDetailClient
+        fighterId={realId}
+        initialFighter={initialFighter}
+        initialFights={initialFights}
+        fightStatusBlock={<FighterFightStatus fighter={initialFighter} fights={initialFights} />}
+      />
       <ExploreLinks links={exploreLinks} className="mx-auto mt-8 max-w-3xl" />
     </>
   );
