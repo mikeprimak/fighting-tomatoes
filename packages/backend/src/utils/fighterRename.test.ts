@@ -13,7 +13,7 @@
  */
 
 import * as assert from 'assert';
-import { isLikelyRenamedFighter, normalizeFullName, resolveRenamedOpponent } from './fighterRename';
+import { isLikelyRenamedFighter, normalizeFullName, resolveRenamedOpponent, resolveRenamedPair } from './fighterRename';
 
 let failures = 0;
 async function check(desc: string, fn: () => void | Promise<void>): Promise<void> {
@@ -157,6 +157,72 @@ async function main(): Promise<void> {
     });
     assert.strictEqual(resolved, null);
     assert.strictEqual(updates.length, 0);
+  });
+
+  console.log('resolveRenamedPair — parser-facing wrapper:');
+
+  await check('no-ops when both sides resolved (no DB touch)', async () => {
+    const pair = await resolveRenamedPair({} as never, {
+      eventId: 'raf-georgia',
+      fighter1Id: 'a-id',
+      fighter2Id: 'b-id',
+      scrapedName1: 'Fighter A',
+      scrapedName2: 'Fighter B',
+      scrapedEventNames: new Set<string>(),
+    });
+    assert.deepStrictEqual(pair, { fighter1Id: 'a-id', fighter2Id: 'b-id' });
+  });
+
+  await check('no-ops when neither side resolved', async () => {
+    const pair = await resolveRenamedPair({} as never, {
+      eventId: 'raf-georgia',
+      fighter1Id: undefined,
+      fighter2Id: undefined,
+      scrapedName1: 'Fighter A',
+      scrapedName2: 'Fighter B',
+      scrapedEventNames: new Set<string>(),
+    });
+    assert.deepStrictEqual(pair, { fighter1Id: undefined, fighter2Id: undefined });
+  });
+
+  await check('fills the unresolved side from the rename guard', async () => {
+    const { stub, updates } = makeStubPrisma({ existingUnderNewName: false });
+    const pair = await resolveRenamedPair(stub as never, {
+      eventId: 'raf-georgia',
+      fighter1Id: 'tsarukyan-id',
+      fighter2Id: undefined,
+      scrapedName1: 'Arman Tsarukyan',
+      scrapedName2: 'Kuat Khamitov',
+      scrapedEventNames: new Set([normalizeFullName('Arman Tsarukyan'), normalizeFullName('Kuat Khamitov')]),
+    });
+    assert.deepStrictEqual(pair, { fighter1Id: 'tsarukyan-id', fighter2Id: 'khamitov-old-id' });
+    assert.strictEqual(updates.length, 1);
+  });
+
+  await check('skips excluded anchors (TBA placeholder)', async () => {
+    const pair = await resolveRenamedPair({} as never, {
+      eventId: 'raf-georgia',
+      fighter1Id: 'tba-fighter-global',
+      fighter2Id: undefined,
+      scrapedName1: 'TBA',
+      scrapedName2: 'Kuat Khamitov',
+      scrapedEventNames: new Set([normalizeFullName('Kuat Khamitov')]),
+      excludeFighterIds: new Set(['tba-fighter-global']),
+    });
+    assert.deepStrictEqual(pair, { fighter1Id: 'tba-fighter-global', fighter2Id: undefined });
+  });
+
+  await check('never throws — a guard failure falls back to the unchanged pair', async () => {
+    const throwingStub = { fight: { findMany: async () => { throw new Error('db down'); } } };
+    const pair = await resolveRenamedPair(throwingStub as never, {
+      eventId: 'raf-georgia',
+      fighter1Id: 'tsarukyan-id',
+      fighter2Id: undefined,
+      scrapedName1: 'Arman Tsarukyan',
+      scrapedName2: 'Kuat Khamitov',
+      scrapedEventNames: new Set([normalizeFullName('Kuat Khamitov')]),
+    });
+    assert.deepStrictEqual(pair, { fighter1Id: 'tsarukyan-id', fighter2Id: undefined });
   });
 
   if (failures > 0) {

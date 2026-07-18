@@ -8,6 +8,7 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { normalizeFullName, resolveRenamedPair } from '../utils/fighterRename';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
@@ -542,6 +543,14 @@ async function importTopRankEvents(
     // Import fights for this event
     let fightsImported = 0;
     const fights = eventData.fights || [];
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (RAF Georgia 2026-07-10; rafDataParser is the template).
+    const renameGuardNames = new Set<string>();
+    for (const f of fights) {
+      renameGuardNames.add(normalizeFullName(f.fighterA.name));
+      renameGuardNames.add(normalizeFullName(f.fighterB.name));
+    }
 
     for (const fightData of fights) {
       // Find fighter IDs from URL map or by name
@@ -564,6 +573,20 @@ async function importTopRankEvents(
         });
         fighter2Id = fighter?.id;
       }
+
+      // Rename-fork guard: exactly one side resolved and the unknown name is a
+      // respelling of the resolved side's existing opponent on this event →
+      // rename that row in place instead of forking a duplicate fighter+fight.
+      ({ fighter1Id, fighter2Id } = await resolveRenamedPair(prisma, {
+        eventId: event.id,
+        fighter1Id,
+        fighter2Id,
+        scrapedName1: fightData.fighterA.name,
+        scrapedName2: fightData.fighterB.name,
+        scrapedEventNames: renameGuardNames,
+      }));
+      if (fighter1Id && fightData.fighterA.athleteUrl) fighterUrlToId.set(fightData.fighterA.athleteUrl, fighter1Id);
+      if (fighter2Id && fightData.fighterB.athleteUrl) fighterUrlToId.set(fightData.fighterB.athleteUrl, fighter2Id);
 
       // If still not found, create new fighters
       if (!fighter1Id) {

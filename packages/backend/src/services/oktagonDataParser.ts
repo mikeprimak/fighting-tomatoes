@@ -8,6 +8,7 @@ import { TBA_FIGHTER_ID, TBA_FIGHTER_NAME, isTBAFighter } from '../constants/tba
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { normalizeFullName, resolveRenamedPair } from '../utils/fighterRename';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
@@ -409,6 +410,16 @@ async function importOktagonEvents(
     // Import fights for this event
     let fightsImported = 0;
     const fights = eventData.fights || [];
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (RAF Georgia 2026-07-10; rafDataParser is the template).
+    const renameGuardNames = new Set<string>();
+    for (const f of fights) {
+      for (const n of [f.fighterA.name, f.fighterB.name]) {
+        const normalized = normalizeFullName(n || '');
+        if (normalized) renameGuardNames.add(normalized);
+      }
+    }
 
     for (const fightData of fights) {
       // Check if fighterB is TBA (missing opponent)
@@ -453,6 +464,22 @@ async function importOktagonEvents(
           fighterUrlToId.set(fightData.fighterB.athleteUrl, fighter2.id);
         }
       }
+
+      // Rename-fork guard: exactly one side resolved and the unknown name is a
+      // respelling of the resolved side's existing opponent on this event →
+      // rename that row in place instead of forking a duplicate fighter+fight.
+      // (The global TBA fighter is never a valid anchor.)
+      ({ fighter1Id, fighter2Id } = await resolveRenamedPair(prisma, {
+        eventId: event.id,
+        fighter1Id,
+        fighter2Id,
+        scrapedName1: fightData.fighterA.name,
+        scrapedName2: isFighterBTBA ? '' : fightData.fighterB.name,
+        scrapedEventNames: renameGuardNames,
+        excludeFighterIds: new Set([TBA_FIGHTER_ID]),
+      }));
+      if (fighter1Id && fightData.fighterA.athleteUrl) fighterUrlToId.set(fightData.fighterA.athleteUrl, fighter1Id);
+      if (fighter2Id && !isFighterBTBA && fightData.fighterB.athleteUrl) fighterUrlToId.set(fightData.fighterB.athleteUrl, fighter2Id);
 
       // If still not found, create/upsert the fighters
       // Single-name fighters are stored with firstName empty, lastName containing the name

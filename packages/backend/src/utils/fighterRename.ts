@@ -161,3 +161,66 @@ export async function resolveRenamedOpponent(
 
   return null;
 }
+
+/** Exact (case-insensitive) DB lookup used as a fallback when a parser's
+ *  in-run name/url map misses — ensures the rename guard always has its anchor
+ *  (the map only knows fighters seen in THIS scrape's athlete import). */
+export async function findExactFighterId(
+  prisma: AnyPrismaClient,
+  firstName: string,
+  lastName: string,
+): Promise<string | undefined> {
+  if (!firstName && !lastName) return undefined;
+  const existing = await prisma.fighter.findFirst({
+    where: {
+      firstName: { equals: firstName, mode: 'insensitive' },
+      lastName: { equals: lastName, mode: 'insensitive' },
+    },
+    select: { id: true },
+  });
+  return existing?.id;
+}
+
+export interface RenamedPairQuery {
+  eventId: string;
+  fighter1Id: string | undefined;
+  fighter2Id: string | undefined;
+  /** Raw scraped names for the two corners, same order as the IDs. */
+  scrapedName1: string;
+  scrapedName2: string;
+  /** See RenamedOpponentQuery.scrapedEventNames (normalizeFullName'd). */
+  scrapedEventNames: Set<string>;
+  /** IDs never valid as a rename anchor (e.g. a TBA placeholder fighter). */
+  excludeFighterIds?: Set<string>;
+}
+
+/**
+ * Parser-facing wrapper: when exactly one side of a bout resolved, run the
+ * rename-fork guard on the unresolved side. Never throws (a guard failure
+ * falls back to the parser's normal create path). Returns the — possibly
+ * updated — fighter-ID pair.
+ */
+export async function resolveRenamedPair(
+  prisma: AnyPrismaClient,
+  q: RenamedPairQuery,
+): Promise<{ fighter1Id: string | undefined; fighter2Id: string | undefined }> {
+  const { fighter1Id, fighter2Id } = q;
+  if (!!fighter1Id === !!fighter2Id) return { fighter1Id, fighter2Id };
+  const anchorFighterId = (fighter1Id ?? fighter2Id)!;
+  if (q.excludeFighterIds?.has(anchorFighterId)) return { fighter1Id, fighter2Id };
+  const missingName = fighter1Id ? q.scrapedName2 : q.scrapedName1;
+  if (!normalizeFullName(missingName || '')) return { fighter1Id, fighter2Id };
+  const renamedId = await resolveRenamedOpponent(prisma, {
+    eventId: q.eventId,
+    anchorFighterId,
+    scrapedOpponentName: missingName,
+    scrapedEventNames: q.scrapedEventNames,
+  }).catch((err) => {
+    console.warn('    ⚠ Rename-fork guard failed, falling back to create:', err);
+    return null;
+  });
+  if (!renamedId) return { fighter1Id, fighter2Id };
+  return fighter1Id
+    ? { fighter1Id, fighter2Id: renamedId }
+    : { fighter1Id: renamedId, fighter2Id };
+}

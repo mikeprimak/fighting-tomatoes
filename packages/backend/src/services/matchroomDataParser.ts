@@ -9,6 +9,7 @@ import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { findExactFighterId, normalizeFullName, resolveRenamedPair } from '../utils/fighterRename';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
@@ -471,6 +472,17 @@ async function importMatchroomEvents(
     // TBA fighter ID for opponents not yet announced
     const TBA_FIGHTER_ID = 'tba-fighter-global';
 
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (RAF Georgia 2026-07-10; rafDataParser is the template).
+    const renameGuardNames = new Set<string>();
+    for (const f of fights) {
+      for (const n of [f.boxerA.name, f.boxerB.name]) {
+        const normalized = normalizeFullName(n || '');
+        if (normalized && normalized !== 'tba') renameGuardNames.add(normalized);
+      }
+    }
+
     for (const fightData of fights) {
       // Find or create boxers
       let boxer1Id = boxerNameToId.get(fightData.boxerA.name);
@@ -485,6 +497,37 @@ async function importMatchroomEvents(
         boxer1Id = TBA_FIGHTER_ID;
         console.log(`    Using TBA fighter for ${fightData.boxerB.name}'s opponent`);
       }
+
+      // The rename guard needs its anchor even when the name map misses —
+      // resolve unknown sides by exact DB name first.
+      if (!boxer1Id) {
+        const { firstName, lastName } = parseBoxerName(fightData.boxerA.name);
+        boxer1Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+      if (!boxer2Id) {
+        const { firstName, lastName } = parseBoxerName(fightData.boxerB.name);
+        boxer2Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+
+      // Rename-fork guard: exactly one side resolved and the unknown name is a
+      // respelling of the resolved side's existing opponent on this event →
+      // rename that row in place instead of forking a duplicate fighter+fight.
+      // (The global TBA fighter is never a valid anchor.)
+      {
+        const guarded = await resolveRenamedPair(prisma, {
+          eventId: event.id,
+          fighter1Id: boxer1Id,
+          fighter2Id: boxer2Id,
+          scrapedName1: fightData.boxerA.name,
+          scrapedName2: fightData.boxerB.name,
+          scrapedEventNames: renameGuardNames,
+          excludeFighterIds: new Set([TBA_FIGHTER_ID]),
+        });
+        boxer1Id = guarded.fighter1Id;
+        boxer2Id = guarded.fighter2Id;
+      }
+      if (boxer1Id) boxerNameToId.set(fightData.boxerA.name, boxer1Id);
+      if (boxer2Id && boxer2Id !== TBA_FIGHTER_ID) boxerNameToId.set(fightData.boxerB.name, boxer2Id);
 
       // Create boxers on the fly if not found
       // Single-name fighters are stored with firstName empty, lastName containing the name

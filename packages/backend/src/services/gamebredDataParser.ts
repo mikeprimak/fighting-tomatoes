@@ -8,6 +8,7 @@ import { eventTimeToUTC } from '../utils/timezone';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { getPromotionByCode } from '../config/promotionRegistry';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { findExactFighterId, normalizeFullName, resolveRenamedPair } from '../utils/fighterRename';
 import {
   CANCELLATION_STRIKE_THRESHOLD,
   MIN_SCRAPED_EVENTS_FOR_CANCEL,
@@ -273,10 +274,43 @@ async function importEvents(
     // Fighter IDs present anywhere in this scrape — used to detect rebookings
     // (a fighter on a DIFFERENT matchup means the old bout is dead).
     const scrapedFighterIds = new Set<string>();
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (RAF Georgia 2026-07-10; rafDataParser is the template).
+    const renameGuardNames = new Set<string>();
+    for (const f of fights) {
+      renameGuardNames.add(normalizeFullName(f.fighterA.name));
+      renameGuardNames.add(normalizeFullName(f.fighterB.name));
+    }
 
     for (const fightData of fights) {
       let fighter1Id = fighterNameToId.get(normalizeName(fightData.fighterA.name).toLowerCase());
       let fighter2Id = fighterNameToId.get(normalizeName(fightData.fighterB.name).toLowerCase());
+
+      // The athlete import misses fighters that only appear on fight cards —
+      // resolve those by exact DB name so the rename guard always has its anchor.
+      if (!fighter1Id) {
+        const { firstName, lastName } = parseFighterName(fightData.fighterA.name);
+        fighter1Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+      if (!fighter2Id) {
+        const { firstName, lastName } = parseFighterName(fightData.fighterB.name);
+        fighter2Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+
+      // Rename-fork guard: exactly one side resolved and the unknown name is a
+      // respelling of the resolved side's existing opponent on this event →
+      // rename that row in place instead of forking a duplicate fighter+fight.
+      ({ fighter1Id, fighter2Id } = await resolveRenamedPair(prisma, {
+        eventId: event.id,
+        fighter1Id,
+        fighter2Id,
+        scrapedName1: fightData.fighterA.name,
+        scrapedName2: fightData.fighterB.name,
+        scrapedEventNames: renameGuardNames,
+      }));
+      if (fighter1Id) fighterNameToId.set(normalizeName(fightData.fighterA.name).toLowerCase(), fighter1Id);
+      if (fighter2Id) fighterNameToId.set(normalizeName(fightData.fighterB.name).toLowerCase(), fighter2Id);
 
       if (!fighter1Id) {
         const { firstName, lastName } = parseFighterName(fightData.fighterA.name);
