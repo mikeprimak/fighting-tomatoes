@@ -7,9 +7,16 @@
  * flopped), the biggest overdeliveries (slept on, then banged), and the
  * most-hyped fights of the window.
  *
+ * Only hype votes CREATED BEFORE the event started count (createdAt vs
+ * mainStartTime, falling back to event date). Hype collection launched
+ * ~2026-04-15; votes on earlier fights are retro-hype, not anticipation,
+ * and this filter drops them without needing a hand-picked cutoff.
+ * Pass --allow-retro-hype to disable (data archaeology only, never for
+ * published numbers).
+ *
  * Usage (from packages/backend/):
  *   npx tsx scripts/hype-vs-reality.ts [--from 2026-01-01] [--to 2026-12-31] \
- *     [--min-hype 5] [--min-ratings 5]
+ *     [--min-hype 5] [--min-ratings 5] [--allow-retro-hype]
  */
 import { prisma } from '../src/lib/prisma';
 
@@ -22,6 +29,7 @@ const FROM = new Date(arg('from', '2026-01-01'));
 const TO = new Date(arg('to', new Date().toISOString().slice(0, 10)));
 const MIN_HYPE = parseInt(arg('min-hype', '5'), 10);
 const MIN_RATINGS = parseInt(arg('min-ratings', '5'), 10);
+const ALLOW_RETRO_HYPE = process.argv.includes('--allow-retro-hype');
 
 interface Row {
   label: string;
@@ -48,17 +56,22 @@ async function main() {
       cardType: true,
       fighter1: { select: { firstName: true, lastName: true } },
       fighter2: { select: { firstName: true, lastName: true } },
-      event: { select: { name: true, date: true, promotion: true } },
+      event: { select: { name: true, date: true, promotion: true, mainStartTime: true } },
       predictions: {
-        where: { predictedRating: { not: null } },
-        select: { predictedRating: true },
+        // Internal accounts (testdev/applereview/etc.) never count toward
+        // published hype numbers.
+        where: { predictedRating: { not: null }, user: { email: { not: { endsWith: '@goodfights.app' } } } },
+        select: { predictedRating: true, createdAt: true },
       },
     },
   });
 
   const rows: Row[] = [];
   for (const f of fights) {
-    const hypes = f.predictions.map((p) => p.predictedRating as number);
+    const eventStart = f.event.mainStartTime ?? f.event.date;
+    const hypes = f.predictions
+      .filter((p) => ALLOW_RETRO_HYPE || p.createdAt < eventStart)
+      .map((p) => p.predictedRating as number);
     if (hypes.length < MIN_HYPE) continue;
     if (!f.averageRating || (f.totalRatings ?? 0) < MIN_RATINGS) continue;
     const avgHype = hypes.reduce((a, b) => a + b, 0) / hypes.length;
