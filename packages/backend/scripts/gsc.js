@@ -13,6 +13,8 @@
  *   node scripts/gsc.js submit <sitemapUrl>         (re)submit a sitemap
  *   node scripts/gsc.js query [days] [dimension]    search analytics (default 7d by page;
  *                                                   dimensions: page | query | date | country | device)
+ *   node scripts/gsc.js inspect <url> [...]         URL Inspection API — Google's index verdict,
+ *                                                   coverage state, canonical, last crawl (2k/day quota)
  */
 const path = require('path');
 const { GoogleAuth } = require('google-auth-library');
@@ -75,9 +77,28 @@ async function main() {
       );
     }
     if (!data.rows) console.log(r.status, JSON.stringify(data, null, 2));
+  } else if (cmd === 'inspect') {
+    const urls = process.argv.slice(3);
+    if (!urls.length) throw new Error('usage: gsc.js inspect <url> [...]');
+    for (const url of urls) {
+      const r = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', {
+        method: 'POST',
+        headers: { ...H, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inspectionUrl: url, siteUrl: SITE }),
+      });
+      const data = await r.json();
+      const idx = data.inspectionResult?.indexStatusResult;
+      if (!idx) {
+        console.log(`${url}\n  ${r.status} ${JSON.stringify(data)}`);
+        continue;
+      }
+      console.log(
+        `${url}\n  verdict=${idx.verdict} state=${idx.coverageState}\n  canonical: user=${idx.userCanonical ?? '-'} google=${idx.googleCanonical ?? '-'}\n  lastCrawl=${idx.lastCrawlTime ?? 'never'} robots=${idx.robotsTxtState ?? '?'} indexing=${idx.indexingState ?? '?'}`
+      );
+    }
   } else {
     console.log(
-      'usage: gsc.js sites | sitemaps | submit <sitemapUrl> | query [days] [page|query|date|country|device]'
+      'usage: gsc.js sites | sitemaps | submit <sitemapUrl> | query [days] [page|query|date|country|device] | inspect <url> [...]'
     );
   }
 }
