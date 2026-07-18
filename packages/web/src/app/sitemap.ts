@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getAllPosts } from '@/lib/posts';
 import { ORGS } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
-import { fetchBestYears, indexableYears } from '@/lib/bestFights';
+import { fetchBestFacets, fetchBestYears, indexableBestLists, indexableYears } from '@/lib/bestFights';
 
 /**
  * Root sitemap: static pages, hub/index pages, and blog posts only. The deep
@@ -50,6 +50,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  // Best-of facet hubs (front-load #4): all-time / per-org / per-method /
+  // per-division lists that clear the same page-worthiness floor.
+  const facetPages: MetadataRoute.Sitemap = indexableBestLists(await fetchBestFacets()).map((l) => ({
+    url: `${SITE_URL}/fights/best/${l.slug}`,
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
   const postPages: MetadataRoute.Sitemap = getAllPosts().map((post) => ({
     url: `${SITE_URL}/blog/${post.slug}`,
     lastModified: post.date ? new Date(post.date) : undefined,
@@ -57,5 +65,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticPages, ...orgPages, ...yearPages, ...postPages];
+  return [...staticPages, ...orgPages, ...yearPages, ...facetPages, ...postPages];
 }

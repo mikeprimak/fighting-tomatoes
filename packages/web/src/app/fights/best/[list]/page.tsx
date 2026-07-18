@@ -2,54 +2,93 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { SITE_URL } from '@/lib/site';
-import { fetchBestFights, fetchBestYears, indexableYears, MIN_YEAR_FIGHTS } from '@/lib/bestFights';
+import {
+  fetchBestFacets,
+  fetchBestListFights,
+  fetchBestYears,
+  indexableBestLists,
+  indexableYears,
+  resolveBestList,
+  bestListTitle,
+  MIN_LIST_FIGHTS,
+  type BestFacets,
+  type BestList,
+  type BestYear,
+} from '@/lib/bestFights';
 import { BEST_FIGHT_YEAR_NOTES } from '@/lib/bestFightYearNotes';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { FightColumnHeader } from '@/components/fight-cards/FightSectionList';
 
-type Props = { params: Promise<{ year: string }> };
-
-function parseYear(raw: string): number | null {
-  if (!/^\d{4}$/.test(raw)) return null;
-  const year = parseInt(raw, 10);
-  const currentYear = new Date().getUTCFullYear();
-  if (year < 1990 || year > currentYear) return null;
-  return year;
-}
+// One dynamic segment serves every list flavor (Own The SERPs front-load #4):
+// a year ("2026"), "all-time", a method ("knockouts", "submissions",
+// "title-fights"), an org ("ufc", "bkfc", …), or a division ("lightweight").
+type Props = { params: Promise<{ list: string }> };
 
 function fightName(f: any): string {
   return `${f.fighter1.firstName} ${f.fighter1.lastName} vs ${f.fighter2.firstName} ${f.fighter2.lastName}`;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { year: yearRaw } = await params;
-  const year = parseYear(yearRaw);
-  if (!year) return { title: 'Best Fights' };
+async function resolveFromParams(
+  listRaw: string,
+): Promise<{ list: BestList; years: BestYear[]; facets: BestFacets | null } | null> {
+  const [facets, allYears] = await Promise.all([fetchBestFacets(), fetchBestYears()]);
+  const list = resolveBestList(listRaw, facets, allYears);
+  if (!list) return null;
+  return { list, years: indexableYears(allYears), facets };
+}
 
-  const fights = await fetchBestFights(year);
-  const canonical = `${SITE_URL}/fights/best/${year}`;
-  const title = `Best Fights of ${year} — Fan Rated`;
+/** The noun phrase the copy hangs on: "the best UFC fights", "the best fights of 2026"… */
+function subject(list: BestList): string {
+  switch (list.kind) {
+    case 'year':
+      return `the best MMA and boxing fights of ${list.year}`;
+    case 'all-time':
+      return 'the best MMA and boxing fights of all time';
+    case 'org':
+      return `the best ${list.org.name} fights`;
+    case 'method':
+      return list.method === 'title'
+        ? 'the best championship title fights'
+        : `the best ${list.noun} in MMA and boxing`;
+    case 'division':
+      return `the best ${list.label.toLowerCase()} fights`;
+  }
+}
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { list: listRaw } = await params;
+  const resolved = await resolveFromParams(listRaw);
+  if (!resolved) return { title: 'Best Fights' };
+  const { list } = resolved;
+
+  const fights = await fetchBestListFights(list);
+  const canonical = `${SITE_URL}/fights/best/${list.slug}`;
+  const title = `${bestListTitle(list)} — Fan Rated`;
   const top = fights[0];
   const description = top
-    ? `The best MMA and boxing fights of ${year}, ranked by fan ratings. #1: ${fightName(top)} (${top.averageRating.toFixed(1)}/10 from ${top.totalRatings} ratings).`
-    : `The best MMA and boxing fights of ${year}, ranked by fan ratings on Good Fights.`;
+    ? `${capitalize(subject(list))}, ranked by fan ratings. #1: ${fightName(top)} (${top.averageRating.toFixed(1)}/10 from ${top.totalRatings} ratings).`
+    : `${capitalize(subject(list))}, ranked by fan ratings on Good Fights.`;
   return {
     title,
     description,
     alternates: { canonical },
-    // Same philosophy as the entity pages' shouldIndex gate: thin year pages
+    // Same philosophy as the entity pages' shouldIndex gate: thin list pages
     // render for users but stay out of Google's index (and the sitemap).
-    ...(fights.length < MIN_YEAR_FIGHTS ? { robots: { index: false, follow: true } } : {}),
+    ...(fights.length < MIN_LIST_FIGHTS ? { robots: { index: false, follow: true } } : {}),
     openGraph: { title, description, type: 'website', url: canonical },
   };
 }
 
 /** ItemList JSON-LD — the ranked list as machine-readable structured data. */
-function buildListJsonLd(year: number, fights: any[], url: string) {
+function buildListJsonLd(list: BestList, fights: any[], url: string) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    name: `Best Fights of ${year}`,
+    name: bestListTitle(list),
     itemListOrder: 'https://schema.org/ItemListOrderDescending',
     numberOfItems: fights.length,
     mainEntityOfPage: { '@type': 'WebPage', '@id': url },
@@ -62,30 +101,66 @@ function buildListJsonLd(year: number, fights: any[], url: string) {
   };
 }
 
-export default async function BestFightsYearPage({ params }: Props) {
-  const { year: yearRaw } = await params;
-  const year = parseYear(yearRaw);
-  if (!year) notFound();
+/** The #1-fight FAQ question, phrased per list flavor. */
+function topFaqQuestion(list: BestList): string {
+  switch (list.kind) {
+    case 'year':
+      return `What was the best fight of ${list.year}?`;
+    case 'all-time':
+      return 'What is the best fight of all time?';
+    case 'org':
+      return `What is the best ${list.org.name} fight ever?`;
+    case 'method':
+      return list.method === 'title'
+        ? 'What is the best title fight ever?'
+        : `What is the best ${list.label.toLowerCase()} fight ever?`;
+    case 'division':
+      return `What is the best ${list.label.toLowerCase()} fight ever?`;
+  }
+}
 
-  const [fights, allYears] = await Promise.all([fetchBestFights(year), fetchBestYears()]);
-  const linkedYears = indexableYears(allYears);
-  const jsonLd = buildListJsonLd(year, fights, `${SITE_URL}/fights/best/${year}`);
+/** Chip label: "Best UFC Fights" -> "UFC", "Best Fights of All Time" -> "All time". */
+function chipLabel(l: BestList): string {
+  switch (l.kind) {
+    case 'all-time':
+      return 'All time';
+    case 'org':
+      return l.org.name;
+    case 'method':
+      return capitalize(l.noun);
+    case 'division':
+      return l.label;
+    case 'year':
+      return String(l.year);
+  }
+}
+
+export default async function BestFightsListPage({ params }: Props) {
+  const { list: listRaw } = await params;
+  const resolved = await resolveFromParams(listRaw);
+  if (!resolved) notFound();
+  const { list, years, facets } = resolved;
+
+  const fights = await fetchBestListFights(list);
+  const canonical = `${SITE_URL}/fights/best/${list.slug}`;
+  const jsonLd = buildListJsonLd(list, fights, canonical);
+  const browseLists = indexableBestLists(facets);
 
   const top = fights[0];
-  // Editorial retrospective, falling back to a data-driven line so every year
-  // page has real prose above the list.
-  const yearNote =
-    BEST_FIGHT_YEAR_NOTES[year] ||
+  // Editorial retrospective for year pages, falling back to a data-driven line
+  // so every list page has real prose above the ranking.
+  const intro =
+    (list.kind === 'year' && BEST_FIGHT_YEAR_NOTES[list.year]) ||
     (top
-      ? `Fans on Good Fights have rated ${fights.length} fights from ${year}, and the wars at the top of this list, like ${fightName(top)}, all scored ${Math.floor(top.averageRating)}/10 or close to it. The order shifts as more fans rate.`
+      ? `Fans on Good Fights rank ${subject(list)} with real post-fight ratings, and the wars at the top of this list, like ${fightName(top)}, all scored ${Math.floor(top.averageRating)}/10 or close to it. The order shifts as more fans rate.`
       : null);
 
   const faqs = [
     ...(top
       ? [
           {
-            q: `What was the best fight of ${year}?`,
-            a: `There is no single right answer, which is why fans vote. Right now ${fightName(top)}${top.event?.name ? ` at ${top.event.name}` : ''} leads the ${year} fan ratings at ${top.averageRating.toFixed(1)}/10 across ${top.totalRatings} ratings on Good Fights, but the order shifts as more fans weigh in, and everything near the top of this list has a real claim.`,
+            q: topFaqQuestion(list),
+            a: `There is no single right answer, which is why fans vote. Right now ${fightName(top)}${top.event?.name ? ` at ${top.event.name}` : ''} leads the fan ratings at ${top.averageRating.toFixed(1)}/10 across ${top.totalRatings} ratings on Good Fights, but the order shifts as more fans weigh in, and everything near the top of this list has a real claim.`,
           },
         ]
       : []),
@@ -104,10 +179,10 @@ export default async function BestFightsYearPage({ params }: Props) {
     })),
   };
 
-  // Adjacent-year links for the bottom of the page (the chip nav is at the top).
-  const yearIdx = linkedYears.findIndex((y) => y.year === year);
-  const prevYear = yearIdx >= 0 ? linkedYears[yearIdx + 1]?.year : undefined; // list is newest-first
-  const nextYear = yearIdx > 0 ? linkedYears[yearIdx - 1]?.year : undefined;
+  // Adjacent-year links for year pages (the chip nav is at the top).
+  const yearIdx = list.kind === 'year' ? years.findIndex((y) => y.year === list.year) : -1;
+  const prevYear = yearIdx >= 0 ? years[yearIdx + 1]?.year : undefined; // list is newest-first
+  const nextYear = yearIdx > 0 ? years[yearIdx - 1]?.year : undefined;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -115,31 +190,47 @@ export default async function BestFightsYearPage({ params }: Props) {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
 
       <header className="mb-4">
-        <h1 className="text-2xl font-bold">Best Fights of {year}</h1>
+        <h1 className="text-2xl font-bold">{bestListTitle(list)}</h1>
         <p className="mt-1 text-sm text-text-secondary">
           {fights.length > 0
-            ? `The top ${fights.length} fights of ${year}, ranked by fan ratings from the Good Fights community.`
-            : `No rated fights found for ${year} yet.`}
+            ? `The top ${fights.length} ranked by fan ratings from the Good Fights community.`
+            : 'No rated fights found for this list yet.'}
         </p>
       </header>
 
-      {yearNote && (
-        <p className="mb-5 text-sm leading-relaxed text-text-secondary">{yearNote}</p>
-      )}
+      {intro && <p className="mb-5 text-sm leading-relaxed text-text-secondary">{intro}</p>}
 
-      {linkedYears.length > 0 && (
-        <nav className="mb-5 flex flex-wrap gap-2" aria-label="Best fights by year">
-          {linkedYears.map((y) => (
+      {years.length > 0 && (
+        <nav className="mb-3 flex flex-wrap gap-2" aria-label="Best fights by year">
+          {years.map((y) => (
             <Link
               key={y.year}
               href={`/fights/best/${y.year}`}
               className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                y.year === year
+                list.kind === 'year' && y.year === list.year
                   ? 'border-primary bg-primary/10 text-primary'
                   : 'border-border bg-card text-text-secondary hover:border-primary hover:text-primary'
               }`}
             >
               {y.year}
+            </Link>
+          ))}
+        </nav>
+      )}
+
+      {browseLists.length > 0 && (
+        <nav className="mb-5 flex flex-wrap gap-2" aria-label="Best fights by category">
+          {browseLists.map((l) => (
+            <Link
+              key={l.slug}
+              href={`/fights/best/${l.slug}`}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                l.slug === list.slug
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-card text-text-secondary hover:border-primary hover:text-primary'
+              }`}
+            >
+              {chipLabel(l)}
             </Link>
           ))}
         </nav>
@@ -158,7 +249,7 @@ export default async function BestFightsYearPage({ params }: Props) {
 
       {faqs.length > 0 && (
         <section className="mt-8">
-          <h2 className="mb-3 text-lg font-bold">FAQ: the best fights of {year}</h2>
+          <h2 className="mb-3 text-lg font-bold">FAQ: {subject(list)}</h2>
           <div className="space-y-4">
             {faqs.map((f) => (
               <div key={f.q}>
@@ -186,11 +277,23 @@ export default async function BestFightsYearPage({ params }: Props) {
       )}
 
       <p className="mt-6 text-sm text-text-secondary">
-        Looking for recent standouts? See{' '}
-        <Link href="/fights/top" className="text-primary hover:underline">
-          top-rated recent fights
-        </Link>{' '}
-        or browse{' '}
+        {list.kind === 'org' ? (
+          <>
+            See the full{' '}
+            <Link href={`/orgs/${list.org.slug}`} className="text-primary hover:underline">
+              {list.org.name} schedule, results and fan ratings
+            </Link>
+            , or browse{' '}
+          </>
+        ) : (
+          <>
+            Looking for recent standouts? See{' '}
+            <Link href="/fights/top" className="text-primary hover:underline">
+              top-rated recent fights
+            </Link>{' '}
+            or browse{' '}
+          </>
+        )}
         <Link href="/fighters" className="text-primary hover:underline">
           fighters
         </Link>{' '}

@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
 import { ORGS, orgBySlug } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
+import { fetchBestFacets, fetchTopOrgFights, MIN_LIST_FIGHTS } from '@/lib/bestFights';
+import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
@@ -80,10 +82,19 @@ export default async function OrgHubPage({ params }: Props) {
   const org = orgBySlug(slug);
   if (!org) notFound();
 
-  const [upcoming, past] = await Promise.all([
+  const [upcoming, past, topFights, facets] = await Promise.all([
     fetchOrgEvents(org.promotion, 'upcoming', 20),
     fetchOrgEvents(org.promotion, 'past', 15),
+    // Lowered rating floor so small-promotion hubs still get a strip; the
+    // indexable /fights/best/<org> page keeps the standard floor.
+    fetchTopOrgFights(org.promotion, 5, 3),
+    fetchBestFacets(),
   ]);
+  // Link the standalone "best <org> fights" page only when it clears the
+  // indexing gate (right now that's UFC; others join as ratings accumulate).
+  const bestPageIndexable =
+    (facets?.orgs.find((o) => o.promotion.toLowerCase() === org.promotion.toLowerCase())?.count ?? 0) >=
+    MIN_LIST_FIGHTS;
 
   // Fan ratings are the differentiator (P4) — derive a card rating for each
   // recent result. Parallel, ISR-cached, and skipped gracefully on failure.
@@ -113,6 +124,9 @@ export default async function OrgHubPage({ params }: Props) {
     : null;
 
   const exploreLinks: ExploreLink[] = [
+    ...(bestPageIndexable
+      ? [{ href: `/fights/best/${org.slug}`, label: `Best ${org.name} fights` }]
+      : []),
     { href: '/schedule', label: 'Fight schedule' },
     { href: '/events', label: 'All events' },
     { href: '/fights/best/2026', label: 'Best fights of 2026' },
@@ -173,6 +187,24 @@ export default async function OrgHubPage({ params }: Props) {
           <p className="text-sm text-text-secondary">No completed events yet.</p>
         )}
       </section>
+
+      {topFights.length > 0 && (
+        <section className="mb-8">
+          <h2 className="mb-3 text-xl font-semibold">Highest-rated {org.name} fights</h2>
+          <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+            {topFights.map((fight: any, index: number) => (
+              <CompletedFightCard key={fight.id} fight={fight} showRank={index + 1} showEvent />
+            ))}
+          </div>
+          {bestPageIndexable && (
+            <p className="mt-2 text-sm">
+              <Link href={`/fights/best/${org.slug}`} className="text-primary hover:underline">
+                See all the best {org.name} fights →
+              </Link>
+            </p>
+          )}
+        </section>
+      )}
 
       <ExploreLinks links={exploreLinks} className="mt-8" />
     </div>
