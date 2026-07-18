@@ -13,6 +13,8 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**✅ DONE (2026-07-17 late evening, sessions 4–5) — backlog continuation + seed-data/dead-code sweep.** Shipped: web PostHog `identify()` on login; the §7 comment edit/delete bug (4 root causes incl. a **silent review-deletion** on rating-only changes); post-fight deletion of own pre-fight comments; OTA published (iOS `b9adc86e` / Android `55d6edba`). Then the §13 sweep: **backend tsc 67 → 0 errors**, ~50 dead files deleted (Express era, .routes.ts era, AdminJS, an **unauthenticated `/api/mock-live-events` API that was live in prod** — security fix), 25 seed users + 1,117 fake hype predictions deleted from prod, `db:migrate`/`db:seed`/`db:reset` footguns removed from package.json. Deploy note: dep changes MUST commit root `pnpm-lock.yaml` in the same push (`47b28d7e` fixed the frozen-lockfile deploy failure — verify it went green). Remaining sweep work (false&&-gated JSX blocks) is logged on the §13 backlog item. See `docs/daily/2026-07-17.md` sessions 4–5.
+
 **✅ DONE (2026-07-17 evening) — backlog intake + 11 quick wins shipped + 3 production OTAs.** ~17 new items added to `docs/BACKLOG.md` (triage there). Shipped: web review self-upvote (backend POST /review), "(me)" comment labels, sidebar rec rated-fight filter, tab-bar spacing, profile notifications-row removal, delete-account restyle, home-comment content filter (`utils/contentFilter.ts`, both platforms), fighter hype-modal bell, inline See more, section-aware "Main @"/"Event @" home card labels. OTAs delivered taste engine + all mobile fixes (latest groups: iOS `502a78f2`, Android `6ff106fc`). See `docs/daily/2026-07-17.md`.
 
 **✅ DONE (2026-07-17) — GA4 conversion tracking fully live.** Key events
