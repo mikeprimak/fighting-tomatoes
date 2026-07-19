@@ -8,7 +8,7 @@ import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { formatEventDate } from '@/utils/dateFormatters';
 import { useSpoilerFree } from '@/lib/spoilerFree';
 import { useAuth } from '@/lib/auth';
-import { Flame, Star, MessageSquare, Loader2, BookOpen, Target, Award, TrendingUp } from 'lucide-react';
+import { Flame, Star, MessageSquare, Loader2, BookOpen, Target, Award, TrendingUp, Quote } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 import { VerticalDistributionChart } from '@/components/charts/VerticalDistributionChart';
@@ -355,6 +355,46 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
           </div>
         );
       })()}
+
+      {/* What the media said (completed) — third-party pundit quotes.
+          Spoiler-gated alongside The Outcome: a quote like "his knee is
+          shattered" is outcome content. Anonymous traffic (including crawlers)
+          never has spoilerFreeMode set, so the strip still renders server-side
+          for SEO. The backend applies the confidence and >=2-quote gates, so an
+          array that arrives non-empty is already cleared to display. */}
+      {isCompleted && !hideSpoilers && Array.isArray(fight.punditQuotes) && fight.punditQuotes.length > 0 && (
+        <div className="mb-6">
+          <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
+            <Quote size={16} className="text-primary" />
+            What the media said
+          </h3>
+          <div className="space-y-3">
+            {fight.punditQuotes.map((q: any) => (
+              <figure key={q.id} className="rounded-lg border border-border bg-card p-4">
+                <blockquote className="text-sm leading-relaxed text-text-secondary">
+                  &ldquo;{q.quote}&rdquo;
+                </blockquote>
+                <figcaption className="mt-2 text-xs text-text-secondary">
+                  <span className="font-semibold text-text-primary">{q.pundit?.name}</span>
+                  {q.outlet && (
+                    <>
+                      {', via '}
+                      <a
+                        href={q.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="text-primary hover:underline"
+                      >
+                        {q.outlet}
+                      </a>
+                    </>
+                  )}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Hype section (upcoming) */}
       {isUpcoming && stats && (

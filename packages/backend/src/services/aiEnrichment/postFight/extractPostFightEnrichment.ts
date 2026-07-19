@@ -52,6 +52,7 @@ Output STRICT JSON (no prose, no markdown, no fences):
       "callouts": [],                            // post-fight callouts / mic moments ["called out Volkanovski"]. Empty if none.
       "aftermath": [],                           // consequences: ["broke his nose", "announced retirement", "moves to #1 contender", "suspended 6 months"]. Empty if none in editorial.
       "fotyConsideration": null,                 // "instant FOTY contender", "2026 FOTY frontrunner" etc. ONLY when editorial frames it that way. null otherwise.
+      "punditQuotes": [ /* see PUNDIT QUOTES rules — fill this for QUOTE-ELIGIBLE fightIds, [] for all others */ ],
       "character": {                             // STRUCTURED classification of WHAT THE FIGHT ACTUALLY WAS — drives fan-taste analytics. Use ONLY the allowed values listed in "FIGHT CHARACTER" below. Fill each field from the recap + result; set any field to null (or [] for the arrays) when the coverage doesn't support a confident read. This is classification of what the recap describes — the same analytic standing as choosing a method, not fabrication.
         "finish": null,                          // ko | tko | submission | decision | draw | no_contest | dq
         "finishMoment": null,                    // one_punch_ko | flurry_finish | ground_and_pound | slick_submission | grinding_submission | strikes_to_submission | cut_stoppage | corner_stoppage | injury_tko | doctor_stoppage | buzzer_beater | went_distance
@@ -95,7 +96,42 @@ FIGHT CHARACTER (the "character" object):
   - "appeals" — multi-select, the why-a-fan-loved-it layer. Pick ALL that genuinely apply. Allowed: knockout, submission, violence, heart, technique, drama, comeback, upset, dominance, controversy, grudge_payoff, stylistic_clash, underdog_story, veteran_clinic, prospect_breakout, title_stakes, grappling_artistry, striking_clinic, cardio_test, finish_hunting, durability, trash_talk_delivered, redemption.
   - "letdowns" — multi-select, honest negatives. [] for a clean fight. Allowed: point_fighting, stalling, clinch_heavy, low_output, early_stoppage, controversial_decision, injury_ending, anticlimactic, showboating, gassed_out, lay_and_pray.
   - Calibration: a "war" is genuinely high-volume, damaging, and competitive — don't inflate an ordinary decision to "war". "blowout" = near-shutout; "razor_thin" = legitimately could go either way; "robbery" only when the recap frames the scorecards as clearly wrong. "instant_classic" / "foty"-level vibes are rare — reserve them.
-  - finish vs decision: if the result is a decision, "finish"/"finishMoment" describe the decision (finish=decision, finishTiming=distance) and you should focus on competitiveness/phase/texture instead.`;
+  - finish vs decision: if the result is a decision, "finish"/"finishMoment" describe the decision (finish=decision, finishTiming=distance) and you should focus on competitiveness/phase/texture instead.
+
+PUNDIT QUOTES (the "punditQuotes" array — "What the media said"):
+  Short, VERBATIM, attributed reactions from third-party media, shown to users as a quote strip with a link to the source. We are publicly attributing words to real named people, so accuracy here matters more than coverage. An empty array is always an acceptable answer.
+
+  Emit quotes ONLY for fightIds listed under "QUOTE-ELIGIBLE" in the user message. For every other fightId return "punditQuotes": [].
+
+  WHAT COUNTS AS A QUOTE. Combat-sports reaction lives on podcasts, broadcasts, and X/Twitter, and reaches us through articles that transcribe or embed it. A named person's words reproduced in the article text COUNT, whatever their original medium:
+  - An embedded X/Twitter post with the author's name attached ("Conor McGregor needs to retire. It's over.— Robert Griffin III (@RGIII)") -> a quote, speaker="Robert Griffin III".
+  - A podcast or broadcast line the article transcribes ("Sonnen said on his show: '...'") -> a quote, speaker="Chael Sonnen".
+  - A line from the article's own author giving their assessment -> a quote, speaker = the bylined writer, role="journalist".
+  These "reactions" / "pros react" / "media react" roundups are a PRIMARY source for this field, not filler. Do not skip them because the words started as a social post. Only genuinely unattributed material ("fans erupted", "social media reacted") is excluded.
+
+  A reaction roundup with several named voices should normally yield 2-4 quotes. Returning an empty array when the sources plainly contain attributed reactions about this fight is a MISS.
+
+  Each entry:
+    {
+      "speaker": "Chael Sonnen",        // the PERSON who said or wrote it
+      "speakerRole": "ex_fighter",      // journalist | analyst | ex_fighter | broadcaster | other
+      "outlet": "Bloody Elbow",         // the publication we found it in
+      "sourceUrl": "https://...",       // the EXACT source URL from the SOURCES section this quote was copied out of
+      "quote": "...",                   // VERBATIM, 40 words or fewer
+      "confidence": 0.8                 // 0.0-1.0, YOUR confidence this is a real, correctly-attributed quote about this fight
+    }
+
+  Hard rules:
+  - VERBATIM ONLY. Copy the words exactly as they appear in the source text, character for character. Do NOT paraphrase, do NOT clean up grammar, do NOT stitch two sentences from different parts of the article into one quote, do NOT translate. A quote that does not appear literally in the source text will be automatically discarded, so guessing costs you the quote.
+  - Copy from a CONTIGUOUS run of the source text. You may trim from the start or end; you may not cut from the middle. Do not add ellipses or bracketed insertions.
+  - 40 words maximum. Prefer the sharpest 15-25 words.
+  - "speaker" is the person who SAID it, NOT the site that transcribed it. When Bloody Elbow writes up something Chael Sonnen said on his podcast, speaker="Chael Sonnen" and outlet="Bloody Elbow".
+  - "sourceUrl" must be one of the URLs given in the SOURCES section, and must be the one whose text contains the quote. Never guess a URL.
+  - The quote must be ABOUT this fight or its outcome/aftermath — not about the pre-fight hype cycle, not about an unrelated bout on the card, not generic event framing.
+  - EXCLUDE: the fight's own participants and their coaches/corners (their mic moments belong in "callouts"/"aftermath"), promotion employees speaking as promoters (Dana White, matchmakers, promotion executives), betting or odds boilerplate, and anonymous filler ("fans reacted", "social media erupted").
+  - Attribute to a named individual. Skip anything you cannot attribute to a specific person.
+  - At most 4 quotes per fight, and never two quotes from the same speaker. If two outlets carry the same quote, emit it once with the outlet you actually read it in.
+  - If nothing in the sources qualifies, return an empty array. Do NOT pad, and do NOT reach for a weak quote to fill the strip.`;
 
 export interface PostFightCardItem {
   fightId: string;
@@ -119,6 +155,23 @@ export interface PostFightEnrichmentInput {
   eventDate?: string;
   card: PostFightCardItem[];
   sources: Array<{ url: string; text: string; label?: string }>;
+  /**
+   * fightIds allowed to carry pundit quotes. Quote density collapses below the
+   * top of the card, so the MVP scopes this to the main event + co-main (see
+   * PUNDIT_QUOTES_MAX_BOUTS_PER_EVENT). Omit or pass [] to disable quotes for
+   * this call entirely — every other extractor output is unaffected.
+   */
+  quoteEligibleFightIds?: string[];
+}
+
+/** One raw pundit quote as the model returned it, before verification. */
+export interface PunditQuoteDraft {
+  speaker: string;
+  speakerRole: string;
+  outlet: string;
+  sourceUrl: string;
+  quote: string;
+  confidence: number;
 }
 
 /**
@@ -178,6 +231,8 @@ export interface PostFightEnrichmentRecord {
   summary: string;        // long-form recap; '' when omitted
   tags: PostFightTags;
   confidence: number;
+  /** Unverified drafts — persistence requires passing verifyPunditQuotes(). */
+  punditQuotes: PunditQuoteDraft[];
 }
 
 export interface PostFightEnrichmentResult {
@@ -225,8 +280,17 @@ export async function extractPostFightEnrichment(
     .join('\n')
     .trim();
 
+  // Escape hatch for prompt debugging — the parsed output can't tell you whether
+  // the model emitted nothing or emitted something we then dropped.
+  if (process.env.AI_ENRICHMENT_DEBUG_RAW) {
+    console.log('[aiEnrichment.postFight] RAW MODEL OUTPUT:\n' + text);
+  }
+
   const validIds = new Set(input.card.map((c) => c.fightId));
-  const { records, ghosts } = parseFights(text, validIds);
+  const quoteEligible = new Set(
+    (input.quoteEligibleFightIds ?? []).filter((id) => validIds.has(id)),
+  );
+  const { records, ghosts } = parseFights(text, validIds, quoteEligible);
 
   const usage = resp.usage as any;
   return {
@@ -266,6 +330,16 @@ function buildUserMessage(input: PostFightEnrichmentInput): string {
     lines.push(`- ${bits.join(' | ')}`);
   }
   lines.push('');
+
+  // Quote scoping: only these fightIds may carry a "punditQuotes" array.
+  const eligible = (input.quoteEligibleFightIds ?? []).filter(Boolean);
+  lines.push('## QUOTE-ELIGIBLE (only these fightIds may have a non-empty "punditQuotes" array):');
+  if (eligible.length === 0) {
+    lines.push('- none — return "punditQuotes": [] for every fight');
+  } else {
+    for (const id of eligible) lines.push(`- ${id}`);
+  }
+  lines.push('');
   if (input.sources.length === 0) {
     lines.push('## SOURCES: none');
   } else {
@@ -284,6 +358,7 @@ function buildUserMessage(input: PostFightEnrichmentInput): string {
 function parseFights(
   raw: string,
   validIds: Set<string>,
+  quoteEligible: Set<string>,
 ): { records: PostFightEnrichmentRecord[]; ghosts: string[] } {
   const jsonText = extractFirstJsonObject(raw);
   if (!jsonText) {
@@ -348,10 +423,60 @@ function parseFights(
         character: parseCharacter(f.character),
       },
       confidence: typeof f.confidence === 'number' ? Math.max(0, Math.min(1, f.confidence)) : 0.5,
+      // Scope gate: a quote on a fight we didn't ask about is dropped here, so a
+      // prompt slip can't widen coverage past the configured bout cap.
+      punditQuotes: quoteEligible.has(fightId) ? parsePunditQuotes(f.punditQuotes) : [],
     });
   }
 
   return { records, ghosts };
+}
+
+/** Hard ceiling on quote length. The prompt asks for <=40; we enforce it. */
+export const PUNDIT_QUOTE_MAX_WORDS = 40;
+/** Max quotes kept per fight after parsing (one per speaker). */
+const MAX_QUOTES_PER_FIGHT = 4;
+
+/**
+ * Shape-validate the raw "punditQuotes" array. This is the CHEAP gate — it drops
+ * malformed rows, over-length quotes, and same-speaker repeats. It does NOT
+ * establish that the quote is real; that is verifyPunditQuotes()'s job, and
+ * nothing reaches the database without passing it.
+ */
+export function parsePunditQuotes(raw: any): PunditQuoteDraft[] {
+  if (!Array.isArray(raw)) return [];
+
+  const out: PunditQuoteDraft[] = [];
+  const seenSpeakers = new Set<string>();
+
+  for (const q of raw) {
+    if (!q || typeof q !== 'object') continue;
+
+    const speaker = typeof q.speaker === 'string' ? q.speaker.trim() : '';
+    const quote = typeof q.quote === 'string' ? q.quote.trim() : '';
+    const outlet = typeof q.outlet === 'string' ? q.outlet.trim() : '';
+    const sourceUrl = typeof q.sourceUrl === 'string' ? q.sourceUrl.trim() : '';
+    if (!speaker || !quote || !outlet || !sourceUrl) continue;
+    if (!/^https?:\/\//i.test(sourceUrl)) continue;
+
+    if (quote.split(/\s+/).length > PUNDIT_QUOTE_MAX_WORDS) continue;
+
+    const speakerKey = speaker.toLowerCase();
+    if (seenSpeakers.has(speakerKey)) continue;
+    seenSpeakers.add(speakerKey);
+
+    out.push({
+      speaker,
+      speakerRole: typeof q.speakerRole === 'string' ? q.speakerRole.trim() : 'other',
+      outlet,
+      sourceUrl,
+      quote,
+      confidence: typeof q.confidence === 'number' ? Math.max(0, Math.min(1, q.confidence)) : 0.5,
+    });
+    if (out.length >= MAX_QUOTES_PER_FIGHT) break;
+  }
+
+  return out;
 }
 
 /**

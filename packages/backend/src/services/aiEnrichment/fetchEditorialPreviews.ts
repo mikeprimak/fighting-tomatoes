@@ -61,8 +61,13 @@ export interface FetchEditorialPreviewsOptions {
    * results/recap pages. 'recap' is the post-fight inverse — it biases toward
    * results/recap/highlights articles and stops excluding them. Phase 1 callers
    * omit this and get the original behavior unchanged.
+   *
+   * 'reaction' targets the media-reaction/column layer that carries pundit
+   * quotes. It is partially disjoint from 'recap' (play-by-play writeups rarely
+   * quote other analysts), which is why it's a separate query rather than a
+   * wider topN on the recap one.
    */
-  mode?: 'preview' | 'recap';
+  mode?: 'preview' | 'recap' | 'reaction';
 }
 
 /**
@@ -83,15 +88,20 @@ export async function fetchEditorialPreviews(
   const freshness = opts.freshness ?? 'pm';
   const mode = opts.mode ?? 'preview';
 
-  // Build a multi-site OR clause so one Brave call covers the whole allowlist.
-  const sitesClause = ALLOWED_DOMAINS.map((d) => `site:${d}`).join(' OR ');
   const matchup = matchupHint ?? extractMatchup(eventName);
   const subject = matchup ? `"${matchup}"` : `"${eventName}"`;
   const intent =
     mode === 'recap'
       ? 'results OR recap OR "what happened" OR highlights'
-      : 'preview OR breakdown OR "what to know"';
-  const query = `${subject} ${intent} (${sitesClause})`;
+      : mode === 'reaction'
+        ? 'reaction OR column OR "had to say"'
+        : 'preview OR breakdown OR "what to know"';
+
+  // Brave rejects queries over 400 chars with a 422. The full 14-domain OR
+  // clause plus a long subject/intent can cross that line, so drop the
+  // lowest-preference domains until it fits (ALLOWED_DOMAINS is in preference
+  // order). Silently sending a query that 422s costs the whole pass.
+  const query = buildQuery(subject, intent, ALLOWED_DOMAINS);
 
   let results;
   try {
@@ -107,7 +117,7 @@ export async function fetchEditorialPreviews(
   // Post-fight: keep them — those ARE the articles we want — but still drop
   // live-blogs (mid-event noise) and the odds-history filler pages.
   const excludeUrl =
-    mode === 'recap'
+    mode === 'recap' || mode === 'reaction'
       ? /\b(live[-_ ]?blog|odds-prediction-history)\b/i
       : /\b(results|live[-_ ]?blog|recap|odds-prediction-history|fight-card)\b/i;
 
@@ -125,6 +135,30 @@ export async function fetchEditorialPreviews(
     if (snap) snapshots.push(snap);
   }
   return snapshots;
+}
+
+/** Brave's hard limit on the `q` parameter. */
+const MAX_QUERY_CHARS = 400;
+
+/**
+ * Assemble `subject intent (site:a OR site:b ...)`, trimming domains off the
+ * end of the allowlist until the whole query fits inside Brave's limit.
+ * Exported for the unit test that pins the 400-char ceiling.
+ */
+export function buildQuery(subject: string, intent: string, domains: string[]): string {
+  const assemble = (ds: string[]) =>
+    `${subject} ${intent} (${ds.map((d) => `site:${d}`).join(' OR ')})`;
+
+  let ds = [...domains];
+  let q = assemble(ds);
+  while (q.length > MAX_QUERY_CHARS && ds.length > 1) {
+    ds.pop();
+    q = assemble(ds);
+  }
+  if (q.length > MAX_QUERY_CHARS) {
+    console.warn(`[aiEnrichment.editorial] query still ${q.length} chars after trimming domains`);
+  }
+  return q;
 }
 
 async function fetchArticle(

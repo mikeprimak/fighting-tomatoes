@@ -37,6 +37,17 @@ const PRICE_CACHE_WRITE_PER_MTOK = 1.25;
 const PRICE_CACHE_READ_PER_MTOK = 0.1;
 const PRICE_OUTPUT_PER_MTOK = 5.0;
 
+/**
+ * How many bouts per event may carry pundit quotes, taken from the top of the
+ * card by orderOnCard (1 = main event). Quote density collapses below the
+ * co-main even on a big PPV, and the >=2-quote display gate would hide most of
+ * what a wider pass produced — so the extra extract tokens buy nothing. Raise
+ * if aggregator coverage of undercard moments proves richer than expected.
+ */
+const PUNDIT_QUOTES_MAX_BOUTS_PER_EVENT = Number(
+  process.env.PUNDIT_QUOTES_MAX_BOUTS_PER_EVENT ?? 2,
+);
+
 export interface EnrichOnePostFightOptions {
   dryRun?: boolean;
   browserHandle?: PreviewBrowserHandle;
@@ -61,6 +72,8 @@ export interface EnrichOnePostFightResult {
   costUsd: number;
   elapsedMs: number;
   persistResult: PersistPostFightResult;
+  /** fightIds that were allowed to carry pundit quotes this run. */
+  quoteEligibleFightIds: string[];
   abortedReason?: string;
 }
 
@@ -70,6 +83,7 @@ const EMPTY_PERSIST: PersistPostFightResult = {
   skippedLowConfidence: [],
   skippedEmpty: [],
   uncoveredFightIds: [],
+  punditQuotes: { proposed: 0, verified: 0, written: 0, rejected: [], skippedExcluded: 0 },
 };
 
 export async function enrichOnePostFightEvent(
@@ -80,12 +94,30 @@ export async function enrichOnePostFightEvent(
   const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) throw new Error(`Event ${eventId} not found`);
 
-  const card = await loadCompletedCard(prisma, eventId);
+  // Fights still needing a recap. Quote targets are computed separately against
+  // the WHOLE card (below) — the top of the card is usually recapped first, so
+  // deriving quote eligibility from this pending subset would slide the "main
+  // event + co-main" scope down onto prelims on any event Phase 6 already ran.
+  const pendingCard = await loadCompletedCard(prisma, eventId);
+  const quoteTargets = await loadQuoteTargets(
+    prisma,
+    eventId,
+    PUNDIT_QUOTES_MAX_BOUTS_PER_EVENT,
+  );
+
+  // A quote target that's already recapped still has to appear in the CARD we
+  // send, or the model has no fightId to hang its quotes on. It is flagged
+  // recap-only-exempt so persistence can't overwrite the existing recap.
+  const pendingIds = new Set(pendingCard.map((c) => c.fightId));
+  const card = [...pendingCard, ...quoteTargets.filter((t) => !pendingIds.has(t.fightId))]
+    .sort((a, b) => (a.orderOnCard ?? 999) - (b.orderOnCard ?? 999));
+  const quoteEligibleFightIds = quoteTargets.map((t) => t.fightId);
+
   const base = {
     eventId: event.id,
     eventName: event.name,
     promotion: event.promotion,
-    cardSize: card.length,
+    cardSize: pendingCard.length,
   };
 
   if (card.length === 0) {
@@ -100,6 +132,7 @@ export async function enrichOnePostFightEvent(
       costUsd: 0,
       elapsedMs: 0,
       persistResult: EMPTY_PERSIST,
+      quoteEligibleFightIds: [],
       abortedReason: 'no_completed_fights_needing_recap',
     };
   }
@@ -147,6 +180,24 @@ export async function enrichOnePostFightEvent(
     sourcesFetched.push({ url: s.url, chars: s.text.length, label: s.domain });
   }
 
+  // Media-reaction pass — one extra Brave query whose results are only partially
+  // disjoint from the recap set (play-by-play writeups rarely quote analysts).
+  // This is what feeds the pundit-quote strip; recaps alone under-serve it.
+  if (quoteEligibleFightIds.length > 0) {
+    const seenUrls = new Set(sources.map((s) => s.url));
+    const reaction = await fetchEditorialPreviews(event.name, undefined, {
+      topN: 4,
+      mode: 'reaction',
+      freshness: opts.editorialFreshness,
+    });
+    for (const s of reaction) {
+      if (seenUrls.has(s.url)) continue; // already fetched by the recap pass
+      seenUrls.add(s.url);
+      sources.push({ url: s.url, text: s.text, label: `${s.domain} (reaction)` });
+      sourcesFetched.push({ url: s.url, chars: s.text.length, label: `${s.domain} (reaction)` });
+    }
+  }
+
   if (sources.length === 0) {
     return {
       ...base,
@@ -159,6 +210,7 @@ export async function enrichOnePostFightEvent(
       costUsd: 0,
       elapsedMs: 0,
       persistResult: { ...EMPTY_PERSIST, uncoveredFightIds: card.map((c) => c.fightId) },
+      quoteEligibleFightIds: [],
       abortedReason: 'no_sources',
     };
   }
@@ -170,6 +222,7 @@ export async function enrichOnePostFightEvent(
     eventDate: event.date.toISOString().slice(0, 10),
     card,
     sources,
+    quoteEligibleFightIds,
   });
   const elapsedMs = Date.now() - t0;
 
@@ -185,7 +238,15 @@ export async function enrichOnePostFightEvent(
     card,
     result.fights,
     sources.map((s) => s.url),
-    { dryRun: !!opts.dryRun },
+    // Pass the fetched text through so quotes can be verified verbatim against
+    // the article they claim to come from. Without it, quotes are dropped.
+    {
+      dryRun: !!opts.dryRun,
+      sources: sources.map((s) => ({ url: s.url, text: s.text })),
+      // Quote-only fights are in the card so they can be quoted; their recaps
+      // already exist and must not be rewritten.
+      recapEligibleFightIds: pendingIds,
+    },
   );
 
   return {
@@ -199,6 +260,7 @@ export async function enrichOnePostFightEvent(
     costUsd,
     elapsedMs,
     persistResult,
+    quoteEligibleFightIds,
   };
 }
 
@@ -225,7 +287,25 @@ async function loadCompletedCard(
     orderBy: { orderOnCard: 'asc' },
   });
 
-  return fights.map((f) => ({
+  return fights.map(toCardItem);
+}
+
+type CardFightRow = {
+  id: string;
+  weightClass: string | null;
+  cardType: string | null;
+  orderOnCard: number | null;
+  isTitle: boolean;
+  winner: string | null;
+  method: string | null;
+  round: number | null;
+  time: string | null;
+  fighter1: { id: string; firstName: string; lastName: string };
+  fighter2: { id: string; firstName: string; lastName: string };
+};
+
+function toCardItem(f: CardFightRow): PostFightCardItem {
+  return {
     fightId: f.id,
     fighter1: fullName(f.fighter1),
     fighter2: fullName(f.fighter2),
@@ -238,7 +318,43 @@ async function loadCompletedCard(
     method: f.method ?? null,
     round: f.round ?? null,
     time: f.time ?? null,
-  }));
+  };
+}
+
+/**
+ * The bouts allowed to carry pundit quotes: the top `maxBouts` of the FULL
+ * completed card by orderOnCard (1 = main event), skipping any that already
+ * have quotes stored so a re-run doesn't re-pay for extraction.
+ *
+ * Deliberately independent of aiPostFightEnrichedAt — a fight recapped on an
+ * earlier pass can still be missing quotes, and the main event is exactly the
+ * fight most likely to be in that state.
+ */
+async function loadQuoteTargets(
+  prisma: PrismaClient,
+  eventId: string,
+  maxBouts: number,
+): Promise<PostFightCardItem[]> {
+  if (maxBouts <= 0) return [];
+
+  const fights = await prisma.fight.findMany({
+    where: {
+      eventId,
+      fightStatus: 'COMPLETED',
+      winner: { not: null },
+    },
+    include: {
+      fighter1: { select: { id: true, firstName: true, lastName: true } },
+      fighter2: { select: { id: true, firstName: true, lastName: true } },
+      _count: { select: { punditQuotes: true } },
+    },
+    orderBy: { orderOnCard: 'asc' },
+    take: maxBouts,
+  });
+
+  return fights
+    .filter((f) => f._count.punditQuotes === 0)
+    .map(toCardItem);
 }
 
 function resolveWinner(f: {

@@ -14,6 +14,7 @@ import {
   Platform,
   Keyboard,
   Alert,
+  Linking,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -1858,6 +1859,72 @@ export default function CompletedFightDetailScreen({
                     </Text>
                   </TouchableOpacity>
                 ) : null}
+              </View>
+            </View>
+          );
+        })()}
+
+        {/* "What the media said" — third-party pundit quotes.
+            MUST stay inside the isOutcomeRevealed gate: quotes are outcome
+            content ("his knee is shattered"), so wiring this to the pre-fight-safe
+            path would leak results to spoiler-free users. Backend applies the
+            confidence and >=2-quote gates, so a non-empty array is display-ready. */}
+        {isOutcomeRevealed && (() => {
+          const quotes = ((fight as any).punditQuotes ?? []) as Array<{
+            id: string;
+            quote: string;
+            outlet: string;
+            sourceUrl: string;
+            pundit?: { name?: string };
+          }>;
+          if (!Array.isArray(quotes) || quotes.length === 0) return null;
+
+          return (
+            <View style={{ paddingHorizontal: 16, marginBottom: 16 }}>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  borderRadius: 12,
+                  backgroundColor: colors.card,
+                  padding: 14,
+                }}
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '700',
+                    letterSpacing: 0.5,
+                    textTransform: 'uppercase',
+                    color: colors.textSecondary,
+                    marginBottom: 8,
+                  }}
+                >
+                  What the media said
+                </Text>
+                {quotes.map((q, i) => (
+                  <View key={q.id} style={{ marginTop: i === 0 ? 0 : 14 }}>
+                    <Text style={{ fontSize: 14, lineHeight: 20, color: colors.text, fontStyle: 'italic' }}>
+                      {`“${q.quote}”`}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => q.sourceUrl && Linking.openURL(q.sourceUrl)}
+                      disabled={!q.sourceUrl}
+                      hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                      style={{ marginTop: 6 }}
+                    >
+                      <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                        <Text style={{ fontWeight: '600', color: colors.text }}>{q.pundit?.name ?? 'Unknown'}</Text>
+                        {q.outlet ? (
+                          <>
+                            {', via '}
+                            <Text style={{ color: colors.tint }}>{q.outlet}</Text>
+                          </>
+                        ) : null}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
               </View>
             </View>
           );

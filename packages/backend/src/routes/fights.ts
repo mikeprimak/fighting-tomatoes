@@ -129,6 +129,25 @@ function stripTrackerFields(fight: any): any {
   return clean;
 }
 
+/**
+ * Display gates for the "What the media said" strip.
+ *
+ * The >=2 rule is the empty-room gate: quote coverage skews hard to big cards,
+ * and a lone quote on an Oktagon prelim reads sadder than no strip at all. When
+ * the bar isn't met we return nothing and the clients render nothing — a silent
+ * skip, never an empty section.
+ *
+ * Centralised here so web and mobile cannot drift apart on the rules.
+ */
+const PUNDIT_QUOTE_MIN_CONFIDENCE = 0.5;
+const PUNDIT_QUOTE_MIN_TO_DISPLAY = 2;
+
+function filterDisplayablePunditQuotes(quotes: any[] | undefined): any[] {
+  if (!quotes?.length) return [];
+  const qualifying = quotes.filter((q) => (q.aiConfidence ?? 0) >= PUNDIT_QUOTE_MIN_CONFIDENCE);
+  return qualifying.length >= PUNDIT_QUOTE_MIN_TO_DISPLAY ? qualifying : [];
+}
+
 export async function fightRoutes(fastify: FastifyInstance) {
   // GET /api/fights - List fights with filtering and pagination
   fastify.get('/fights', {
@@ -686,6 +705,22 @@ export async function fightRoutes(fastify: FastifyInstance) {
           event: true,
           fighter1: true,
           fighter2: true,
+          // "What the media said" — third-party pundit quotes. Display gates are
+          // applied below (see filterDisplayablePunditQuotes); this only excludes
+          // the rows no surface may ever show.
+          punditQuotes: {
+            where: { status: 'VISIBLE', verified: true, pundit: { excluded: false } },
+            select: {
+              id: true,
+              quote: true,
+              outlet: true,
+              sourceUrl: true,
+              publishedAt: true,
+              aiConfidence: true,
+              pundit: { select: { name: true, slug: true, role: true } },
+            },
+            orderBy: { createdAt: 'asc' },
+          },
           ratings: currentUserId ? {
             where: { userId: currentUserId }, // Only get current user's rating
             include: {
@@ -790,6 +825,10 @@ export async function fightRoutes(fastify: FastifyInstance) {
 
       // Strip tracker shadow fields from public response
       const cleanFight: any = stripTrackerFields(fight);
+
+      // Apply the pundit-quote display gates in ONE place so web and mobile can
+      // never drift into showing a one-quote strip or a sub-threshold quote.
+      cleanFight.punditQuotes = filterDisplayablePunditQuotes((fight as any).punditQuotes);
 
       // Transform the fight data to include user-specific data in the expected format (like the /fights endpoint)
       const fightWithRelations = fight as any;

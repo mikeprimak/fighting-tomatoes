@@ -698,8 +698,57 @@ model Fight {
   crewRoundVotes    CrewRoundVote[]
   crewReactions     CrewReaction[]
 
+  // "What the media said" — third-party pundit quotes pulled by Phase 6.
+  punditQuotes      PunditQuote[]
+
   @@unique([eventId, fighter1Id, fighter2Id])
   @@map("fights")
+}
+
+// ============== PUNDIT QUOTES ("What the media said") ==============
+// A critic layer on completed fights: short, attributed, verbatim quotes from
+// third-party media. Deliberately NOT a numeric critic score — see
+// docs/plans/pundit-quotes-2026-07-17.md. Real tables (not JSONB on Fight) so
+// quotes carry per-row provenance, dedupe across outlets, survive moderation,
+// and stay queryable across fights (the media-graph asset).
+
+model Pundit {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique          // "chael-sonnen"
+  aliases   String[]                  // ["Sonnen", "Chael P. Sonnen"]
+  role      String                    // journalist|analyst|ex_fighter|broadcaster|other
+  excluded  Boolean  @default(false)  // hard display kill-switch (e.g. promoters)
+  createdAt DateTime @default(now())
+
+  quotes    PunditQuote[]
+
+  @@map("pundits")
+}
+
+model PunditQuote {
+  id           String   @id @default(uuid())
+  fightId      String
+  punditId     String
+
+  quote        String   // verbatim, <=40 words enforced at extract
+  outlet       String   // where we found it, e.g. "Bloody Elbow"
+  sourceUrl    String
+  publishedAt  DateTime?
+  aiConfidence Float
+  // Passed the deterministic substring check against the fetched article text.
+  // Only verified quotes are persisted; the column keeps the guarantee legible.
+  verified     Boolean  @default(true)
+  status       String   @default("VISIBLE") // VISIBLE|HIDDEN|TAKEDOWN
+  quoteHash    String   // sha256 of the normalized quote, for cross-outlet dedupe
+  createdAt    DateTime @default(now())
+
+  fight        Fight    @relation(fields: [fightId], references: [id], onDelete: Cascade)
+  pundit       Pundit   @relation(fields: [punditId], references: [id])
+
+  @@unique([fightId, punditId, quoteHash]) // same quote via 2 aggregators = 1 row
+  @@index([fightId, status])
+  @@map("pundit_quotes")
 }
 
 // ============== RATINGS ==============
