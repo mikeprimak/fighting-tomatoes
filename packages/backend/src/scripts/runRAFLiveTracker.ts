@@ -21,6 +21,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import { parseRAFLiveData, autoCompleteRAFEvent } from '../services/rafLiveParser';
 import type { RAFLiveEventData } from '../services/rafLiveParser';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 const execAsync = promisify(exec);
 
@@ -65,6 +66,11 @@ async function runRAFLiveTracker(): Promise<void> {
   console.log('========================================\n');
 
   try {
+    // Standalone process: load the production-scrapers list from SystemConfig
+    // (raf is admin-toggled production there). Without this the default cache
+    // excludes raf and every result write lands in shadow fields only.
+    await refreshProductionScrapersCache(prisma);
+
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
     const event = await findActiveRAFEvent(overrideEventId);
 
