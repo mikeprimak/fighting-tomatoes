@@ -368,13 +368,15 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
             <Quote size={16} className="text-primary" />
             What the media said
           </h3>
-          <div className="space-y-3">
+          {/* Three across on desktop, stacked on narrow screens. Cards stretch to
+              a shared row height so the uneven quote lengths still line up. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             {fight.punditQuotes.map((q: any) => (
-              <figure key={q.id} className="rounded-lg border border-border bg-card p-4">
-                <blockquote className="text-sm leading-relaxed text-text-secondary">
+              <figure key={q.id} className="flex h-full flex-col rounded-lg border border-border bg-card p-4">
+                <blockquote className="flex-1 text-sm leading-relaxed text-text-secondary">
                   &ldquo;{q.quote}&rdquo;
                 </blockquote>
-                <figcaption className="mt-2 text-xs text-text-secondary">
+                <figcaption className="mt-3 text-xs text-text-secondary">
                   <span className="font-semibold text-text-primary">{q.pundit?.name}</span>
                   {q.outlet && (
                     <>
