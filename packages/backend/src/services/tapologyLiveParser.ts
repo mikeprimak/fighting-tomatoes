@@ -10,6 +10,7 @@ import { PrismaClient, Gender, Sport } from '@prisma/client';
 import { TapologyEventData, TapologyFight } from './tapologyLiveScraper';
 import { stripDiacritics, similarityScore } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData } from '../config/liveTrackerConfig';
+import { isScrapeHealthyForCancellation } from './cancellationGuards';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 
 
@@ -484,6 +485,21 @@ export async function parseTapologyData(
       console.log('[Tapology Parser] Skipping cancellation sweep: event already COMPLETED (backfill mode)');
     }
 
+    // `scrapeLooksValid` only rules out a *fully* empty scrape. A partial one —
+    // a Tapology markup change that drops most bouts, or a paginated card where
+    // only the main card rendered — still sails through and cancels everything
+    // it didn't see. Require the scrape to be proportionally healthy before any
+    // CANCEL fires; un-cancelling stays on the weaker gate so a card that was
+    // wrongly cancelled recovers on the next pass. (RAF11, 2026-07-18.)
+    const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const scrapeHealthy = isScrapeHealthyForCancellation(result.fightsMatched, dbNonCancelledCount);
+    if (hasStarted && scrapeLooksValid && !eventIsComplete && !scrapeHealthy) {
+      console.log(
+        `[Tapology Parser] Cancellation sweep disabled: matched ${result.fightsMatched} of ` +
+        `${dbNonCancelledCount} non-cancelled DB fights — treating as partial scrape.`
+      );
+    }
+
     if (hasStarted && scrapeLooksValid && !eventIsComplete) {
       for (const dbFight of event.fights) {
         // Skip fights already completed with results or already cancelled
@@ -498,7 +514,7 @@ export async function parseTapologyData(
           console.log(`  UN-CANCEL ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
         }
         // Cancel: fight in DB but missing from scraped data
-        else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
+        else if (scrapeHealthy && dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
           await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'CANCELLED' } });
           result.cancelledCount++;
           console.log(`  CANCEL ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (missing from page)`);

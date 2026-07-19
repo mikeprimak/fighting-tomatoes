@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma';
 import { OktagonEventData, OktagonFightData } from './oktagonLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
+import { isScrapeHealthyForCancellation } from './cancellationGuards';
 
 
 // ============== UTILITY FUNCTIONS ==============
@@ -315,6 +316,17 @@ export async function parseOktagonLiveData(
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
+    // Broken-scrape guard: a source-site republish that renames the selectors
+    // we anchor on yields 0 parsed fights from a page that still lists them
+    // all, and the pass below would cancel the entire card. Gate cancellation
+    // on the scrape looking healthy; un-cancelling stays allowed so recovery
+    // is automatic on the next healthy pass. (RAF11, 2026-07-18.)
+    const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const scrapeHealthy = isScrapeHealthyForCancellation(scrapedFightSignatures.size, dbNonCancelledCount);
+    if (!scrapeHealthy) {
+      console.log(`  ⚠️  Scrape returned ${scrapedFightSignatures.size} fights vs ${dbNonCancelledCount} non-cancelled in DB — treating as broken/partial scrape. Cancellation disabled this pass.`);
+    }
+
     for (const dbFight of event.fights) {
       // Skip fights that were completed WITH a real result (winner set by scraper)
       // But still check lifecycle-completed fights (no winner) — they may need cancellation
@@ -345,7 +357,7 @@ export async function parseOktagonLiveData(
       }
       // Case 2: Fight is NOT cancelled and missing from scraped data -> CANCEL it
       // This also catches lifecycle-completed fights (COMPLETED with no winner) that were cancelled
-      else if (dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
+      else if (scrapeHealthy && dbFight.fightStatus !== 'CANCELLED' && !fightIsInScrapedData) {
         console.log(`  ⚠️  Fight missing from scraped data: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName} (status: ${dbFight.fightStatus})`);
 
         // Only mark as cancelled if event has started (to avoid false positives before event begins)

@@ -25,6 +25,7 @@ import { promisify } from 'util';
 import { exec } from 'child_process';
 import { parseBKFCLiveData, autoCompleteBKFCEvent } from '../services/bkfcLiveParser';
 import type { BKFCEventData } from '../services/bkfcLiveScraper';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 const execAsync = promisify(exec);
 
@@ -76,6 +77,11 @@ async function runBKFCLiveTracker(): Promise<void> {
   console.log('========================================\n');
 
   try {
+    // Standalone process: load the production-scrapers list from SystemConfig
+    // before any result write, so publish/shadow routing matches the admin
+    // toggles rather than the compiled-in default. (RAF11, 2026-07-18.)
+    await refreshProductionScrapersCache(prisma);
+
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
     const event = await findActiveBKFCEvent(overrideEventId);
 

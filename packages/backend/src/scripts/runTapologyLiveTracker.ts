@@ -28,6 +28,7 @@ import { prisma } from '../lib/prisma';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
 import { TAPOLOGY_PROMOTION_HUBS } from '../config/promotionRegistry';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
@@ -269,6 +270,11 @@ async function runTapologyLiveTracker(): Promise<void> {
   console.log('========================================\n');
 
   try {
+    // Standalone process: load the production-scrapers list from SystemConfig
+    // before any result write, so publish/shadow routing matches the admin
+    // toggles rather than the compiled-in default. (RAF11, 2026-07-18.)
+    await refreshProductionScrapersCache(prisma);
+
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
 
     const event = await findActiveTapologyEvent(overrideEventId);

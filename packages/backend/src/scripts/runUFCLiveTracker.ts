@@ -18,6 +18,7 @@ import { promisify } from 'util';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 import { parseLiveEventData, getEventStatus, autoCompleteEvent } from '../services/ufcLiveParser';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 const execAsync = promisify(exec);
 
@@ -147,6 +148,11 @@ async function runUFCLiveTracker(): Promise<void> {
   console.log('========================================\n');
 
   try {
+    // Standalone process: load the production-scrapers list from SystemConfig
+    // before any result write, so publish/shadow routing matches the admin
+    // toggles rather than the compiled-in default. (RAF11, 2026-07-18.)
+    await refreshProductionScrapersCache(prisma);
+
     // Check for override event ID from environment
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
 

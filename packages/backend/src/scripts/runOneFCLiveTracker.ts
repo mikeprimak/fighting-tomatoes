@@ -21,6 +21,7 @@
 import { prisma } from '../lib/prisma';
 import OneFCLiveScraper from '../services/oneFCLiveScraper';
 import { parseOneFCLiveData, autoCompleteOneFCEvent } from '../services/oneFCLiveParser';
+import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
 
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
@@ -69,6 +70,11 @@ async function runOneFCLiveTracker(): Promise<void> {
   let scraper: OneFCLiveScraper | null = null;
 
   try {
+    // Standalone process: load the production-scrapers list from SystemConfig
+    // before any result write, so publish/shadow routing matches the admin
+    // toggles rather than the compiled-in default. (RAF11, 2026-07-18.)
+    await refreshProductionScrapersCache(prisma);
+
     const overrideEventId = process.env.EVENT_ID || process.argv[2];
     const event = await findActiveOneFCEvent(overrideEventId);
 

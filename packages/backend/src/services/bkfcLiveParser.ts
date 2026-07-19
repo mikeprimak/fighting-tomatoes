@@ -8,6 +8,7 @@ import { prisma } from '../lib/prisma';
 import { BKFCEventData, BKFCFightData } from './bkfcLiveScraper';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
+import { isScrapeHealthyForCancellation } from './cancellationGuards';
 
 
 // ============== UTILITY FUNCTIONS ==============
@@ -343,6 +344,17 @@ export async function parseBKFCLiveData(
       return { fightsUpdated, eventUpdated, cancelledCount: 0, unCancelledCount: 0 };
     }
 
+    // Broken-scrape guard: a source-site republish that renames the selectors
+    // we anchor on yields 0 parsed fights from a page that still lists them
+    // all, and the pass below would cancel the entire card. Gate cancellation
+    // on the scrape looking healthy; un-cancelling stays allowed so recovery
+    // is automatic on the next healthy pass. (RAF11, 2026-07-18.)
+    const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const scrapeHealthy = isScrapeHealthyForCancellation(scrapedFightSignatures.size, dbNonCancelledCount);
+    if (!scrapeHealthy) {
+      console.log(`  ⚠️  Scrape returned ${scrapedFightSignatures.size} fights vs ${dbNonCancelledCount} non-cancelled in DB — treating as broken/partial scrape. Cancellation disabled this pass.`);
+    }
+
     for (const dbFight of event.fights) {
       if (dbFight.fightStatus === 'COMPLETED') continue;
 
@@ -357,7 +369,7 @@ export async function parseBKFCLiveData(
         await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'UPCOMING' } });
         unCancelledCount++;
         console.log(`  UN-CANCEL: ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.lastName}`);
-      } else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
+      } else if (scrapeHealthy && dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
         if (event.eventStatus !== 'UPCOMING' || liveData.hasStarted) {
           await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'CANCELLED' } });
           cancelledCount++;
