@@ -7,6 +7,7 @@
 import { prisma } from '../lib/prisma';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { getEventTrackerType, buildTrackerUpdateData, BackfillOptions } from '../config/liveTrackerConfig';
+import { isScrapeHealthyForCancellation } from './cancellationGuards';
 
 
 // ============== TYPE DEFINITIONS ==============
@@ -276,6 +277,12 @@ export async function parseRAFLiveData(
           where: { id: dbFight.id },
           data: updateData,
         });
+        // Keep the in-memory copy in sync — the cancellation pass below reads
+        // it, and a stale CANCELLED status there would un-cancel a fight this
+        // loop just marked COMPLETED (flipping it back to UPCOMING).
+        if (publishedData.fightStatus) dbFight.fightStatus = publishedData.fightStatus;
+        if (publishedData.winner) dbFight.winner = publishedData.winner;
+        if (publishedData.method) dbFight.method = publishedData.method;
         fightsUpdated++;
       }
     }
@@ -285,7 +292,18 @@ export async function parseRAFLiveData(
     let cancelledCount = 0;
     let unCancelledCount = 0;
 
+    // Partial/broken-scrape gate: a selector break or transient render that
+    // returns far fewer fights than the DB holds must never authorize a mass
+    // cancel. On 2026-07-18 a Webflow republish renamed the matchup wrapper,
+    // the scrape returned 0 fights, and this pass cancelled RAF11's entire
+    // live card. Un-cancelling stays allowed regardless of scrape health.
+    const dbNonCancelledCount = event.fights.filter(f => f.fightStatus !== 'CANCELLED').length;
+    const scrapeHealthy = isScrapeHealthyForCancellation(scrapedFightSignatures.size, dbNonCancelledCount);
+
     if (!options.skipCancellationCheck) {
+      if (!scrapeHealthy) {
+        console.log(`  ⚠️  Scrape returned ${scrapedFightSignatures.size} fights vs ${dbNonCancelledCount} non-cancelled in DB — treating as broken/partial scrape. Cancellation disabled this pass.`);
+      }
       for (const dbFight of event.fights) {
         if (dbFight.fightStatus === 'COMPLETED') continue;
 
@@ -299,7 +317,7 @@ export async function parseRAFLiveData(
         if (dbFight.fightStatus === 'CANCELLED' && inScraped) {
           await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'UPCOMING' } });
           unCancelledCount++;
-        } else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped) {
+        } else if (dbFight.fightStatus !== 'CANCELLED' && !inScraped && scrapeHealthy) {
           await prisma.fight.update({ where: { id: dbFight.id }, data: { fightStatus: 'CANCELLED' } });
           cancelledCount++;
         }

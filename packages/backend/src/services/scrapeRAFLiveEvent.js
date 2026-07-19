@@ -38,8 +38,12 @@ async function scrapeRAFLiveEvent() {
   const html = await fetchHTML(eventUrl);
   const $ = cheerio.load(html);
 
-  // Event name
-  const eventName = $('.logo-text').first().text().trim() || 'RAF Event';
+  // Event name — .logo-text was dropped in a 2026-07 Webflow republish;
+  // fall back to the <title> ("RAF11 | Tsarukyan vs Covington").
+  const eventName =
+    $('.logo-text').first().text().trim() ||
+    $('title').text().split('|')[0].trim() ||
+    'RAF Event';
 
   // Is it a past event?
   const pastEventTag = $('div.past-event-tag');
@@ -56,7 +60,14 @@ async function scrapeRAFLiveEvent() {
   const fights = [];
   let fightOrder = 0;
 
-  $('.matchups-list .w-dyn-item').each((i, el) => {
+  // Fight cards: any collection item containing a fight-card heading. The
+  // .matchups-list wrapper class was dropped in a 2026-07 Webflow republish
+  // (which zeroed this selector and mass-cancelled RAF11's live card), so
+  // anchor on the card markup itself instead of the list wrapper.
+  const fightItems = $('.w-dyn-item').filter(
+    (_, el) => $(el).find('.event-card_card-heading-wrapper').length > 0,
+  );
+  fightItems.each((i, el) => {
     const $fight = $(el);
     fightOrder++;
 

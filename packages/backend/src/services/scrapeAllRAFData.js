@@ -200,7 +200,13 @@ async function scrapeEventPage(eventUrl, eventName) {
   const fights = [];
   let fightOrder = 0;
 
-  $('.matchups-list .w-dyn-item').each((i, el) => {
+  // Fight cards: any collection item containing a fight-card heading. The
+  // .matchups-list wrapper class was dropped in a 2026-07 Webflow republish,
+  // so anchor on the card markup itself instead of the list wrapper.
+  const fightItems = $('.w-dyn-item').filter(
+    (_, el) => $(el).find('.event-card_card-heading-wrapper').length > 0,
+  );
+  fightItems.each((i, el) => {
     const $fight = $(el);
     fightOrder++;
 
