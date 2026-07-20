@@ -7,7 +7,7 @@ excerpt: "Fight fans scored McGregor vs Holloway 2 at 9.5 out of 10 before the f
 tags: ["round-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
 image: "/blog/letdowns-2026-hero.png"
 ogImage: "/blog/letdowns-2026-og.png"
-draft: true
+draft: false
 featured: false
 ---
 
@@ -20,6 +20,7 @@ featured: false
 <li>Across 70 fights analyzed, average hype was <strong>7.5</strong>; average rating was <strong>6.7</strong>.</li>
 <li><strong>UFC 326</strong> produced four of the ten biggest letdowns, more than any other event.</li>
 <li><strong>Grasso vs Barber</strong> (4.6 hyped, 8.6 rated) and <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated) stand out the other way, far exceeding fan expectations.</li>
+<li>Hype did not predict quality. The 16 fights hyped <strong>8.6 or higher</strong> averaged a <strong>6.5</strong> rating; the 13 hyped <strong>6.4 or lower</strong> averaged <strong>6.6</strong>.</li>
 </ul>
 </div>
 
@@ -178,6 +179,10 @@ Almost none of it played out that way. Oliveira took Holloway down in every roun
 The card-wide numbers: across UFC 326's seven qualifying fights, fans went in expecting an average of 7.4 and came out rating an average of 5.2. One fight on the card beat its hype, the prelim between Ricky Turcios and Alberto Montes, by half a point.
 
 None of this was bad fighting. Oliveira, Rosas, and Borralho all dominated. But domination by control is the style fans consistently rate lowest, and UFC 326 stacked four of those outcomes on one night.
+
+## The Netflix Card
+
+One other 2026 event produced letdowns across almost the whole card. Most Valuable Promotions' May 16 show on Netflix, headlined by Ronda Rousey vs Gina Carano, put four fights over the qualifying threshold, and three underdelivered: Rousey vs Carano (7.9 hyped, 4.4 rated), Mike Perry vs Nate Diaz (8.9 to 7.1), and Francis Ngannou vs Philipe Lins (9.0 to 7.3). Only Robelis Despaigne vs Junior dos Santos beat its hype, 7.6 to 8.3. Across the four, fans expected an average of 8.4 and rated an average of 6.8.
 
 ## One-Sided or Slow
 
