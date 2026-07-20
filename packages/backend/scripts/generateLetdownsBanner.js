@@ -14,8 +14,21 @@
  * Writes: packages/web/public/blog/letdowns-2026-hero.png
  *         packages/web/public/blog/letdowns-2026-og.png
  */
+const fs = require('fs');
 const path = require('path');
 const puppeteer = require('puppeteer');
+
+// Brand mark (hand + stylised wordmark), inlined so puppeteer needs no file access.
+const LOGO_PATH = path.join(__dirname, '../../web/public/brand/good-fights-long-logo.png');
+const LOGO_DATA_URI = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
+
+// Verbatim fan review on this fight, verified against prod 2026-07-20.
+// Real user account, not internal. Note: no trailing period in the original.
+const QUOTE = 'At an absolute loss for words';
+const QUOTE_AUTHOR = 'Jake7911';
+
+// When the ratings on this graphic were pulled from the live database.
+const DATA_DATE = 'Fan ratings collected July 20, 2026';
 
 // ---- the actual rating distribution (verified against prod) ----
 const SCORES = [
@@ -63,8 +76,8 @@ function tileText(score) {
 }
 
 const LAYOUTS = {
-  hero: { w: 1600, h: 900, cols: 9, tile: 122, ratio: 0.58, gap: 13, head: 80, sub: 25, eyebrow: 20, pad: 64 },
-  og: { w: 1200, h: 630, cols: 9, tile: 88, ratio: 0.58, gap: 9, head: 54, sub: 18, eyebrow: 15, pad: 46 },
+  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 24, eyebrow: 19, pad: 64, logo: 52, quote: 40, cite: 18 },
+  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 17, eyebrow: 14, pad: 44, logo: 38, quote: 28, cite: 13 },
 };
 
 function buildHtml(L) {
@@ -98,12 +111,13 @@ function buildHtml(L) {
     <div class="goldbar"></div>
     <div class="wrap">
 
-      <div style="display:flex;justify-content:space-between;align-items:baseline;">
-        <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <img src="${LOGO_DATA_URI}" style="height:${L.logo}px;display:block;" />
+        <div style="text-align:right;">
           <span style="font-size:${L.eyebrow}px;font-weight:800;letter-spacing:.09em;
             text-transform:uppercase;color:#F5C518;">Round Numbers</span>
-          <span style="font-size:${L.eyebrow}px;color:#8b9096;margin-left:10px;">
-            data stories from combat sports</span>
+          <span style="font-size:${L.eyebrow}px;font-weight:600;letter-spacing:.09em;
+            text-transform:uppercase;color:#8b9096;margin-left:9px;">Combat Sports Data Stories</span>
         </div>
       </div>
 
@@ -120,27 +134,39 @@ function buildHtml(L) {
         </div>
       </div>
 
-      <div style="flex:1;display:flex;align-items:center;justify-content:flex-start;">
-        <div style="display:grid;
+      <div style="flex:1;display:flex;align-items:center;justify-content:space-between;
+        gap:${Math.round(L.pad * 0.7)}px;">
+        <div style="display:grid;flex:none;
           grid-template-columns:repeat(${L.cols},${L.tile}px);
           gap:${L.gap}px;width:${gridW}px;">${tiles}</div>
+        <div style="flex:1;border-left:3px solid #F5C518;padding-left:${Math.round(L.pad * 0.4)}px;">
+          <div style="font-size:${L.quote}px;line-height:1.22;color:#fff;font-weight:600;
+            letter-spacing:-.01em;">&ldquo;${QUOTE}&rdquo;</div>
+          <div style="font-size:${L.cite}px;color:#8b9096;margin-top:${Math.round(L.cite * 0.8)}px;">
+            ${QUOTE_AUTHOR}, in his review of the fight
+          </div>
+        </div>
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:flex-end;
         margin-top:${Math.round(L.pad * 0.3)}px;">
         <div>
-          <div style="font-size:${Math.round(L.eyebrow * 0.82)}px;color:#6d7176;
-            margin-bottom:6px;letter-spacing:.04em;">EVERY INDIVIDUAL FAN RATING</div>
-          <div style="width:${Math.round(L.w * 0.2)}px;height:${Math.round(L.eyebrow * 0.5)}px;
-            border-radius:3px;background:${legendGradient};"></div>
+          <div style="font-size:${Math.round(L.eyebrow * 0.9)}px;color:#8b9096;
+            margin-bottom:9px;letter-spacing:.05em;">EVERY INDIVIDUAL FAN RATING</div>
+          <div style="width:${Math.round(L.w * 0.36)}px;height:${Math.round(L.eyebrow * 1.15)}px;
+            border-radius:4px;background:${legendGradient};"></div>
           <div style="display:flex;justify-content:space-between;
-            width:${Math.round(L.w * 0.2)}px;font-size:${Math.round(L.eyebrow * 0.72)}px;
-            color:#6d7176;margin-top:5px;">
+            width:${Math.round(L.w * 0.36)}px;font-size:${Math.round(L.eyebrow * 0.95)}px;
+            font-weight:700;color:#8b9096;margin-top:7px;">
             <span>1</span><span>10</span>
           </div>
         </div>
-        <div style="font-size:${Math.round(L.sub * 1.05)}px;font-weight:800;color:#F5C518;">
-          goodfights.app
+        <div style="text-align:right;">
+          <div style="font-size:${Math.round(L.cite * 0.95)}px;color:#6d7176;
+            margin-bottom:${Math.round(L.cite * 0.45)}px;">${DATA_DATE}</div>
+          <div style="font-size:${Math.round(L.sub * 1.05)}px;font-weight:800;color:#F5C518;">
+            goodfights.app
+          </div>
         </div>
       </div>
 
