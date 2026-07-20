@@ -231,7 +231,7 @@ The gap runs both ways.
 
 The exception at the top of the scale is **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250: hyped 9.2 (28 votes), rated 9.7 (59 ratings). The highest-rated fight of 2026 on Good Fights, four rounds of exchanges in front of the White House, ended when Topuria could not answer the fifth-round bell. Of the year's ten most hyped fights, it is the only one that out-rated its expectation.
 
-That is the finding underneath this piece. At the top of the hype scale, almost nothing measures up. This year, one fight has.
+That is the finding underneath this piece. At the top of the hype scale, almost nothing measures up. This year, one fight has, and to this author it is no surprise that Justin Gaethje was in it. Always entertaining.
 
 ## The full data
 
