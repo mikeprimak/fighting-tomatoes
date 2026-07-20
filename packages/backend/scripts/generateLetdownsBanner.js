@@ -24,11 +24,11 @@ const LOGO_DATA_URI = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toStri
 
 // Verbatim fan review on this fight, verified against prod 2026-07-20.
 // Real user account, not internal. Note: no trailing period in the original.
-const QUOTE = 'At an absolute loss for words';
+const QUOTE = 'At an absolute loss for words.';
 const QUOTE_AUTHOR = 'Jake7911';
 
 // When the ratings on this graphic were pulled from the live database.
-const DATA_DATE = 'Fan ratings collected July 20, 2026';
+const DATA_DATE = 'Fan ratings as of July 20, 2026';
 
 // ---- the actual rating distribution (verified against prod) ----
 const SCORES = [
@@ -76,8 +76,8 @@ function tileText(score) {
 }
 
 const LAYOUTS = {
-  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 24, eyebrow: 19, pad: 64, logo: 52, quote: 40, cite: 18 },
-  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 17, eyebrow: 14, pad: 44, logo: 38, quote: 28, cite: 13 },
+  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 33, eyebrow: 22, pad: 64, logo: 52, quote: 40, cite: 21 },
+  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 24, eyebrow: 17, pad: 44, logo: 38, quote: 28, cite: 16 },
 };
 
 function buildHtml(L) {
@@ -111,13 +111,14 @@ function buildHtml(L) {
     <div class="goldbar"></div>
     <div class="wrap">
 
-      <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
         <img src="${LOGO_DATA_URI}" style="height:${L.logo}px;display:block;" />
         <div style="text-align:right;">
-          <span style="font-size:${L.eyebrow}px;font-weight:800;letter-spacing:.09em;
-            text-transform:uppercase;color:#F5C518;">Round Numbers</span>
-          <span style="font-size:${L.eyebrow}px;font-weight:600;letter-spacing:.09em;
-            text-transform:uppercase;color:#8b9096;margin-left:9px;">Combat Sports Data Stories</span>
+          <div style="font-size:${L.eyebrow}px;font-weight:800;letter-spacing:.09em;
+            text-transform:uppercase;color:#F5C518;line-height:1.15;">Round Numbers</div>
+          <div style="font-size:${L.eyebrow}px;font-weight:600;letter-spacing:.09em;
+            text-transform:uppercase;color:#8b9096;line-height:1.15;
+            margin-top:${Math.round(L.eyebrow * 0.28)}px;">Combat Sports Data Stories</div>
         </div>
       </div>
 

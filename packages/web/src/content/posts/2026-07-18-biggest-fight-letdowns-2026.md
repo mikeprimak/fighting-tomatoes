@@ -11,7 +11,9 @@ draft: false
 featured: false
 ---
 
-<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F5C518;margin-bottom:14px;">Round Numbers <span style="color:#9aa0a6;font-weight:400;text-transform:none;letter-spacing:0;">&middot; data stories from combat sports</span></div>
+<div style="font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#F5C518;margin-bottom:14px;">Round Numbers <span style="color:#9aa0a6;font-weight:400;text-transform:none;letter-spacing:0;">&middot; combat sports data stories</span></div>
+
+<p style="font-size:19px;line-height:1.5;color:#c8ccd0;margin:0 0 22px;">We track fan hype and reactions to combat sports. Here are the fights that let us down so far and surprised us the most in 2026.</p>
 
 <div style="margin:0 0 24px;padding:14px 18px;border:1px solid #2b2b2b;border-left:3px solid #F5C518;border-radius:10px;background:#141414;">
 <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
@@ -40,7 +42,7 @@ featured: false
 </ol>
 </div>
 
-Good Fights is an app where fans rate fights. Every fight gets two scores: how excited fans are before it, and how good it actually was after, both on a 1-to-10 scale. The same people answer both questions, so the difference between the two numbers shows how a fight measured up against expectations. An 8 before and a 3 after is a letdown. A 5 before and an 8 after is a pleasant surprise.
+Good Fights is an app where fans score every fight twice on a 1-to-10 scale: hype before it happens, rating after. The gap between the two shows how a fight measured up against expectations. Hyped 8 and rated 3 is a letdown; hyped 5 and rated 8 is a pleasant surprise.
 
 No 2026 fight illustrates the gap like the UFC 329 main event. Fans scored Conor McGregor vs Max Holloway 2 at 9.5 out of 10 going in, higher than both White House title fights and Chimaev vs Strickland.
 
@@ -352,7 +354,7 @@ Some sample sizes are small, particularly from before our public launch in April
 
 ## Rate the fights yourself
 
-Round Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores feed the next installment.
+Round Numbers is our series of combat sports data stories, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores feed the next installment.
 
 *Data notes: completed fights from January 1 to July 17, 2026. Only hype votes cast before the fight started count; Good Fights began collecting hype in mid-February 2026, so the earliest weeks of the year are not represented. Internal test accounts excluded. Fights qualified with at least 5 pre-fight hype votes and 5 post-fight ratings; 70 fights qualified. Hype and rating averages are unweighted means. Gaps are computed before rounding, which is why a displayed pair can differ from its displayed gap by 0.1.*
 
