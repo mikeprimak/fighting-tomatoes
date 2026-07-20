@@ -81,22 +81,26 @@ async function main() {
   console.log(`hand:  ${hm.width}x${hm.height}`);
   console.log(`words: ${wm.width}x${wm.height}`);
 
-  // Match the hand's height to the stacked wordmark so the lockup reads as one
-  // unit. Slightly taller than the words looks better than dead equal.
-  const targetH = Math.round(wm.height * 1.06);
+  // Words slightly dominant over the hand (per Mike 2026-07-20): scale the
+  // wordmark up, keep the hand just a touch shorter than the words.
+  const wordsH = Math.round(wm.height * 1.12);
+  const wordsW = Math.round((wm.width / wm.height) * wordsH);
+  const wordsScaled = await sharp(words).resize({ width: wordsW, height: wordsH }).toBuffer();
+
+  const targetH = Math.round(wordsH * 0.97);
   const handW = Math.round((hm.width / hm.height) * targetH);
   const handScaled = await sharp(hand).resize({ width: handW, height: targetH }).toBuffer();
 
-  const GAP = Math.round(targetH * 0.14);
-  const canvasW = handW + GAP + wm.width;
-  const canvasH = Math.max(targetH, wm.height);
+  const GAP = Math.round(targetH * 0.3);
+  const canvasW = handW + GAP + wordsW;
+  const canvasH = Math.max(targetH, wordsH);
 
   await sharp({
     create: { width: canvasW, height: canvasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite([
       { input: handScaled, left: 0, top: Math.round((canvasH - targetH) / 2) },
-      { input: words, left: handW + GAP, top: Math.round((canvasH - wm.height) / 2) },
+      { input: wordsScaled, left: handW + GAP, top: Math.round((canvasH - wordsH) / 2) },
     ])
     .png()
     .toFile(OUT);

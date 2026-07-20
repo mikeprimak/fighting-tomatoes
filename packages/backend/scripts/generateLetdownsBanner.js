@@ -1,14 +1,18 @@
 /**
  * Generates the Round Numbers #1 banner (hero + OG) for the letdowns article.
  *
- * Concept: the "tile wall" — one tile per individual fan rating of
+ * Concept: two "tile walls" — before and after. One tile per individual
+ * pre-fight hype vote (left) and per post-fight fan rating (right) on
  * McGregor vs Holloway 2, coloured with the app's own heatmap scale
- * (1 = grey, 7 = yellow, 8 = orange, 9-10 = red). A letdown renders as a
- * wall of dead grey with a single warm outlier. Reusable as the series
- * device: a great fight renders as a wall of fire.
+ * (1 = grey, 7 = yellow, 8 = orange, 9-10 = red). The hype wall renders as
+ * fire with one grey outlier; the rating wall as dead grey with one warm
+ * outlier. Reusable as the series device.
  *
  * Data is REAL and verified against prod on 2026-07-20:
- *   54 ratings, 47 of them a 1, remainder 2,2,2,3,4,4,8. Mean 1.33.
+ *   Hype: 33 pre-fight votes (post-start votes and internal accounts
+ *   excluded, same filters as hype-vs-reality.ts): twenty-three 10s,
+ *   six 9s, three 8s, one 4. Mean 9.45.
+ *   Ratings: 54, 47 of them a 1, remainder 2,2,2,3,4,4,8. Mean 1.33.
  *
  * Usage: node scripts/generateLetdownsBanner.js
  * Writes: packages/web/public/blog/letdowns-2026-hero.png
@@ -22,15 +26,26 @@ const puppeteer = require('puppeteer');
 const LOGO_PATH = path.join(__dirname, '../../web/public/brand/good-fights-stacked-horizontal.png');
 const LOGO_DATA_URI = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
-// Verbatim fan review on this fight, verified against prod 2026-07-20.
-// Real user account, not internal. Note: no trailing period in the original.
-const QUOTE = 'At an absolute loss for words.';
-const QUOTE_AUTHOR = 'Jake7911';
+// Fighter head cutouts, both US-government photos usable without credit —
+// provenance, licensing notes and the rembg pipeline live in
+// scripts/cropLetdownsFaces.py.
+const faceUri = (name) =>
+  `data:image/png;base64,${fs.readFileSync(path.join(__dirname, 'banner-assets', `${name}-head.png`)).toString('base64')}`;
+const CONOR_URI = faceUri('conor');
+const MAX_URI = faceUri('max');
 
-// When the ratings on this graphic were pulled from the live database.
-const DATA_DATE = 'Fan ratings as of July 20, 2026';
+// When the votes and ratings on this graphic were pulled from the live database.
+const DATA_DATE = 'Fan hype and ratings as of July 20, 2026';
 
-// ---- the actual rating distribution (verified against prod) ----
+// ---- the actual distributions (verified against prod) ----
+// Hype descending so the red mass leads and the lone 4 lands bottom-right,
+// mirroring the rating wall's lone 8.
+const HYPES = [
+  ...Array(23).fill(10),
+  9, 9, 9, 9, 9, 9,
+  8, 8, 8,
+  4,
+];
 const SCORES = [
   ...Array(47).fill(1),
   2, 2, 2,
@@ -38,6 +53,8 @@ const SCORES = [
   4, 4,
   8,
 ];
+const HYPE_AVG = 9.5; // 9.45 rounded, matches the article
+const RATING_AVG = 1.3;
 
 // ---- heatmap, mirrored from packages/web/src/utils/heatmap.ts ----
 const colorStops = [
@@ -83,24 +100,26 @@ function textShadow(fontPx) {
 }
 
 const LAYOUTS = {
-  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 33, eyebrow: 22, pad: 64, logo: 62, quote: 40, cite: 21 },
-  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 24, eyebrow: 17, pad: 44, logo: 46, quote: 28, cite: 16 },
+  hero: { w: 1600, h: 900, ratingCols: 9, hypeCols: 6, tile: 84, ratio: 0.58, gap: 9, head: 72, sub: 31, eyebrow: 22, wallWord: 42, wallLabel: 21, pad: 60, logo: 60, quote: 26, cite: 18, face: 150, faceTop: 158, faceRight: 132 },
+  og: { w: 1200, h: 630, ratingCols: 9, hypeCols: 6, tile: 57, ratio: 0.58, gap: 6, head: 47, sub: 21, eyebrow: 16, wallWord: 27, wallLabel: 15, pad: 40, logo: 42, quote: 18, cite: 13, face: 92, faceTop: 108, faceRight: 88 },
 };
 
-/** A score rendered as a heatmap chip, matching the tiles in the wall. */
-function chip(score, L) {
-  return `<span style="
-    display:inline-flex;align-items:center;justify-content:center;
-    background:${heat(score)};color:#fff;
-    text-shadow:${textShadow(Math.round(L.sub * 0.95))};
-    font-weight:800;font-size:${Math.round(L.sub * 0.95)}px;
-    padding:${Math.round(L.sub * 0.1)}px ${Math.round(L.sub * 0.42)}px;
-    border-radius:${Math.round(L.sub * 0.24)}px;
-  ">${score.toFixed(1)}</span>`;
+// The app's own iconography: flame = hype, star = rating (lucide-react
+// v1.7.0 paths, exactly what packages/web renders). Stroke-gold, app style.
+const ICON_PATHS = {
+  flame: 'M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4',
+  star: 'M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z',
+};
+
+function icon(name, sizePx) {
+  return `<svg width="${sizePx}" height="${sizePx}" viewBox="0 0 24 24" fill="none"
+    stroke="#F5C518" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+    style="flex:none;"><path d="${ICON_PATHS[name]}"/></svg>`;
 }
 
-function buildHtml(L) {
-  const tiles = SCORES.map((s) => {
+/** One tile wall: big gold word + icon, a plain-language subline, the grid. */
+function wall(scores, cols, iconName, word, subline, L) {
+  const tiles = scores.map((s) => {
     const size = L.tile;
     return `<div style="
       width:${size}px;height:${Math.round(size * L.ratio)}px;
@@ -114,8 +133,24 @@ function buildHtml(L) {
     ">${s}</div>`;
   }).join('');
 
-  const gridW = L.cols * L.tile + (L.cols - 1) * L.gap;
+  const gridW = cols * L.tile + (cols - 1) * L.gap;
 
+  return `<div style="width:${gridW}px;flex:none;">
+    <div style="display:flex;align-items:center;gap:${Math.round(L.wallWord * 0.28)}px;
+      margin-top:${Math.round(L.wallWord * 0.35)}px;">
+      ${icon(iconName, Math.round(L.wallWord * 0.92))}
+      <span style="font-size:${L.wallWord}px;font-weight:800;letter-spacing:.05em;
+        text-transform:uppercase;color:#F5C518;line-height:1;">${word}</span>
+    </div>
+    <div style="font-size:${L.wallLabel}px;color:#8b9096;
+      margin-top:${Math.round(L.wallLabel * 0.5)}px;">${subline}</div>
+    <div style="display:grid;margin-top:${Math.round(L.wallLabel * 0.7)}px;
+      grid-template-columns:repeat(${cols},${L.tile}px);
+      gap:${L.gap}px;">${tiles}</div>
+  </div>`;
+}
+
+function buildHtml(L) {
   // legend: continuous heatmap strip so the colour language is self-explanatory
   const legendStops = [];
   for (let i = 1; i <= 10; i += 0.25) legendStops.push(heat(i));
@@ -129,6 +164,18 @@ function buildHtml(L) {
     .wrap{padding:${L.pad}px;height:100%;display:flex;flex-direction:column}
   </style></head><body>
     <div class="goldbar"></div>
+
+    <!-- fighter head cutouts in the open space top-right, under the series mark -->
+    <div style="position:absolute;top:${L.faceTop}px;right:${L.faceRight}px;
+      display:flex;align-items:flex-end;z-index:2;">
+      <img src="${CONOR_URI}" style="height:${L.face}px;position:relative;z-index:2;
+        top:${Math.round(L.face * 0.07)}px;
+        filter:drop-shadow(0 ${Math.round(L.face * 0.03)}px ${Math.round(L.face * 0.08)}px rgba(0,0,0,.6));" />
+      <img src="${MAX_URI}" style="height:${L.face}px;position:relative;z-index:1;
+        margin-left:-${Math.round(L.face * 0.1)}px;
+        filter:drop-shadow(0 ${Math.round(L.face * 0.03)}px ${Math.round(L.face * 0.08)}px rgba(0,0,0,.6));" />
+    </div>
+
     <div class="wrap">
 
       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -142,47 +189,47 @@ function buildHtml(L) {
         </div>
       </div>
 
-      <div style="margin-top:${Math.round(L.pad * 0.34)}px;">
-        <div style="font-size:${L.head}px;font-weight:800;color:#fff;line-height:1.04;
-          letter-spacing:-.02em;">
-          47 of 54 fans scored it <span style="color:#9a9a9a;">1.</span>
+      <div style="margin-top:${Math.round(L.pad * 0.3)}px;">
+        <div style="font-size:${L.sub}px;font-weight:600;letter-spacing:.06em;
+          text-transform:uppercase;color:#8b9096;">
+          The Disappointment of McGregor vs Holloway 2 &middot; UFC 329
         </div>
-        <div style="font-size:${L.sub}px;color:#8b9096;margin-top:${Math.round(L.sub * 0.6)}px;
-          display:flex;align-items:center;flex-wrap:wrap;gap:${Math.round(L.sub * 0.34)}px;">
-          <span>McGregor vs Holloway 2 &middot; UFC 329</span>
-          <span>hyped</span>${chip(9.5, L)}
-          <span>rated</span>${chip(1.3, L)}
+        <div style="font-size:${L.head}px;font-weight:800;color:#fff;line-height:1.04;
+          letter-spacing:-.02em;margin-top:${Math.round(L.sub * 0.4)}px;">
+          47 of 54 fans rated it a <span style="color:#9a9a9a;">1</span>
+        </div>
+        <div style="font-size:${L.sub}px;color:#8b9096;
+          margin-top:${Math.round(L.sub * 0.45)}px;">
+          The biggest letdown of 2026
         </div>
       </div>
 
       <div style="flex:1;display:flex;align-items:center;justify-content:space-between;
-        gap:${Math.round(L.pad * 0.7)}px;">
-        <div style="display:grid;flex:none;
-          grid-template-columns:repeat(${L.cols},${L.tile}px);
-          gap:${L.gap}px;width:${gridW}px;">${tiles}</div>
-        <div style="flex:1;border-left:3px solid #F5C518;padding-left:${Math.round(L.pad * 0.4)}px;">
-          <div style="font-size:${L.quote}px;line-height:1.22;color:#fff;font-weight:600;
-            letter-spacing:-.01em;">&ldquo;${QUOTE}&rdquo;</div>
-          <div style="font-size:${L.cite}px;color:#8b9096;margin-top:${Math.round(L.cite * 0.8)}px;">
-            ${QUOTE_AUTHOR} review on goodfights.app
-          </div>
-        </div>
+        gap:${Math.round(L.pad * 0.5)}px;">
+        ${wall(HYPES, L.hypeCols, 'flame', 'Hype', 'Most fans were 10/10 hyped for this fight.', L)}
+        <div style="font-size:${Math.round(L.head * 0.75)}px;color:#8b9096;flex:none;
+          padding-top:${Math.round(L.wallLabel * 3)}px;">&#8594;</div>
+        ${wall(SCORES, L.ratingCols, 'star', 'Rating', 'But ended up disappointed and rated it a 1.', L)}
       </div>
 
       <div style="display:flex;justify-content:space-between;align-items:flex-end;
-        margin-top:${Math.round(L.pad * 0.3)}px;">
-        <div>
-          <div style="font-size:${Math.round(L.eyebrow * 0.9)}px;color:#8b9096;
-            margin-bottom:9px;letter-spacing:.05em;">EVERY INDIVIDUAL FAN RATING</div>
-          <div style="width:${Math.round(L.w * 0.36)}px;height:${Math.round(L.eyebrow * 1.15)}px;
+        margin-top:${Math.round(L.pad * 0.3)}px;gap:${Math.round(L.pad * 0.5)}px;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:${Math.round(L.eyebrow * 0.8)}px;color:#8b9096;
+            margin-bottom:9px;letter-spacing:.05em;text-align:center;
+            width:100%;">EVERY TILE IS ONE FAN'S SCORE</div>
+          <div style="width:100%;height:${Math.round(L.eyebrow * 1.15)}px;
             border-radius:4px;background:${legendGradient};"></div>
-          <div style="display:flex;justify-content:space-between;
-            width:${Math.round(L.w * 0.36)}px;font-size:${Math.round(L.eyebrow * 0.95)}px;
+          <div style="display:flex;justify-content:space-between;align-items:center;
+            width:100%;font-size:${Math.round(L.eyebrow * 0.95)}px;
             font-weight:700;color:#8b9096;margin-top:7px;">
-            <span>1</span><span>10</span>
+            <span>1</span>
+            <span style="font-size:${Math.round(L.eyebrow * 0.8)}px;font-weight:600;
+              color:#6d7176;letter-spacing:.05em;">A HEATMAP OF FIGHT FAN SENTIMENT.</span>
+            <span>10</span>
           </div>
         </div>
-        <div style="text-align:right;">
+        <div style="text-align:right;flex:none;">
           <div style="font-size:${Math.round(L.cite * 0.95)}px;color:#6d7176;
             margin-bottom:${Math.round(L.cite * 0.45)}px;">${DATA_DATE}</div>
           <div style="font-size:${Math.round(L.sub * 1.05)}px;font-weight:800;color:#F5C518;">
@@ -210,7 +257,10 @@ async function main() {
   }
 
   await browser.close();
-  console.log(`\ntiles: ${SCORES.length} | ones: ${SCORES.filter((s) => s === 1).length}`);
+  console.log(
+    `\nhype tiles: ${HYPES.length} (tens: ${HYPES.filter((s) => s === 10).length}) | ` +
+    `rating tiles: ${SCORES.length} (ones: ${SCORES.filter((s) => s === 1).length})`,
+  );
 }
 
 main().catch((e) => {
