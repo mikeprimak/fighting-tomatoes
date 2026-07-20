@@ -30,7 +30,7 @@ No 2026 fight illustrates the gap like the UFC 329 main event. Fans scored Conor
 
 The fight lasted 69 seconds. McGregor's knee gave out on a kick in the first exchange. He went down twice more trying to continue, and the referee stopped it.
 
-Afterward, the same community rated it 1.3. Forty-six of 52 raters gave it a 1. That 8.1-point drop is the largest we have recorded, and it raised an obvious question: which other fights promised the most and delivered the least?
+Afterward, the same community rated it 1.3. Forty-seven of 54 raters gave it a 1. That 8.1-point drop is the largest we have recorded, and it raised an obvious question: which other fights promised the most and delivered the least?
 
 We ran the numbers on all of 2026.
 
@@ -103,7 +103,7 @@ Hyped **9.5**/10 (33 votes)<br>
 Rated **1.3**/10 (52 ratings)<br>
 Gap **-8.1**
 
-McGregor's first fight in five years ended at 69 seconds. His knee buckled on a kick in the opening exchange; he went down twice more trying to continue, with Holloway signaling to the referee that McGregor couldn't fight, before the stoppage. Forty-six of 52 raters gave it a 1.
+McGregor's first fight in five years ended at 69 seconds. His knee buckled on a kick in the opening exchange; he went down twice more trying to continue, with Holloway signaling to the referee that McGregor couldn't fight, before the stoppage. Forty-seven of 54 raters gave it a 1.
 
 **2. [Michael Page vs Sam Patterson](/fights/michael-page-vs-sam-patterson)** · UFC London, March 21<br>
 Hyped **8.6**/10 (5 votes)<br>
@@ -332,7 +332,7 @@ These are self-selected fight fans, not a survey panel. The community skews towa
 
 The gap measures expectation against experience, not fight quality. Holloway vs Oliveira was a grappling clinic; it ranks fourth because fans expected a different fight, and that mismatch is what the metric captures.
 
-Some sample sizes are small, particularly from before our public launch in April; every one is listed so you can weigh the claims yourself. Ratings keep arriving after publication, so live numbers on the fight pages may drift a decimal from the figures here.
+Some sample sizes are small, particularly from before our public launch in April; every one is listed so you can weigh the claims yourself. Ratings keep arriving after the cutoff, so live numbers on the fight pages drift away from the frozen ones here. That is already true of the fight at the top of this piece: the ranking table below is frozen at the July 17 cutoff, where McGregor vs Holloway 2 stood at 52 ratings, while the count quoted in the text (47 of 54) is current as of publication. The average holds at 1.3 either way.
 
 ## Rate the fights yourself
 
