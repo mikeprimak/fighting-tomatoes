@@ -42,4 +42,5 @@ When revising, check drift in BOTH directions: not a fan, not a lab report.
 
 ## Decisions Log
 
+- **2026-07-20** — Publish round. Added "The Netflix Card" section and a 5th TLDR bullet; skipped the comeback-fights angle (definition attackable, counterexample on the same card) and the Van vs Taira counterpoint. **New rule learned:** the "never let a superlative outrun the table" check must be re-run over *derivative* copy (pitch emails, social, TLDRs), not just the article body. Two claims that were correct in the article were overstated in the pitch emails and had to be caught at send time. Also: spell out promotion names on first use ("Most Valuable Promotions", not "MVP") — the explain-from-zero rule covers org abbreviations too.
 - **2026-07-19** — Initial doc, distilled from three revision rounds on `2026-07-18-biggest-fight-letdowns-2026.md` (commits `ed261bff` → `35f6dc49`). Key calls: reporter register over clinical; lead with the point; word-economy pass; plain-language sweep replacing idioms; platform explained from zero at the top of the piece; Gaethje author-aside precedent set.
