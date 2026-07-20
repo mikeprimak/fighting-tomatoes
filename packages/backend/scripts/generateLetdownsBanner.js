@@ -19,7 +19,7 @@ const path = require('path');
 const puppeteer = require('puppeteer');
 
 // Brand mark (hand + stylised wordmark), inlined so puppeteer needs no file access.
-const LOGO_PATH = path.join(__dirname, '../../web/public/brand/good-fights-long-logo.png');
+const LOGO_PATH = path.join(__dirname, '../../web/public/brand/good-fights-stacked-horizontal.png');
 const LOGO_DATA_URI = `data:image/png;base64,${fs.readFileSync(LOGO_PATH).toString('base64')}`;
 
 // Verbatim fan review on this fight, verified against prod 2026-07-20.
@@ -76,9 +76,20 @@ function tileText(score) {
 }
 
 const LAYOUTS = {
-  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 33, eyebrow: 22, pad: 64, logo: 52, quote: 40, cite: 21 },
-  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 24, eyebrow: 17, pad: 44, logo: 38, quote: 28, cite: 16 },
+  hero: { w: 1600, h: 900, cols: 9, tile: 100, ratio: 0.58, gap: 11, head: 76, sub: 33, eyebrow: 22, pad: 64, logo: 62, quote: 40, cite: 21 },
+  og: { w: 1200, h: 630, cols: 9, tile: 74, ratio: 0.58, gap: 8, head: 52, sub: 24, eyebrow: 17, pad: 44, logo: 46, quote: 28, cite: 16 },
 };
+
+/** A score rendered as a heatmap chip, matching the tiles in the wall. */
+function chip(score, L) {
+  return `<span style="
+    display:inline-flex;align-items:center;justify-content:center;
+    background:${heat(score)};color:${tileText(score)};
+    font-weight:800;font-size:${Math.round(L.sub * 0.95)}px;
+    padding:${Math.round(L.sub * 0.1)}px ${Math.round(L.sub * 0.42)}px;
+    border-radius:${Math.round(L.sub * 0.24)}px;
+  ">${score.toFixed(1)}</span>`;
+}
 
 function buildHtml(L) {
   const tiles = SCORES.map((s) => {
@@ -125,13 +136,13 @@ function buildHtml(L) {
       <div style="margin-top:${Math.round(L.pad * 0.34)}px;">
         <div style="font-size:${L.head}px;font-weight:800;color:#fff;line-height:1.04;
           letter-spacing:-.02em;">
-          47 of 54 fans scored it <span style="color:#9a9a9a;">1</span><span
-            style="color:#5f5f5f;font-weight:700;">/10</span>
+          47 of 54 fans scored it <span style="color:#9a9a9a;">one</span>
         </div>
-        <div style="font-size:${L.sub}px;color:#8b9096;margin-top:${Math.round(L.sub * 0.6)}px;">
-          McGregor vs Holloway 2 &middot; UFC 329 &middot;
-          hyped <span style="color:#F5C518;font-weight:700;">9.5</span>,
-          rated <span style="color:#9a9a9a;font-weight:700;">1.3</span>
+        <div style="font-size:${L.sub}px;color:#8b9096;margin-top:${Math.round(L.sub * 0.6)}px;
+          display:flex;align-items:center;flex-wrap:wrap;gap:${Math.round(L.sub * 0.34)}px;">
+          <span>McGregor vs Holloway 2 &middot; UFC 329</span>
+          <span>hyped</span>${chip(9.5, L)}
+          <span>rated</span>${chip(1.3, L)}
         </div>
       </div>
 
@@ -144,7 +155,7 @@ function buildHtml(L) {
           <div style="font-size:${L.quote}px;line-height:1.22;color:#fff;font-weight:600;
             letter-spacing:-.01em;">&ldquo;${QUOTE}&rdquo;</div>
           <div style="font-size:${L.cite}px;color:#8b9096;margin-top:${Math.round(L.cite * 0.8)}px;">
-            ${QUOTE_AUTHOR}, in his review of the fight
+            ${QUOTE_AUTHOR} review on goodfights.app
           </div>
         </div>
       </div>

@@ -18,10 +18,10 @@ featured: false
 <div style="margin:0 0 24px;padding:14px 18px;border:1px solid #2b2b2b;border-left:3px solid #F5C518;border-radius:10px;background:#141414;">
 <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
 <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;">
-<li>Fans hyped McGregor vs Holloway 2 at <strong>9.5/10</strong> and rated it <strong>1.3/10</strong> afterward - the largest hype-to-rating gap we have recorded.</li>
+<li>The biggest letdown of the year was <strong>McGregor vs Holloway 2</strong>: hyped <strong>9.5/10</strong>, rated <strong>1.3/10</strong> afterward. The largest hype-to-rating gap we have recorded.</li>
 <li>Across 70 fights analyzed, average hype was <strong>7.5</strong>; average rating was <strong>6.7</strong>.</li>
 <li><strong>UFC 326</strong> produced four of the ten biggest letdowns, more than any other event.</li>
-<li><strong>Grasso vs Barber</strong> (4.6 hyped, 8.6 rated) and <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated) stand out the other way, far exceeding fan expectations.</li>
+<li>Standout fights that exceeded expectations: <strong>Grasso vs Barber</strong> (4.6 hyped, 8.6 rated) and <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated).</li>
 <li>Hype did not predict quality. The 16 fights hyped <strong>8.6 or higher</strong> averaged a <strong>6.5</strong> rating; the 13 hyped <strong>6.4 or lower</strong> averaged <strong>6.6</strong>.</li>
 </ul>
 </div>
