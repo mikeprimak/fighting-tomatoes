@@ -24,6 +24,22 @@ featured: false
 </ul>
 </div>
 
+<div style="margin:0 0 26px;padding:16px 18px;border:1px solid #2b2b2b;border-radius:10px;background:#121212;">
+<div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:10px;">In this piece</div>
+<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.35;color:#9aa0a6;">
+<li style="margin:0 0 2px;"><a href="#how-we-measured-it" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">How we measured it</a></li>
+<li style="margin:0 0 2px;"><a href="#the-ten-biggest-letdowns-of-2026" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">The ten biggest letdowns of 2026</a></li>
+<li style="margin:0 0 2px;"><a href="#the-letdown-card-of-the-year-ufc-326" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">The letdown card of the year: UFC 326</a></li>
+<li style="margin:0 0 2px;"><a href="#the-netflix-card" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">The Netflix Card</a></li>
+<li style="margin:0 0 2px;"><a href="#one-sided-or-slow" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">One-Sided or Slow</a></li>
+<li style="margin:0 0 2px;"><a href="#hype-doesnt-predict-quality" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">Hype Doesn't Predict Quality</a></li>
+<li style="margin:0 0 2px;"><a href="#the-fights-that-beat-their-hype" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">The fights that beat their hype</a></li>
+<li style="margin:0 0 2px;"><a href="#the-full-data" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">The full data: all 70 fights</a></li>
+<li style="margin:0 0 2px;"><a href="#what-this-data-is-and-isnt" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">What this data is and isn't</a></li>
+<li style="margin:0;"><a href="#rate-the-fights-yourself" style="color:#F5C518;text-decoration:none;display:inline-block;padding:5px 0;">Rate the fights yourself</a></li>
+</ol>
+</div>
+
 Good Fights is an app where fans rate fights. Every fight gets two scores: how excited fans are before it, and how good it actually was after, both on a 1-to-10 scale. The same people answer both questions, so the difference between the two numbers shows how a fight measured up against expectations. An 8 before and a 3 after is a letdown. A 5 before and an 8 after is a pleasant surprise.
 
 No 2026 fight illustrates the gap like the UFC 329 main event. Fans scored Conor McGregor vs Max Holloway 2 at 9.5 out of 10 going in, higher than both White House title fights and Chimaev vs Strickland.

@@ -152,13 +152,51 @@ export function getPostSlugs(): string[] {
   return getAllPosts().map((p) => p.slug);
 }
 
+/**
+ * Turn heading text into a URL fragment: "The Netflix Card" -> "the-netflix-card".
+ * Strips any inline markup marked already rendered inside the heading.
+ */
+export function slugifyHeading(text: string): string {
+  return text
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(#\d+|[a-z]+);/gi, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+}
+
+/**
+ * marked v18 renders bare <h2>/<h3> with no id, so in-page anchors have nothing
+ * to target. Inject slug ids after parsing rather than overriding the renderer,
+ * which keeps this independent of marked's internal API. Headings that already
+ * carry an id (hand-written HTML in a post) are left alone. Duplicate slugs get
+ * a numeric suffix so every anchor stays unique.
+ */
+function addHeadingIds(html: string): string {
+  const seen = new Map<string, number>();
+  return html.replace(
+    /<(h[23])>([\s\S]*?)<\/\1>/g,
+    (full, tag: string, inner: string) => {
+      const base = slugifyHeading(inner);
+      if (!base) return full;
+      const n = seen.get(base) ?? 0;
+      seen.set(base, n + 1);
+      const id = n === 0 ? base : `${base}-${n + 1}`;
+      // scroll-margin keeps the heading clear of the sticky site header when
+      // an in-page anchor jumps to it.
+      return `<${tag} id="${id}" style="scroll-margin-top:88px;">${inner}</${tag}>`;
+    },
+  );
+}
+
 export function getPost(slug: string, opts: { includeDrafts?: boolean } = {}): Post | null {
   for (const filename of listFiles()) {
     const parsed = parseFile(filename, opts.includeDrafts === true);
     if (parsed && parsed.meta.slug === slug) {
       return {
         ...parsed.meta,
-        html: marked.parse(parsed.content) as string,
+        html: addHeadingIds(marked.parse(parsed.content) as string),
         faqs: extractFaqs(parsed.content),
       };
     }
