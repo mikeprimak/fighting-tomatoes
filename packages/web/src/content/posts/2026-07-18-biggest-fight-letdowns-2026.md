@@ -25,7 +25,7 @@ featured: false
 
 Good Fights is an app where fans rate fights. Every fight gets two scores: how excited fans are before it, and how good it actually was after, both on a 1-to-10 scale. The same people answer both questions, so the difference between the two numbers shows how a fight measured up against expectations. An 8 before and a 3 after is a letdown. A 5 before and an 8 after is a pleasant surprise.
 
-No 2026 fight illustrates the gap like the UFC 329 main event. Fans scored Conor McGregor vs Max Holloway 2 at 9.5 out of 10 going in, the highest of any fight this year, ahead of both White House title fights and Chimaev vs Strickland.
+No 2026 fight illustrates the gap like the UFC 329 main event. Fans scored Conor McGregor vs Max Holloway 2 at 9.5 out of 10 going in, higher than both White House title fights and Chimaev vs Strickland.
 
 The fight lasted 69 seconds. McGregor's knee gave out on a kick in the first exchange. He went down twice more trying to continue, and the referee stopped it.
 
@@ -37,7 +37,7 @@ We ran the numbers on all of 2026.
 
 The ground rules: every completed fight through July 17, 2026 qualified with at least 5 hype votes and 5 post-fight ratings. Only hype votes cast before the first bell count, so no score is colored by the result. Hype collection began in mid-February, so the year's first weeks are missing. Test accounts are excluded. Seventy fights qualified; sample sizes appear with every figure below.
 
-One number before the list: across all 70 fights, average hype was 7.5 and average rating was 6.7. The typical 2026 fight came in 0.8 points under its billing.
+One number before the list: across all 70 fights, average hype was 7.5 and average rating was 6.7. The typical 2026 fight delivered 0.8 points less than fans expected.
 
 ## The ten biggest letdowns of 2026
 
@@ -109,7 +109,7 @@ Hyped **8.6**/10 (5 votes)<br>
 Rated **1.6**/10 (14 ratings)<br>
 Gap **-7.0**
 
-Page built his name on highlight-reel offense, which is what the 8.6 was buying. The fight produced 39 total significant strikes in three rounds, no takedowns, and a decision. The O2 booed; Page's peers criticized it publicly.
+Page built his name on highlight-reel offense, and the 8.6 hype score reflected that reputation. The fight produced 39 total significant strikes in three rounds, no takedowns, and a decision. The O2 booed; Page's peers criticized it publicly.
 
 **3. [Dominick Reyes vs Johnny Walker](/fights/dominick-reyes-vs-johnny-walker)** · UFC 327, April 11<br>
 Hyped **8.9**/10 (7 votes)<br>
@@ -130,7 +130,7 @@ Hyped **6.9**/10 (8 votes)<br>
 Rated **2.4**/10 (14 ratings)<br>
 Gap **-4.4**
 
-Five takedowns in the first round set the pattern. Rosas swept the cards 30-27 in a one-sided wrestling performance. Dominance and entertainment are different commodities; this fight priced the difference.
+Five takedowns in the first round set the pattern. Rosas swept the cards 30-27 in a one-sided wrestling performance. Dominance and entertainment are not the same thing, and the two scores here show the difference.
 
 **6. [Ronda Rousey vs Gina Carano](/fights/ronda-rousey-vs-gina-carano)** · MVP MMA, May 16<br>
 Hyped **7.9**/10 (9 votes)<br>
@@ -144,7 +144,7 @@ Hyped **7.3**/10 (6 votes)<br>
 Rated **4.3**/10 (15 ratings)<br>
 Gap **-3.1**
 
-A prelim repeatedly interrupted by low blows, including a two-point deduction, with Garbrandt visibly ill in the cage afterward. It never found a rhythm; the 4.3 tracked it.
+A prelim repeatedly interrupted by low blows, including a two-point deduction, with Garbrandt visibly ill in the cage afterward. It never found a rhythm, and the 4.3 rating reflected it.
 
 **8. [Movsar Evloev vs Lerone Murphy](/fights/movsar-evloev-vs-lerone-murphy)** · UFC London, March 21<br>
 Hyped **8.0**/10 (5 votes)<br>
@@ -171,11 +171,11 @@ Borralho won every round on every card, controlling distance and shutting down d
 
 One card accounts for four of the ten. No other event appears more than twice.
 
-If you skipped UFC 326 on March 7, here is what happened. The card was built as an action showcase: a BMF title rematch between Max Holloway and Charles Oliveira on top, hyped at 9.2, with a string of matchups underneath that fans read as guaranteed fireworks. Rob Font against the prospect Raul Rosas Jr. Former champion Cody Garbrandt against Xiao Long. Contenders Caio Borralho and Reinier de Ridder.
+If you skipped UFC 326 on March 7, here is what happened. The card was built as an action showcase: a BMF title rematch between Max Holloway and Charles Oliveira on top, hyped at 9.2, with a string of matchups underneath that fans expected to produce action. Rob Font against the prospect Raul Rosas Jr. Former champion Cody Garbrandt against Xiao Long. Contenders Caio Borralho and Reinier de Ridder.
 
 Almost none of it played out that way. Oliveira took Holloway down in every round and swept the cards 50-45, a dominant performance with almost none of the striking both men are known for (rated 4.6, the year's fourth-biggest letdown). Rosas wrestled Font to a 30-27 sweep (2.4, fifth). Garbrandt vs Xiao was broken up repeatedly by low blows and a two-point deduction (4.3, seventh). Borralho controlled de Ridder for fifteen minutes without ever being pulled into an exchange (4.7, tenth).
 
-The card-wide numbers tell it cleanly: across UFC 326's seven qualifying fights, fans went in expecting an average of 7.4 and came out rating an average of 5.2. One fight on the card beat its hype, the prelim between Ricky Turcios and Alberto Montes, by half a point.
+The card-wide numbers: across UFC 326's seven qualifying fights, fans went in expecting an average of 7.4 and came out rating an average of 5.2. One fight on the card beat its hype, the prelim between Ricky Turcios and Alberto Montes, by half a point.
 
 None of this was bad fighting. Oliveira, Rosas, and Borralho all dominated. But domination by control is the style fans consistently rate lowest, and UFC 326 stacked four of those outcomes on one night.
 
@@ -184,6 +184,12 @@ None of this was bad fighting. Oliveira, Rosas, and Borralho all dominated. But 
 Fights disappoint in one of two ways: nothing happens for the full distance, or everything is over before a fight develops. Eight of the ten letdowns went to a decision, most of them one-sided control wins or low-output striking matches. The other two, McGregor's knee and Rousey's armbar, lasted a combined 86 seconds.
 
 The overdeliveries make the same point from the other side: nine of the ten biggest positive gaps ended in a finish. Fans don't penalize an early ending that arrives as decisive action. What drags a rating down is the absence of action, not the absence of rounds.
+
+## Hype Doesn't Predict Quality
+
+The most surprising finding in the data: how excited fans are for a fight tells you almost nothing about how good it will be. The 16 fights hyped at 8.6 or higher went on to an average rating of 6.5. The 13 fights hyped at 6.4 or lower averaged 6.6. The fights fans wanted most delivered no better than the fights they nearly ignored.
+
+Hype is not irrational. Big names, title stakes, and violent styles are real reasons to be excited. But in five and a half months of data, pre-fight excitement has shown no measurable relationship with how good the fight turned out to be. For every heavily hyped fight that rewards the anticipation, the year has produced a Grasso vs Barber: overlooked beforehand, and rated among the best fights of 2026.
 
 ## The fights that beat their hype
 
@@ -225,7 +231,7 @@ The gap runs both ways.
 <div style="font-size:11px;color:#9aa0a6;text-align:right;margin-top:6px;">goodfights.app &middot; fan scores, 2026 through Jul 17</div>
 </div>
 
-**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) is the year's largest positive gap: hyped 4.6 (5 votes), rated 8.6 (34 ratings). Grasso dropped Barber with a left hand and finished with a choke inside a round, in a fight almost nobody had circled.
+**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) is the year's largest positive gap: hyped 4.6 (5 votes), rated 8.6 (34 ratings). Grasso dropped Barber with a left hand and finished with a choke inside a round, in a fight few fans were paying attention to beforehand.
 
 **[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Fight Night, May 30) went from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) after Menifield dropped the fast-rising Zhang twice and finished him inside four minutes.
 
@@ -235,7 +241,7 @@ That is the finding underneath this piece. At the top of the hype scale, almost 
 
 ## The full data
 
-A top ten invites cherry-picking, so here is the complete dataset: all 70 qualifying fights, sorted from largest letdown to largest overdelivery. Every fight links to its page, where the live numbers and every individual review are public.
+The top ten is only part of the picture, so here is the complete dataset: all 70 qualifying fights, sorted from largest letdown to largest overdelivery. Every fight links to its page, where the live numbers and every individual review are public.
 
 <div style="margin:18px 0;">
 <div style="font-weight:700;color:#F5C518;">The full table: all 70 qualifying fights, sorted by gap</div>
