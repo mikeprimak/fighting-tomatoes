@@ -145,7 +145,7 @@ function buildHtml(L) {
       <div style="margin-top:${Math.round(L.pad * 0.34)}px;">
         <div style="font-size:${L.head}px;font-weight:800;color:#fff;line-height:1.04;
           letter-spacing:-.02em;">
-          47 of 54 fans scored it <span style="color:#9a9a9a;">one</span>
+          47 of 54 fans scored it <span style="color:#9a9a9a;">1.</span>
         </div>
         <div style="font-size:${L.sub}px;color:#8b9096;margin-top:${Math.round(L.sub * 0.6)}px;
           display:flex;align-items:center;flex-wrap:wrap;gap:${Math.round(L.sub * 0.34)}px;">
