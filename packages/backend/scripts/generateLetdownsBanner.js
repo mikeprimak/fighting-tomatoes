@@ -70,9 +70,16 @@ function heat(score) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-// Dark text on warm tiles, light text on the grey ones, so every number stays legible.
-function tileText(score) {
-  return score >= 6.5 ? '#141414' : '#e9e9e9';
+/**
+ * The app always renders scores as white text with a dark shadow on top of the
+ * heatmap colour, at every score. Mirrors RateFightModal.tsx:215
+ * (`text-white [text-shadow:_0_2px_4px_rgb(0_0_0_/_70%)]`); the offset and blur
+ * scale with type size so it reads the same at hero and OG dimensions.
+ */
+function textShadow(fontPx) {
+  const dy = Math.max(1, Math.round(fontPx * 0.06));
+  const blur = Math.max(2, Math.round(fontPx * 0.12));
+  return `0 ${dy}px ${blur}px rgba(0, 0, 0, 0.7)`;
 }
 
 const LAYOUTS = {
@@ -84,7 +91,8 @@ const LAYOUTS = {
 function chip(score, L) {
   return `<span style="
     display:inline-flex;align-items:center;justify-content:center;
-    background:${heat(score)};color:${tileText(score)};
+    background:${heat(score)};color:#fff;
+    text-shadow:${textShadow(Math.round(L.sub * 0.95))};
     font-weight:800;font-size:${Math.round(L.sub * 0.95)}px;
     padding:${Math.round(L.sub * 0.1)}px ${Math.round(L.sub * 0.42)}px;
     border-radius:${Math.round(L.sub * 0.24)}px;
@@ -100,7 +108,8 @@ function buildHtml(L) {
       border-radius:${Math.round(size * 0.09)}px;
       display:flex;align-items:center;justify-content:center;
       font-size:${Math.round(size * 0.34)}px;font-weight:800;
-      color:${tileText(s)};
+      color:#fff;
+      text-shadow:${textShadow(Math.round(size * 0.34))};
       font-family:'Segoe UI',Arial,sans-serif;
     ">${s}</div>`;
   }).join('');
