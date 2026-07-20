@@ -3,7 +3,7 @@ title: "The Biggest Letdowns of 2026 So Far, According to Fight Fans"
 slug: "biggest-fight-letdowns-2026"
 date: "2026-07-18"
 author: "Mike Primak"
-excerpt: "Before UFC 329, fight fans rated their anticipation for McGregor vs Holloway 2 at 9.5 out of 10. After the fight, the same community scored it 1.3. We measured the gap between pre-fight hype and post-fight ratings for every qualifying fight of 2026. Here are the ten largest gaps, the event that produced the most of them, and the fights that outperformed expectations."
+excerpt: "Fight fans scored McGregor vs Holloway 2 at 9.5 out of 10 before the fight and 1.3 after it. We measured the gap between pre-fight hype and post-fight ratings for all 70 qualifying fights of 2026. The results identify the year's biggest letdowns, the card that produced the most of them, and the one heavily hyped fight that delivered."
 tags: ["round-numbers", "ufc", "rankings", "fan-ratings", "data", "feature"]
 image: "/blog/letdowns-2026-hero.png"
 ogImage: "/blog/letdowns-2026-og.png"
@@ -16,28 +16,28 @@ featured: false
 <div style="margin:0 0 24px;padding:14px 18px;border:1px solid #2b2b2b;border-left:3px solid #F5C518;border-radius:10px;background:#141414;">
 <div style="font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9aa0a6;margin-bottom:8px;">The short version</div>
 <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.6;">
-<li>Fans hyped McGregor vs Holloway 2 at <strong>9.5/10</strong> before the fight and rated it <strong>1.3/10</strong> after. 46 of 52 raters gave it a 1. It is the largest hype-to-rating gap we have recorded.</li>
-<li>Across all 70 qualifying fights, the average hype score was <strong>7.5</strong> and the average post-fight rating was <strong>6.7</strong>.</li>
-<li><strong>UFC 326</strong> accounts for four of the ten largest gaps, more than any other event.</li>
-<li>Of the ten most hyped fights of 2026, only one was rated above its hype score: <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated).</li>
+<li>Fans hyped McGregor vs Holloway 2 at <strong>9.5/10</strong> and rated it <strong>1.3/10</strong> afterward. 46 of 52 raters gave it a 1, the largest hype-to-rating gap we have recorded.</li>
+<li>Across 70 qualifying fights, average hype was <strong>7.5</strong>; average post-fight rating was <strong>6.7</strong>.</li>
+<li><strong>UFC 326</strong> produced four of the ten biggest letdowns, more than any other event.</li>
+<li>Of the ten most hyped fights of 2026, only one out-rated its hype: <strong>Topuria vs Gaethje</strong> (9.2 hyped, 9.7 rated).</li>
 </ul>
 </div>
 
-Before UFC 329, users on Good Fights gave Conor McGregor vs Max Holloway 2 an average hype score of 9.5 out of 10. That made it the most anticipated fight of 2026 on the platform, ahead of both White House title fights and Chimaev vs Strickland.
+Good Fights is an app where fans rate fights. It collects two scores for every fight on the calendar. Before the fight happens, users say how excited they are to see it, on a scale of 1 to 10. After it ends, they rate how good it actually was, on the same scale. The same people answer both questions, so subtracting one number from the other shows exactly how a fight measured up against what fans expected of it. A fight that scores an 8 before and a 3 after was a letdown. A fight that scores a 5 before and an 8 after was a pleasant surprise.
 
-The fight lasted 69 seconds. McGregor injured his knee throwing a kick in the first exchange, went down twice more attempting to continue, and the referee stopped the fight.
+No fight in 2026 illustrates that gap like the UFC 329 main event. Going in, fans scored Conor McGregor vs Max Holloway 2 at an average of 9.5 out of 10, the highest of any fight this year, ahead of both White House title fights and Chimaev vs Strickland.
 
-Afterward, the same community rated the fight 1.3 out of 10. Of the 52 users who scored it, 46 gave it the minimum score of 1. The 8.1-point difference between expectation and result is the largest we have recorded, and it suggested a broader question worth answering with data: which fights this year showed the widest gaps between what fans expected and what they rated afterward?
+The fight lasted 69 seconds. McGregor's knee gave out on a kick in the first exchange. He went down twice more trying to continue, and the referee stopped it.
 
-We ran that calculation for every fight of 2026.
+When the ratings came in, the same community scored the fight 1.3 out of 10. Forty-six of the 52 raters gave it a 1. The 8.1-point drop from expectation to verdict is the largest we have recorded, and it raised an obvious follow-up: which other fights this year promised the most and delivered the least?
+
+We ran the numbers on all of 2026 to find out.
 
 ## How we measured it
 
-Good Fights users score every fight twice: a hype rating (1 to 10) before the fight, and a quality rating (1 to 10) after watching it. Both scores come from the same community, so each fight carries a measure of expectation and a measure of the result. The gap in this piece is the difference between the two averages.
+The ground rules: every completed fight through July 17, 2026 qualified if it drew at least 5 hype votes and 5 post-fight ratings. Only hype votes cast before the first bell count, so no score is colored by knowing the result. Hype collection began in mid-February, so the first weeks of the year are not represented. Internal test accounts are excluded. Seventy fights qualified, and sample sizes appear alongside every figure below.
 
-The qualification rules: every completed fight through July 17, 2026 was included if it had at least 5 hype votes and 5 post-fight ratings. Only hype votes cast before the fight started are counted, so pre-fight scores cannot be influenced by knowledge of the outcome. We began collecting hype in mid-February, so the earliest weeks of the year are not represented. Internal test accounts are excluded. 70 fights qualified, and the sample size is listed alongside every figure below.
-
-One aggregate finding before the list: across all 70 qualifying fights, the average hype score was 7.5 and the average post-fight rating was 6.7. On average, a 2026 fight was rated 0.8 points below its pre-fight hype.
+One number worth knowing before the list: across all 70 fights, average hype was 7.5 and average post-fight rating was 6.7. The typical 2026 fight came in 0.8 points under its billing.
 
 ## The ten biggest letdowns of 2026
 
@@ -99,57 +99,57 @@ One aggregate finding before the list: across all 70 qualifying fights, the aver
 
 **1. [Conor McGregor vs Max Holloway 2](/fights/conor-mcgregor-vs-max-holloway-2)** · UFC 329, July 11
 Hyped **9.5**/10 (33 votes) · Rated **1.3**/10 (52 ratings) · Gap **-8.1**
-McGregor's first fight in five years ended at 69 seconds. He injured his knee throwing a kick in the opening exchange and fell. He stood, threw another kick, and went down a second time; Holloway followed with ground strikes before backing off and allowing him up. After a third fall, with Holloway signaling to the referee that McGregor could not continue, the knee gave out under McGregor's own weight and the referee stopped the fight. 46 of the 52 users who rated it gave it a 1.
+McGregor's first fight in five years ended at 69 seconds. His knee buckled on a kick in the opening exchange. He got up, threw another kick, and went down again; Holloway followed with ground strikes before backing off and letting him stand. By the third fall Holloway was signaling to the referee that McGregor could not continue, and when the knee gave out once more, the fight was stopped. Forty-six of the 52 raters gave it a 1.
 
 **2. [Michael Page vs Sam Patterson](/fights/michael-page-vs-sam-patterson)** · UFC London, March 21
 Hyped **8.6**/10 (5 votes) · Rated **1.6**/10 (14 ratings) · Gap **-7.0**
-Page's reputation for highlight-reel offense explains the 8.6 hype score. The fight itself produced 39 total significant strikes across three rounds, no takedowns from either fighter, and a decision. The O2 crowd booed during the fight, and several fellow fighters criticized it publicly afterward.
+Page built his reputation on highlight-reel offense, which is what the 8.6 hype score was buying. The fight produced 39 total significant strikes across three rounds, no takedowns from either man, and a decision. The O2 booed it, and several of Page's peers criticized it publicly in the days after.
 
 **3. [Dominick Reyes vs Johnny Walker](/fights/dominick-reyes-vs-johnny-walker)** · UFC 327, April 11
 Hyped **8.9**/10 (7 votes) · Rated **1.9**/10 (37 ratings) · Gap **-7.0**
-Both fighters entered with high finish rates, which drove the 8.9 hype score. The fight stayed at range for three rounds with little sustained offense from either man; the Miami crowd chanted "this is boring" before the split decision was announced.
+Two of light heavyweight's most reliable finishers, and an 8.9 hype score to match. The fight stayed at range for three rounds with little sustained offense from either man. By the third, the Miami crowd was chanting "this is boring"; the split decision followed.
 
 **4. [Max Holloway vs Charles Oliveira 2](/fights/max-holloway-vs-charles-oliveira-2)** · UFC 326, March 7
 Hyped **9.2**/10 (10 votes) · Rated **4.6**/10 (31 ratings) · Gap **-4.6**
-A BMF title fight between two fighters known for high-output striking, which is what the 9.2 hype score priced in. Oliveira instead took Holloway down in all five rounds and won 50-45 on every card. The 4.6 rating reflects how fans scored the experience of watching sustained control, not the quality of the performance itself.
+A BMF title fight between two of the most proven action fighters in the sport, priced by fans at 9.2. Oliveira took Holloway down in all five rounds and swept the scorecards 50-45. Judged as grappling, it was a masterclass; judged against the war fans expected, it rated a 4.6.
 
 **5. [Rob Font vs Raul Rosas Jr.](/fights/rob-font-vs-raul-rosas-jr)** · UFC 326, March 7
 Hyped **6.9**/10 (8 votes) · Rated **2.4**/10 (14 ratings) · Gap **-4.4**
-Rosas landed five takedowns in the first round and maintained control for the remainder of the fight, winning 30-27 on all three cards. One-sided grappling control with few scoring exchanges.
+Five takedowns in the first round set the pattern. Rosas swept the cards 30-27 in a one-sided wrestling performance, and fans who had scored the matchup a 6.9 rated the result a 2.4. Dominance and entertainment are different commodities; this fight priced the difference.
 
 **6. [Ronda Rousey vs Gina Carano](/fights/ronda-rousey-vs-gina-carano)** · MVP MMA, May 16
 Hyped **7.9**/10 (9 votes) · Rated **4.4**/10 (16 ratings) · Gap **-3.5**
-The fight lasted 17 seconds: takedown, mount, armbar, tap. The outcome matched the consensus prediction, but a main event that ends in under 20 seconds gives viewers almost nothing to evaluate. The 4.4 rating measures that experience, not the execution, which was flawless.
+Seventeen seconds: takedown, mount, armbar, tap. It was the widely predicted outcome, executed cleanly, and it still left a main-event audience with almost nothing to score. The 4.4 rating is less a judgment of Rousey than a measure of how little fight there was to rate.
 
 **7. [Cody Garbrandt vs Xiao Long](/fights/cody-garbrandt-vs-xiao-long)** · UFC 326, March 7
 Hyped **7.3**/10 (6 votes) · Rated **4.3**/10 (15 ratings) · Gap **-3.1**
-A prelim disrupted by repeated low blows, a two-point deduction, and the extended pauses that came with them. Garbrandt was visibly ill in the cage after the decision. The fight never established sustained action, and the 4.3 rating reflects that.
+A prelim repeatedly interrupted by low blows, including a two-point deduction, with Garbrandt visibly ill in the cage after the decision. The fight never found a rhythm, and the 4.3 rating tracked it.
 
 **8. [Movsar Evloev vs Lerone Murphy](/fights/movsar-evloev-vs-lerone-murphy)** · UFC London, March 21
 Hyped **8.0**/10 (5 votes) · Rated **4.9**/10 (19 ratings) · Gap **-3.1**
-Twenty-five minutes between two unbeaten featherweights, decided by a low-blow point deduction and late takedowns. Evloev extended his record to 20-0 by majority decision in a fight with low output on both sides.
+Twenty-five minutes between two unbeaten featherweights, decided by a low-blow point deduction and late takedowns. Evloev moved to 20-0 by majority decision. The stakes were as high as a Fight Night main event gets; the output never matched them, and fans rated it 4.9 against an 8.0 expectation.
 
 **9. [Sean Brady vs Joaquin Buckley 2](/fights/sean-brady-vs-joaquin-buckley-2)** · UFC 328, May 9
 Hyped **7.6**/10 (17 votes) · Rated **4.7**/10 (30 ratings) · Gap **-2.9**
-Brady took Buckley down in every round and won 30-25 on two of the three cards. An effective, one-sided control performance, rated 4.7 by fans who had scored their anticipation at 7.6.
+Brady took Buckley down in every round and won 30-25 on two cards. It was as effective as it was one-sided, and fans scored the experience accordingly: 4.7, against a 7.6 going in.
 
 **10. [Caio Borralho vs Reinier de Ridder](/fights/caio-borralho-vs-reinier-de-ridder)** · UFC 326, March 7
 Hyped **7.5**/10 (8 votes) · Rated **4.7**/10 (22 ratings) · Gap **-2.8**
-A middleweight contender bout that Borralho won 30-27 on every card. He controlled distance and prevented de Ridder's clinch entries throughout: a technically sound performance that produced few of the exchanges the 7.5 hype score anticipated.
+A middleweight contender bout that Borralho won 30-27 on every card, controlling distance and shutting down de Ridder's clinch entries throughout. Technically sound, strategically clean, and short on the exchanges a 7.5 hype score is built on.
 
-## The event with the most letdowns: UFC 326
+## The letdown card of the year: UFC 326
 
-One event accounts for four of the ten entries above. UFC 326: Holloway vs Oliveira carried a main event with a 9.2 hype score and produced four of the year's ten largest negative gaps, including that main event. The next most represented event, UFC London, appears twice.
+One card accounts for four of the ten biggest letdowns. UFC 326: Holloway vs Oliveira came in carrying a 9.2-hype main event and delivered the year's fourth-, fifth-, seventh-, and tenth-largest gaps, the main event among them. No other event appears more than twice.
 
-## Two patterns in the letdowns
+## Where letdowns come from
 
-Grouping the ten letdowns by how they ended shows two distinct failure modes. Eight of the ten went to a decision, most of them one-sided control wins or low-output striking matches. The other two, McGregor vs Holloway 2 and Rousey vs Carano, ended in a combined 86 seconds. A fight disappoints in one of two ways: it produces little action across its full length, or it ends before meaningful action can occur.
+Sort the ten letdowns by how they ended and two patterns emerge. Eight went to a decision, most of them one-sided control wins or low-output striking matches. The other two, McGregor's knee and Rousey's armbar, lasted a combined 86 seconds. Fights disappoint at the extremes: either nothing happens for the full distance, or everything is over before a fight develops.
 
-The overdelivery list supports the same reading from the other side: nine of the ten largest positive gaps ended in a finish. Early finishes are not penalized when they arrive as decisive action. The common factor in the negative gaps is the absence of action, not short duration by itself.
+The overdelivery list makes the same point from the other side. Nine of the ten biggest positive gaps ended in a finish. Fans do not penalize an early ending that arrives as decisive action. What drags a rating down is the absence of action, not the absence of rounds.
 
-## The other direction: the biggest overdeliveries
+## The fights that beat their hype
 
-The gap runs both ways, and the positive side of the distribution is worth the same attention.
+The gap runs both ways, and the positive side of the list has its own stories.
 
 <div style="margin:18px 0 24px;padding:16px 18px;border:1px solid #2b2b2b;border-radius:14px;background:linear-gradient(135deg,#1b1b1b,#0f0f0f);">
 <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:2px;">Hype vs. reality: the biggest overdeliveries of 2026</div>
@@ -187,17 +187,17 @@ The gap runs both ways, and the positive side of the distribution is worth the s
 <div style="font-size:11px;color:#9aa0a6;text-align:right;margin-top:6px;">goodfights.app &middot; fan scores, 2026 through Jul 17</div>
 </div>
 
-**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) shows the largest positive gap of the year: hyped 4.6 (5 votes), rated 8.6 (34 ratings). Grasso dropped Barber with a left hand and finished with a choke inside the first round.
+**[Alexa Grasso vs Maycee Barber](/fights/alexa-grasso-vs-maycee-barber)** (UFC Seattle, March 28) is the year's largest positive gap: hyped 4.6 (5 votes), rated 8.6 (34 ratings). Grasso dropped Barber with a left hand and finished with a choke inside the first round, in a fight almost nobody had circled beforehand.
 
-**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Fight Night, May 30) moved from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) after Menifield dropped Zhang twice and finished the fight inside four minutes.
+**[Zhang Mingyang vs Alonzo Menifield](/fights/zhang-mingyang-vs-alonzo-menifield)** (UFC Fight Night, May 30) went from a 6.0 hype score (6 votes) to an 8.5 rating (20 ratings) after Menifield dropped the fast-rising Zhang twice and finished him inside four minutes.
 
-The outlier at the top of the range is **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250: a 9.2 hype score (28 votes) and a 9.7 post-fight rating (59 ratings). It is the highest-rated fight of 2026 on Good Fights, four rounds of sustained exchanges in front of the White House that ended when Topuria could not answer the fifth-round bell. Of the ten most hyped fights of the year, it is the only one whose rating exceeded its hype.
+The exception at the top of the scale is **[Ilia Topuria vs Justin Gaethje](/fights/ilia-topuria-vs-justin-gaethje)** at UFC Freedom 250: hyped 9.2 (28 votes), rated 9.7 (59 ratings). It is the highest-rated fight of 2026 on Good Fights, four rounds of sustained exchanges in front of the White House that ended when Topuria could not answer the fifth-round bell. Of the year's ten most hyped fights, it is the only one that out-rated its expectation.
 
-That is the broader pattern in this data. At the top of the hype range, fights almost never meet the expectation set for them. In 2026 so far, exactly one has.
+That is the finding underneath this piece. At the top of the hype scale, almost nothing measures up. This year, one fight has.
 
 ## The full data
 
-A top-ten list is a selective presentation, so the complete dataset follows: all 70 qualifying fights, sorted from largest negative gap to largest positive gap. Every fight links to its page, where the live numbers and every individual review are public.
+A top ten invites cherry-picking, so here is the complete dataset: all 70 qualifying fights, sorted from largest letdown to largest overdelivery. Every fight links to its page, where the live numbers and every individual review are public.
 
 <div style="margin:18px 0;">
 <div style="font-weight:700;color:#F5C518;">The full table: all 70 qualifying fights, sorted by gap</div>
@@ -279,15 +279,15 @@ A top-ten list is a selective presentation, so the complete dataset follows: all
 
 A few things worth being clear about, especially if you plan to cite this.
 
-These are self-selected fight fans scoring fights they chose to watch, not a survey panel. The community skews toward people engaged enough to rate fights, which is the audience promotional hype targets, but it is not a random sample of everyone who watched.
+These are self-selected fight fans scoring fights they chose to watch, not a survey panel. The community skews toward people engaged enough to rate fights, which is the audience hype is built for, but it is not a random sample of everyone who watched.
 
-The gap measures the difference between expectation and the rated experience, not fight quality. Holloway vs Oliveira was a five-round grappling performance that many observers rated highly on technical grounds. It ranks fourth here because the pre-fight expectation was for a different kind of fight, and the gap metric captures exactly that mismatch.
+The gap measures expectation against experience, not fight quality. Holloway vs Oliveira was a five-round grappling clinic that plenty of observers rated highly on technical grounds. It ranks fourth here because fans expected a different fight, and that mismatch is precisely what the metric captures.
 
-Some sample sizes are small, particularly from before our public launch in April. Every sample size is listed next to every number so readers can weigh the claims accordingly. Ratings continue to arrive after publication, so live numbers on the fight pages may differ by a decimal from the figures recorded here.
+Some sample sizes are small, particularly from before our public launch in April; every one is listed next to every number so you can weigh the claims yourself. Ratings keep arriving after publication, so live numbers on the fight pages may drift a decimal from the figures here.
 
 ## Rate the fights yourself
 
-Round Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you are anticipating, rate them once they are done, and your scores become part of the next installment's dataset.
+Round Numbers is our series of data stories from combat sports, and this is the first installment. Every number in this piece comes from fans scoring fights on [Good Fights](https://goodfights.app), free on [iOS and Android](https://goodfights.app/download). Hype the fights you're waiting on, rate them when they're done, and your scores feed the next installment.
 
 *Data notes: completed fights from January 1 to July 17, 2026. Only hype votes cast before the fight started count; Good Fights began collecting hype in mid-February 2026, so the earliest weeks of the year are not represented. Internal test accounts excluded. Fights qualified with at least 5 pre-fight hype votes and 5 post-fight ratings; 70 fights qualified. Hype and rating averages are unweighted means. Gaps are computed before rounding, which is why a displayed pair can differ from its displayed gap by 0.1.*
 
