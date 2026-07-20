@@ -97,53 +97,91 @@ One number before the list: across all 70 fights, average hype was 7.5 and avera
 <div style="font-size:11px;color:#9aa0a6;text-align:right;margin-top:6px;">goodfights.app · fan scores, 2026 through Jul 17</div>
 </div>
 
-**1. [Conor McGregor vs Max Holloway 2](/fights/conor-mcgregor-vs-max-holloway-2)** · UFC 329, July 11
-Hyped **9.5**/10 (33 votes) · Rated **1.3**/10 (52 ratings) · Gap **-8.1**
+**1. [Conor McGregor vs Max Holloway 2](/fights/conor-mcgregor-vs-max-holloway-2)** · UFC 329, July 11<br>
+Hyped **9.5**/10 (33 votes)<br>
+Rated **1.3**/10 (52 ratings)<br>
+Gap **-8.1**
+
 McGregor's first fight in five years ended at 69 seconds. His knee buckled on a kick in the opening exchange; he went down twice more trying to continue, with Holloway signaling to the referee that McGregor couldn't fight, before the stoppage. Forty-six of 52 raters gave it a 1.
 
-**2. [Michael Page vs Sam Patterson](/fights/michael-page-vs-sam-patterson)** · UFC London, March 21
-Hyped **8.6**/10 (5 votes) · Rated **1.6**/10 (14 ratings) · Gap **-7.0**
+**2. [Michael Page vs Sam Patterson](/fights/michael-page-vs-sam-patterson)** · UFC London, March 21<br>
+Hyped **8.6**/10 (5 votes)<br>
+Rated **1.6**/10 (14 ratings)<br>
+Gap **-7.0**
+
 Page built his name on highlight-reel offense, which is what the 8.6 was buying. The fight produced 39 total significant strikes in three rounds, no takedowns, and a decision. The O2 booed; Page's peers criticized it publicly.
 
-**3. [Dominick Reyes vs Johnny Walker](/fights/dominick-reyes-vs-johnny-walker)** · UFC 327, April 11
-Hyped **8.9**/10 (7 votes) · Rated **1.9**/10 (37 ratings) · Gap **-7.0**
+**3. [Dominick Reyes vs Johnny Walker](/fights/dominick-reyes-vs-johnny-walker)** · UFC 327, April 11<br>
+Hyped **8.9**/10 (7 votes)<br>
+Rated **1.9**/10 (37 ratings)<br>
+Gap **-7.0**
+
 Two of light heavyweight's most reliable finishers, hyped 8.9 to match. Three rounds at range with little sustained offense; by the third, the Miami crowd was chanting "this is boring." Split decision.
 
-**4. [Max Holloway vs Charles Oliveira 2](/fights/max-holloway-vs-charles-oliveira-2)** · UFC 326, March 7
-Hyped **9.2**/10 (10 votes) · Rated **4.6**/10 (31 ratings) · Gap **-4.6**
+**4. [Max Holloway vs Charles Oliveira 2](/fights/max-holloway-vs-charles-oliveira-2)** · UFC 326, March 7<br>
+Hyped **9.2**/10 (10 votes)<br>
+Rated **4.6**/10 (31 ratings)<br>
+Gap **-4.6**
+
 A BMF title fight between two proven action fighters. Oliveira took Holloway down in all five rounds and swept the cards 50-45. Judged as grappling, a masterclass; judged against the war fans expected, a 4.6.
 
-**5. [Rob Font vs Raul Rosas Jr.](/fights/rob-font-vs-raul-rosas-jr)** · UFC 326, March 7
-Hyped **6.9**/10 (8 votes) · Rated **2.4**/10 (14 ratings) · Gap **-4.4**
+**5. [Rob Font vs Raul Rosas Jr.](/fights/rob-font-vs-raul-rosas-jr)** · UFC 326, March 7<br>
+Hyped **6.9**/10 (8 votes)<br>
+Rated **2.4**/10 (14 ratings)<br>
+Gap **-4.4**
+
 Five takedowns in the first round set the pattern. Rosas swept the cards 30-27 in a one-sided wrestling performance. Dominance and entertainment are different commodities; this fight priced the difference.
 
-**6. [Ronda Rousey vs Gina Carano](/fights/ronda-rousey-vs-gina-carano)** · MVP MMA, May 16
-Hyped **7.9**/10 (9 votes) · Rated **4.4**/10 (16 ratings) · Gap **-3.5**
+**6. [Ronda Rousey vs Gina Carano](/fights/ronda-rousey-vs-gina-carano)** · MVP MMA, May 16<br>
+Hyped **7.9**/10 (9 votes)<br>
+Rated **4.4**/10 (16 ratings)<br>
+Gap **-3.5**
+
 Seventeen seconds: takedown, mount, armbar, tap. The predicted outcome, cleanly executed, and still almost nothing to score. The 4.4 is less a judgment of Rousey than a measure of how little fight there was to rate.
 
-**7. [Cody Garbrandt vs Xiao Long](/fights/cody-garbrandt-vs-xiao-long)** · UFC 326, March 7
-Hyped **7.3**/10 (6 votes) · Rated **4.3**/10 (15 ratings) · Gap **-3.1**
+**7. [Cody Garbrandt vs Xiao Long](/fights/cody-garbrandt-vs-xiao-long)** · UFC 326, March 7<br>
+Hyped **7.3**/10 (6 votes)<br>
+Rated **4.3**/10 (15 ratings)<br>
+Gap **-3.1**
+
 A prelim repeatedly interrupted by low blows, including a two-point deduction, with Garbrandt visibly ill in the cage afterward. It never found a rhythm; the 4.3 tracked it.
 
-**8. [Movsar Evloev vs Lerone Murphy](/fights/movsar-evloev-vs-lerone-murphy)** · UFC London, March 21
-Hyped **8.0**/10 (5 votes) · Rated **4.9**/10 (19 ratings) · Gap **-3.1**
+**8. [Movsar Evloev vs Lerone Murphy](/fights/movsar-evloev-vs-lerone-murphy)** · UFC London, March 21<br>
+Hyped **8.0**/10 (5 votes)<br>
+Rated **4.9**/10 (19 ratings)<br>
+Gap **-3.1**
+
 Twenty-five minutes between two unbeaten featherweights, decided by a point deduction and late takedowns. Evloev moved to 20-0 by majority decision. High stakes, low output.
 
-**9. [Sean Brady vs Joaquin Buckley 2](/fights/sean-brady-vs-joaquin-buckley-2)** · UFC 328, May 9
-Hyped **7.6**/10 (17 votes) · Rated **4.7**/10 (30 ratings) · Gap **-2.9**
+**9. [Sean Brady vs Joaquin Buckley 2](/fights/sean-brady-vs-joaquin-buckley-2)** · UFC 328, May 9<br>
+Hyped **7.6**/10 (17 votes)<br>
+Rated **4.7**/10 (30 ratings)<br>
+Gap **-2.9**
+
 Brady took Buckley down in every round and won 30-25 on two cards. As effective as it was one-sided, and scored accordingly.
 
-**10. [Caio Borralho vs Reinier de Ridder](/fights/caio-borralho-vs-reinier-de-ridder)** · UFC 326, March 7
-Hyped **7.5**/10 (8 votes) · Rated **4.7**/10 (22 ratings) · Gap **-2.8**
+**10. [Caio Borralho vs Reinier de Ridder](/fights/caio-borralho-vs-reinier-de-ridder)** · UFC 326, March 7<br>
+Hyped **7.5**/10 (8 votes)<br>
+Rated **4.7**/10 (22 ratings)<br>
+Gap **-2.8**
+
 Borralho won every round on every card, controlling distance and shutting down de Ridder's clinch entries. Technically sound, and short on the exchanges a 7.5 hype score is built on.
 
 ## The letdown card of the year: UFC 326
 
-One card accounts for four of the ten. UFC 326: Holloway vs Oliveira produced the year's fourth-, fifth-, seventh-, and tenth-largest gaps, its 9.2-hype main event among them. No other event appears more than twice.
+One card accounts for four of the ten. No other event appears more than twice.
 
-## Where letdowns come from
+If you skipped UFC 326 on March 7, here is what happened. The card was built as an action showcase: a BMF title rematch between Max Holloway and Charles Oliveira on top, hyped at 9.2, with a string of matchups underneath that fans read as guaranteed fireworks. Rob Font against the prospect Raul Rosas Jr. Former champion Cody Garbrandt against Xiao Long. Contenders Caio Borralho and Reinier de Ridder.
 
-Sort the ten by how they ended and two patterns emerge. Eight went to a decision, most of them one-sided control wins or low-output striking matches. The other two, McGregor's knee and Rousey's armbar, lasted a combined 86 seconds. Fights disappoint at the extremes: nothing happens for the full distance, or everything is over before a fight develops.
+Almost none of it played out that way. Oliveira took Holloway down in every round and swept the cards 50-45, a dominant performance with almost none of the striking both men are known for (rated 4.6, the year's fourth-biggest letdown). Rosas wrestled Font to a 30-27 sweep (2.4, fifth). Garbrandt vs Xiao was broken up repeatedly by low blows and a two-point deduction (4.3, seventh). Borralho controlled de Ridder for fifteen minutes without ever being pulled into an exchange (4.7, tenth).
+
+The card-wide numbers tell it cleanly: across UFC 326's seven qualifying fights, fans went in expecting an average of 7.4 and came out rating an average of 5.2. One fight on the card beat its hype, the prelim between Ricky Turcios and Alberto Montes, by half a point.
+
+None of this was bad fighting. Oliveira, Rosas, and Borralho all dominated. But domination by control is the style fans consistently rate lowest, and UFC 326 stacked four of those outcomes on one night.
+
+## One-Sided or Slow
+
+Fights disappoint in one of two ways: nothing happens for the full distance, or everything is over before a fight develops. Eight of the ten letdowns went to a decision, most of them one-sided control wins or low-output striking matches. The other two, McGregor's knee and Rousey's armbar, lasted a combined 86 seconds.
 
 The overdeliveries make the same point from the other side: nine of the ten biggest positive gaps ended in a finish. Fans don't penalize an early ending that arrives as decisive action. What drags a rating down is the absence of action, not the absence of rounds.
 
