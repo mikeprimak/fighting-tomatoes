@@ -52,12 +52,12 @@ const prisma = new PrismaClient();
 const PORT = parseInt(process.env.PORT || '3009', 10);
 const API_KEY = process.env.SCRAPER_API_KEY || '';
 const SCRAPE_INTERVAL_MS = 30 * 1000; // 30 seconds (own-site scrapers: ufc/bkfc/pfl/onefc/oktagon/sherdog)
-// Tapology fetches route through Scrapfly's Web Unlocker (metered — 1000 req/mo
-// on the free tier). Each poll is one Scrapfly request, so 30s polling burns
-// ~120/hr and a single long card can eat half the monthly cap. Poll Tapology 5x
-// slower: it isn't a real-time source anyway (results lag, backfill cron exists),
-// so the extra lag is invisible to users but cuts request burn 5x.
-// See docs/daily/2026-06-13.md + memory project-tapology-scrapfly-cloudflare.
+// Tapology fetches route through the DataImpulse residential proxy + CapSolver
+// (TAPOLOGY_PROXY + CAPSOLVER_KEY in .env — SCRAPFLY_KEY must be UNSET or it
+// hijacks the launcher onto the dead Scrapfly path). Proxy bandwidth is metered
+// per GB, so Tapology still polls 5x slower than own-site scrapers: it isn't a
+// real-time source anyway (results lag, backfill cron exists), and the extra
+// lag is invisible to users. See memory project-tapology-scrapfly-cloudflare.
 const TAPOLOGY_SCRAPE_INTERVAL_MS = 150 * 1000; // 150 seconds
 
 // Adaptive downshift for Tapology only: a healthy card produces fight-status
