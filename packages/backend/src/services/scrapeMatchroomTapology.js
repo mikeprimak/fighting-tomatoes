@@ -1,12 +1,12 @@
 /**
- * Golden Boy Scraper - Scrapes event data from Tapology
+ * Matchroom Scraper - Scrapes event data from Tapology
  *
- * Golden Boy events are listed on Tapology. This scraper extracts
+ * Matchroom Boxing events are listed on Tapology. This scraper extracts
  * fight cards from Tapology event pages.
  *
  * Usage:
- * - Manual: node src/services/scrapeGoldenBoyTapology.js
- * - Automated: SCRAPER_MODE=automated node src/services/scrapeGoldenBoyTapology.js
+ * - Manual: node src/services/scrapeGoldStarTapology.js
+ * - Automated: SCRAPER_MODE=automated node src/services/scrapeGoldStarTapology.js
  */
 
 const { launchTapologyBrowser, waitForCloudflareClear } = require('./tapologyBrowser');
@@ -18,8 +18,8 @@ const { FIGHT_CARD_CONTAINER_SELECTOR, FIGHT_ROW_SELECTOR } = require('./tapolog
 const SCRAPER_MODE = process.env.SCRAPER_MODE || 'manual';
 const OVERALL_TIMEOUT = parseInt(process.env.SCRAPER_TIMEOUT || '600000', 10);
 
-// Tapology URLs for Golden Boy
-const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/1979-golden-boy-promotions-gbp';
+// Tapology URLs for Matchroom Boxing
+const TAPOLOGY_PROMOTION_URL = 'https://www.tapology.com/fightcenter/promotions/2484-matchroom-boxing-mb';
 const TAPOLOGY_BASE_URL = 'https://www.tapology.com';
 
 const DELAYS = {
@@ -36,6 +36,23 @@ const MONTHS = {
   'october': 9, 'oct': 9, 'november': 10, 'nov': 10, 'december': 11, 'dec': 11,
 };
 
+// How many days in the past to still consider "recent" — events older than
+// this are skipped entirely (Matchroom only cares about upcoming cards).
+const STALE_DAYS = 3;
+
+// Tapology event IDs to skip during Matchroom scraping. Matchroom Boxing is the
+// CANONICAL home for its own cards (including co-promotions like Usyk vs.
+// Verhoeven "Glory in Giza", which the Gold Star/Top Rank scrapers deliberately
+// blacklist so they land here). Only add an id here if a card surfaces on the
+// Matchroom hub whose cleaner canonical home is a DIFFERENT scraper. Empty by
+// design. Format: 'TAPOLOGY_ID' from /events/{id}-...
+const SKIP_TAPOLOGY_EVENT_IDS = new Set([]);
+
+function isBlacklistedEventUrl(url) {
+  const match = url && url.match(/\/events\/(\d+)-/);
+  return match ? SKIP_TAPOLOGY_EVENT_IDS.has(match[1]) : false;
+}
+
 function parseTapologyDate(dateStr) {
   if (!dateStr) return null;
   const cleanDate = dateStr.replace(/^(monday|tuesday|wednesday|thursday|friday|saturday|sunday),?\s*/i, '');
@@ -46,13 +63,20 @@ function parseTapologyDate(dateStr) {
   return new Date(parseInt(match[3], 10), month, parseInt(match[2], 10));
 }
 
+function isStale(eventDate) {
+  if (!eventDate) return false;
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - STALE_DAYS);
+  return eventDate < cutoff;
+}
+
 function getEventSlug(url) {
   const match = url.match(/events\/\d+-([^/]+)/);
   return match ? match[1] : null;
 }
 
 async function scrapeEventsList(browser) {
-  console.log('\n📋 Scraping Golden Boy events from Tapology...\n');
+  console.log('\n📋 Scraping Matchroom events from Tapology...\n');
   const page = await browser.newPage();
   await page.setViewport({ width: 1920, height: 1080 });
   await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
@@ -66,23 +90,16 @@ async function scrapeEventsList(browser) {
       const extractedEvents = [];
       const seenUrls = new Set();
       // UPCOMING-ONLY (2026-06-13): scope to #mainUpcoming (upcoming events only).
-      // Page-wide grabs the FULL archive + sidebar bleed; rendering each dead event
-      // via Scrapfly (~30-45 credits) blew the monthly cap. Fall back to #content
-      // only if the container is gone — never page-wide. See docs/daily/2026-06-13.md.
-      const upcomingScope = document.querySelector('#mainUpcoming') || document.querySelector('#content') || document;
-      upcomingScope.querySelectorAll('a[href*="/fightcenter/events/"]').forEach(link => {
+      // #content is the FULL archive; rendering each dead event via Scrapfly
+      // (~30-45 credits) blew the monthly cap. Matchroom slugs carry no org marker,
+      // so the isStale date filter below is a secondary net. Fall back to #content
+      // only if the container is gone. See docs/daily/2026-06-13.md.
+      const scope = document.querySelector('#mainUpcoming') || document.querySelector('#content') || document;
+      scope.querySelectorAll('a[href*="/fightcenter/events/"]').forEach(link => {
         const eventUrl = link.href;
         const eventName = link.textContent.trim();
         if (!eventUrl || !eventName || eventName.length < 3) return;
         if (seenUrls.has(eventUrl)) return;
-        // Golden Boy events on Tapology are named by HEADLINER, not the promotion
-        // (e.g. /events/{id}-collazo-vs-canoy), so a positive "golden-boy"-in-slug
-        // filter dropped almost the entire hub (2026-07-21 fix). Instead exclude
-        // slugs whose canonical home is a DIFFERENT scraper — mirrors Top Rank's
-        // exclusion model. #mainUpcoming already scopes to Golden Boy's own hub.
-        const urlLower = eventUrl.toLowerCase();
-        const nonGoldenBoyPrefixes = ['matchroom', 'top-rank', 'gold-star', 'zuffa'];
-        if (nonGoldenBoyPrefixes.some(p => urlLower.includes(p))) return;
         seenUrls.add(eventUrl);
 
         const container = link.closest('div, li, section, tr') || link.parentElement;
@@ -100,10 +117,22 @@ async function scrapeEventsList(browser) {
     await page.close();
     const uniqueEvents = [];
     const seenUrls = new Set();
+    let skippedStale = 0;
     for (const event of events) {
-      if (!seenUrls.has(event.eventUrl)) { seenUrls.add(event.eventUrl); uniqueEvents.push(event); }
+      if (seenUrls.has(event.eventUrl)) continue;
+      seenUrls.add(event.eventUrl);
+      // Skip clearly-past events early to avoid a slow per-page scrape.
+      const parsedDate = parseTapologyDate(event.dateText);
+      if (parsedDate && isStale(parsedDate)) {
+        skippedStale++;
+        continue;
+      }
+      uniqueEvents.push(event);
     }
-    console.log(`✅ Found ${uniqueEvents.length} Golden Boy events\n`);
+    if (skippedStale > 0) {
+      console.log(`⏭  Skipped ${skippedStale} past events (>${STALE_DAYS} days old)`);
+    }
+    console.log(`✅ Found ${uniqueEvents.length} upcoming Matchroom events\n`);
     return uniqueEvents;
   } catch (error) {
     console.error('Error scraping events list:', error.message);
@@ -161,10 +190,11 @@ async function scrapeEventPage(browser, eventUrl) {
       const dateMatch = pageText.match(/((?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+)?(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4}/i);
       if (dateMatch) data.dateText = dateMatch[0].trim();
 
-      // Extract event start time - try targeted CSS selector first, then fall back to page text
-      // Iterate ALL li > span.font-bold to find the Date/Time label. Fight-row
-      // labels (e.g. "[W]", "[Main Event]") are also `li span.font-bold` and on
-      // some renderings appear earlier in DOM order than the sidebar row.
+      // Extract event start time - iterate ALL li > span.font-bold to find the
+      // one labeled "Date/Time:". Fight-row labels (e.g. "[W]", "[Main Event]")
+      // are also `li span.font-bold` and on some renderings appear earlier in
+      // DOM order than the sidebar Date/Time row, so querySelector (first match)
+      // would land on the wrong span and skip extraction.
       const fontBoldLabels_dt = document.querySelectorAll('li span.font-bold');
       let dateTimeLi = null;
       for (const lbl_dt of fontBoldLabels_dt) {
@@ -234,7 +264,7 @@ async function scrapeEventPage(browser, eventUrl) {
         if (processedPairs.has(pairKey)) return;
         processedPairs.add(pairKey);
         data.fights.push({
-          fightId: `golden-boy-fight-${data.fights.length + 1}`,
+          fightId: `matchroom-fight-${data.fights.length + 1}`,
           order: data.fights.length + 1,
           cardType: data.fights.length === 0 ? 'Main Event' : 'Main Card',
           weightClass: '', scheduledRounds: 12, isTitle: false,
@@ -260,7 +290,7 @@ async function scrapeEventPage(browser, eventUrl) {
 }
 
 async function main() {
-  console.log('\n🚀 Starting Golden Boy Tapology Scraper\n');
+  console.log('\n🚀 Starting Matchroom Tapology Scraper\n');
   console.log('='.repeat(60));
   const browser = await launchTapologyBrowser();
 
@@ -272,6 +302,10 @@ async function main() {
     const athleteMap = new Map();
 
     for (const discovered of discoveredEvents) {
+      if (isBlacklistedEventUrl(discovered.eventUrl)) {
+        console.log(`\n⏭  Skipping blacklisted event: ${discovered.eventName} (${discovered.eventUrl}) — canonical home is another scraper`);
+        continue;
+      }
       console.log(`\n📄 Processing event: ${discovered.eventName}`);
       await new Promise(r => setTimeout(r, delays.betweenPages));
       const eventData = await scrapeEventPage(browser, discovered.eventUrl);
@@ -279,6 +313,13 @@ async function main() {
       if (eventData.dateText) {
         const parsedDate = parseTapologyDate(eventData.dateText);
         if (parsedDate) eventData.eventDate = parsedDate.toISOString();
+      }
+
+      // Backup staleness check — catches events whose listing-page date had
+      // no year so they couldn't be filtered in scrapeEventsList.
+      if (eventData.eventDate && isStale(new Date(eventData.eventDate))) {
+        console.log(`      ⏭  Skipping past event (${eventData.dateText})`);
+        continue;
       }
 
       const eventSlug = getEventSlug(discovered.eventUrl) || discovered.eventName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
@@ -300,7 +341,7 @@ async function main() {
       }
     }
 
-    const outputDir = path.join(__dirname, '../../scraped-data/goldenboy');
+    const outputDir = path.join(__dirname, '../../scraped-data/matchroom');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const outputData = { events: allEvents };
@@ -331,7 +372,7 @@ async function runWithTimeout() {
 
 if (require.main === module) {
   const startTime = Date.now();
-  console.log(`🚀 Starting Golden Boy scraper in ${SCRAPER_MODE} mode...`);
+  console.log(`🚀 Starting Matchroom scraper in ${SCRAPER_MODE} mode...`);
   runWithTimeout()
     .then(() => { console.log(`✅ Completed in ${Math.floor((Date.now() - startTime) / 1000)}s`); process.exit(0); })
     .catch(error => { console.error(`\n❌ Failed after ${Math.floor((Date.now() - startTime) / 1000)}s:`, error.message); process.exit(1); });

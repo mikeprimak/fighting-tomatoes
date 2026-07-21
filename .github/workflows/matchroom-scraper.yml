@@ -40,9 +40,11 @@ jobs:
           pnpm build
       - name: Install Chromium
         run: cd packages/backend && npx puppeteer browsers install chrome
-      - name: Run Matchroom Scraper
+      - name: Run Matchroom Tapology Scraper
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          TAPOLOGY_PROXY: ${{ secrets.TAPOLOGY_PROXY }}
+          CAPSOLVER_KEY: ${{ secrets.CAPSOLVER_KEY }}
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY: ${{ secrets.R2_ACCESS_KEY }}
           R2_SECRET_KEY: ${{ secrets.R2_SECRET_KEY }}
@@ -51,8 +53,8 @@ jobs:
           SCRAPER_MODE: automated
         run: |
           cd packages/backend
-          node dist/services/scrapeAllMatchroomData.js
-          node -e "require('./dist/services/matchroomDataParser.js').importMatchroomData().then(() => process.exit(0))"
+          node dist/services/scrapeMatchroomTapology.js
+          node -e "require('./dist/services/matchroomTapologyDataParser.js').importMatchroomTapologyData().then(() => process.exit(0))"
       - name: Report failure
         if: failure()
         run: |

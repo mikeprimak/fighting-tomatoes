@@ -1,8 +1,10 @@
 name: Golden Boy Scraper
 
 on:
-  schedule:
-    - cron: "0 21 * * *"
+  # Scheduled runs disabled 2026-07-21 — goldenboy.com scraper unreliable and it
+  # conflicted with the working Tapology scraper (goldenboy-tapology-scraper.yml),
+  # which is now the canonical Golden Boy source. Keep manual dispatch in case the
+  # direct scraper is ever repaired.
   workflow_dispatch:
 
 jobs:

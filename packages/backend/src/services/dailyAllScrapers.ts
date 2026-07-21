@@ -23,6 +23,7 @@ import { importBKFCData } from './bkfcDataParser';
 import { importPFLData } from './pflDataParser';
 import { importOneFCData } from './oneFCDataParser';
 import { importMatchroomData } from './matchroomDataParser';
+import { importMatchroomTapologyData } from './matchroomTapologyDataParser';
 import { importGoldenBoyData } from './goldenBoyDataParser';
 import { importGoldStarData } from './goldStarDataParser';
 import { importTopRankData } from './topRankDataParser';
@@ -74,13 +75,18 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     timeout: 1500000, // 25 minutes
   },
   MATCHROOM: {
-    scraperFile: 'scrapeAllMatchroomData.js',
-    importFn: importMatchroomData,
+    // Migrated 2026-07-21 from the matchroomboxing.com scraper (returned 0 events
+    // after a site redesign) to Tapology, matching the other boxing orgs. Old
+    // scrapeAllMatchroomData.js + importMatchroomData retained for reference.
+    scraperFile: 'scrapeMatchroomTapology.js',
+    importFn: importMatchroomTapologyData,
     displayName: 'Matchroom Boxing',
     timeout: 1500000, // 25 minutes
   },
   GOLDENBOY: {
-    scraperFile: 'scrapeAllGoldenBoyData.js',
+    // Migrated to Tapology (goldenboy.com scraper unreliable). The Tapology
+    // scraper+parser pair already runs in prod via goldenboy-tapology-scraper.yml.
+    scraperFile: 'scrapeGoldenBoyTapology.js',
     importFn: importGoldenBoyData,
     displayName: 'Golden Boy Promotions',
     timeout: 1500000, // 25 minutes
@@ -92,7 +98,9 @@ const SCRAPER_CONFIG: Record<OrganizationType, {
     timeout: 1500000, // 25 minutes
   },
   TOPRANK: {
-    scraperFile: 'scrapeAllTopRankData.js',
+    // Migrated to Tapology 2026-04-14 (toprank.com dates stopped parsing). The
+    // Tapology scraper+parser pair already runs in prod via toprank-tapology-scraper.yml.
+    scraperFile: 'scrapeTopRankTapology.js',
     importFn: importTopRankData,
     displayName: 'Top Rank Boxing',
     timeout: 1500000, // 25 minutes

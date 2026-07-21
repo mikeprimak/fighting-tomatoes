@@ -1,0 +1,806 @@
+// Matchroom Boxing Data Parser - Imports scraped JSON data into database
+import { prisma } from '../lib/prisma';
+import { PrismaClient, WeightClass, Gender, Sport } from '@prisma/client';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { uploadFighterImage, uploadEventImage } from './imageStorage';
+import { stripDiacritics } from '../utils/fighterMatcher';
+import { eventTimeToUTC } from '../utils/timezone';
+import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
+import { upsertFightSwapAware } from '../utils/fightUpsert';
+import { findExactFighterId, normalizeFullName, resolveRenamedPair } from '../utils/fighterRename';
+import {
+  CANCELLATION_STRIKE_THRESHOLD,
+  MIN_SCRAPED_EVENTS_FOR_CANCEL,
+  MIN_HEALTHY_SCRAPE_FIGHTS,
+  computeCancellationSafetyFloor,
+  decideStrike,
+  isScrapeHealthyForCancellation,
+} from './cancellationGuards';
+
+
+// ============== TYPE DEFINITIONS ==============
+
+interface ScrapedMatchroomTapologyFighter {
+  name: string;
+  nickname?: string | null;
+  url: string;
+  imageUrl: string | null;
+  localImagePath?: string;
+  record?: string | null;
+}
+
+interface ScrapedMatchroomTapologyFight {
+  fightId: string;
+  order: number;
+  cardType: string;
+  weightClass: string;
+  scheduledRounds: number;
+  isTitle: boolean;
+  fighterA: {
+    name: string;
+    nickname?: string | null;
+    athleteUrl: string;
+    imageUrl: string | null;
+    record: string;
+    rank?: string;
+    country: string;
+    odds?: string;
+  };
+  fighterB: {
+    name: string;
+    nickname?: string | null;
+    athleteUrl: string;
+    imageUrl: string | null;
+    record: string;
+    rank?: string;
+    country: string;
+    odds?: string;
+  };
+}
+
+interface ScrapedMatchroomTapologyEvent {
+  eventName: string;
+  eventType: string;
+  eventUrl: string;
+  eventSlug: string;
+  venue: string;
+  city: string;
+  state: string;
+  country: string;
+  dateText: string;
+  eventDate: string | null; // ISO date string
+  eventImageUrl: string | null;
+  eventStartTime?: string | null;
+  status: string;
+  fights?: ScrapedMatchroomTapologyFight[];
+  localImagePath?: string;
+}
+
+interface ScrapedMatchroomTapologyEventsData {
+  events: ScrapedMatchroomTapologyEvent[];
+}
+
+interface ScrapedMatchroomTapologyAthletesData {
+  athletes: ScrapedMatchroomTapologyFighter[];
+}
+
+// ============== UTILITY FUNCTIONS ==============
+
+/**
+ * Parse boxing weight class string to WeightClass enum.
+ * Boxing uses different weight classes than MMA — closest matches used.
+ */
+function parseBoxingWeightClass(weightClassStr: string): WeightClass | null {
+  const normalized = weightClassStr.toLowerCase().trim();
+
+  const weightClassMapping: Record<string, WeightClass> = {
+    'strawweight': WeightClass.STRAWWEIGHT,
+    'light flyweight': WeightClass.STRAWWEIGHT,
+    'flyweight': WeightClass.FLYWEIGHT,
+    'super flyweight': WeightClass.FLYWEIGHT,
+    'bantamweight': WeightClass.BANTAMWEIGHT,
+    'super bantamweight': WeightClass.BANTAMWEIGHT,
+    'featherweight': WeightClass.FEATHERWEIGHT,
+    'super featherweight': WeightClass.FEATHERWEIGHT,
+    'junior lightweight': WeightClass.FEATHERWEIGHT,
+    'lightweight': WeightClass.LIGHTWEIGHT,
+    'super lightweight': WeightClass.LIGHTWEIGHT,
+    'junior welterweight': WeightClass.LIGHTWEIGHT,
+    'welterweight': WeightClass.WELTERWEIGHT,
+    'super welterweight': WeightClass.WELTERWEIGHT,
+    'junior middleweight': WeightClass.WELTERWEIGHT,
+    'middleweight': WeightClass.MIDDLEWEIGHT,
+    'super middleweight': WeightClass.MIDDLEWEIGHT,
+    'light heavyweight': WeightClass.LIGHT_HEAVYWEIGHT,
+    'cruiserweight': WeightClass.LIGHT_HEAVYWEIGHT,
+    'heavyweight': WeightClass.HEAVYWEIGHT,
+  };
+
+  for (const [key, value] of Object.entries(weightClassMapping)) {
+    if (normalized.includes(key)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function inferGenderFromWeightClass(weightClassStr: string): Gender {
+  const normalized = (weightClassStr || '').toLowerCase();
+  if (normalized.includes("women's") || normalized.includes('womens') || normalized.includes('female')) {
+    return Gender.FEMALE;
+  }
+  return Gender.MALE;
+}
+
+function parseGoldStarFighterName(
+  name: string
+): { firstName: string; lastName: string } {
+  let decodedName = name;
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(name)) {
+      decodedName = decodeURIComponent(name);
+    }
+  } catch (e) {
+    decodedName = name;
+  }
+
+  const cleanName = decodedName.trim();
+  const nameParts = cleanName.split(/\s+/);
+
+  if (nameParts.length === 1) {
+    return { firstName: '', lastName: stripDiacritics(nameParts[0]) };
+  }
+
+  const firstName = stripDiacritics(nameParts[0]);
+  const lastName = stripDiacritics(nameParts.slice(1).join(' '));
+  return { firstName, lastName };
+}
+
+function parseRecord(record: string): { wins: number; losses: number; draws: number; kos?: number } {
+  const recordMatch = record.match(/(\d+)\s*-\s*(\d+)(?:\s*-\s*(\d+))?/);
+  const koMatch = record.match(/(\d+)\s*KO/i);
+
+  return {
+    wins: recordMatch ? parseInt(recordMatch[1], 10) : 0,
+    losses: recordMatch ? parseInt(recordMatch[2], 10) : 0,
+    draws: recordMatch && recordMatch[3] ? parseInt(recordMatch[3], 10) : 0,
+    kos: koMatch ? parseInt(koMatch[1], 10) : undefined
+  };
+}
+
+function parseGoldStarDate(dateStr: string | null): Date {
+  if (!dateStr) {
+    return new Date('2099-01-01');
+  }
+  return new Date(dateStr);
+}
+
+/**
+ * Parse event start time to Date object.
+ * Matchroom Boxing is UK-based, so times are in Europe/London (handles GMT/BST).
+ */
+function parseGoldStarEventStartTime(
+  eventDate: Date,
+  eventStartTime: string | null | undefined
+): Date | null {
+  return eventTimeToUTC(eventDate, eventStartTime, 'Europe/London');
+}
+
+// ============== PARSER FUNCTIONS ==============
+
+async function importGoldStarFighters(
+  athletesData: ScrapedMatchroomTapologyAthletesData
+): Promise<Map<string, string>> {
+  const fighterNameToId = new Map<string, string>();
+
+  console.log(`\n📦 Importing ${athletesData.athletes.length} Matchroom fighters...`);
+
+  for (const athlete of athletesData.athletes) {
+    const { firstName, lastName } = parseGoldStarFighterName(athlete.name);
+
+    if (!firstName && !lastName) {
+      console.warn(`  ⚠ Skipping athlete with no valid name: ${athlete.name}`);
+      continue;
+    }
+
+    const recordParts = athlete.record ? parseRecord(athlete.record) : { wins: 0, losses: 0, draws: 0 };
+
+    let profileImageUrl: string | null = null;
+    if (athlete.imageUrl) {
+      try {
+        profileImageUrl = await uploadFighterImage(athlete.imageUrl, `${firstName} ${lastName}`);
+      } catch (error) {
+        console.warn(`  ⚠ Image upload failed for ${firstName} ${lastName}, using original URL`);
+        profileImageUrl = athlete.imageUrl;
+      }
+    }
+
+    try {
+      const fighter = await prisma.fighter.upsert({
+        where: {
+          firstName_lastName: {
+            firstName,
+            lastName,
+          }
+        },
+        update: {
+          profileImage: profileImageUrl || undefined,
+          nickname: athlete.nickname || undefined,
+          wins: recordParts.wins,
+          losses: recordParts.losses,
+          draws: recordParts.draws,
+        },
+        create: {
+          firstName,
+          lastName,
+          nickname: athlete.nickname || undefined,
+          profileImage: profileImageUrl,
+          gender: Gender.MALE,
+          sport: Sport.BOXING,
+          isActive: true,
+          wins: recordParts.wins,
+          losses: recordParts.losses,
+          draws: recordParts.draws,
+        }
+      });
+
+      fighterNameToId.set(athlete.name.toLowerCase(), fighter.id);
+      console.log(`  ✓ ${firstName} ${lastName}`);
+    } catch (error) {
+      console.error(`  ✗ Failed to import ${firstName} ${lastName}:`, error);
+    }
+  }
+
+  console.log(`✅ Imported ${fighterNameToId.size} Matchroom fighters\n`);
+  return fighterNameToId;
+}
+
+async function importGoldStarEvents(
+  eventsData: ScrapedMatchroomTapologyEventsData,
+  fighterNameToId: Map<string, string>
+): Promise<void> {
+  console.log(`\n📦 Importing ${eventsData.events.length} Matchroom events...`);
+
+  const uniqueEvents = new Map<string, ScrapedMatchroomTapologyEvent>();
+  for (const event of eventsData.events) {
+    if (!uniqueEvents.has(event.eventUrl)) {
+      uniqueEvents.set(event.eventUrl, event);
+    }
+  }
+  console.log(`  📋 ${uniqueEvents.size} unique events (${eventsData.events.length - uniqueEvents.size} duplicates removed)`);
+
+  // Global cancellation sanity gate: skip ALL cancellation passes if scrape returned almost nothing.
+  const scrapeIsSane = uniqueEvents.size >= MIN_SCRAPED_EVENTS_FOR_CANCEL;
+  if (!scrapeIsSane) {
+    console.log(`  ⚠️  Scrape returned only ${uniqueEvents.size} events (< ${MIN_SCRAPED_EVENTS_FOR_CANCEL}). Skipping ALL cancellation passes — treating scrape as broken.`);
+  }
+
+  for (const [eventUrl, eventData] of Array.from(uniqueEvents.entries())) {
+    const eventDate = parseGoldStarDate(eventData.eventDate);
+
+    const location = [eventData.city, eventData.state, eventData.country]
+      .filter(Boolean)
+      .join(', ') || 'TBA';
+
+    let bannerImageUrl: string | undefined;
+    if (eventData.eventImageUrl) {
+      try {
+        bannerImageUrl = await uploadEventImage(eventData.eventImageUrl, eventData.eventName);
+      } catch (error) {
+        console.warn(`  ⚠ Banner upload failed for ${eventData.eventName}, using original URL`);
+        bannerImageUrl = eventData.eventImageUrl;
+      }
+    }
+
+    const mainStartTime = parseGoldStarEventStartTime(
+      eventDate,
+      eventData.eventStartTime
+    );
+    if (!mainStartTime) {
+      console.warn(`[GoldStar] ⚠️ No start time found for "${eventData.eventName}" (date: ${eventData.dateText}). Event will NOT auto-transition to LIVE.`);
+    }
+
+    // Look up by ufcUrl ONLY. The Tapology event ID is the unique stable identifier;
+    // a name fallback merges sibling events whose generic titles collide before
+    // headliners are announced (see Gamebred fix 2026-05-03).
+    let event = await prisma.event.findFirst({
+      where: { ufcUrl: eventUrl },
+    });
+
+    if (event) {
+      // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
+      // except un-cancel events that reappear on the source site.
+      const wasCancelled = event.eventStatus === 'CANCELLED';
+      event = await prisma.event.update({
+        where: { id: event.id },
+        data: {
+          name: eventData.eventName,
+          date: eventDate,
+          venue: eventData.venue || undefined,
+          location,
+          bannerImage: bannerImageUrl,
+          ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
+          missingScrapeCount: 0, // event present in this scrape — clear strike counter
+          ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),
+        }
+      });
+      if (wasCancelled) {
+        console.log(`    ✅ Un-cancelled event (reappeared on source): ${eventData.eventName}`);
+        await prisma.fight.updateMany({
+          where: { eventId: event.id, fightStatus: 'CANCELLED' },
+          data: { fightStatus: 'UPCOMING', missingScrapeCount: 0 },
+        });
+      }
+    } else {
+      const now = new Date();
+      const initialStatus = (eventData.status === 'Complete' || eventDate < now) ? 'COMPLETED' : 'UPCOMING';
+      event = await prisma.event.create({
+        data: {
+          name: eventData.eventName,
+          promotion: 'Matchroom Boxing',
+          date: eventDate,
+          venue: eventData.venue || undefined,
+          location,
+          bannerImage: bannerImageUrl,
+          ufcUrl: eventUrl,
+          mainStartTime: mainStartTime || undefined,
+          scraperType: 'tapology',
+          eventStatus: initialStatus,
+        }
+      });
+    }
+
+    console.log(`  ✓ Event: ${eventData.eventName} (${eventDate.toLocaleDateString()})`);
+
+    let fightsImported = 0;
+    const fights = eventData.fights || [];
+    // Every fighter name on this event's scraped card, normalized — the
+    // rename-fork guard uses this to tell a respelling apart from a genuine
+    // opponent change (RAF Georgia 2026-07-10; rafDataParser is the template).
+    const renameGuardNames = new Set<string>();
+    for (const f of fights) {
+      renameGuardNames.add(normalizeFullName(f.fighterA.name));
+      renameGuardNames.add(normalizeFullName(f.fighterB.name));
+    }
+
+    for (const fightData of fights) {
+      let fighter1Id = fighterNameToId.get(fightData.fighterA.name.toLowerCase());
+      let fighter2Id = fighterNameToId.get(fightData.fighterB.name.toLowerCase());
+
+      // The athlete import misses fighters that only appear on fight cards —
+      // resolve those by exact DB name so the rename guard always has its anchor.
+      if (!fighter1Id) {
+        const { firstName, lastName } = parseGoldStarFighterName(fightData.fighterA.name);
+        fighter1Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+      if (!fighter2Id) {
+        const { firstName, lastName } = parseGoldStarFighterName(fightData.fighterB.name);
+        fighter2Id = await findExactFighterId(prisma, firstName, lastName);
+      }
+
+      // Rename-fork guard: exactly one side resolved and the unknown name is a
+      // respelling of the resolved side's existing opponent on this event →
+      // rename that row in place instead of forking a duplicate fighter+fight.
+      ({ fighter1Id, fighter2Id } = await resolveRenamedPair(prisma, {
+        eventId: event.id,
+        fighter1Id,
+        fighter2Id,
+        scrapedName1: fightData.fighterA.name,
+        scrapedName2: fightData.fighterB.name,
+        scrapedEventNames: renameGuardNames,
+      }));
+      if (fighter1Id) fighterNameToId.set(fightData.fighterA.name.toLowerCase(), fighter1Id);
+      if (fighter2Id) fighterNameToId.set(fightData.fighterB.name.toLowerCase(), fighter2Id);
+
+      if (!fighter1Id || !fighter2Id) {
+        let f1Id = fighter1Id;
+        let f2Id = fighter2Id;
+
+        if (!f1Id) {
+          const { firstName, lastName } = parseGoldStarFighterName(fightData.fighterA.name);
+          const recordParts = fightData.fighterA.record ? parseRecord(fightData.fighterA.record) : { wins: 0, losses: 0, draws: 0 };
+          try {
+            const fighter = await prisma.fighter.upsert({
+              where: {
+                firstName_lastName: { firstName, lastName }
+              },
+              update: {},
+              create: {
+                firstName,
+                lastName,
+                nickname: fightData.fighterA.nickname || undefined,
+                gender: inferGenderFromWeightClass(fightData.weightClass),
+                sport: Sport.BOXING,
+                isActive: true,
+                wins: recordParts.wins,
+                losses: recordParts.losses,
+                draws: recordParts.draws,
+              }
+            });
+            f1Id = fighter.id;
+            fighterNameToId.set(fightData.fighterA.name.toLowerCase(), fighter.id);
+          } catch (e) {
+            console.warn(`    ⚠ Failed to create fighter: ${fightData.fighterA.name}`);
+            continue;
+          }
+        }
+
+        if (!f2Id) {
+          const { firstName, lastName } = parseGoldStarFighterName(fightData.fighterB.name);
+          const recordParts = fightData.fighterB.record ? parseRecord(fightData.fighterB.record) : { wins: 0, losses: 0, draws: 0 };
+          try {
+            const fighter = await prisma.fighter.upsert({
+              where: {
+                firstName_lastName: { firstName, lastName }
+              },
+              update: {},
+              create: {
+                firstName,
+                lastName,
+                nickname: fightData.fighterB.nickname || undefined,
+                gender: inferGenderFromWeightClass(fightData.weightClass),
+                sport: Sport.BOXING,
+                isActive: true,
+                wins: recordParts.wins,
+                losses: recordParts.losses,
+                draws: recordParts.draws,
+              }
+            });
+            f2Id = fighter.id;
+            fighterNameToId.set(fightData.fighterB.name.toLowerCase(), fighter.id);
+          } catch (e) {
+            console.warn(`    ⚠ Failed to create fighter: ${fightData.fighterB.name}`);
+            continue;
+          }
+        }
+
+        if (!f1Id || !f2Id) {
+          console.warn(`    ⚠ Skipping fight - fighters not found: ${fightData.fighterA.name} vs ${fightData.fighterB.name}`);
+          continue;
+        }
+
+        await createGoldStarFight(event.id, f1Id, f2Id, fightData);
+        fightsImported++;
+        continue;
+      }
+
+      await createGoldStarFight(event.id, fighter1Id, fighter2Id, fightData);
+      fightsImported++;
+    }
+
+    if (fights.length > 0) {
+      console.log(`    ✓ Imported ${fightsImported}/${fights.length} fights`);
+
+      const scrapedFighterNames = new Set<string>();
+      for (const fightData of fights) {
+        scrapedFighterNames.add(fightData.fighterA.name.toLowerCase().trim());
+        scrapedFighterNames.add(fightData.fighterB.name.toLowerCase().trim());
+      }
+
+      const scrapedFightPairs = new Set<string>();
+      for (const fightData of fights) {
+        const pairKey = [
+          fightData.fighterA.name.toLowerCase().trim(),
+          fightData.fighterB.name.toLowerCase().trim()
+        ].sort().join('|');
+        scrapedFightPairs.add(pairKey);
+      }
+
+      const existingDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          fightStatus: { in: ['UPCOMING', 'LIVE'] },
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      let cancelledCount = 0;
+      let unCancelledCount = 0;
+      let strikeCount = 0;
+
+      // Cancellation guards. Once an event has gone LIVE/COMPLETED the live
+      // tracker owns the fight list — daily scrapers must not cancel.
+      // For UPCOMING events, require the scrape to return ≥75% of the DB's
+      // non-cancelled fight count to guard against partial-page renders.
+      const eventInProgress = event.eventStatus !== 'UPCOMING';
+      const cancellationSafetyFloor = computeCancellationSafetyFloor(existingDbFights.length);
+      const scrapeLooksComplete = isScrapeHealthyForCancellation(fights.length, existingDbFights.length);
+      const shouldCancelMissing =
+        scrapeIsSane && !eventInProgress && (existingDbFights.length === 0 || scrapeLooksComplete);
+
+      if (eventInProgress) {
+        console.log(`    ⏭️  Skipping cancellation (event is ${event.eventStatus} — live tracker owns this).`);
+      } else if (!scrapeLooksComplete && existingDbFights.length > 0) {
+        console.log(`    ⚠️  Skipping cancellation (scrape returned ${fights.length} fights, DB has ${existingDbFights.length} non-cancelled, need ≥${cancellationSafetyFloor} (75%) or ≥${MIN_HEALTHY_SCRAPE_FIGHTS} (absolute)). Treating as partial scrape.`);
+      }
+
+      if (shouldCancelMissing) {
+        for (const dbFight of existingDbFights) {
+          const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+          const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+          const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+          if (!scrapedFightPairs.has(dbFightPairKey)) {
+            // Two-strike rule: must be missing on consecutive scrapes before cancel.
+            const fighter1Rebooked = scrapedFighterNames.has(fighter1Name);
+            const fighter2Rebooked = scrapedFighterNames.has(fighter2Name);
+            const rebooked = fighter1Rebooked || fighter2Rebooked;
+            // A fighter present in this scrape but in a DIFFERENT matchup is
+            // definitive proof the old bout is dead - a fighter can't appear on
+            // two bouts of the same card. That's not a transient render glitch,
+            // so bypass the two-strike wait and cancel immediately. Without this,
+            // a source that flaps between the old and new matchup keeps resetting
+            // the strike counter and the stale bout never reaches two consecutive
+            // misses, leaving both the old and new fight UPCOMING.
+            const { newCount, shouldCancel: strikeReached } = decideStrike(dbFight.missingScrapeCount);
+            const shouldCancel = strikeReached || rebooked;
+            const reason = rebooked ? 'fighter rebooked' : 'not in scraped data';
+            const matchupLabel = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`;
+
+            if (shouldCancel) {
+              console.log(`    ❌ Cancelling fight (${reason}, strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${matchupLabel}`);
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { fightStatus: 'CANCELLED', missingScrapeCount: newCount }
+              });
+              cancelledCount++;
+            } else {
+              console.log(`    ⚠️  Strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD} on missing fight (${reason}): ${matchupLabel}. Won't cancel until next consecutive miss.`);
+              await prisma.fight.update({
+                where: { id: dbFight.id },
+                data: { missingScrapeCount: newCount }
+              });
+              strikeCount++;
+            }
+          }
+        }
+      }
+
+      const cancelledDbFights = await prisma.fight.findMany({
+        where: {
+          eventId: event.id,
+          fightStatus: 'CANCELLED',
+        },
+        include: {
+          fighter1: true,
+          fighter2: true,
+        }
+      });
+
+      for (const dbFight of cancelledDbFights) {
+        const fighter1Name = `${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName}`.toLowerCase().trim();
+        const fighter2Name = `${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`.toLowerCase().trim();
+        const dbFightPairKey = [fighter1Name, fighter2Name].sort().join('|');
+
+        if (scrapedFightPairs.has(dbFightPairKey)) {
+          console.log(`    ✅ Un-cancelling fight (reappeared in data): ${dbFight.fighter1.firstName} ${dbFight.fighter1.lastName} vs ${dbFight.fighter2.firstName} ${dbFight.fighter2.lastName}`);
+          await prisma.fight.update({
+            where: { id: dbFight.id },
+            data: { fightStatus: 'UPCOMING', missingScrapeCount: 0 }
+          });
+          unCancelledCount++;
+        }
+      }
+
+      if (cancelledCount > 0) {
+        console.log(`    ⚠ Cancelled ${cancelledCount} fights due to rebooking/cancellation`);
+      }
+      if (strikeCount > 0) {
+        console.log(`    ⚠ Struck ${strikeCount} missing fights (will cancel after another consecutive miss)`);
+      }
+      if (unCancelledCount > 0) {
+        console.log(`    ✅ Un-cancelled ${unCancelledCount} fights (reappeared in data)`);
+      }
+    } else {
+      console.log(`    ⚠ No fights found for this event`);
+    }
+  }
+
+  // ============== EVENT-LEVEL CANCELLATION DETECTION ==============
+  const scrapedEventUrls = new Set(Array.from(uniqueEvents.keys()));
+  const scrapedEventNames = new Set(Array.from(uniqueEvents.values()).map(e => e.eventName.toLowerCase().trim()));
+
+  const existingUpcomingEvents = await prisma.event.findMany({
+    where: { promotion: 'Matchroom Boxing', eventStatus: 'UPCOMING' },
+    select: { id: true, name: true, ufcUrl: true, missingScrapeCount: true },
+  });
+
+  let eventsCancelled = 0;
+  let eventsStruck = 0;
+  if (!scrapeIsSane) {
+    console.log(`  ⏭️  Skipping event-level cancellation: scrape returned ${uniqueEvents.size} events (< ${MIN_SCRAPED_EVENTS_FOR_CANCEL}). Treating as broken scrape.`);
+  } else {
+    for (const dbEvent of existingUpcomingEvents) {
+      const isStillOnSite = dbEvent.ufcUrl
+        ? scrapedEventUrls.has(dbEvent.ufcUrl)
+        : scrapedEventNames.has(dbEvent.name.toLowerCase().trim());
+
+      if (!isStillOnSite) {
+        // Two-strike rule: a single missing scrape can be a transient site glitch.
+        const { newCount, shouldCancel } = decideStrike(dbEvent.missingScrapeCount);
+        if (shouldCancel) {
+          await prisma.event.update({
+            where: { id: dbEvent.id },
+            data: { eventStatus: 'CANCELLED', missingScrapeCount: newCount },
+          });
+          console.log(`  ❌ Cancelling event (no longer on Tapology, strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD}): ${dbEvent.name}`);
+          const cancelledFights = await prisma.fight.updateMany({
+            where: { eventId: dbEvent.id, fightStatus: 'UPCOMING' },
+            data: { fightStatus: 'CANCELLED' },
+          });
+          if (cancelledFights.count > 0) console.log(`    ❌ Cancelled ${cancelledFights.count} fights`);
+          eventsCancelled++;
+        } else {
+          await prisma.event.update({
+            where: { id: dbEvent.id },
+            data: { missingScrapeCount: newCount },
+          });
+          console.log(`  ⚠️  Strike ${newCount}/${CANCELLATION_STRIKE_THRESHOLD} on missing event: ${dbEvent.name}. Won't cancel until next consecutive miss.`);
+          eventsStruck++;
+        }
+      }
+    }
+  }
+  if (eventsCancelled > 0) console.log(`  ⚠ Cancelled ${eventsCancelled} Matchroom events no longer on Tapology`);
+  if (eventsStruck > 0) console.log(`  ⚠ Struck ${eventsStruck} missing events (will cancel after another consecutive miss)`);
+
+  console.log(`✅ Imported all Matchroom events\n`);
+}
+
+async function createGoldStarFight(
+  eventId: string,
+  fighter1Id: string,
+  fighter2Id: string,
+  fightData: ScrapedMatchroomTapologyFight
+): Promise<void> {
+  const weightClass = parseBoxingWeightClass(fightData.weightClass);
+  const gender = inferGenderFromWeightClass(fightData.weightClass);
+
+  // Backfill classification only for fighters already classified as this
+  // org's sport — never overwrite sport, never touch a cross-sport fighter
+  // that bled into the scrape. updateMany no-ops when the where misses, so
+  // a bleed fighter is left intact (see lesson_tapology_parsers_overwrite_sport).
+  await prisma.fighter.updateMany({
+    where: { id: fighter1Id, sport: Sport.BOXING },
+    data: {
+      gender,
+      weightClass: weightClass || undefined,
+    }
+  });
+
+  // Backfill classification only for fighters already classified as this
+  // org's sport — never overwrite sport, never touch a cross-sport fighter
+  // that bled into the scrape. updateMany no-ops when the where misses, so
+  // a bleed fighter is left intact (see lesson_tapology_parsers_overwrite_sport).
+  await prisma.fighter.updateMany({
+    where: { id: fighter2Id, sport: Sport.BOXING },
+    data: {
+      gender,
+      weightClass: weightClass || undefined,
+    }
+  });
+
+  const titleName = fightData.isTitle
+    ? `${fightData.weightClass} Championship`
+    : undefined;
+
+  try {
+    const upsertedFight = await upsertFightSwapAware(
+      prisma,
+      { eventId, fighter1Id, fighter2Id },
+      {
+        weightClass,
+        isTitle: fightData.isTitle,
+        titleName,
+        scheduledRounds: fightData.scheduledRounds || (fightData.isTitle ? 12 : 10),
+        orderOnCard: fightData.order,
+        cardType: fightData.cardType,
+        missingScrapeCount: 0, // fight present in this scrape — clear strike counter
+      },
+      {
+        eventId,
+        fighter1Id,
+        fighter2Id,
+        weightClass,
+        isTitle: fightData.isTitle,
+        titleName,
+        scheduledRounds: fightData.scheduledRounds || (fightData.isTitle ? 12 : 10),
+        orderOnCard: fightData.order,
+        cardType: fightData.cardType,
+        fightStatus: 'UPCOMING',
+      },
+      { crossEventDedup: true },
+    );
+
+    if (upsertedFight) {
+      await syncFighterFollowMatchesForFight(upsertedFight.id).catch(err =>
+        console.warn('[FollowSync]', err)
+      );
+    }
+  } catch (error) {
+    console.warn(`    ⚠ Failed to upsert fight:`, error);
+  }
+}
+
+// ============== MAIN IMPORT FUNCTION ==============
+
+export async function importMatchroomTapologyData(options: {
+  eventsFilePath?: string;
+  athletesFilePath?: string;
+} = {}): Promise<void> {
+  const {
+    eventsFilePath = path.join(__dirname, '../../scraped-data/matchroom/latest-events.json'),
+    athletesFilePath = path.join(__dirname, '../../scraped-data/matchroom/latest-athletes.json'),
+  } = options;
+
+  console.log('\n🚀 Starting Matchroom data import...');
+  console.log(`📁 Events file: ${eventsFilePath}`);
+  console.log(`📁 Athletes file: ${athletesFilePath}\n`);
+
+  try {
+    // A missing events file means the scraper found no events to write (e.g. the
+    // promotion has no upcoming events). That's benign for a small/intermittent
+    // promotion — skip the import instead of crashing, which would falsely page the
+    // admin. (Matches the karateCombat/raf/dirtyBoxing idiom. Majors like UFC/BKFC/
+    // ONE FC deliberately throw here instead — zero events there signals a scrape failure.)
+    let eventsJson: string;
+    try {
+      eventsJson = await fs.readFile(eventsFilePath, 'utf-8');
+    } catch {
+      console.log('⚠ Events file not found - scraper likely found no events. Skipping import.');
+      return;
+    }
+    const athletesJson = await fs.readFile(athletesFilePath, 'utf-8');
+
+    const eventsData: ScrapedMatchroomTapologyEventsData = JSON.parse(eventsJson);
+    const athletesData: ScrapedMatchroomTapologyAthletesData = JSON.parse(athletesJson);
+
+    const fighterNameToId = await importGoldStarFighters(athletesData);
+    await importGoldStarEvents(eventsData, fighterNameToId);
+
+    console.log('✅ Matchroom data import completed successfully!\n');
+  } catch (error) {
+    console.error('❌ Error during Matchroom import:', error);
+    throw error;
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+export async function getMatchroomTapologyImportStats(): Promise<{
+  totalFighters: number;
+  totalEvents: number;
+  totalFights: number;
+  upcomingEvents: number;
+}> {
+  const [totalFighters, totalEvents, totalFights, upcomingEvents] = await Promise.all([
+    prisma.fighter.count({ where: { sport: Sport.BOXING } }),
+    prisma.event.count({ where: { promotion: 'Matchroom Boxing' } }),
+    prisma.fight.count({
+      where: {
+        event: { promotion: 'Matchroom Boxing' }
+      }
+    }),
+    prisma.event.count({
+      where: {
+        promotion: 'Matchroom Boxing',
+        date: { gte: new Date() },
+        eventStatus: { not: 'COMPLETED' }
+      }
+    })
+  ]);
+
+  return {
+    totalFighters,
+    totalEvents,
+    totalFights,
+    upcomingEvents
+  };
+}
