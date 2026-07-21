@@ -32,6 +32,14 @@ const SECTION_NOTIF_LEAD_MS = 15 * 60 * 1000;
 // can still rate the fights during/after the broadcast, even though we can't
 // follow the card in real time.
 const NO_TRACKER_LIVE_WINDOW_HOURS = 8;
+// Failsafe threshold: an UPCOMING event with no confirmed start time can never
+// advance to LIVE (Step 1 blocks it). Once its date is this many hours in the
+// past it is abandoned — auto-complete it so it stops surfacing in the app's
+// "live now" bucket. Generous by design: event.date is often a midnight/UTC-hour
+// placeholder, so a genuinely-upcoming card whose start time an operator simply
+// hasn't entered yet can still be many hours from airing on its own date. 36h
+// guarantees we only ever touch truly-stale events, never a real upcoming one.
+const STALE_NO_STARTTIME_HOURS = 36;
 
 let lifecycleTimer: ReturnType<typeof setInterval> | null = null;
 const lastGitHubDispatchByWorkflow: Record<string, number> = {};
@@ -242,9 +250,37 @@ export async function runEventLifecycleCheck(): Promise<{
       // the actual start time. They require manual intervention via the admin panel.
       if (!hasConfirmedStartTime(event)) {
         const eventDate = event.date;
+        const msSinceDate = now.getTime() - eventDate.getTime();
+
+        // Failsafe: no start time means this event can never advance to LIVE
+        // below, so once it is well past its date it would otherwise sit
+        // UPCOMING forever — and a past-dated UPCOMING event surfaces in the
+        // app's "live now" bucket (e.g. boxing events un-hidden on promotion
+        // unshelve, 2026-07-21). Auto-complete the event and its fights so it
+        // lands correctly in past events. Shelved promotions are already
+        // skipped above, so their stale events only get completed once the
+        // promotion is unshelved — exactly the recurrence this closes.
+        if (msSinceDate >= STALE_NO_STARTTIME_HOURS * 60 * 60 * 1000) {
+          const staleFights = await prisma.fight.updateMany({
+            where: { eventId: event.id, fightStatus: { in: ['UPCOMING', 'LIVE'] } },
+            data: {
+              fightStatus: 'COMPLETED',
+              completionMethod: 'lifecycle-stale-no-starttime',
+              completedAt: now,
+            },
+          });
+          await prisma.event.update({
+            where: { id: event.id },
+            data: { eventStatus: 'COMPLETED', completionMethod: 'lifecycle-stale-no-starttime' },
+          });
+          results.fightsCompleted += staleFights.count;
+          results.eventsCompleted++;
+          console.log(`[Lifecycle] Stale no-start-time event auto-completed: ${event.name} (date ${eventDate.toISOString()}, ${staleFights.count} fights)`);
+          continue;
+        }
+
         // Only log once per event (when midnight has just passed)
-        const msSinceMidnight = now.getTime() - eventDate.getTime();
-        if (msSinceMidnight >= 0 && msSinceMidnight < LIFECYCLE_INTERVAL_MS * 2) {
+        if (msSinceDate >= 0 && msSinceDate < LIFECYCLE_INTERVAL_MS * 2) {
           console.warn(`[Lifecycle] BLOCKED: ${event.name} has no confirmed start time (only date: ${eventDate.toISOString()}). Set start time or manually mark LIVE via admin panel.`);
         }
         continue;
