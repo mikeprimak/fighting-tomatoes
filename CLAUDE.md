@@ -17,8 +17,8 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 **→ PICK UP HERE. Round Numbers #1 is PUBLISHED; the pitch send is blocked on two Mike-only tasks.** The letdowns article is live and verified at `https://goodfights.app/blog/biggest-fight-letdowns-2026`, through 5 banner rounds + a clickable TOC (latest `0c4e5a1e`).
 
-**Blocking Monday's journalist send, both on Mike:**
-1. **Create `mikeprimak@goodfights.app`** in Zoho (Users → Add User, real user not alias). SPF/DKIM/DMARC all verified healthy for the domain on 2026-07-20. **Send 2-3 tests from it first** — a new mailbox whose first activity is a burst of cold emails to media domains is the classic spam-filter pattern.
+**Blocking Monday's journalist send:**
+1. ~~Create `mikeprimak@goodfights.app`~~ **DONE 2026-07-21** — created as an **alias on `contact@goodfights.app`**, not a separate user. Zoho refused a new user ("not enough licenses" — the org has 1 seat, the free 5-user tier wasn't in effect), and aliases don't consume a license. The Zoho user's login is `avocadomike@hotmail.com`; `contact@goodfights.app` is the mailbox on it, so aliases are added under that user, not a user named contact@. Alias sends authenticate on the domain's own DKIM/SPF, verified healthy 2026-07-20. **Pick the alias in the From dropdown on every send** — the default is still contact@. Replies land in the main inbox (no filter folder set up).
 2. **Fill the `email` column** in `private/marketing/pitches/mma-media-list.csv` (41 rows, ordered by fit not fame). It is deliberately empty: MMA outlets are Cloudflare-blocked and search obfuscates addresses, and **no address was ever pattern-guessed**. Verify current outlet from a recent byline first — Bloody Elbow split in 2026 (GRV Media owns the site; the old team runs The MMA Draw).
 
 Then send the pitches personally (one per email, no BCC, **NO Reddit**), offer custom data pulls to repliers, and watch GA4/PostHog for `utm_campaign=round-numbers-letdowns`.
