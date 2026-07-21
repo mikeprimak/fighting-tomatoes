@@ -496,12 +496,19 @@ async function importTopRankEvents(
       // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
       // except un-cancel events that reappear on the source site.
       const wasCancelled = event.eventStatus === 'CANCELLED';
+      // Don't clobber an existing main-card time. Tapology lists a single coarse
+      // time (often the first-bell / venue-local doors), whereas start-time
+      // discovery resolves the accurate main-card and prelim split. Overwriting
+      // would invert the sections (main earlier than prelim). Only fill
+      // mainStartTime when it is currently null; discovery and admin own it
+      // thereafter. See docs/daily/2026-07-21.md.
+      const mainStartTimeToSet = event.mainStartTime === null ? (mainStartTime || undefined) : undefined;
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
           name: eventData.eventName,
           date: eventDate,
-          mainStartTime: mainStartTime || undefined,
+          mainStartTime: mainStartTimeToSet,
           venue: eventData.venue || undefined,
           location,
           bannerImage: bannerImageUrl,
