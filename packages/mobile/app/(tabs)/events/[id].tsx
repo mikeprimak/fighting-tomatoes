@@ -23,7 +23,7 @@ import { useAuth } from '../../../store/AuthContext';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import { useLiveEventPolling } from '../../../hooks/useLiveEventPolling';
 import { normalizeEventName } from '../../../components/fight-cards/shared/utils';
-import { formatEventDate, formatEventTime } from '../../../utils/dateFormatters';
+import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../../utils/dateFormatters';
 import { getDefaultBanner } from '../../../utils/defaultBanners';
 import { PromotionLogo } from '../../../components/PromotionLogo';
 
@@ -174,7 +174,7 @@ export default function EventDetailScreen() {
   };
 
   const formatDate = (dateString: string) => formatEventDate(dateString, { year: true });
-  const formatTime = (dateString: string) => formatEventTime(dateString);
+  const formatTime = (dateString: string) => `${formatEventTime(dateString)} ${getTimezoneAbbreviation(new Date(dateString))}`;
 
   const getDisplayTime = (event: EventDetails | undefined) => {
     if (!event) return null;
@@ -515,6 +515,7 @@ export default function EventDetailScreen() {
         fight={modalFight}
         onClose={() => setModalFight(null)}
         showNotificationBell={(event as any)?.notificationsAllowed === true}
+        hideEventLink
       />
     </SafeAreaView>
   );

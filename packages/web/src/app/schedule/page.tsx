@@ -52,7 +52,7 @@ export default async function SchedulePage() {
         <h1 className="text-2xl font-bold">MMA &amp; Boxing Schedule</h1>
         <p className="mt-1 text-sm text-text-secondary">
           Every upcoming fight card we track — UFC, BKFC, ONE, Oktagon, PFL, RIZIN, Karate Combat
-          and more — with start times in ET, headliners, and fan hype scores. Updated continuously.
+          and more — with local start times, headliners, and fan hype scores. Updated continuously.
         </p>
       </header>
 

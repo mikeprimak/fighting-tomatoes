@@ -65,13 +65,16 @@ interface UpcomingFightModalProps {
   // Hide the "See Comments" link when opened from the fight-detail screen
   // (the user is already there, so the link would just stack another screen).
   hideSeeComments?: boolean;
+  // Hide the tappable event-name line when the event context is already on
+  // screen behind the modal (event detail; lists grouped under event headers).
+  hideEventLink?: boolean;
 }
 
 // Wheel constants (same as UpcomingFightDetailScreen)
 const FLAME_SLOT_HEIGHT = 115;
 const BLANK_POSITION = 1150; // 10 slots * 115
 
-export default function UpcomingFightModal({ visible, fight, onClose, showNotificationBell = false, hideSeeComments = false }: UpcomingFightModalProps) {
+export default function UpcomingFightModal({ visible, fight, onClose, showNotificationBell = false, hideSeeComments = false, hideEventLink = false }: UpcomingFightModalProps) {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { isAuthenticated } = useAuth();
@@ -478,6 +481,20 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
     onClose();
   }, [onClose]);
 
+  // Fighter/event taps mirror the See Comments link: save pending edits via
+  // handleDone (which closes the modal) before pushing the destination.
+  const handleFighterPress = useCallback(async (fighterId: string) => {
+    await handleDone({ skipReveal: true });
+    router.push(`/fighter/${fighterId}` as any);
+  }, [handleDone]);
+
+  const handleEventPress = useCallback(async () => {
+    const eventId = fight?.event?.id;
+    if (!eventId) return;
+    await handleDone({ skipReveal: true });
+    router.push(`/event/${eventId}` as any);
+  }, [fight?.event?.id, handleDone]);
+
   const handleHypeSelection = useCallback((level: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newHype = selectedHype === level ? null : level;
@@ -605,11 +622,13 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
           {/* Compact fighter row */}
           <View style={styles.fightersRow}>
             <View style={styles.fighterImageWrap}>
-              <Image
-                source={fighter1Img}
-                style={styles.fighterImage}
-                onError={() => setFighter1ImgError(true)}
-              />
+              <TouchableOpacity onPress={() => handleFighterPress(fight.fighter1.id)}>
+                <Image
+                  source={fighter1Img}
+                  style={styles.fighterImage}
+                  onError={() => setFighter1ImgError(true)}
+                />
+              </TouchableOpacity>
               <FollowFighterButton
                 fighterId={fight.fighter1.id}
                 isFollowing={fight.isFollowingFighter1 ?? false}
@@ -618,20 +637,26 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               />
             </View>
             <View style={styles.fighterNamesBlock}>
-              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                {fight.fighter1.lastName}
-              </Text>
+              <TouchableOpacity onPress={() => handleFighterPress(fight.fighter1.id)} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}>
+                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+                  {fight.fighter1.lastName}
+                </Text>
+              </TouchableOpacity>
               <Text style={[styles.vsText, { color: colors.textSecondary }]}>vs</Text>
-              <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
-                {fight.fighter2.lastName}
-              </Text>
+              <TouchableOpacity onPress={() => handleFighterPress(fight.fighter2.id)} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}>
+                <Text style={[styles.fighterName, { color: colors.text }]} numberOfLines={1}>
+                  {fight.fighter2.lastName}
+                </Text>
+              </TouchableOpacity>
             </View>
             <View style={styles.fighterImageWrap}>
-              <Image
-                source={fighter2Img}
-                style={styles.fighterImage}
-                onError={() => setFighter2ImgError(true)}
-              />
+              <TouchableOpacity onPress={() => handleFighterPress(fight.fighter2.id)}>
+                <Image
+                  source={fighter2Img}
+                  style={styles.fighterImage}
+                  onError={() => setFighter2ImgError(true)}
+                />
+              </TouchableOpacity>
               <FollowFighterButton
                 fighterId={fight.fighter2.id}
                 isFollowing={fight.isFollowingFighter2 ?? false}
@@ -640,6 +665,15 @@ export default function UpcomingFightModal({ visible, fight, onClose, showNotifi
               />
             </View>
           </View>
+
+          {/* Tappable event line — only when the event isn't already on screen */}
+          {!hideEventLink && fight.event?.id && fight.event?.name && (
+            <TouchableOpacity style={styles.eventLink} onPress={handleEventPress} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}>
+              <Text style={[styles.eventLinkText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {fight.event.name} {'>'}
+              </Text>
+            </TouchableOpacity>
+          )}
 
           {/* Large flame wheel display */}
           <View style={styles.flameWheelContainer}>
@@ -882,6 +916,16 @@ const styles = StyleSheet.create({
   fighterNamesBlock: {
     alignItems: 'center',
     gap: 2,
+  },
+  eventLink: {
+    marginTop: -4,
+    marginBottom: 10,
+    maxWidth: '90%',
+  },
+  eventLinkText: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
   },
   fighterImage: {
     width: 72,

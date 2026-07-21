@@ -3,11 +3,11 @@ import {
   type ScheduleEvent,
   eventStart,
   eventFirstBell,
-  formatTimeET,
   mainEvent,
   fightLabel,
   peakHype,
 } from '@/lib/schedule';
+import { LocalTime } from '@/components/LocalTime';
 
 /**
  * One event on a schedule hub. Server-rendered, link-rich, and data-forward:
@@ -55,8 +55,8 @@ export function ScheduleEventRow({
             {' · '}
           </>
         )}
-        Main card {formatTimeET(start)}
-        {firstBell.getTime() < start.getTime() && <> · first fight {formatTimeET(firstBell)}</>}
+        Main card <LocalTime iso={start.toISOString()} />
+        {firstBell.getTime() < start.getTime() && <> · first fight <LocalTime iso={firstBell.toISOString()} /></>}
         {(event.venue || event.location) && (
           <> · {[event.venue, event.location].filter(Boolean).join(', ')}</>
         )}

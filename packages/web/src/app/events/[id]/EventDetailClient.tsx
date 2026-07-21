@@ -3,7 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { getEvent, getFights } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
-import { formatEventDate, formatEventTime, formatEventTimeCompact } from '@/utils/dateFormatters';
+import { formatEventDate } from '@/utils/dateFormatters';
+import { localTimeString, useMounted } from '@/components/LocalTime';
 import { FightSectionList } from '@/components/fight-cards/FightSectionList';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
 import { normalizeEventName } from '@/utils/eventName';
@@ -76,6 +77,7 @@ interface Props {
 }
 
 export function EventDetailClient({ eventId, initialEvent, initialFights }: Props) {
+  const mounted = useMounted();
   const { isLoading: authLoading } = useAuth();
 
   const { data: eventData } = useQuery({
@@ -160,7 +162,7 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
           <span>{event.promotion}</span>
           <span>-</span>
           <span>{formatEventDate(event.date, { weekday: 'long', month: 'long', year: true })}</span>
-          {event.mainStartTime && <span>• Main @ {formatEventTime(event.mainStartTime)}</span>}
+          {event.mainStartTime && <span>• Main @ {localTimeString(event.mainStartTime, 'long', mounted)}</span>}
         </div>
         {(event.venue || event.location) && (
           <p className="mt-0.5 text-sm text-text-secondary">
@@ -218,7 +220,7 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
               eventId={event.id}
               section={broadcastKey}
               label={section}
-              time={sectionTime ? formatEventTimeCompact(sectionTime) : undefined}
+              time={sectionTime ? localTimeString(sectionTime, 'compact', mounted) : undefined}
             />
           )}
           {showHeader && (
@@ -226,7 +228,7 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
               <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>
               {sectionTime && !isPast && (
                 <span className="text-[10px] font-semibold tracking-wider text-text-secondary">
-                  @ {formatEventTimeCompact(sectionTime)}
+                  @ {localTimeString(sectionTime, 'compact', mounted)}
                 </span>
               )}
               <div className="h-px flex-1 bg-border" />

@@ -8,6 +8,7 @@ import { getEvents } from '@/lib/api';
 import { isEventLiveNow } from '@/lib/eventStatus';
 import { getHypeHeatmapColor } from '@/utils/heatmap';
 import { useEventBroadcasts } from '@/components/HowToWatch';
+import { localTimeString, useMounted } from '@/components/LocalTime';
 import { SectionHeading } from './SectionHeading';
 
 /**
@@ -51,18 +52,8 @@ function formatDaySubline(dateStr: string): string {
   });
 }
 
-function formatTime(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  // Always show start times in Eastern — the canonical timezone for the cards.
-  const t = d.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'America/New_York',
-  });
-  return `${t} ET`;
-}
+// Start times render via localTimeString: Eastern in the SSR pass, the
+// viewer's local timezone (with label) once mounted.
 
 /** When the card's first fight starts — earliest known bell (early prelims →
  *  prelims → main card). */
@@ -276,6 +267,7 @@ export function WeekendEventsSection() {
  * home's EventRow.
  */
 function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: boolean }) {
+  const mounted = useMounted();
   const summary = aiSummary(event);
   const firstStart = firstFightStart(event);
   const live = isEventLiveNow(event);
@@ -304,7 +296,7 @@ function EventDayCard({ event, hideMeta = false }: { event: any; hideMeta?: bool
   const isMainLabel = hasCardSections(event) && !!event.mainStartTime;
   const shownStart = isMainLabel ? event.mainStartTime : firstStart;
   const timeText = !live && shownStart
-    ? `${isMainLabel ? 'Main' : 'Event'} @ ${formatTime(shownStart)}`
+    ? `${isMainLabel ? 'Main' : 'Event'} @ ${localTimeString(shownStart, 'long', mounted)}`
     : null;
   const metaText = hideMeta ? '' : [timeText, channel].filter(Boolean).join(' · ');
 

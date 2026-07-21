@@ -369,6 +369,7 @@ export default function UpcomingEventsScreen() {
         fight={modalFight}
         onClose={() => setModalFight(null)}
         showNotificationBell={modalShowBell}
+        hideEventLink
       />
     </SafeAreaView>
   );

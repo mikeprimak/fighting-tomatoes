@@ -288,6 +288,7 @@ export default function LiveEventsScreen() {
         fight={modalFight}
         onClose={() => setModalFight(null)}
         showNotificationBell={modalShowBell}
+        hideEventLink
       />
     </SafeAreaView>
   );

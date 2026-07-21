@@ -1,6 +1,7 @@
 'use client';
 
-import { formatEventDate, formatEventTimeCompact, formatTimeUntil, formatTimeAgo } from '@/utils/dateFormatters';
+import { formatEventDate, formatTimeUntil, formatTimeAgo } from '@/utils/dateFormatters';
+import { localTimeString, useMounted } from '@/components/LocalTime';
 import { FightSectionList } from '@/components/fight-cards/FightSectionList';
 import { HowToWatch, useEventBroadcasts } from '@/components/HowToWatch';
 import { normalizeEventName } from '@/utils/eventName';
@@ -73,6 +74,7 @@ function sectionToBroadcastKey(section: string): CardSection | null {
 }
 
 export function EventCard({ event, mode }: EventCardProps) {
+  const mounted = useMounted();
   const rawFights = event.fights || [];
   const seenIds = new Set<string>();
   const fights = rawFights.filter((f: any) => {
@@ -198,7 +200,7 @@ export function EventCard({ event, mode }: EventCardProps) {
               eventId={event.id}
               section={broadcastKey}
               label={section}
-              time={sTime ? formatEventTimeCompact(sTime) : undefined}
+              time={sTime ? localTimeString(sTime, 'compact', mounted) : undefined}
             />
           )}
           {showHeader && (
@@ -206,7 +208,7 @@ export function EventCard({ event, mode }: EventCardProps) {
               <span className="text-[10px] font-semibold tracking-wider text-text-secondary">{section}</span>
               {sTime && mode !== 'past' && (
                 <span className="text-[10px] font-semibold tracking-wider text-text-secondary">
-                  @ {formatEventTimeCompact(sTime)}
+                  @ {localTimeString(sTime, 'compact', mounted)}
                 </span>
               )}
               <div className="h-px flex-1 bg-border" />

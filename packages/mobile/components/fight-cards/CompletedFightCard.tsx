@@ -560,6 +560,7 @@ function CompletedFightCard({
         visible={modalVisible}
         fight={fight}
         onClose={() => setModalVisible(false)}
+        hideEventLink={!showEvent}
       />
     </TouchableOpacity>
   );

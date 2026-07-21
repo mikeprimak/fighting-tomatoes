@@ -25,7 +25,7 @@ function weekendLabel(keys: string[]): string {
 export async function generateMetadata(): Promise<Metadata> {
   const keys = weekendDayKeys(new Date());
   const title = `MMA & Boxing Fights This Weekend (${weekendLabel(keys)}) — Full Schedule`;
-  const description = `Every MMA, boxing, and bare-knuckle card this weekend (Friday through Sunday): start times in ET, headliners, US broadcasts, and fan hype scores.`;
+  const description = `Every MMA, boxing, and bare-knuckle card this weekend (Friday through Sunday): local start times, headliners, US broadcasts, and fan hype scores.`;
   return {
     title,
     description,
@@ -65,7 +65,7 @@ export default async function FightsThisWeekendPage() {
         <h1 className="text-2xl font-bold">Fights This Weekend</h1>
         <p className="mt-1 text-sm text-text-secondary">
           {weekend.length > 0
-            ? `${weekend.length === 1 ? 'One card' : `${weekend.length} cards`} between Friday and Sunday (${weekendLabel(keys)}), with start times in ET, US broadcasts, and fan hype scores.`
+            ? `${weekend.length === 1 ? 'One card' : `${weekend.length} cards`} between Friday and Sunday (${weekendLabel(keys)}), with local start times, US broadcasts, and fan hype scores.`
             : `No cards scheduled for ${weekendLabel(keys)} yet.`}
         </p>
       </header>

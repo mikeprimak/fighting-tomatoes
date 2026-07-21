@@ -47,19 +47,32 @@ export const formatEventDate = (dateString: string, options?: FormatDateOptions)
   return date.toLocaleDateString('en-US', localeOptions);
 };
 
-export const formatEventTime = (dateString: string): string => {
+export const formatEventTime = (dateString: string, timeZone?: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
 };
 
-export const formatEventTimeCompact = (dateString: string): string => {
+export const formatEventTimeCompact = (dateString: string, timeZone?: string): string => {
   const date = new Date(dateString);
-  const hours = date.getHours();
-  const minutes = date.getMinutes();
-  const ampm = hours >= 12 ? 'pm' : 'am';
-  const h12 = hours % 12 || 12;
-  if (minutes === 0) return `${h12}${ampm}`;
-  return `${h12}:${minutes.toString().padStart(2, '0')}${ampm}`;
+  const str = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone });
+  // "8:00 PM" -> "8pm", "8:30 PM" -> "8:30pm"
+  return str.replace(':00', '').replace(/\s(AM|PM)$/, (_, p) => p.toLowerCase());
+};
+
+// Timezone abbreviation for the runtime (or given) zone, with DST variants
+// collapsed to the stable North-American form ("EST"/"EDT" -> "ET"). Mirrors
+// mobile's getTimezoneAbbreviation.
+export const getTimezoneAbbreviation = (date: Date, timeZone?: string): string => {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'short' }).formatToParts(date);
+    const tz = parts.find((p) => p.type === 'timeZoneName')?.value ?? '';
+    const collapsed: Record<string, string> = {
+      EDT: 'ET', EST: 'ET', CDT: 'CT', CST: 'CT', MDT: 'MT', MST: 'MT', PDT: 'PT', PST: 'PT',
+    };
+    return collapsed[tz] ?? tz;
+  } catch {
+    return '';
+  }
 };
 
 export const formatTimeUntil = (eventDateString: string, startTimeString?: string): string => {

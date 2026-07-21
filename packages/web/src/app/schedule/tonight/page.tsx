@@ -8,8 +8,8 @@ import {
   eventStart,
   etDayKey,
   formatDayKey,
-  formatTimeET,
 } from '@/lib/schedule';
+import { LocalTime } from '@/components/LocalTime';
 import { ScheduleEventRow } from '@/components/schedule/ScheduleEventRow';
 
 export const revalidate = 900;
@@ -24,7 +24,7 @@ function todayLabel(): string {
 
 export async function generateMetadata(): Promise<Metadata> {
   const title = `MMA & Boxing Fights Tonight (${todayLabel()}) — Cards, Start Times, How to Watch`;
-  const description = `Which fights are on tonight? Every MMA, boxing, and bare-knuckle card happening today with start times in ET, headliners, US broadcasts, and fan hype scores.`;
+  const description = `Which fights are on tonight? Every MMA, boxing, and bare-knuckle card happening today with local start times, headliners, US broadcasts, and fan hype scores.`;
   return {
     title,
     description,
@@ -57,7 +57,7 @@ export default async function FightsTonightPage() {
         <h1 className="text-2xl font-bold">Fights Tonight — {formatDayKey(today)}</h1>
         <p className="mt-1 text-sm text-text-secondary">
           {tonight.length > 0
-            ? `${tonight.length === 1 ? 'One fight card is' : `${tonight.length} fight cards are`} on today. Start times in ET, with US broadcast info and fan hype scores from the Good Fights community.`
+            ? `${tonight.length === 1 ? 'One fight card is' : `${tonight.length} fight cards are`} on today. Start times in your local time, with US broadcast info and fan hype scores from the Good Fights community.`
             : 'No fight cards on the schedule today.'}
         </p>
       </header>
@@ -89,7 +89,7 @@ export default async function FightsTonightPage() {
               <Link href={`/events/${next.slug || next.id}`} className="font-semibold text-primary hover:underline">
                 {next.name}
               </Link>{' '}
-              on {formatDayKey(etDayKey(eventStart(next)))} at {formatTimeET(eventStart(next))}.
+              on {formatDayKey(etDayKey(eventStart(next)))} at <LocalTime iso={eventStart(next).toISOString()} />.
             </p>
           )}
           <p className="mt-2 text-sm text-text-secondary">
