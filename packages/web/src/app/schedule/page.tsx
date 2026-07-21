@@ -66,7 +66,22 @@ export default async function SchedulePage() {
         <Link href="/events/past" className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary">
           Recent results
         </Link>
+        <a
+          href={`${SITE_URL.replace(/^https?:/, 'webcal:')}/calendar/upcoming.ics`}
+          className="rounded-full border border-primary bg-card px-3 py-1 text-xs font-medium text-primary transition-colors hover:bg-primary hover:text-white"
+        >
+          📅 Subscribe to this calendar
+        </a>
       </nav>
+
+      <p className="mb-5 text-xs text-text-secondary">
+        Subscribing adds every card below to your own calendar app, and keeps it current as new
+        events are announced and start times firm up.{' '}
+        <a href="/calendar/upcoming.ics" className="text-primary hover:underline">
+          Download the .ics
+        </a>{' '}
+        instead if your calendar app does not handle webcal links.
+      </p>
 
       {events.length === 0 && (
         <p className="py-12 text-center text-sm text-text-secondary">

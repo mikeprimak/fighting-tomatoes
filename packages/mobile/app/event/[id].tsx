@@ -26,6 +26,7 @@ import { normalizeEventName } from '../../components/fight-cards/shared/utils';
 import { formatEventDate, formatEventTime, getTimezoneAbbreviation } from '../../utils/dateFormatters';
 import { getDefaultBanner } from '../../utils/defaultBanners';
 import { PromotionLogo } from '../../components/PromotionLogo';
+import { AddToCalendarButton } from '../../components/AddToCalendarButton';
 
 interface EventDetails {
   id: string;
@@ -374,6 +375,11 @@ export default function EventDetailScreen() {
           <View style={styles.howToWatchWrapper}>
             <HowToWatch eventId={event.id} />
           </View>
+        )}
+
+        {/* Add to calendar — upcoming/live only; a finished card is not worth saving. */}
+        {event?.id && event.eventStatus !== 'COMPLETED' && (
+          <AddToCalendarButton eventId={event.id} />
         )}
 
         {/* Main Card */}

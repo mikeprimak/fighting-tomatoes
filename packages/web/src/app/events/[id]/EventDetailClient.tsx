@@ -169,6 +169,14 @@ export function EventDetailClient({ eventId, initialEvent, initialFights }: Prop
             {[event.venue, event.location].filter(Boolean).join(', ')}
           </p>
         )}
+        {!isPast && (
+          <a
+            href={`/events/${event.id}/calendar.ics`}
+            className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary"
+          >
+            <span aria-hidden>📅</span> Add to calendar
+          </a>
+        )}
       </div>
 
       {/* Preview state: the card-wide AI "why care" line (confidence-gated,
