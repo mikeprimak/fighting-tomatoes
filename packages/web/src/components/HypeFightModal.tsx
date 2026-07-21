@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/lib/auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { AuthGatePrompt } from '@/components/AuthGatePrompt';
 
 interface HypeFightModalProps {
@@ -156,7 +157,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
         </h2>
 
         {/* Fighter row: image | lastName vs lastName | image */}
-        <div className="mb-3 flex items-center justify-center gap-3">
+        <div className="mb-2 flex items-center justify-center gap-3">
           <FighterImage fighter={f1} />
           <div className="flex min-w-0 flex-col items-center text-center">
             <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f1.lastName}</span>
@@ -165,6 +166,17 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
           </div>
           <FighterImage fighter={f2} />
         </div>
+
+        {/* Tappable event name → event detail */}
+        {fight.event?.id && fight.event?.name && (
+          <Link
+            href={`/events/${fight.event.id}`}
+            onClick={onClose}
+            className="mb-3 block truncate text-center text-xs font-medium text-text-secondary hover:text-primary"
+          >
+            {fight.event.name}
+          </Link>
+        )}
 
         {/* Flame wheel — one slot visible, transitions on selection */}
         <div
@@ -273,7 +285,7 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
 function FighterImage({ fighter }: { fighter: any }) {
   const img = fighter?.profileImage || '';
   const initials = `${fighter?.firstName?.[0] ?? ''}${fighter?.lastName?.[0] ?? ''}`.toUpperCase();
-  return (
+  const avatar = (
     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-card">
       {img ? (
         <img src={img} alt={`${fighter.firstName} ${fighter.lastName}`} className="h-full w-full object-cover" />
@@ -283,5 +295,15 @@ function FighterImage({ fighter }: { fighter: any }) {
         </div>
       )}
     </div>
+  );
+  if (!fighter?.id) return avatar;
+  return (
+    <Link
+      href={`/fighters/${fighter.id}`}
+      className="shrink-0 rounded-full transition-opacity hover:opacity-80"
+      aria-label={`${fighter.firstName ?? ''} ${fighter.lastName ?? ''} profile`.trim()}
+    >
+      {avatar}
+    </Link>
   );
 }
