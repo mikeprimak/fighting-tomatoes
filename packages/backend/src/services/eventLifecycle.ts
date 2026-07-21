@@ -42,12 +42,15 @@ const VPS_SCRAPER_URL = process.env.VPS_SCRAPER_URL || ''; // e.g. http://178.15
 const VPS_SCRAPER_API_KEY = process.env.VPS_SCRAPER_API_KEY || '';
 
 // Scraper types that have a VPS handler in scraperService.ts scrapeOnce().
-// Anything not in this list (e.g. raf) must dispatch via GitHub Actions
-// even when the VPS is configured — VPS would silently no-op them otherwise.
+// Anything not in this list must dispatch via GitHub Actions even when the
+// VPS is configured — VPS would silently no-op them otherwise.
 // 'tapology' re-enabled 2026-06-06: all tapology promotions now live-track on the
 // VPS (Tapology 403s GitHub Actions, so the VPS is the only viable runner) and
 // auto-publish. The VPS scrapeTapologyOnce handler + URL discovery already exist.
-const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'sherdog', 'tapology'];
+// 'raf' added 2026-07-21: the RAF handler was hot-wired onto the VPS during the
+// RAF11 incident (GH dispatch was down — expired Render GITHUB_TOKEN) and now
+// lives on main; raf-live-tracker.yml stays as the VPS-unreachable fallback.
+const VPS_SUPPORTED_SCRAPERS = ['ufc', 'oktagon', 'bkfc', 'onefc', 'pfl', 'sherdog', 'tapology', 'raf'];
 
 /**
  * Trigger the VPS scraper service to start tracking an event.
@@ -296,8 +299,8 @@ export async function runEventLifecycleCheck(): Promise<{
           console.error(`[Lifecycle] First-fight notif failed for ${event.name}: ${err.message}`);
         }
 
-        // Trigger live tracker. VPS handles ufc/oktagon/bkfc/onefc/tapology; pfl
-        // and raf have no VPS scraper handler so they go straight to GitHub
+        // Trigger live tracker. VPS handles every scraperType in
+        // VPS_SUPPORTED_SCRAPERS; anything else goes straight to GitHub
         // Actions. Tapology is now VPS-tracked for all tapology promotions
         // (re-enabled 2026-06-06) — Tapology 403s GitHub Actions, so the VPS is
         // the only viable runner. The earlier no-tracker conflict is gone: reliable
