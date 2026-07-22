@@ -152,20 +152,9 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
           />
         ) : (
         <>
-        <h2 className="mb-4 text-center text-base font-bold uppercase tracking-wider text-foreground">
+        <h2 className="mb-2 text-center text-base font-bold uppercase tracking-wider text-foreground">
           How Hyped Are You?
         </h2>
-
-        {/* Fighter row: image | lastName vs lastName | image */}
-        <div className="mb-2 flex items-center justify-center gap-3">
-          <FighterImage fighter={f1} />
-          <div className="flex min-w-0 flex-col items-center text-center">
-            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f1.lastName}</span>
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">vs</span>
-            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f2.lastName}</span>
-          </div>
-          <FighterImage fighter={f2} />
-        </div>
 
         {/* Tappable event name → event detail */}
         {fight.event?.id && fight.event?.name && (
@@ -177,6 +166,17 @@ export function HypeFightModal({ isOpen, onClose, fight, existingHype, hideComme
             {fight.event.name}
           </Link>
         )}
+
+        {/* Fighter row: image | lastName vs lastName | image */}
+        <div className="mb-3 flex items-center justify-center gap-3">
+          <FighterImage fighter={f1} />
+          <div className="flex min-w-0 flex-col items-center text-center">
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f1.lastName}</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">vs</span>
+            <span className="max-w-[100px] truncate text-sm font-bold text-foreground">{f2.lastName}</span>
+          </div>
+          <FighterImage fighter={f2} />
+        </div>
 
         {/* Flame wheel — one slot visible, transitions on selection */}
         <div

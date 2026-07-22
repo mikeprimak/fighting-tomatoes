@@ -379,7 +379,7 @@ export default function EventDetailScreen() {
 
         {/* Add to calendar — upcoming/live only; a finished card is not worth saving. */}
         {event?.id && event.eventStatus !== 'COMPLETED' && (
-          <AddToCalendarButton eventId={event.id} />
+          <AddToCalendarButton eventId={event.id} event={event} />
         )}
 
         {/* Main Card */}

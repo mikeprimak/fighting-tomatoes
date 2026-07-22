@@ -513,6 +513,15 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
             Rate This Fight
           </Text>
 
+          {/* Tappable event line — only when the event isn't already on screen */}
+          {!hideEventLink && fight.event?.id && fight.event?.name && (
+            <TouchableOpacity style={styles.eventLink} onPress={handleEventPress} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}>
+              <Text style={[styles.eventLinkText, { color: colors.textSecondary }]} numberOfLines={1}>
+                {fight.event.name}
+              </Text>
+            </TouchableOpacity>
+          )}
+
           {/* Compact fighter row */}
           <View style={styles.fightersRow}>
             <View style={styles.fighterImageWrap}>
@@ -557,15 +566,6 @@ export default function CompletedFightModal({ visible, fight, onClose, hideSeeCo
               />
             </View>
           </View>
-
-          {/* Tappable event line — only when the event isn't already on screen */}
-          {!hideEventLink && fight.event?.id && fight.event?.name && (
-            <TouchableOpacity style={styles.eventLink} onPress={handleEventPress} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }}>
-              <Text style={[styles.eventLinkText, { color: colors.textSecondary }]} numberOfLines={1}>
-                {fight.event.name} {'>'}
-              </Text>
-            </TouchableOpacity>
-          )}
 
           {/* Large star wheel display */}
           <View style={styles.starWheelContainer}>
