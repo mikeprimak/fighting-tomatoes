@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { FightDetailClient } from './FightDetailClient';
+import { AppDownloadFooter } from '@/components/layout/AppDownloadFooter';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
 import { divisionLabel, divisionSlug } from '@/lib/divisions';
 import { SITE_URL } from '@/lib/site';
@@ -177,6 +178,7 @@ export default async function FightDetailPage({ params }: Props) {
         </header>
       )}
       <FightDetailClient fightId={initialFight?.id ?? id} initialFight={initialFight} />
+      <AppDownloadFooter />
     </>
   );
 }

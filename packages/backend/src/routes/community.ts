@@ -2,6 +2,26 @@ import { FastifyInstance } from 'fastify';
 import { optionalAuthenticateMiddleware } from '../middleware/auth.fastify';
 import { getHiddenPromotions } from '../config/hiddenPromotions';
 
+/**
+ * A user's display name for a comment/review, resilient to null name parts.
+ * The old `displayName || `${firstName} ${lastName}`` pattern rendered the
+ * literal string "null null" for legacy users with no displayName and both
+ * name fields null (surfaced on the home "Classic Comments" throwback). Prefer
+ * displayName, then any non-null name parts, then a neutral fallback.
+ */
+function commentAuthorName(user: {
+  displayName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+} | null | undefined): string {
+  const dn = user?.displayName?.trim();
+  if (dn) return dn;
+  const parts = [user?.firstName, user?.lastName].filter(
+    (p): p is string => typeof p === 'string' && p.trim().length > 0,
+  );
+  return parts.length > 0 ? parts.join(' ') : 'Fan';
+}
+
 export default async function communityRoutes(fastify: FastifyInstance) {
   // Get all comments with sorting options
   fastify.get('/comments', {
@@ -98,7 +118,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
           userHasUpvoted: upvotedReviewIds.has(review.id),
           user: {
             id: review.user.id,
-            displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+            displayName: commentAuthorName(review.user),
           },
           fight: {
             id: review.fight.id,
@@ -212,7 +232,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         userHasUpvoted: upvotedReviewIds.has(review.id),
         user: {
           id: review.user.id,
-          displayName: review.user.displayName || `${review.user.firstName} ${review.user.lastName}`,
+          displayName: commentAuthorName(review.user),
         },
         fight: {
           id: review.fight.id,
@@ -1320,7 +1340,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             : null,
           user: {
             id: comment.user.id,
-            displayName: comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`,
+            displayName: commentAuthorName(comment.user),
           },
           fight: {
             id: comment.fight.id,
@@ -1442,7 +1462,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
             : null,
           user: {
             id: comment.user.id,
-            displayName: comment.user.displayName || `${comment.user.firstName} ${comment.user.lastName}`,
+            displayName: commentAuthorName(comment.user),
           },
           fight: {
             id: comment.fight.id,
@@ -1909,7 +1929,7 @@ export default async function communityRoutes(fastify: FastifyInstance) {
         // Reason comes from the user's own taste where we have it (namesake =
         // a fighter they follow or rated high); the fallback claims the
         // fighter, never the crowd ("Highly rated" is the algorithm talking).
-        const reason = namesake ? `Runs in ${namesake}'s division` : 'Always in good fights';
+        const reason = namesake ? `Same division as ${namesake}` : 'Always in good fights';
         return { fighter: c, reason };
       });
 

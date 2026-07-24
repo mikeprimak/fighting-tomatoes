@@ -655,11 +655,29 @@ export async function runEventLifecycleCheck(): Promise<{
       // prelimStartTime with no prelim fights, expired mid-card. Defer to the tracker
       // until the 10h hard cap; only then force everything closed.
       if (trackerBacked && now < hardCapTime) {
-        const pending = await prisma.fight.count({
-          where: { eventId: event.id, fightStatus: { in: ['UPCOMING', 'LIVE'] } },
-        });
+        const [pending, completed] = await Promise.all([
+          prisma.fight.count({
+            where: { eventId: event.id, fightStatus: { in: ['UPCOMING', 'LIVE'] } },
+          }),
+          prisma.fight.count({
+            where: { eventId: event.id, fightStatus: 'COMPLETED' },
+          }),
+        ]);
         if (pending > 0) {
           console.log(`[Lifecycle] Deferring completion of ${event.name}: soft estimate elapsed but ${pending} fight(s) still pending (tracker-backed, before ${HARD_CAP_HOURS}h cap)`);
+          continue;
+        }
+        // No pending fights, but ALSO no completed ones → the entire card is
+        // CANCELLED. For a tracker-backed event that is the signature of a
+        // broken scrape mass-cancelling the card (RAF11, 2026-07-18), NOT a
+        // genuine event end — CANCELLED fights fall outside the pending set, so
+        // force-completing here is exactly what re-fired 'lifecycle-auto' on
+        // every 5-min tick each time the event was restored to LIVE. Defer to
+        // the hard cap so a scrape-health recovery can restore the real fights;
+        // a genuinely finished event always has >= 1 COMPLETED fight and still
+        // completes normally. See docs/HANDOFF-raf-live-mass-cancel-2026-07-18.
+        if (completed === 0 && numFights > 0) {
+          console.log(`[Lifecycle] Deferring completion of ${event.name}: 0 pending but 0 completed fights (all-cancelled card — likely broken scrape, before ${HARD_CAP_HOURS}h cap)`);
           continue;
         }
       }

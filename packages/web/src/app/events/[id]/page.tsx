@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { EventDetailClient } from './EventDetailClient';
+import { AppDownloadFooter } from '@/components/layout/AppDownloadFooter';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
 import { orgByPromotion } from '@/lib/orgs';
 import { SITE_URL } from '@/lib/site';
@@ -203,6 +204,7 @@ export default async function EventDetailPage({ params }: Props) {
       )}
       <EventDetailClient eventId={realId} initialEvent={initialEvent} initialFights={initialFights} />
       <ExploreLinks links={exploreLinks} className="mx-auto mt-8 max-w-3xl" />
+      <AppDownloadFooter />
     </>
   );
 }

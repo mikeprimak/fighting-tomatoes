@@ -11,10 +11,11 @@ import { useAnyLiveEvent } from '@/lib/useAnyLiveEvent';
 import { searchSuggest } from '@/lib/api';
 import { FighterAvatar } from '@/components/FighterAvatar';
 
+// 'Schedule' intentionally lives only in the footer (see Footer.tsx), not the
+// top nav — moved out 2026-07-24 per Mike to declutter the primary nav.
 const navLinks = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/events/live', label: 'Live', icon: Radio },
-  { href: '/schedule', label: 'Schedule', icon: Calendar },
   { href: '/events/upcoming', label: 'Upcoming', icon: Flame },
   { href: '/events/past', label: 'Past', icon: Star },
   { href: '/fights/top', label: 'Good Fights', icon: Trophy },

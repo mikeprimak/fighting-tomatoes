@@ -366,6 +366,9 @@ function HypedFightRow({
   const hype: number = (isRating ? fight.averageRating : fight.averageHype) || 0;
   const hypeColor = getHypeHeatmapColor(hype);
   const hypeCount: number = (isRating ? fight.totalRatings : fight.hypeCount) || 0;
+  // Comment count in the score badge, mirroring the full fight cards: post-fight
+  // reviews for the rating surface, pre-fight comments for the hype surface.
+  const commentCount: number = (isRating ? fight.reviewCount : fight.commentCount) || 0;
 
   const name1 = getFighterPrimaryName(fight.fighter1);
   const name2 = getFighterPrimaryName(fight.fighter2);
@@ -398,8 +401,18 @@ function HypedFightRow({
           heatmap fill, white hype number, user count in parentheses, no flame. */}
       <View style={[styles.hypedBadge, { backgroundColor: hypeColor }]}>
         <Text style={styles.hypedBadgeNum}>{hype === 10 ? '10' : hype.toFixed(1)}</Text>
-        {hypeCount > 0 ? (
-          <Text style={styles.hypedBadgeCount}>({hypeCount})</Text>
+        {hypeCount > 0 || commentCount > 0 ? (
+          <View style={styles.hypedBadgeMetaRow}>
+            {hypeCount > 0 ? (
+              <Text style={styles.hypedBadgeCount}>({hypeCount})</Text>
+            ) : null}
+            {commentCount > 0 ? (
+              <View style={styles.hypedBadgeCommentRow}>
+                <FontAwesome name="comment" size={7} color="rgba(0,0,0,0.6)" />
+                <Text style={styles.hypedBadgeCount}>{commentCount}</Text>
+              </View>
+            ) : null}
+          </View>
         ) : null}
       </View>
     </View>
@@ -1671,6 +1684,18 @@ function makeStyles(colors: ThemeColors) {
       fontSize: 9,
       fontWeight: '600',
       textAlign: 'center',
+    },
+    // Rating/hype count + comment count sit side by side under the score.
+    hypedBadgeMetaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 3,
+    },
+    hypedBadgeCommentRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 1,
     },
     // Home comment cards share the event cards' screen-edge margins.
     commentList: {

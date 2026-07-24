@@ -21,6 +21,8 @@ import {
   updateFightUserData,
   toggleReviewUpvote,
   togglePreFightCommentUpvote,
+  createFightReviewReply,
+  createPreFightCommentReply,
 } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -140,7 +142,13 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
   }
 
   const isCompleted = fight.fightStatus === 'COMPLETED';
+  const isLive = fight.fightStatus === 'LIVE';
   const isUpcoming = fight.fightStatus === 'UPCOMING' || fight.fightStatus === 'SCHEDULED';
+  // A LIVE fight is ratable in-progress (that's what the LiveFightCard rate
+  // modal posts), so it shows the completed-style rating + reviews layout — NOT
+  // the upcoming/pre-fight-comments layout. Winner/outcome/spoiler blocks below
+  // stay gated on isCompleted only (no result exists mid-fight).
+  const showRating = isCompleted || isLive;
   const hideSpoilers = isCompleted && spoilerFreeMode && !fight.userRating && !outcomeRevealed;
 
   const isWinner1 = fight.winner === fight.fighter1.id;
@@ -424,8 +432,8 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         </div>
       )}
 
-      {/* Rating section (completed) */}
-      {isCompleted && stats && (
+      {/* Rating section (completed or live) */}
+      {showRating && stats && (
         <div className="mb-6">
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
             <Star size={16} className="text-primary" />
@@ -467,7 +475,7 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
 
       {/* Action buttons */}
       <div className="mb-6 flex justify-center gap-3">
-        {isCompleted && (
+        {showRating && (
           fight.userRating ? (
             <button
               onClick={() => isAuthenticated ? setRateModalOpen(true) : undefined}
@@ -507,7 +515,7 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
         )}
         {!isAuthenticated && (
           <Link href="/login" className="flex items-center gap-2 rounded-lg border border-primary px-5 py-2.5 text-sm font-medium text-primary hover:bg-primary/10">
-            Sign in to {isCompleted ? 'rate' : 'hype'}
+            Sign in to {showRating ? 'rate' : 'hype'}
           </Link>
         )}
       </div>
@@ -516,11 +524,11 @@ export function FightDetailClient({ fightId, initialFight }: Props) {
       <div className="mb-6">
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
           <MessageSquare size={16} className="text-primary" />
-          {isCompleted ? 'Reviews' : 'Pre-Fight Comments'}
+          {showRating ? 'Reviews' : 'Pre-Fight Comments'}
         </h3>
         <CommentsSection
           fightId={fightId}
-          isCompleted={isCompleted}
+          isCompleted={showRating}
           currentUserId={user?.id}
           myReviewFromFight={fight.userReview}
         />
@@ -557,6 +565,8 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
   const qc = useQueryClient();
   const { isAuthenticated } = useAuth();
   const [editing, setEditing] = useState(false);
+  // Which top-level comment currently has an open reply composer (by id).
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   const invalidate = () => {
     if (isCompleted) {
@@ -570,10 +580,19 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
 
   // Patch a single item's upvote state in place. We deliberately do NOT
   // invalidate/refetch here so the list does not re-sort while the user is
-  // reading it — order only changes on a fresh page load.
+  // reading it — order only changes on a fresh page load. Recurses one level
+  // into `replies` so upvoting a reply patches cleanly too.
   const patchUpvote = (itemId: string, upvotes: number, userHasUpvoted: boolean) => {
-    const apply = (it: any) =>
+    const patchOne = (it: any) =>
       it && it.id === itemId ? { ...it, upvotes, userHasUpvoted } : it;
+    const apply = (it: any) => {
+      if (!it) return it;
+      const patched = patchOne(it);
+      if (Array.isArray(patched.replies) && patched.replies.length > 0) {
+        return { ...patched, replies: patched.replies.map(patchOne) };
+      }
+      return patched;
+    };
     if (isCompleted) {
       qc.setQueryData(['fightReviews', fightId], (old: any) =>
         old ? { ...old, reviews: (old.reviews ?? []).map(apply) } : old,
@@ -609,6 +628,17 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
       // Roll back on failure.
       patchUpvote(itemId, current.upvotes, current.userHasUpvoted);
     }
+  };
+
+  // Post a reply to a top-level comment (one level of nesting, matching mobile
+  // + the backend guard). Refetch after so the new reply appears in the thread.
+  const handleReply = async (parentId: string, content: string) => {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    if (isCompleted) await createFightReviewReply(fightId, parentId, trimmed);
+    else await createPreFightCommentReply(fightId, parentId, trimmed);
+    setReplyingTo(null);
+    invalidate();
   };
 
   const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
@@ -676,20 +706,28 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
             onSave={saveMine}
           />
         ) : (
-          <CommentCard
+          <CommentThread
             item={myItem}
             isMine
-            onUpvote={() => handleUpvote(myItem.id, { upvotes: myItem.upvotes ?? 0, userHasUpvoted: !!myItem.userHasUpvoted })}
+            isAuthenticated={isAuthenticated}
+            onUpvote={handleUpvote}
             onEdit={() => setEditing(true)}
+            replyingTo={replyingTo}
+            setReplyingTo={setReplyingTo}
+            onReply={handleReply}
           />
         )
       )}
 
       {others.map((item) => (
-        <CommentCard
+        <CommentThread
           key={item.id}
           item={item}
-          onUpvote={() => handleUpvote(item.id, { upvotes: item.upvotes ?? 0, userHasUpvoted: !!item.userHasUpvoted })}
+          isAuthenticated={isAuthenticated}
+          onUpvote={handleUpvote}
+          replyingTo={replyingTo}
+          setReplyingTo={setReplyingTo}
+          onReply={handleReply}
         />
       ))}
 
@@ -698,6 +736,115 @@ function CommentsSection({ fightId, isCompleted, currentUserId, myReviewFromFigh
           No {isCompleted ? 'reviews' : 'comments'} yet.
         </p>
       )}
+    </div>
+  );
+}
+
+/** A top-level comment plus its (one level of) replies and an inline reply
+ *  composer. Replies render indented under the parent; the composer opens when
+ *  this thread's id is the active `replyingTo`. */
+function CommentThread({
+  item,
+  isMine = false,
+  isAuthenticated,
+  onUpvote,
+  onEdit,
+  replyingTo,
+  setReplyingTo,
+  onReply,
+}: {
+  item: any;
+  isMine?: boolean;
+  isAuthenticated: boolean;
+  onUpvote: (id: string, current: { upvotes: number; userHasUpvoted: boolean }) => void;
+  onEdit?: () => void;
+  replyingTo: string | null;
+  setReplyingTo: (id: string | null) => void;
+  onReply: (parentId: string, content: string) => Promise<void>;
+}) {
+  const replies: any[] = Array.isArray(item.replies) ? item.replies : [];
+  const isOpen = replyingTo === item.id;
+
+  return (
+    <div className="space-y-2">
+      <CommentCard
+        item={item}
+        isMine={isMine}
+        onUpvote={() => onUpvote(item.id, { upvotes: item.upvotes ?? 0, userHasUpvoted: !!item.userHasUpvoted })}
+        onEdit={onEdit}
+        onReply={isAuthenticated ? () => setReplyingTo(isOpen ? null : item.id) : undefined}
+      />
+      {(replies.length > 0 || isOpen) && (
+        <div className="ml-4 space-y-2 border-l border-border pl-3">
+          {replies.map((r) => (
+            <CommentCard
+              key={r.id}
+              item={r}
+              compact
+              onUpvote={() => onUpvote(r.id, { upvotes: r.upvotes ?? 0, userHasUpvoted: !!r.userHasUpvoted })}
+            />
+          ))}
+          {isOpen && (
+            <ReplyComposer onCancel={() => setReplyingTo(null)} onSubmit={(content) => onReply(item.id, content)} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Small inline composer for a reply (no rating, 500-char cap like the API). */
+function ReplyComposer({
+  onSubmit,
+  onCancel,
+}: {
+  onSubmit: (content: string) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [content, setContent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const submit = async () => {
+    if (!content.trim()) return;
+    setSaving(true);
+    setError('');
+    try {
+      await onSubmit(content);
+    } catch (err: any) {
+      setError(err?.error || 'Failed to post reply');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="rounded-lg border border-border bg-card p-2.5">
+      <textarea
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        placeholder="Write a reply…"
+        maxLength={500}
+        rows={2}
+        autoFocus
+        className="w-full resize-none rounded-lg border border-border bg-background p-2 text-sm text-foreground placeholder:text-text-secondary focus:border-primary focus:outline-none"
+      />
+      {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+      <div className="mt-2 flex items-center justify-end gap-2">
+        <button
+          onClick={onCancel}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary hover:text-foreground"
+        >
+          Cancel
+        </button>
+        <button
+          onClick={submit}
+          disabled={saving || !content.trim()}
+          className="rounded-lg bg-primary px-4 py-1.5 text-xs font-semibold text-text-on-accent hover:bg-primary/90 disabled:opacity-50"
+        >
+          {saving ? 'Posting…' : 'Reply'}
+        </button>
+      </div>
     </div>
   );
 }

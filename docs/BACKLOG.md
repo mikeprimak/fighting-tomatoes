@@ -169,6 +169,23 @@ These are scoped, isolated, and mostly `S`/`M`. Knock them out in one or two ses
 - [ ] `XL` 🔵 **Canadian IP lawyer** → trademark/IP protection. External, Mike-driven.
 - [ ] `M` 🔵 **App Store preview video** → ASC rejected it (wrong phone size). Re-record on a borrowed modern iPhone.
 
+## 18. 2026-07-24 batch (Mike's issue list)
+
+- [ ] `S` 🟢 **SERP image white background** → the image Google shows for goodfights.app in search results has a white background; should be `#181818`. Likely the OG image / logo / favicon served with a transparent-on-white or white bg. Find which asset Google is pulling and set the bg.
+- [ ] `S` 🟢 **"null null" comment name on classic old comment (home)** → a legacy comment on the home screen renders its author as "null null". Guard the name render (fall back to username / "Fan") when first/last name are null.
+- [ ] `M` 🟢 **PFL daily scraper: capture prelims start times** → PFL daily scraper should resolve prelim (first-bell) start times like the other orgs. Check `scrapeAllPFLData` / pfl parser + start-time discovery coverage.
+- [ ] `S` 🟢 **Num comments on home fight score/hype boxes** → show comment count on the home-screen rating and hype boxes (web + mobile as applicable).
+- [ ] `S` 🟢 **Web home: show MY hype value in Upcoming Hyped Fights** → if the user has hyped a fight, their number should appear in that column on the web home upcoming-hyped list.
+- [ ] `S` 🟢 **Web LiveFightCard 'view comments' → wrong detail screen** → clicking 'view comments' on the rating modal of a LiveFightCard opens the Upcoming fight detail; should open the Completed fight detail.
+- [ ] `M` 🟡 **RAF event 'completing' every 5 minutes** → investigate why the RAF event lifecycle kept marking the event COMPLETED every 5 min. Related to [[lesson_raf_webflow_selector_break_mass_cancel]] / lifecycle failsafe.
+- [ ] `M` 🟢 **Reply UI on web comments** → add reply affordance to web comment threads (mobile already has replies).
+- [ ] `S` 🟢 **Web: move 'Schedule' from top nav to footer.**
+- [ ] `S` 🟢 **Web: footer "Download the app" on finite pages** → add a download-the-app footer on pages with an end (fighter, fight, event), NOT on infinitely-scrolling list pages.
+- [ ] `M` 🟢 **Web mobile-browser styling pass** → (a) fighter names squished in FightCard components (Upcoming/Completed/Live cards); (b) home on mobile: move blog content below the events list; (c) "Never miss a Good Fight" box: all icons grey-only, shorter bullet copy ("See which upcoming fights are hyped" / "See which fights entertained" / "Keep track of fighters and get notified when they fight"), remove Fan DNA bullet, "already a fan" → "already have one?", remove "your home for…", bullets grey + larger font, make "Never miss a Good Fight" heading larger.
+- [ ] `S` 🟢 **Mobile fight-detail 'See more' comments button** → text should be dark grey, not white (MCG vs Holloway 2 screen).
+- [ ] `S` 🟢 **Web home "your kind of fighters": drop/improve "runs in X's division" caption** → the per-fighter subtitle "runs in {fighter}'s division" reads awkward; improve the copy or remove it.
+- [x] `S` 🟢 **Web activity filters — explain** → answered inline in 2026-07-24 session (My Activity/Rated/Hyped/Pre-fight/Post-fight). No code change.
+
 ---
 
 ## Decisions needed from Mike (unblock these)

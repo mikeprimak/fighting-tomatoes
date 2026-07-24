@@ -87,7 +87,7 @@ function FighterBlock({
   const headshot = (
     <div className="relative shrink-0">
       <div
-        className={`h-14 w-14 overflow-hidden rounded-full ${
+        className={`h-11 w-11 overflow-hidden rounded-full sm:h-14 sm:w-14 ${
           showWinnerRing ? 'ring-2 ring-[#166534]' : 'bg-card'
         }`}
       >
@@ -134,12 +134,12 @@ function FighterBlock({
   );
 
   return side === 'left' ? (
-    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
       {names}
       {headshot}
     </div>
   ) : (
-    <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
+    <div className="flex min-w-0 flex-1 items-center justify-start gap-1.5 sm:gap-2">
       {headshot}
       {names}
     </div>
@@ -228,7 +228,7 @@ export function CompletedFightCard({ fight, showRank, showEvent }: CompletedFigh
         </div>
 
         {/* Center: fighters + names */}
-        <div className="relative flex min-w-0 flex-1 items-center px-2 py-2">
+        <div className="relative flex min-w-0 flex-1 items-center px-1 py-2 sm:px-2">
           <FighterBlock
             fighter={fight.fighter1}
             side="left"
@@ -238,7 +238,7 @@ export function CompletedFightCard({ fight, showRank, showEvent }: CompletedFigh
             round={isWinner1 ? fight.round : undefined}
             userPicked={userPickedF1}
           />
-          <div className="flex flex-col items-center px-2">
+          <div className="flex flex-col items-center px-1 sm:px-2">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">vs</span>
             {showRank ? (
               <span className="mt-0.5 text-[10px] font-bold text-primary">#{showRank}</span>

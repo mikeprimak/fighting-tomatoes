@@ -51,7 +51,7 @@ function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'righ
   const placeholder = `${fighter.firstName?.[0] ?? ''}${fighter.lastName?.[0] ?? ''}`.toUpperCase();
 
   const headshot = (
-    <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full bg-background">
+    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full bg-background sm:h-12 sm:w-12">
       <FighterAvatar
         src={img}
         alt={`${fighter.firstName} ${fighter.lastName}`}
@@ -74,12 +74,12 @@ function FighterSide({ fighter, side }: { fighter: Fighter; side: 'left' | 'righ
   );
 
   return side === 'left' ? (
-    <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+    <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5 sm:gap-2">
       {names}
       {headshot}
     </div>
   ) : (
-    <div className="flex min-w-0 flex-1 items-center justify-start gap-2">
+    <div className="flex min-w-0 flex-1 items-center justify-start gap-1.5 sm:gap-2">
       {headshot}
       {names}
     </div>
@@ -146,9 +146,9 @@ export function UpcomingFightCard({ fight, showEvent }: UpcomingFightCardProps) 
         </div>
 
         {/* Center: fighters */}
-        <div className="flex min-w-0 flex-1 items-center px-2 py-2">
+        <div className="flex min-w-0 flex-1 items-center px-1 py-2 sm:px-2">
           <FighterSide fighter={fight.fighter1} side="left" />
-          <div className="px-2 text-[10px] font-semibold tracking-wider text-text-secondary">
+          <div className="px-1 text-[10px] font-semibold tracking-wider text-text-secondary sm:px-2">
             vs
           </div>
           <FighterSide fighter={fight.fighter2} side="right" />

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { Flame, Star, Bell } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/lib/auth';
 import { getTasteProfile } from '@/lib/api';
@@ -51,41 +52,21 @@ export function IdentityBlock() {
           className="mx-auto mb-3 h-auto w-full"
           priority
         />
-        <p className="mb-3 text-sm font-bold text-foreground">
+        <p className="mb-4 text-lg font-bold text-foreground">
           Never miss a Good Fight.
         </p>
-        <p className="mb-3 text-xs leading-relaxed text-text-secondary">
-          Your home for combat sports across 15+ promotions — UFC, boxing, and
-          more in one place.
-        </p>
-        <ul className="mb-4 space-y-2 text-left">
-          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
-            <span aria-hidden className="text-primary">🔥</span>
-            <span>
-              <span className="font-semibold text-foreground">See the hype.</span>{' '}
-              Know which fights are worth watching before they happen.
-            </span>
+        <ul className="mb-4 space-y-3 text-left">
+          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+            <Flame size={18} className="mt-0.5 shrink-0 text-text-secondary" />
+            <span>See which upcoming fights are hyped</span>
           </li>
-          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
-            <span aria-hidden className="text-primary">⭐</span>
-            <span>
-              <span className="font-semibold text-foreground">Rate every fight.</span>{' '}
-              Find the bouts the community loved and skip the duds.
-            </span>
+          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+            <Star size={18} className="mt-0.5 shrink-0 text-text-secondary" />
+            <span>See which fights entertained</span>
           </li>
-          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
-            <span aria-hidden className="text-primary">🧬</span>
-            <span>
-              <span className="font-semibold text-foreground">Build your Fan DNA.</span>{' '}
-              A profile that shows what kind of fight fan you are.
-            </span>
-          </li>
-          <li className="flex gap-2 text-xs leading-snug text-text-secondary">
-            <span aria-hidden className="text-primary">🔔</span>
-            <span>
-              <span className="font-semibold text-foreground">Follow fighters.</span>{' '}
-              Get notified on the app the moment they&apos;re booked.
-            </span>
+          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+            <Bell size={18} className="mt-0.5 shrink-0 text-text-secondary" />
+            <span>Keep track of fighters and get notified when they fight</span>
           </li>
         </ul>
         <Link
@@ -95,7 +76,7 @@ export function IdentityBlock() {
           Create your account
         </Link>
         <p className="mt-3 text-xs text-text-secondary">
-          Already a fan?{' '}
+          Already have one?{' '}
           <Link href="/login" className="font-medium text-primary hover:underline">
             Sign in
           </Link>

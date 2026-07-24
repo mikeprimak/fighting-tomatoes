@@ -38,7 +38,7 @@ export function HomeClient() {
   }, [hasLiveEvent, router]);
 
   return (
-    <SidebarLayout>
+    <SidebarLayout mobileBlogAtBottom>
       <WeekendEventsSection />
       <HotUpcomingFightsSection />
       <RecentGoodFightsSection />

@@ -2730,7 +2730,7 @@ export default function CompletedFightDetailScreen({
                     disabled={isFetchingNextPage}
                   >
                     {isFetchingNextPage ? (
-                      <ActivityIndicator color="#fff" />
+                      <ActivityIndicator color="#181818" />
                     ) : (
                       <Text style={styles.loadMoreButtonText}>Load More</Text>
                     )}
@@ -3571,7 +3571,9 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   loadMoreButtonText: {
-    color: '#fff',
+    // Dark text — the button background is the gold primary (#F5C518), on which
+    // white is low-contrast (per Mike, 2026-07-24: should be dark grey).
+    color: '#181818',
     fontSize: 14,
     fontWeight: '600',
   },

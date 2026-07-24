@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Flame, Trophy, History } from 'lucide-react';
 import { getTopUpcomingFights, getRecentGoodFights, getClassicFights } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { SectionHeading } from './SectionHeading';
@@ -166,9 +167,15 @@ function EventFightGroup({
 
 /** Hyped Upcoming Fights: the most-hyped upcoming bouts (avg hype ≥ 7). */
 export function HotUpcomingFightsSection() {
+  // Key on auth (and wait for it to restore) so the authenticated response —
+  // which carries the user's own userHypePrediction for the "My Hype" column —
+  // replaces the anonymous one on login. Without this the first (tokenless)
+  // fetch is cached and the user's hype never shows. Mirrors CommentSections.
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data } = useQuery({
-    queryKey: ['home', 'hot-upcoming'],
+    queryKey: ['home', 'hot-upcoming', isAuthenticated],
     queryFn: () => getTopUpcomingFights('week'),
+    enabled: !authLoading,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -201,9 +208,13 @@ export function HotUpcomingFightsSection() {
 /** Recent Good Fights: the best fights from the last couple weeks (rating > 7,
  *  >= 3 ratings), grouped by event under banner headers — mirrors mobile. */
 export function RecentGoodFightsSection() {
+  // Auth-keyed so the user's own rating fills the "My Rating" column on login
+  // (same reasoning as HotUpcomingFightsSection).
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data } = useQuery({
-    queryKey: ['home', 'recent-good'],
+    queryKey: ['home', 'recent-good', isAuthenticated],
     queryFn: getRecentGoodFights,
+    enabled: !authLoading,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -235,9 +246,12 @@ export function RecentGoodFightsSection() {
 
 /** Classic Good Fights: top-rated bouts 3+ years old — a vault recommendation. */
 export function ClassicGoodFightsSection() {
+  // Auth-keyed so the user's own rating fills the "My Rating" column on login.
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { data } = useQuery({
-    queryKey: ['home', 'classic-good'],
+    queryKey: ['home', 'classic-good', isAuthenticated],
     queryFn: () => getClassicFights(MAX),
+    enabled: !authLoading,
     staleTime: 30 * 60 * 1000,
   });
 

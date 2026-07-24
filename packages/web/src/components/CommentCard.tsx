@@ -22,12 +22,18 @@ export function CommentCard({
   isMine = false,
   onUpvote,
   onEdit,
+  onReply,
+  compact = false,
   meta,
 }: {
   item: any;
   isMine?: boolean;
   onUpvote?: () => void;
   onEdit?: () => void;
+  /** When provided, a "Reply" action appears in the footer row. */
+  onReply?: () => void;
+  /** Tighter padding + smaller avatar rail for nested replies. */
+  compact?: boolean;
   /** Extra context rendered in the footer row, next to the date (e.g. the
    *  fight matchup + event on the My Activity screen). */
   meta?: React.ReactNode;
@@ -45,7 +51,7 @@ export function CommentCard({
   );
 
   return (
-    <div className={`flex gap-3 rounded-lg border bg-card p-3 ${mine ? 'border-primary/50' : 'border-border'}`}>
+    <div className={`flex gap-3 rounded-lg border bg-card ${compact ? 'p-2.5' : 'p-3'} ${mine ? 'border-primary/50' : 'border-border'}`}>
       {/* Upvote rail (left of everything, like mobile) */}
       {onUpvote ? (
         <button
@@ -92,6 +98,11 @@ export function CommentCard({
           {mine && onEdit && (
             <button onClick={onEdit} className="font-semibold uppercase tracking-wide hover:text-primary">
               Edit
+            </button>
+          )}
+          {onReply && (
+            <button onClick={onReply} className="font-semibold uppercase tracking-wide hover:text-primary">
+              Reply
             </button>
           )}
         </div>

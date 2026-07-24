@@ -354,12 +354,26 @@ async function importPFLEvents(
       // Update existing event - do NOT overwrite eventStatus (lifecycle service manages it),
       // except un-cancel events that reappear on the source site.
       const wasCancelled = event.eventStatus === 'CANCELLED';
-      // Section start times: pass through null so a scrape that no longer
-      // sees a section header (e.g. PFL drops "Early Prelims" from a card,
-      // or we previously misinterpreted "Early Card" as Early Prelims) will
-      // clear the stale DB value. Only main is conservative — never clear it
-      // because parsePFLEventStartTime returns null when both ISO and string
+      // Section start times: normally pass through null so a scrape that no
+      // longer sees a section header (e.g. PFL drops "Early Prelims" from a
+      // card, or we previously misinterpreted "Early Card" as Early Prelims)
+      // clears the stale scraper value. Only main is conservative — never clear
+      // it because parsePFLEventStartTime returns null when both ISO and string
       // are missing, and we don't want a transient AJAX hiccup to wipe it.
+      //
+      // BUT never clobber a section time that Start-Time Discovery or an admin
+      // filled: pflmma.com routinely omits the prelim header, so an unconditional
+      // null-write wiped the discovered "Early Card" time on the very next daily
+      // scrape, and the discovery retry-throttle (startTimeDiscoveredAt) then
+      // kept it null for 36h — PFL cards showed no prelim time indefinitely.
+      // Preserve discovery/manual values (undefined = leave unchanged); only
+      // scraper-owned values (startTimeSource null/'scraper') still clear.
+      const sectionTimeProtected =
+        event.startTimeSource === 'discovery' || event.startTimeSource === 'manual';
+      const prelimUpdate =
+        prelimStartTime != null ? prelimStartTime : sectionTimeProtected ? undefined : null;
+      const earlyPrelimUpdate =
+        earlyPrelimStartTime != null ? earlyPrelimStartTime : sectionTimeProtected ? undefined : null;
       event = await prisma.event.update({
         where: { id: event.id },
         data: {
@@ -370,8 +384,8 @@ async function importPFLEvents(
           bannerImage: bannerImageUrl,
           ufcUrl: eventUrl,
           mainStartTime: mainStartTime || undefined,
-          prelimStartTime: prelimStartTime,
-          earlyPrelimStartTime: earlyPrelimStartTime,
+          prelimStartTime: prelimUpdate,
+          earlyPrelimStartTime: earlyPrelimUpdate,
           scraperType: 'pfl',
           missingScrapeCount: 0, // event present in this scrape — clear strike counter
           ...(wasCancelled ? { eventStatus: 'UPCOMING', completionMethod: null } : {}),

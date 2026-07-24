@@ -16,15 +16,27 @@ import { FanDNABlock } from '@/components/sidebar/FanDNABlock';
  * feed instead (the desktop sidebar is unreachable because feeds lazy-load
  * forever). Mirrors the home (Upcoming) page so Past / Live / Good Fights match.
  */
-export function SidebarLayout({ children }: { children: React.ReactNode }) {
+export function SidebarLayout({
+  children,
+  mobileBlogAtBottom = false,
+}: {
+  children: React.ReactNode;
+  /**
+   * On mobile (below md), render the blog block BELOW the feed instead of above
+   * it. Only safe on pages whose feed has a natural end (the home page) — the
+   * other feeds lazy-load forever, so a bottom block would never be reached.
+   */
+  mobileBlogAtBottom?: boolean;
+}) {
   const { isAuthenticated } = useAuth();
 
   return (
     <div className="md:grid md:grid-cols-[minmax(0,1fr)_260px] md:gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
       {/* Shown below md: blog block + compact "About you" strip above the feed
-          (the desktop sidebar is unreachable on narrow screens). */}
+          (the desktop sidebar is unreachable on narrow screens). With
+          mobileBlogAtBottom the blog moves below the feed (see below). */}
       <div className="mb-6 space-y-4 md:hidden">
-        <BlogSidebarBlock />
+        {!mobileBlogAtBottom && <BlogSidebarBlock />}
         <IdentityBlock />
         <FanDNABlock />
         {/* Profile link is meaningless logged out (it routes to a sign-in wall),
@@ -40,7 +52,16 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         ) : null}
       </div>
 
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        {children}
+        {/* Blog below the feed on mobile (home only). Hidden on md+ where the
+            right rail already carries it. */}
+        {mobileBlogAtBottom && (
+          <div className="mt-6 md:hidden">
+            <BlogSidebarBlock />
+          </div>
+        )}
+      </div>
 
       <div className="hidden md:block">
         <ProfileSidebar />

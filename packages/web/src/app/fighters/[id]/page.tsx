@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { permanentRedirect } from 'next/navigation';
 import { FighterDetailClient } from './FighterDetailClient';
+import { AppDownloadFooter } from '@/components/layout/AppDownloadFooter';
 import { FighterFightStatus, nextFightSentence, pickNextAndLastFight } from './FighterFightStatus';
 import { ExploreLinks, type ExploreLink } from '@/components/ExploreLinks';
 import { divisionLabel, divisionSlug } from '@/lib/divisions';
@@ -147,6 +148,7 @@ export default async function FighterDetailPage({ params }: Props) {
         fightStatusBlock={<FighterFightStatus fighter={initialFighter} fights={initialFights} />}
       />
       <ExploreLinks links={exploreLinks} className="mx-auto mt-8 max-w-3xl" />
+      <AppDownloadFooter />
     </>
   );
 }
