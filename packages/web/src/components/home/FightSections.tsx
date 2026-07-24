@@ -14,7 +14,7 @@ const MAX = 6;
 /** Labels over the fight cards' score columns (community left, the user's own
  *  right). Spans align with the cards' w-12 columns; the right label is pulled
  *  slightly off the edge so wide labels ("MY RATING") don't crowd it. */
-function ColumnHeaders({ left, right }: { left: string; right: string }) {
+export function ColumnHeaders({ left, right }: { left: string; right: string }) {
   return (
     <div className="flex items-center justify-between pb-1.5 pt-2 text-[9px] font-bold uppercase tracking-wider text-text-secondary">
       <span className="ml-2 w-12 whitespace-nowrap text-center">{left}</span>

@@ -6,6 +6,7 @@ import { getMyRatings, toggleReviewUpvote, togglePreFightCommentUpvote } from '@
 import { useAuth } from '@/lib/auth';
 import { CompletedFightCard } from '@/components/fight-cards/CompletedFightCard';
 import { UpcomingFightCard } from '@/components/fight-cards/UpcomingFightCard';
+import { ColumnHeaders } from '@/components/home/FightSections';
 import { CommentCard } from '@/components/CommentCard';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -208,12 +209,21 @@ function ActivityPageInner() {
           (you can only rate a completed fight) — guards against fights whose
           fightStatus is stale-UPCOMING on an already-finished event. */}
       {!isCommentTab && fights.length > 0 && (
-        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-          {fights.map((fight: any) => (
-            filterType === 'all' || fight.fightStatus === 'COMPLETED'
-              ? <CompletedFightCard key={fight.id} fight={fight} />
-              : <UpcomingFightCard key={fight.id} fight={fight} />
-          ))}
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
+          {/* Score-column headers, matching the home bands: community score on
+              the left, the user's own on the right. Hyped tab is upcoming
+              (hype), Rated tab is completed (rating). */}
+          <ColumnHeaders
+            left={filterType === 'hype' ? 'Hype' : 'Rating'}
+            right={filterType === 'hype' ? 'My Hype' : 'My Rating'}
+          />
+          <div className="divide-y divide-border">
+            {fights.map((fight: any) => (
+              filterType === 'all' || fight.fightStatus === 'COMPLETED'
+                ? <CompletedFightCard key={fight.id} fight={fight} />
+                : <UpcomingFightCard key={fight.id} fight={fight} />
+            ))}
+          </div>
         </div>
       )}
 

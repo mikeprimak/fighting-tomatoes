@@ -56,15 +56,15 @@ export function IdentityBlock() {
           Never miss a Good Fight.
         </p>
         <ul className="mb-4 space-y-3 text-left">
-          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+          <li className="flex items-start gap-2.5 text-base leading-snug text-text-secondary md:text-sm">
             <Flame size={18} className="mt-0.5 shrink-0 text-text-secondary" />
             <span>See which upcoming fights are hyped</span>
           </li>
-          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+          <li className="flex items-start gap-2.5 text-base leading-snug text-text-secondary md:text-sm">
             <Star size={18} className="mt-0.5 shrink-0 text-text-secondary" />
             <span>See which fights entertained</span>
           </li>
-          <li className="flex items-start gap-2.5 text-sm leading-snug text-text-secondary">
+          <li className="flex items-start gap-2.5 text-base leading-snug text-text-secondary md:text-sm">
             <Bell size={18} className="mt-0.5 shrink-0 text-text-secondary" />
             <span>Keep track of fighters and get notified when they fight</span>
           </li>
