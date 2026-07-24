@@ -29,6 +29,7 @@ import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
 import { TAPOLOGY_PROMOTION_HUBS } from '../config/promotionRegistry';
 import { refreshProductionScrapersCache } from '../config/liveTrackerConfig';
+import { matchTapologyEventLink } from '../utils/tapologyEventMatcher';
 
 
 const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
@@ -160,49 +161,15 @@ async function discoverTapologyUrl(event: any, promotion: string): Promise<strin
 
     if (eventLinks.length === 0) return null;
 
-    // Try to match by event name
-    const eventNameLower = event.name.toLowerCase();
-    for (const link of eventLinks) {
-      const linkNameLower = link.name.toLowerCase();
-      // Check if names overlap significantly
-      if (eventNameLower.includes(linkNameLower) || linkNameLower.includes(eventNameLower)) {
-        console.log(`[TAPOLOGY LIVE] Matched by name: "${link.name}" → ${link.url}`);
-        // Store the URL on the event for future lookups
-        await prisma.event.update({
-          where: { id: event.id },
-          data: { ufcUrl: link.url },
-        });
-        return link.url;
-      }
-    }
-
-    // Try matching by URL slug keywords from event name
-    const eventWords = event.name.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter((w: string) => w.length > 2);
-
-    for (const link of eventLinks) {
-      const urlLower = link.url.toLowerCase();
-      const matchCount = eventWords.filter((w: string) => urlLower.includes(w)).length;
-      if (matchCount >= 2) {
-        console.log(`[TAPOLOGY LIVE] Matched by keywords (${matchCount}): "${link.name}" → ${link.url}`);
-        await prisma.event.update({
-          where: { id: event.id },
-          data: { ufcUrl: link.url },
-        });
-        return link.url;
-      }
-    }
-
-    // Last resort: if only one event found on the hub, use that
-    if (eventLinks.length === 1) {
-      console.log(`[TAPOLOGY LIVE] Only one event on hub, using: ${eventLinks[0].url}`);
+    const match = matchTapologyEventLink(event.name, eventLinks);
+    if (match) {
+      console.log(`[TAPOLOGY LIVE] Matched: "${match.name}" → ${match.url}`);
+      // Store the URL on the event for future lookups
       await prisma.event.update({
         where: { id: event.id },
-        data: { ufcUrl: eventLinks[0].url },
+        data: { ufcUrl: match.url },
       });
-      return eventLinks[0].url;
+      return match.url;
     }
 
     console.log(`[TAPOLOGY LIVE] Could not auto-match event. Available events:`);

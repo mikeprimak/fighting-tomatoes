@@ -20,13 +20,13 @@
  *   BACKFILL_WINDOW_DAYS   - Optional, defaults to 7
  */
 
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { TapologyLiveScraper } from '../services/tapologyLiveScraper';
 import { parseTapologyData } from '../services/tapologyLiveParser';
 import { TAPOLOGY_PROMOTION_HUBS, shelvedExclusionWhere, refreshShelvedPromotionsCache } from '../config/promotionRegistry';
 import { fetchTapologyHtml } from '../services/tapologyBrowser';
+import { matchTapologyEventLink } from '../utils/tapologyEventMatcher';
 
-const prisma = new PrismaClient();
 
 // 3-day window (was 7). Tapology results settle within ~2 days; a 7-day window
 // re-rendered every still-null completed event through Scrapfly DAILY for a week
@@ -71,26 +71,10 @@ async function discoverTapologyUrl(event: any, promotion: string): Promise<strin
 
     if (eventLinks.length === 0) return null;
 
-    const eventNameLower = event.name.toLowerCase();
-    for (const link of eventLinks) {
-      const linkNameLower = link.name.toLowerCase();
-      if (eventNameLower.includes(linkNameLower) || linkNameLower.includes(eventNameLower)) {
-        await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: link.url } });
-        return link.url;
-      }
-    }
-
-    const eventWords = event.name.toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .split(/\s+/)
-      .filter((w: string) => w.length > 2);
-    for (const link of eventLinks) {
-      const urlLower = link.url.toLowerCase();
-      const matchCount = eventWords.filter((w: string) => urlLower.includes(w)).length;
-      if (matchCount >= 2) {
-        await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: link.url } });
-        return link.url;
-      }
+    const match = matchTapologyEventLink(event.name, eventLinks);
+    if (match) {
+      await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: match.url } });
+      return match.url;
     }
 
     return null;

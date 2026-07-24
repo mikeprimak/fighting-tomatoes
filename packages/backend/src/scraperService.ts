@@ -33,6 +33,7 @@ import * as fs from 'fs/promises';
 import OneFCLiveScraper from './services/oneFCLiveScraper';
 import OktagonLiveScraper from './services/oktagonLiveScraper';
 import { TapologyLiveScraper } from './services/tapologyLiveScraper';
+import { matchTapologyEventLink } from './utils/tapologyEventMatcher';
 import { PFLLiveScraper } from './services/pflLiveScraper';
 import { SherdogLiveScraper } from './services/sherdogLiveScraper';
 
@@ -650,31 +651,10 @@ async function discoverTapologyUrl(event: any): Promise<string | null> {
 
     if (eventLinks.length === 0) return null;
 
-    // Match by name
-    const eventNameLower = event.name.toLowerCase();
-    for (const link of eventLinks) {
-      const linkNameLower = link.name.toLowerCase();
-      if (eventNameLower.includes(linkNameLower) || linkNameLower.includes(eventNameLower)) {
-        await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: link.url } });
-        return link.url;
-      }
-    }
-
-    // Match by URL keywords
-    const eventWords = event.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: string) => w.length > 2);
-    for (const link of eventLinks) {
-      const urlLower = link.url.toLowerCase();
-      const matchCount = eventWords.filter((w: string) => urlLower.includes(w)).length;
-      if (matchCount >= 2) {
-        await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: link.url } });
-        return link.url;
-      }
-    }
-
-    // Single result fallback
-    if (eventLinks.length === 1) {
-      await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: eventLinks[0].url } });
-      return eventLinks[0].url;
+    const match = matchTapologyEventLink(event.name, eventLinks);
+    if (match) {
+      await prisma.event.update({ where: { id: event.id }, data: { ufcUrl: match.url } });
+      return match.url;
     }
 
     return null;
