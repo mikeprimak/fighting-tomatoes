@@ -2,7 +2,7 @@
 title: "McGregor vs Holloway 2 Result: What Happened at UFC 329"
 slug: "mcgregor-holloway-2-ufc-329"
 date: "2026-05-30"
-updated: "2026-07-13"
+updated: "2026-07-24"
 author: "Good Fights"
 excerpt: "Max Holloway beat Conor McGregor by first-round TKO at UFC 329 on July 11 in Las Vegas after McGregor blew out his knee 69 seconds in. Here is what happened, what it means for both men, and the full preview we published before the fight: the history, the tale of the tape, and the odds."
 tags: ["conor-mcgregor", "max-holloway", "ufc-329", "ufc-329-result", "ufc", "results"]
@@ -154,7 +154,11 @@ That was before the resale market got involved. Multiple reports pegged some off
 
 ## What was the full UFC 329 fight card?
 
-UFC 329 was a stacked card top to bottom. Here is the final lineup by broadcast segment:
+UFC 329 was a stacked card top to bottom. Tap any fight to rate it and see how the fanbase scored the night:
+
+<div class="gf-event-fights" data-event-id="ufc-329-mcgregor-vs-holloway"></div>
+
+Here is the final lineup by broadcast segment:
 
 **Main card**
 
