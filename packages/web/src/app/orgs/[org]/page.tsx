@@ -127,6 +127,7 @@ export default async function OrgHubPage({ params }: Props) {
     ...(bestPageIndexable
       ? [{ href: `/fights/best/${org.slug}`, label: `Best ${org.name} fights` }]
       : []),
+    ...(org.sport === 'boxing' ? [{ href: '/schedule/boxing', label: 'Boxing schedule' }] : []),
     { href: '/schedule', label: 'Fight schedule' },
     { href: '/events', label: 'All events' },
     { href: '/fights/best/2026', label: 'Best fights of 2026' },

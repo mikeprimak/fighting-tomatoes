@@ -11,9 +11,17 @@
  * is the real instant when present (see lesson_event_date_is_utc_hour_placeholder).
  */
 
+import { orgByPromotion, type OrgSport } from '@/lib/orgs';
+
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 
 export const ET = 'America/New_York';
+
+/** Sport bucket of an event via the org registry. Unknown promotions return
+ *  undefined so sport-facet hubs fail closed (miss a card, never pollute). */
+export function eventSport(e: { promotion: string }): OrgSport | undefined {
+  return orgByPromotion(e.promotion)?.sport;
+}
 
 export interface ScheduleFight {
   id: string;

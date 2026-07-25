@@ -69,6 +69,9 @@ export default async function FightsTonightPage() {
         <Link href="/schedule/this-weekend" className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary">
           This weekend
         </Link>
+        <Link href="/schedule/boxing" className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary">
+          Boxing
+        </Link>
         <Link href="/events/live" className="rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-text-secondary transition-colors hover:border-primary hover:text-primary">
           Live now
         </Link>

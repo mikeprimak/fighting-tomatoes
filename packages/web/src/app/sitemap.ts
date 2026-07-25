@@ -20,6 +20,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/schedule`, changeFrequency: 'daily', priority: 0.9, lastModified: new Date() },
     { url: `${SITE_URL}/schedule/tonight`, changeFrequency: 'hourly', priority: 0.9, lastModified: new Date() },
     { url: `${SITE_URL}/schedule/this-weekend`, changeFrequency: 'daily', priority: 0.9, lastModified: new Date() },
+    { url: `${SITE_URL}/schedule/boxing`, changeFrequency: 'daily', priority: 0.9, lastModified: new Date() },
     { url: `${SITE_URL}/events`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${SITE_URL}/events/live`, changeFrequency: 'always', priority: 0.9 },
     { url: `${SITE_URL}/events/upcoming`, changeFrequency: 'daily', priority: 0.8 },

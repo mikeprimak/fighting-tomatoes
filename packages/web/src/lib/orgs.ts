@@ -10,6 +10,10 @@
  * display label.
  */
 
+/** Sport bucket for sport-facet schedule hubs (/schedule/boxing). 'other'
+ *  covers hybrids and one-offs (karate, wrestling, Dirty Boxing rules). */
+export type OrgSport = 'mma' | 'boxing' | 'bareknuckle' | 'other';
+
 export interface OrgInfo {
   /** URL slug: /orgs/<slug> */
   slug: string;
@@ -17,26 +21,27 @@ export interface OrgInfo {
   promotion: string;
   /** Display name. */
   name: string;
+  sport: OrgSport;
 }
 
 export const ORGS: OrgInfo[] = [
-  { slug: 'ufc', promotion: 'UFC', name: 'UFC' },
-  { slug: 'bkfc', promotion: 'BKFC', name: 'BKFC' },
-  { slug: 'one', promotion: 'ONE', name: 'ONE Championship' },
-  { slug: 'pfl', promotion: 'PFL', name: 'PFL' },
-  { slug: 'oktagon', promotion: 'OKTAGON', name: 'Oktagon MMA' },
-  { slug: 'rizin', promotion: 'RIZIN', name: 'RIZIN' },
-  { slug: 'karate-combat', promotion: 'Karate Combat', name: 'Karate Combat' },
-  { slug: 'dirty-boxing', promotion: 'Dirty Boxing', name: 'Dirty Boxing' },
-  { slug: 'mvp', promotion: 'MVP', name: 'MVP (Most Valuable Promotions)' },
-  { slug: 'raf', promotion: 'RAF', name: 'RAF Wrestling' },
-  { slug: 'gamebred', promotion: 'Gamebred', name: 'Gamebred Fighting Championship' },
+  { slug: 'ufc', promotion: 'UFC', name: 'UFC', sport: 'mma' },
+  { slug: 'bkfc', promotion: 'BKFC', name: 'BKFC', sport: 'bareknuckle' },
+  { slug: 'one', promotion: 'ONE', name: 'ONE Championship', sport: 'mma' },
+  { slug: 'pfl', promotion: 'PFL', name: 'PFL', sport: 'mma' },
+  { slug: 'oktagon', promotion: 'OKTAGON', name: 'Oktagon MMA', sport: 'mma' },
+  { slug: 'rizin', promotion: 'RIZIN', name: 'RIZIN', sport: 'mma' },
+  { slug: 'karate-combat', promotion: 'Karate Combat', name: 'Karate Combat', sport: 'other' },
+  { slug: 'dirty-boxing', promotion: 'Dirty Boxing', name: 'Dirty Boxing', sport: 'other' },
+  { slug: 'mvp', promotion: 'MVP', name: 'MVP (Most Valuable Promotions)', sport: 'boxing' },
+  { slug: 'raf', promotion: 'RAF', name: 'RAF Wrestling', sport: 'other' },
+  { slug: 'gamebred', promotion: 'Gamebred', name: 'Gamebred Fighting Championship', sport: 'mma' },
   // Boxing (un-shelved 2026-07-21).
-  { slug: 'zuffa-boxing', promotion: 'Zuffa Boxing', name: 'Zuffa Boxing' },
-  { slug: 'top-rank', promotion: 'TOP_RANK', name: 'Top Rank' },
-  { slug: 'golden-boy', promotion: 'Golden Boy', name: 'Golden Boy' },
-  { slug: 'gold-star', promotion: 'Gold Star', name: 'Gold Star' },
-  { slug: 'matchroom', promotion: 'Matchroom Boxing', name: 'Matchroom Boxing' },
+  { slug: 'zuffa-boxing', promotion: 'Zuffa Boxing', name: 'Zuffa Boxing', sport: 'boxing' },
+  { slug: 'top-rank', promotion: 'TOP_RANK', name: 'Top Rank', sport: 'boxing' },
+  { slug: 'golden-boy', promotion: 'Golden Boy', name: 'Golden Boy', sport: 'boxing' },
+  { slug: 'gold-star', promotion: 'Gold Star', name: 'Gold Star', sport: 'boxing' },
+  { slug: 'matchroom', promotion: 'Matchroom Boxing', name: 'Matchroom Boxing', sport: 'boxing' },
 ];
 
 export function orgBySlug(slug: string): OrgInfo | undefined {
