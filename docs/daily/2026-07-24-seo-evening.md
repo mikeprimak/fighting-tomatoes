@@ -75,8 +75,11 @@ Brainstorm list reviewed; Mike's calls:
   **329 flagship** (`mcgregor-holloway-2-ufc-329`). Added the embed in the
   full-card section (completed event → "Rate the fights" mode), static SSR
   list kept below it, `updated` bumped. Backlog §9 item marked DONE.
-- **Subscribable fight calendar ICS (§7)** — Mike asked for a scope; delivered
-  in-chat (Layer 1 per-event `.ics` route + Layer 2 `webcal://` feeds, no new
-  deps, no native build — see backlog item for the full spec).
+- **Subscribable fight calendar ICS (§7)** — scoped it in-chat, then Mike
+  pointed out it already exists: **shipped 2026-07-21** (`56443291` both
+  layers + `18eeb6d9` Android native editor) but the backlog item was never
+  checked off. Marked DONE (`1a4cdfef`). Genuinely-new follow-ups logged on
+  the item: `?sport=boxing` feed + subscribe link on `/schedule/boxing`,
+  feed in mobile settings.
 - **Card-placement article (§9)** — **CLOSED by Mike**, no publish; Round
   Numbers is the data-article lane now.
