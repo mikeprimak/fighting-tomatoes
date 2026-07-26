@@ -33,6 +33,7 @@ import * as fs from 'fs/promises';
 import OneFCLiveScraper from './services/oneFCLiveScraper';
 import OktagonLiveScraper from './services/oktagonLiveScraper';
 import { TapologyLiveScraper } from './services/tapologyLiveScraper';
+import { closeSharedTapologyBrowser } from './services/tapologyBrowser';
 import { matchTapologyEventLink } from './utils/tapologyEventMatcher';
 import { PFLLiveScraper } from './services/pflLiveScraper';
 import { SherdogLiveScraper } from './services/sherdogLiveScraper';
@@ -545,6 +546,13 @@ function stopTracker(eventId: string): boolean {
   clearInterval(tracker.interval);
   activeTrackers.delete(eventId);
   console.log(`[SCRAPER] Stopped ${tracker.scraperType} tracker for ${tracker.eventName} (${tracker.scrapeCount} scrapes)`);
+
+  // The Tapology browser is shared across trackers so one cf_clearance serves
+  // them all (see tapologyBrowser.js). Only let it go once nothing is polling —
+  // between cards there's no reason to keep a Chrome resident for hours.
+  if (![...activeTrackers.values()].some((t) => t.scraperType === 'tapology')) {
+    closeSharedTapologyBrowser('no active tapology trackers').catch(() => {});
+  }
   return true;
 }
 

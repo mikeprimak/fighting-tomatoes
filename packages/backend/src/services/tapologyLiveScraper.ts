@@ -11,7 +11,12 @@
 
 import * as cheerio from 'cheerio';
 import puppeteer from 'puppeteer';
-import { launchTapologyBrowser, waitForCloudflareClear, DEFAULT_UA } from './tapologyBrowser';
+import {
+  getSharedTapologyBrowser,
+  closeSharedTapologyBrowser,
+  waitForCloudflareClear,
+  DEFAULT_UA,
+} from './tapologyBrowser';
 
 // ============== TYPE DEFINITIONS ==============
 
@@ -127,10 +132,14 @@ export class TapologyLiveScraper {
   private async fetchHtmlWithRetry(maxAttempts = 4): Promise<string> {
     let lastErr: Error | null = null;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      let browser: Awaited<ReturnType<typeof puppeteer.launch>> | null = null;
+      let page: Awaited<ReturnType<Awaited<ReturnType<typeof puppeteer.launch>>['newPage']>> | null = null;
       try {
-        browser = await launchTapologyBrowser();
-        const page = await browser.newPage();
+        // Shared browser, NOT a fresh one per poll. A new browser re-pays the
+        // Cloudflare challenge (~1 MB of billed residential proxy traffic for
+        // ~6 KB of HTML); reusing this one rides the cf_clearance cookie the
+        // first poll already paid CapSolver to obtain. See tapologyBrowser.js.
+        const browser = await getSharedTapologyBrowser();
+        page = await browser.newPage();
         await page.setViewport({ width: 1920, height: 1080 });
         await page.setUserAgent(DEFAULT_UA);
 
@@ -148,25 +157,33 @@ export class TapologyLiveScraper {
           lastErr = new Error(`Cloudflare challenge not cleared (HTTP ${status})`);
           const waitMs = attempt * 30_000; // 30s, 60s, 90s
           console.log(`[Tapology] challenge not cleared — backing off ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
-          await browser.close();
-          browser = null;
+          // The session is flagged, not merely unlucky — reusing it would just
+          // re-fail on the same sticky exit. Drop it so the retry starts clean.
+          await closeSharedTapologyBrowser('challenge-not-cleared');
+          page = null;
           await new Promise((r) => setTimeout(r, waitMs));
           continue;
         }
 
-        const html = await page.content();
-        await browser.close();
-        browser = null;
-        return html;
+        return await page.content();
       } catch (err: any) {
         lastErr = err;
+        // A protocol/connection error means the browser itself is sick; a plain
+        // navigation timeout doesn't, and recycling on those would forfeit the
+        // clearance (and the bandwidth saving) over a blip.
+        if (/Protocol error|Connection closed|Target closed|browser has disconnected/i.test(err?.message || '')) {
+          await closeSharedTapologyBrowser('protocol-error').catch(() => {});
+          page = null;
+        }
         if (attempt < maxAttempts) {
           const waitMs = attempt * 15_000; // 15s, 30s, 45s
           console.log(`[Tapology] fetch error (${err.message}) — retrying in ${waitMs / 1000}s (attempt ${attempt}/${maxAttempts})`);
           await new Promise((r) => setTimeout(r, waitMs));
         }
       } finally {
-        if (browser) await browser.close().catch(() => {});
+        // The browser now outlives the fetch, so the page is ours to clean up —
+        // otherwise tabs pile up for the whole card.
+        if (page) await page.close().catch(() => {});
       }
     }
     throw lastErr ?? new Error('Tapology fetch failed');

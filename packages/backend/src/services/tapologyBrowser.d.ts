@@ -1,6 +1,8 @@
 import type { Browser, Page } from 'puppeteer';
 
 export function launchTapologyBrowser(opts?: any): Promise<Browser>;
+export function getSharedTapologyBrowser(): Promise<Browser>;
+export function closeSharedTapologyBrowser(reason?: string): Promise<void>;
 export function newTapologyPage(browser: Browser): Promise<Page>;
 export function waitForCloudflareClear(
   page: Page,

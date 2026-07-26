@@ -412,6 +412,104 @@ async function newTapologyPage(browser) {
   return page;
 }
 
+// ──────────────────── Shared long-lived browser (proxy cost) ─────────────────
+// Every FRESH browser re-pays Cloudflare's challenge. Measured 2026-07-26: one
+// Tapology navigation pulls ~1,080 KB, of which ~1,070 KB is challenge traffic
+// (challenges.cloudflare.com + cdn-cgi/challenge-platform + turnstile) and only
+// ~6 KB is the HTML we actually parse. On a metered residential proxy that is
+// 98-99% of the bill, and it is pure waste: the live tracker used to
+// launch-and-close per poll, throwing away the cf_clearance cookie CapSolver had
+// just paid to obtain, so the next poll 150s later re-challenged from zero.
+//
+// Holding ONE browser across polls reuses that clearance and drops steady-state
+// cost to roughly the real HTML. Bounded on both axes so an 8-hour card can't
+// leak: recycled once the clearance is likely stale (cf_clearance is typically
+// good for ~30min-2hr) or after enough page opens that Chrome's memory matters.
+// A recycle is cheap — it costs exactly what EVERY fetch used to cost.
+const SHARED_BROWSER_MAX_AGE_MS = Number(process.env.TAPOLOGY_BROWSER_MAX_AGE_MS || 40 * 60 * 1000);
+const SHARED_BROWSER_MAX_USES = Number(process.env.TAPOLOGY_BROWSER_MAX_USES || 250);
+
+let sharedBrowser = null;
+let sharedBrowserBornAt = 0;
+let sharedBrowserUses = 0;
+let sharedBrowserLaunch = null; // in-flight launch, so concurrent trackers don't race
+
+/** Puppeteer renamed isConnected() -> connected; tolerate both. */
+function isBrowserAlive(browser) {
+  if (!browser) return false;
+  try {
+    if (typeof browser.connected === 'boolean') return browser.connected;
+    if (typeof browser.isConnected === 'function') return browser.isConnected();
+  } catch (_) {
+    return false;
+  }
+  return false;
+}
+
+function sharedBrowserExpiry() {
+  if (!sharedBrowser) return null;
+  if (!isBrowserAlive(sharedBrowser)) return 'disconnected';
+  if (Date.now() - sharedBrowserBornAt >= SHARED_BROWSER_MAX_AGE_MS) return 'max-age';
+  if (sharedBrowserUses >= SHARED_BROWSER_MAX_USES) return 'max-uses';
+  return null;
+}
+
+/**
+ * Close the shared browser, if any. Safe to call when there isn't one. Callers
+ * that detect a poisoned session (challenge stopped clearing) should call this
+ * so the next fetch starts clean — a fresh sticky exit often clears where a
+ * flagged one won't.
+ */
+async function closeSharedTapologyBrowser(reason = 'requested') {
+  const browser = sharedBrowser;
+  sharedBrowser = null;
+  sharedBrowserBornAt = 0;
+  sharedBrowserUses = 0;
+  if (!browser) return;
+  console.log(`[tapology] recycling shared browser (${reason})`);
+  await browser.close().catch(() => {});
+}
+
+/**
+ * Get the process-wide Tapology browser, launching or recycling as needed. The
+ * returned browser is already proxy-wrapped by launchTapologyBrowser, so
+ * browser.newPage() authenticates and retries exactly as before.
+ *
+ * Callers MUST close their own pages (previously the per-fetch browser.close()
+ * did that implicitly) or tabs accumulate for the life of the card.
+ */
+async function getSharedTapologyBrowser() {
+  const expiry = sharedBrowserExpiry();
+  if (expiry) await closeSharedTapologyBrowser(expiry);
+
+  if (sharedBrowser) {
+    sharedBrowserUses++;
+    return sharedBrowser;
+  }
+  if (!sharedBrowserLaunch) {
+    sharedBrowserLaunch = launchTapologyBrowser()
+      .then((b) => {
+        sharedBrowser = b;
+        sharedBrowserBornAt = Date.now();
+        sharedBrowserUses = 1;
+        // If Chrome dies underneath us, drop the handle so the next call relaunches
+        // instead of throwing "Protocol error: Connection closed" forever.
+        b.once('disconnected', () => {
+          if (sharedBrowser === b) {
+            sharedBrowser = null;
+            sharedBrowserBornAt = 0;
+            sharedBrowserUses = 0;
+          }
+        });
+        return b;
+      })
+      .finally(() => {
+        sharedBrowserLaunch = null;
+      });
+  }
+  return sharedBrowserLaunch;
+}
+
 /**
  * After a navigation, poll until Cloudflare's interstitial clears. Returns true
  * once the real page <title> is showing, false if still challenged at timeout.
@@ -488,6 +586,8 @@ async function fetchTapologyHtml(url, { waitForSelector, gotoOpts } = {}) {
 
 module.exports = {
   launchTapologyBrowser,
+  getSharedTapologyBrowser,
+  closeSharedTapologyBrowser,
   newTapologyPage,
   waitForCloudflareClear,
   gotoTapology,
