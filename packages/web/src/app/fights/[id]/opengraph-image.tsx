@@ -12,12 +12,38 @@ import { join } from 'node:path';
 // never a single user's "my hype" (the server doesn't know who's sharing).
 
 export const runtime = 'nodejs'; // readFile + image pre-fetch need Node, not edge
+// Belt-and-braces with the Cache-Control below: Next.js owns the response for
+// metadata image routes and stamps `max-age=0, must-revalidate` on dynamic ones
+// unless the segment declares a revalidate window. Setting both means the CDN
+// caches whichever layer ends up winning.
+export const revalidate = 86400;
 export const alt = 'Good Fights';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrender.com/api';
 const SERVER_BASE_URL = API_BASE_URL.replace(/\/api$/, '');
+
+// Rendering this card costs ~270ms CPU (API fetch + 2 headshot fetches + base64
+// + Satori + PNG encode), and until 2026-07-26 EVERY request paid it — the route
+// shipped `max-age=0, must-revalidate`, so the CDN never held a copy and every
+// hit was an X-Vercel-Cache MISS. A PerplexityBot crawl of ~4,800 fight pages
+// then turned a normal <30 req/hr baseline into 1000+ req/20min, spiking CPU and
+// surfacing the 300s timeouts below. The card's inputs (matchup, event, community
+// score) move slowly, so a long CDN TTL with SWR makes repeat crawls and repeat
+// social unfurls free while keeping scores reasonably fresh.
+const CACHE_OK = 'public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800';
+// The fallback card means the API failed. Cache it only briefly so a transient
+// backend blip doesn't pin a logo-only card in front of a real fight for a day.
+const CACHE_FALLBACK = 'public, max-age=60, s-maxage=60';
+
+// Every outbound fetch here is on the critical path of an image response. With
+// no timeout a single hung upstream (cold Render dyno, slow R2 object) rides the
+// function all the way to Vercel's 300s ceiling — which is exactly the
+// "Task timed out after 300 seconds" / "failed to pipe response" pair in the
+// error logs. Bounded waits degrade to the placeholder instead.
+const FIGHT_FETCH_TIMEOUT_MS = 6000;
+const IMAGE_FETCH_TIMEOUT_MS = 4000;
 
 const C = {
   bg: '#161618',
@@ -44,7 +70,10 @@ async function loadFighterImage(profileImage: string | null | undefined): Promis
   if (url.startsWith('/')) url = `${SERVER_BASE_URL}${url}`;
   else if (!url.startsWith('http')) return null;
   try {
-    const res = await fetch(url, { next: { revalidate: 86400 } });
+    const res = await fetch(url, {
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
+    });
     if (!res.ok) return null;
     const type = res.headers.get('content-type') || 'image/jpeg';
     const buf = Buffer.from(await res.arrayBuffer());
@@ -108,7 +137,10 @@ export default async function Image({ params }: Props) {
 
   let fight: any = null;
   try {
-    const res = await fetch(`${API_BASE_URL}/fights/${id}`, { next: { revalidate: 300 } });
+    const res = await fetch(`${API_BASE_URL}/fights/${id}`, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(FIGHT_FETCH_TIMEOUT_MS),
+    });
     if (res.ok) fight = (await res.json()).fight;
   } catch {
     // fall through to the branded fallback below
@@ -122,7 +154,7 @@ export default async function Image({ params }: Props) {
           <img src={logoSrc} width={520} height={137} style={{ width: 520, height: 137 }} />
         </div>
       ),
-      { ...size },
+      { ...size, headers: { 'Cache-Control': CACHE_FALLBACK } },
     );
   }
 
@@ -212,6 +244,6 @@ export default async function Image({ params }: Props) {
         </div>
       </div>
     ),
-    { ...size },
+    { ...size, headers: { 'Cache-Control': CACHE_OK } },
   );
 }
