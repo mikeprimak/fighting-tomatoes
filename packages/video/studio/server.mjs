@@ -185,7 +185,21 @@ const server = http.createServer(async (req, res) => {
   send(res, 404, { error: 'not found' });
 });
 
+// Starting it twice is the most likely user error, and a raw EADDRINUSE stack trace
+// reads like a breakage when in fact the panel is already up and working.
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`\n  The panel is ALREADY RUNNING.`);
+    console.log(`  Open  http://localhost:${PORT}\n`);
+    console.log(`  (To restart it instead, close the other window, or run: pnpm panel:stop)\n`);
+    process.exit(0);
+  }
+  console.error(err);
+  process.exit(1);
+});
+
 server.listen(PORT, () => {
   console.log(`\n  Good Fights — video control panel`);
-  console.log(`  http://localhost:${PORT}\n`);
+  console.log(`  http://localhost:${PORT}`);
+  console.log(`  Press Ctrl+C to stop.\n`);
 });

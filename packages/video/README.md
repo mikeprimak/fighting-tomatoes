@@ -28,7 +28,12 @@ cd packages/video && pnpm install   # its own install, always
 
 ```bash
 cd packages/video && pnpm panel     # -> http://localhost:3009
+cd packages/video && pnpm panel:stop  # if it was left running in a closed window
 ```
+
+`pnpm panel` **only works from inside `packages/video`** — this package is outside the
+workspace, so pnpm at the repo root cannot see the script. Starting it twice prints
+"already running" rather than an EADDRINUSE trace.
 
 Pick a format, pull from production, write the captions, render, preview — no terminal.
 Zero dependencies beyond Node, so nothing new enters the lockfile.
