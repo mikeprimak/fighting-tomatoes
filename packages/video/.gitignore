@@ -1,0 +1,7 @@
+node_modules/
+out/
+.remotion/
+
+# Fighter headshots are scraped images and the repo is PUBLIC — keep them out.
+# They are re-downloaded by the data script, which must be run before any render.
+public/headshots/

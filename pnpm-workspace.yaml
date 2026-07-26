@@ -1,2 +1,8 @@
 packages:
-  - 'packages/*' 
+  - 'packages/*'
+  # packages/video (Remotion) is deliberately EXCLUDED from the workspace.
+  # It is a local content-production tool, not part of any deployed app. Keeping it
+  # out means its render deps never enter the root lockfile, so they can never slow
+  # or break the Render backend image or the Vercel web build.
+  # Install it on its own:  cd packages/video && pnpm install
+  - '!packages/video'

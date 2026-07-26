@@ -1,0 +1,24 @@
+{
+  "name": "@good-fights/video",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Faceless video production engine (Remotion). Not part of any deployed app — excluded from the pnpm workspace on purpose.",
+  "scripts": {
+    "studio": "remotion studio",
+    "render": "remotion render Countdown out/countdown.mp4",
+    "still": "remotion still Countdown out/frame.png --frame=200",
+    "data": "cd ../backend && npx tsx scripts/videoData.ts"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.499",
+    "@remotion/google-fonts": "4.0.499",
+    "@remotion/media-utils": "4.0.499",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.499"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "typescript": "5.7.2"
+  }
+}

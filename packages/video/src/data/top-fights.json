@@ -1,0 +1,153 @@
+{
+  "format": "top-fights",
+  "title": "The 5 Highest-Rated Fights in UFC History",
+  "subtitle": "As rated by Good Fights users",
+  "generatedAt": "2026-07-26T15:18:51.577Z",
+  "filters": {
+    "org": "UFC",
+    "minVotes": 10,
+    "limit": 5
+  },
+  "corpus": {
+    "totalFights": 8945,
+    "ratedFights": 7054,
+    "ratingsCast": 67941
+  },
+  "fights": [
+    {
+      "rank": 1,
+      "fightId": "46e7dba1-0cf5-49d1-9564-38ffe7ed807d",
+      "rating": 9.75,
+      "votes": 175,
+      "fighter1": {
+        "id": "84430d97-ab05-4bb1-96bd-e36584cc1ebf",
+        "name": "Glover Teixeira",
+        "lastName": "Teixeira",
+        "nickname": null,
+        "headshot": "headshots/84430d97-ab05-4bb1-96bd-e36584cc1ebf.png"
+      },
+      "fighter2": {
+        "id": "15b0a755-292f-441b-9088-19a8fe868e36",
+        "name": "Jiri Prochazka",
+        "lastName": "Prochazka",
+        "nickname": null,
+        "headshot": "headshots/15b0a755-292f-441b-9088-19a8fe868e36.png"
+      },
+      "event": "UFC Fight Night Teixeira vs Prochazka",
+      "eventDate": "2022-06-11T04:00:00.000Z",
+      "eventDateLabel": "Jun 11, 2022",
+      "method": "Submission (rear-naked choke)",
+      "round": 5,
+      "finishLabel": "Submission (rear-naked choke) R5",
+      "weightClass": null
+    },
+    {
+      "rank": 2,
+      "fightId": "c5101dec-f72e-4be0-a01c-806038086dba",
+      "rating": 9.67,
+      "votes": 196,
+      "fighter1": {
+        "id": "a403fa60-b8dc-43f4-8384-83b388311e33",
+        "name": "Cub Swanson",
+        "lastName": "Swanson",
+        "nickname": null,
+        "headshot": "headshots/a403fa60-b8dc-43f4-8384-83b388311e33.png"
+      },
+      "fighter2": {
+        "id": "39298045-2e36-4551-b8a3-db43e05a043d",
+        "name": "Doo Ho Choi",
+        "lastName": "Choi",
+        "nickname": null,
+        "headshot": "headshots/39298045-2e36-4551-b8a3-db43e05a043d.png"
+      },
+      "event": "UFC 206",
+      "eventDate": "2016-12-10T05:00:00.000Z",
+      "eventDateLabel": "Dec 10, 2016",
+      "method": "Decision (unanimous) (30-27, 30-27, 29-28)",
+      "round": 3,
+      "finishLabel": "Decision (R3)",
+      "weightClass": null
+    },
+    {
+      "rank": 3,
+      "fightId": "5c663026-7270-4b42-babb-e17e21042461",
+      "rating": 9.58,
+      "votes": 259,
+      "fighter1": {
+        "id": "a45b031f-b174-4497-96eb-1fa73d9c7071",
+        "name": "Robbie Lawler",
+        "lastName": "Lawler",
+        "nickname": null,
+        "headshot": "headshots/a45b031f-b174-4497-96eb-1fa73d9c7071.png"
+      },
+      "fighter2": {
+        "id": "04a0d9b1-6705-4e1f-804f-73860a4879f3",
+        "name": "Rory MacDonald",
+        "lastName": "MacDonald",
+        "nickname": null,
+        "headshot": "headshots/04a0d9b1-6705-4e1f-804f-73860a4879f3.png"
+      },
+      "event": "UFC 189",
+      "eventDate": "2015-07-11T04:00:00.000Z",
+      "eventDateLabel": "Jul 11, 2015",
+      "method": "TKO (punches)",
+      "round": 5,
+      "finishLabel": "TKO (punches) R5",
+      "weightClass": null
+    },
+    {
+      "rank": 4,
+      "fightId": "e6010dfb-ee6a-4538-80b5-62d7ad05105a",
+      "rating": 9.56,
+      "votes": 149,
+      "fighter1": {
+        "id": "ed8bbacf-c0e7-42f9-bf19-8c48eede81a6",
+        "name": "Michael Johnson",
+        "lastName": "Johnson",
+        "nickname": null,
+        "headshot": "headshots/ed8bbacf-c0e7-42f9-bf19-8c48eede81a6.png"
+      },
+      "fighter2": {
+        "id": "ca1d9715-9fd1-4155-a522-28e7939dc59a",
+        "name": "Justin Gaethje",
+        "lastName": "Gaethje",
+        "nickname": null,
+        "headshot": "headshots/ca1d9715-9fd1-4155-a522-28e7939dc59a.png"
+      },
+      "event": "UFC TUF 25 Finale",
+      "eventDate": "2017-07-07T04:00:00.000Z",
+      "eventDateLabel": "Jul 7, 2017",
+      "method": "TKO (punches and knees)",
+      "round": 2,
+      "finishLabel": "TKO (punches and knees) R2",
+      "weightClass": null
+    },
+    {
+      "rank": 5,
+      "fightId": "678f5cab-59af-45fc-8e8a-80f969965adf",
+      "rating": 9.52,
+      "votes": 63,
+      "fighter1": {
+        "id": "cd02ecb6-d0de-4fa3-9b58-7b02ff82faae",
+        "name": "Ilia Topuria",
+        "lastName": "Topuria",
+        "nickname": null,
+        "headshot": "headshots/cd02ecb6-d0de-4fa3-9b58-7b02ff82faae.png"
+      },
+      "fighter2": {
+        "id": "ca1d9715-9fd1-4155-a522-28e7939dc59a",
+        "name": "Justin Gaethje",
+        "lastName": "Gaethje",
+        "nickname": null,
+        "headshot": "headshots/ca1d9715-9fd1-4155-a522-28e7939dc59a.png"
+      },
+      "event": "UFC Freedom 250",
+      "eventDate": "2026-06-15T00:00:00.000Z",
+      "eventDateLabel": "Jun 15, 2026",
+      "method": "KO/TKO",
+      "round": 4,
+      "finishLabel": "KO/TKO R4",
+      "weightClass": "LIGHTWEIGHT"
+    }
+  ]
+}

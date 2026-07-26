@@ -1,0 +1,5 @@
+# Makes packages/video its own pnpm root so `pnpm install` here does NOT walk up
+# to the monorepo root. Combined with the '!packages/video' exclusion in the root
+# pnpm-workspace.yaml, this keeps the Remotion render deps entirely out of the
+# root lockfile — backend (Render) and web (Vercel) builds never see them.
+packages: []

@@ -1,0 +1,443 @@
+import React from 'react';
+import {
+  AbsoluteFill,
+  Sequence,
+  interpolate,
+  useCurrentFrame,
+  Easing,
+  Img,
+  staticFile,
+} from 'remotion';
+import { COLORS, SHEAR, SAFE, TIMING, VIDEO } from './brand';
+import { NumberPop } from './components/NumberPop';
+import { RatingBar } from './components/RatingBar';
+import { Watermark } from './components/Watermark';
+import { FightCard } from './components/FightCard';
+import type { VideoPayload, VideoFight } from './data/types';
+
+/** ④ Whoosh slide — the ONE transition, used everywhere (spec §9.4). */
+const WhooshSlide: React.FC<{ children: React.ReactNode; durationInFrames: number }> = ({
+  children,
+  durationInFrames,
+}) => {
+  const frame = useCurrentFrame();
+  const t = TIMING.transition;
+
+  const enterX = interpolate(frame, [0, t], [VIDEO.width, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.33, 1, 0.68, 1),
+  });
+  const exitX = interpolate(frame, [durationInFrames - t, durationInFrames], [0, -VIDEO.width], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.33, 1, 0.68, 1),
+  });
+  const opacity = interpolate(
+    frame,
+    [0, t, durationInFrames - t, durationInFrames],
+    [0, 1, 1, 0],
+    { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' },
+  );
+
+  return (
+    <AbsoluteFill style={{ transform: `translateX(${enterX + exitX}px)`, opacity }}>
+      {children}
+    </AbsoluteFill>
+  );
+};
+
+/**
+ * ② Blur Reveal — hook cold-open, blur held high. The retention engine.
+ *
+ * `ratedCount` must be a real, defensible figure. "Fans rated EVERY UFC fight" was the
+ * first draft and it is false: 7,054 of 8,945 UFC fights in the DB carry a rating. No
+ * superlative outruns the table — that rule applies to video copy, not just articles.
+ */
+const Hook: React.FC<{ topRating: number; org: string; ratedCount: number }> = ({
+  topRating,
+  org,
+  ratedCount,
+}) => {
+  const frame = useCurrentFrame();
+  const headlineOpacity = interpolate(frame, [0, 12], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const headlineY = interpolate(frame, [0, 16], [40, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.33, 1, 0.68, 1),
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: SAFE.top,
+        paddingBottom: SAFE.bottom,
+        paddingLeft: SAFE.left,
+        paddingRight: SAFE.right,
+      }}
+    >
+      <div
+        style={{
+          opacity: headlineOpacity,
+          transform: `translateY(${headlineY}px)`,
+          fontFamily: 'Anton, sans-serif',
+          fontSize: 82,
+          color: COLORS.white,
+          textAlign: 'center',
+          lineHeight: 1.1,
+          marginBottom: 60,
+        }}
+      >
+        FANS HAVE RATED
+        <br />
+        {ratedCount.toLocaleString('en-US')} {org} FIGHTS.
+      </div>
+
+      <div
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 34,
+          color: COLORS.gray,
+          marginBottom: 24,
+          opacity: headlineOpacity,
+        }}
+      >
+        One scored a
+      </div>
+
+      {/* the #1 number, held BLURRED — people stay to un-blur it.
+          Blur must be heavy enough to be genuinely unreadable; at 26 the digits
+          were still legible, which kills the whole retention device. */}
+      <NumberPop value={topRating} startFrame={6} fontSize={300} blurAmount={44} />
+    </AbsoluteFill>
+  );
+};
+
+const Tease: React.FC<{ fights: VideoFight[] }> = ({ fights }) => {
+  const frame = useCurrentFrame();
+  const shots = fights.flatMap((f) => [f.fighter1, f.fighter2]).slice(0, 10);
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: SAFE.top,
+        paddingBottom: SAFE.bottom,
+        paddingLeft: SAFE.left,
+        paddingRight: SAFE.right,
+      }}
+    >
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 20,
+          marginBottom: 50,
+        }}
+      >
+        {shots.map((s, i) => {
+          const delay = i * 3;
+          const local = frame - delay;
+          const scale = interpolate(local, [0, 8], [0.9, 1], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+            easing: Easing.bezier(0.33, 1, 0.68, 1),
+          });
+          const opacity = interpolate(local, [0, 8], [0, 1], {
+            extrapolateLeft: 'clamp',
+            extrapolateRight: 'clamp',
+          });
+          return (
+            <div
+              key={s.id + i}
+              style={{
+                width: 180,
+                height: 180,
+                borderRadius: 12,
+                overflow: 'hidden',
+                backgroundColor: COLORS.panel,
+                transform: `scale(${scale})`,
+                opacity,
+              }}
+            >
+              {s.headshot ? (
+                <Img
+                  src={staticFile(s.headshot)}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <div
+        style={{
+          fontFamily: 'Anton, sans-serif',
+          fontSize: 66,
+          color: COLORS.gold,
+          transform: SHEAR,
+          textAlign: 'center',
+        }}
+      >
+        THE {fights.length} GREATEST
+      </div>
+      <div
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 32,
+          color: COLORS.gray,
+          marginTop: 14,
+        }}
+      >
+        counting down
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+/** The #1 payoff — un-blur, biggest pop, let it sit. */
+const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, caption }) => {
+  const frame = useCurrentFrame();
+
+  // Hold a beat of near-empty frame, then ramp blur 26 -> 0 over ~0.4s.
+  const blur = interpolate(frame, [30, 42], [44, 0], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.33, 1, 0.68, 1),
+  });
+
+  const setupOpacity = interpolate(frame, [0, 14], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const captionOpacity = interpolate(frame, [60, 72], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingTop: SAFE.top,
+        paddingBottom: 300,
+        paddingLeft: SAFE.left,
+        paddingRight: SAFE.right,
+      }}
+    >
+      <div
+        style={{
+          opacity: setupOpacity,
+          fontFamily: 'Anton, sans-serif',
+          fontSize: 58,
+          color: COLORS.gold,
+          transform: SHEAR,
+          marginBottom: 30,
+        }}
+      >
+        #1
+      </div>
+
+      <div style={{ display: 'flex', gap: 24, opacity: setupOpacity, marginBottom: 34 }}>
+        {[fight.fighter1, fight.fighter2].map((f) => (
+          <div
+            key={f.id}
+            style={{
+              width: 320,
+              height: 320,
+              borderRadius: 16,
+              overflow: 'hidden',
+              backgroundColor: COLORS.panel,
+            }}
+          >
+            {f.headshot ? (
+              <Img
+                src={staticFile(f.headshot)}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            ) : null}
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          opacity: setupOpacity,
+          fontFamily: 'Anton, sans-serif',
+          fontSize: 80,
+          color: COLORS.white,
+          transform: SHEAR,
+          textAlign: 'center',
+          marginBottom: 26,
+        }}
+      >
+        {fight.fighter1.lastName.toUpperCase()} vs {fight.fighter2.lastName.toUpperCase()}
+      </div>
+
+      <NumberPop value={fight.rating} startFrame={30} fontSize={340} blurAmount={blur} />
+
+      <div style={{ marginTop: 22 }}>
+        <RatingBar rating={fight.rating} startFrame={42} width={720} />
+      </div>
+      <div
+        style={{
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 30,
+          color: COLORS.gray,
+          marginTop: 18,
+        }}
+      >
+        {fight.votes} fans rated it · the highest-rated fight in the app
+      </div>
+
+      <div
+        style={{
+          opacity: captionOpacity,
+          fontFamily: 'Inter, sans-serif',
+          fontWeight: 600,
+          fontSize: 38,
+          color: COLORS.white,
+          textAlign: 'center',
+          marginTop: 34,
+          maxWidth: 820,
+          lineHeight: 1.3,
+        }}
+      >
+        {caption}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const CTA: React.FC = () => {
+  const frame = useCurrentFrame();
+  const scale = interpolate(frame, [0, 20], [0.7, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+    easing: Easing.bezier(0.33, 1, 0.68, 1),
+  });
+  const opacity = interpolate(frame, [0, 14], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+  const tagOpacity = interpolate(frame, [22, 36], [0, 1], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingBottom: SAFE.bottom,
+      }}
+    >
+      <Img
+        src={staticFile('brand/lockup.png')}
+        style={{ width: 620, transform: `scale(${scale})`, opacity }}
+      />
+      <div
+        style={{
+          opacity: tagOpacity,
+          fontFamily: 'Anton, sans-serif',
+          fontSize: 58,
+          color: COLORS.gold,
+          transform: SHEAR,
+          marginTop: 40,
+          textAlign: 'center',
+        }}
+      >
+        {/* Slogan is used VERBATIM, including casing — it is a locked brand asset. */}
+        Never miss a Good Fight.
+      </div>
+      <div
+        style={{
+          opacity: tagOpacity,
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 32,
+          color: COLORS.gray,
+          marginTop: 22,
+          textAlign: 'center',
+        }}
+      >
+        Rate them yourself · goodfights.app
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+export const Countdown: React.FC<{
+  payload: VideoPayload;
+  captions: Record<string, string>;
+}> = ({ payload, captions }) => {
+  const fights = [...payload.fights].sort((a, b) => a.rank - b.rank);
+  const top = fights[0];
+  const countdownFights = fights.slice(1).reverse(); // #5, #4, #3, #2
+
+  const captionFor = (f: VideoFight) =>
+    captions[f.fightId] ?? `${f.event} · ${f.finishLabel ?? 'Went the distance'}`;
+
+  let cursor = 0;
+  const hookStart = cursor;
+  cursor += TIMING.hook;
+  const teaseStart = cursor;
+  cursor += TIMING.tease;
+  const cardStarts = countdownFights.map((_, i) => teaseStart + TIMING.tease + i * TIMING.perCard);
+  cursor = teaseStart + TIMING.tease + countdownFights.length * TIMING.perCard;
+  const payoffStart = cursor;
+  cursor += TIMING.payoff;
+  const ctaStart = cursor;
+
+  return (
+    <AbsoluteFill style={{ backgroundColor: COLORS.bg }}>
+      <Sequence from={hookStart} durationInFrames={TIMING.hook}>
+        <Hook
+          topRating={top.rating}
+          org={payload.filters.org}
+          ratedCount={payload.corpus.ratedFights}
+        />
+      </Sequence>
+
+      <Sequence from={teaseStart} durationInFrames={TIMING.tease}>
+        <Tease fights={fights} />
+      </Sequence>
+
+      {countdownFights.map((f, i) => (
+        <Sequence key={f.fightId} from={cardStarts[i]} durationInFrames={TIMING.perCard}>
+          <WhooshSlide durationInFrames={TIMING.perCard}>
+            <FightCard fight={f} caption={captionFor(f)} total={fights.length} />
+          </WhooshSlide>
+        </Sequence>
+      ))}
+
+      <Sequence from={payoffStart} durationInFrames={TIMING.payoff}>
+        <Payoff fight={top} caption={captionFor(top)} />
+      </Sequence>
+
+      <Sequence from={ctaStart} durationInFrames={TIMING.cta}>
+        <CTA />
+      </Sequence>
+
+      {/* watermark on everything except the outro */}
+      <Sequence from={0} durationInFrames={ctaStart}>
+        <Watermark />
+      </Sequence>
+    </AbsoluteFill>
+  );
+};
+
+export const countdownDuration = (fightCount: number) =>
+  TIMING.hook +
+  TIMING.tease +
+  (fightCount - 1) * TIMING.perCard +
+  TIMING.payoff +
+  TIMING.cta;
