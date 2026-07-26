@@ -15,6 +15,25 @@ Good Fights: React Native + Node.js combat sports fight rating app.
 
 ## Next Session
 
+**→ VIDEO WORKSTREAM IS UNBLOCKED (2026-07-26). One task left, and it's Mike-only.**
+Video production moved from hand-edited OpenShot to code: `packages/video` (Remotion) +
+a local GUI. Two videos rendered end-to-end today. **The only thing standing between the
+pipeline and publishable content is an ElevenLabs voice** (~$5–11/mo) — renders are
+silent, and the beat timings in `src/brand.ts` are already the sync map.
+
+Operator loop: `cd packages/video && pnpm panel` → http://localhost:3009 (pull → captions
+→ render). **`pnpm panel` only works from inside `packages/video`** — that package is
+deliberately outside the pnpm workspace (its own `pnpm-workspace.yaml` + `!packages/video`
+at root) so Remotion's deps never touch the Render or Vercel builds. Don't "fix" that.
+
+Two traps that bit today and will bite again: **(1)** re-pull before every render, the
+top-5 drifts (Henderson vs Rua fell out since June); **(2)** the default `--min-votes=10`
+is fine all-time but garbage for narrow scopes — the 2023 pull ranked a 13-vote 9.31 above
+a 44-vote 9.20. The panel flags anything under 20 votes. Every number on screen is a
+factual claim; the hook headline is generated from a live query for exactly this reason.
+Full detail: `docs/daily/2026-07-26.md`, `packages/video/README.md`,
+`private/marketing/video-production.md`.
+
 **→ PICK UP HERE. Round Numbers #1 is PUBLISHED; the pitch send is blocked on two Mike-only tasks.** The letdowns article is live and verified at `https://goodfights.app/blog/biggest-fight-letdowns-2026`, through 5 banner rounds + a clickable TOC (latest `0c4e5a1e`).
 
 **Blocking Monday's journalist send:**
