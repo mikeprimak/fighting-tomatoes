@@ -50,8 +50,21 @@ over. The reason it never amortises: `tapologyLiveScraper.fetchHtmlWithRetry()` 
 150s later — re-challenges from zero. CapSolver's own solve also egresses through the
 same proxy, roughly doubling the per-poll cost.
 
-Reusing one browser across the polls of a single event should cut this 3–5×. Not done
-yet: it needs care around cf_clearance expiry and browser lifetime over an 8-hour card.
+**FIXED same day (`13f0a115`).** `tapologyBrowser` now owns a process-wide browser that
+persists across fetches and is shared by concurrent trackers, so one clearance serves them
+all. Bounded so a long card can't leak Chrome: recycled after 40min (cf_clearance goes
+stale anyway), 250 page opens, on disconnect, or when the last tapology tracker stops. A
+recycle costs exactly what every fetch used to cost. The "challenge not cleared" path sheds
+the session deliberately — a flagged sticky exit won't clear by being retried — while plain
+navigation timeouts keep the browser, so a blip doesn't forfeit the saving. Contract test in
+`tapologyBrowser.sharedSession.test.ts` covers reuse, no page leak, real replacement on
+recycle, double-close safety, and concurrent callers sharing one launch.
+
+**⚠️ NOT YET DEPLOYED TO THE VPS.** Deploying restarts `scraper-service`, which would drop
+live tracking mid-card, and Zuffa Boxing 9 was live when this shipped. Once no card is
+running: `bash /opt/scraper-service/packages/backend/vps-update.sh`, then
+`node dist/scripts/testTapologyProxy.js` to confirm. Until then the VPS still pays the old
+per-poll cost.
 
 ### Two things that will push the burn up
 
@@ -61,6 +74,19 @@ yet: it needs care around cf_clearance expiry and browser lifetime over an 8-hou
 2. **There is no bandwidth kill-switch.** When a live tracker can't clear Cloudflare it
    retries 4× per poll. At 150s across an 8-hour card that is ~190 polls × 4 attempts
    ≈ **800 MB in a single night** with nothing to stop it.
+
+### Incident: Zuffa Boxing 9 stalled on the exhausted proxy
+
+The exhaustion had live consequences the same evening. Zuffa Boxing 9 (Berlanga vs Butler)
+went LIVE with the tracker failing every poll on `ERR_PROXY_AUTH_UNSUPPORTED` — Tapology
+showed the opening three bouts finished, the app showed all 8 upcoming. **No code fix was
+needed: the tracker self-healed the moment Mike topped the account up.** At 23:17:36 the
+next scheduled poll cleared CapSolver, matched all 8 fights and updated 3; #6-8 landed with
+winners and methods (Davis UD, Nash MD, Francis UD).
+
+Worth remembering: the failure was silent from the outside. The service stayed `active`, the
+event stayed LIVE, and only the journal showed 6 consecutive scrape errors. This is exactly
+the case the missing bandwidth kill-switch (below) should alert on.
 
 ## 2. Vercel alerts: fight OG images were never cached (`e595f3bf`)
 
