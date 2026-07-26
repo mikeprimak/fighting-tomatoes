@@ -29,9 +29,10 @@ export interface VideoFight {
  * Queried, never hardcoded — every number on screen is a factual claim.
  */
 export interface VideoCorpus {
-  totalFights: number;   // fights in the org
-  ratedFights: number;   // fights carrying >= 1 rating  <- the honest hook number
-  ratingsCast: number;   // total ratings across the org
+  totalFights: number;      // fights in the org
+  ratedFights: number;      // org-wide fights carrying >= 1 rating
+  ratingsCast: number;      // total ratings across the org
+  scopeRatedFights: number; // rated fights inside THIS video's scope <- backs the hook
 }
 
 export interface VideoPayload {
@@ -41,5 +42,7 @@ export interface VideoPayload {
   generatedAt: string;
   filters: { org: string; minVotes: number; limit: number; extra?: string };
   corpus: VideoCorpus;
+  /** Rendered verbatim in the hook. Generated per format from queried counts. */
+  hookHeadline: string;
   fights: VideoFight[];
 }

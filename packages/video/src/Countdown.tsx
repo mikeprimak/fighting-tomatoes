@@ -54,11 +54,19 @@ const WhooshSlide: React.FC<{ children: React.ReactNode; durationInFrames: numbe
  * first draft and it is false: 7,054 of 8,945 UFC fights in the DB carry a rating. No
  * superlative outruns the table — that rule applies to video copy, not just articles.
  */
-const Hook: React.FC<{ topRating: number; org: string; ratedCount: number }> = ({
-  topRating,
-  org,
-  ratedCount,
-}) => {
+/**
+ * Headlines are generated per format, so their length varies a lot
+ * ("7,054 UFC FIGHTS." vs "16 CONOR MCGREGOR FIGHTS."). Shrink to fit the safe column
+ * rather than letting a long fighter name run under the share rail.
+ */
+const fitHeadline = (headline: string, max = 82) => {
+  const usable = VIDEO.width - SAFE.left - SAFE.right;
+  const longest = Math.max(...headline.split('\n').map((l) => l.length));
+  // Anton is condensed; ~0.46em average advance is a good empirical fit.
+  return Math.min(max, Math.floor(usable / (0.46 * longest)));
+};
+
+const Hook: React.FC<{ topRating: number; headline: string }> = ({ topRating, headline }) => {
   const frame = useCurrentFrame();
   const headlineOpacity = interpolate(frame, [0, 12], [0, 1], {
     extrapolateLeft: 'clamp',
@@ -86,16 +94,19 @@ const Hook: React.FC<{ topRating: number; org: string; ratedCount: number }> = (
           opacity: headlineOpacity,
           transform: `translateY(${headlineY}px)`,
           fontFamily: 'Anton, sans-serif',
-          fontSize: 82,
+          fontSize: fitHeadline(headline),
           color: COLORS.white,
           textAlign: 'center',
           lineHeight: 1.1,
           marginBottom: 60,
         }}
       >
-        FANS HAVE RATED
-        <br />
-        {ratedCount.toLocaleString('en-US')} {org} FIGHTS.
+        {headline.split('\n').map((line, i) => (
+          <React.Fragment key={i}>
+            {i > 0 && <br />}
+            {line}
+          </React.Fragment>
+        ))}
       </div>
 
       <div
@@ -400,11 +411,7 @@ export const Countdown: React.FC<{
   return (
     <AbsoluteFill style={{ backgroundColor: COLORS.bg }}>
       <Sequence from={hookStart} durationInFrames={TIMING.hook}>
-        <Hook
-          topRating={top.rating}
-          org={payload.filters.org}
-          ratedCount={payload.corpus.ratedFights}
-        />
+        <Hook topRating={top.rating} headline={payload.hookHeadline} />
       </Sequence>
 
       <Sequence from={teaseStart} durationInFrames={TIMING.tease}>

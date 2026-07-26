@@ -30,9 +30,15 @@ cd packages/video && pnpm install   # its own install, always
 `DATABASE_URL`). This also downloads the fighter headshots into `public/headshots/`:
 
 ```bash
-cd packages/backend
+cd packages/backend                 # from the REPO ROOT
 npx tsx scripts/videoData.ts --format=top-fights --org=UFC --limit=5
+cd ../video && pnpm render          # note: ../video, you are in packages/backend now
 ```
+
+Every pull writes **two** files: `src/data/<format>.json` (archive) and
+`src/data/current.json`. The Remotion root imports `current.json`, because a static
+import cannot select a file by name at render time — so **the last thing you pulled is
+what renders next**. The script prints both paths and the exact next command.
 
 Other formats — the content engine for the whole evergreen library:
 
@@ -61,9 +67,10 @@ npx remotion still Countdown out/f.png --frame=600
 
 ## Honesty rules baked in
 
-- The hook claim reads from `payload.corpus.ratedFights` — a queried number, never
-  hardcoded. The first draft said "fans rated EVERY UFC fight"; only 7,054 of 8,945 UFC
-  fights carry a rating. No superlative outruns the table.
+- The hook headline is **generated per format from a queried count**
+  (`corpus.scopeRatedFights`), never hardcoded — "FANS HAVE RATED 7,054 UFC FIGHTS." /
+  "...16 CONOR MCGREGOR FIGHTS." The first draft said "fans rated EVERY UFC fight"; only
+  7,054 of 8,945 carry a rating. No superlative outruns the table.
 - Per-fight vote counts on screen are that fight's real count.
 - The slogan is used verbatim, including casing: "Never miss a Good Fight."
 

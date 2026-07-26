@@ -85,6 +85,8 @@ export interface VideoCorpus {
   totalFights: number;
   ratedFights: number;
   ratingsCast: number;
+  /** Fights *within this video's scope* carrying >= 1 rating — backs the hook headline. */
+  scopeRatedFights: number;
 }
 
 export interface VideoPayload {
@@ -94,23 +96,37 @@ export interface VideoPayload {
   generatedAt: string;
   filters: { org: string; minVotes: number; limit: number; extra?: string };
   corpus: VideoCorpus;
+  /**
+   * Hook headline, rendered verbatim over the blurred #1 number.
+   * Generated per format from queried counts so it can never overstate the data.
+   */
+  hookHeadline: string;
   fights: VideoFight[];
 }
 
-/** How much of the org's catalogue actually carries fan ratings. */
-async function measureCorpus(org: string): Promise<VideoCorpus> {
-  const fights = await prisma.fight.findMany({
-    where: { event: { promotion: org } },
-    select: { id: true },
-  });
+/** Fights in a given scope that carry at least one rating. */
+async function countRatedIn(where: any): Promise<{ total: number; rated: number; cast: number }> {
+  const fights = await prisma.fight.findMany({ where, select: { id: true } });
   const ids = fights.map((f) => f.id);
   const grouped = await prisma.fightRating.groupBy({
     by: ['fightId'],
     where: { fightId: { in: ids } },
     _count: { rating: true },
   });
-  const ratingsCast = await prisma.fightRating.count({ where: { fightId: { in: ids } } });
-  return { totalFights: ids.length, ratedFights: grouped.length, ratingsCast };
+  const cast = await prisma.fightRating.count({ where: { fightId: { in: ids } } });
+  return { total: ids.length, rated: grouped.length, cast };
+}
+
+/** Org-wide catalogue coverage + this video's own scope. */
+async function measureCorpus(org: string, scopeWhere: any): Promise<VideoCorpus> {
+  const orgWide = await countRatedIn({ event: { promotion: org } });
+  const scope = await countRatedIn(scopeWhere);
+  return {
+    totalFights: orgWide.total,
+    ratedFights: orgWide.rated,
+    ratingsCast: orgWide.cast,
+    scopeRatedFights: scope.rated,
+  };
 }
 
 const FIGHTER_SELECT = {
@@ -254,12 +270,15 @@ async function main() {
   let title = '';
   let subtitle = '';
   let extra: string | undefined;
+  // What the hook counts: "FANS HAVE RATED <n> <scopeLabel>."
+  let scopeLabel = '';
 
   switch (args.format) {
     case 'top-fights':
       where = { ...completed, event: { promotion: args.org } };
       title = `The ${args.limit} Highest-Rated Fights in ${args.org} History`;
       subtitle = 'As rated by Good Fights users';
+      scopeLabel = `${args.org} FIGHTS`;
       break;
 
     case 'fighter': {
@@ -282,6 +301,7 @@ async function main() {
       title = `Every ${fullName} Fight, Rated by Fans`;
       subtitle = 'As rated by Good Fights users';
       extra = `fighter=${fullName}`;
+      scopeLabel = `${fullName.toUpperCase()} FIGHTS`;
       break;
     }
 
@@ -291,6 +311,7 @@ async function main() {
       title = `The Best ${args.weightClass.replace(/_/g, ' ')} Fights Ever`;
       subtitle = 'As rated by Good Fights users';
       extra = `weightClass=${args.weightClass}`;
+      scopeLabel = `${args.weightClass.replace(/_/g, ' ')} FIGHTS`;
       break;
 
     case 'year': {
@@ -301,6 +322,7 @@ async function main() {
       title = `The Best Fights of ${args.year}`;
       subtitle = 'As rated by Good Fights users';
       extra = `year=${args.year}`;
+      scopeLabel = `${args.org} FIGHTS FROM ${args.year}`;
       break;
     }
 
@@ -316,7 +338,7 @@ async function main() {
   }
   console.log(`Ranked ${ranked.length} fights. Caching headshots...`);
   const fights = await hydrate(ranked);
-  const corpus = await measureCorpus(args.org);
+  const corpus = await measureCorpus(args.org, where);
 
   const payload: VideoPayload = {
     format: args.format,
@@ -325,6 +347,7 @@ async function main() {
     generatedAt: new Date().toISOString(),
     filters: { org: args.org, minVotes: args.minVotes, limit: args.limit, extra },
     corpus,
+    hookHeadline: `FANS HAVE RATED\n${corpus.scopeRatedFights.toLocaleString('en-US')} ${scopeLabel}.`,
     fights,
   };
 
@@ -333,6 +356,12 @@ async function main() {
     : path.join(DATA_DIR, `${args.format}.json`);
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   fs.writeFileSync(outPath, JSON.stringify(payload, null, 2));
+
+  // The Remotion root imports current.json — a static import, so it cannot pick a file
+  // by name at render time. Every pull therefore also becomes "the one that renders next".
+  // Without this, `pnpm render` silently re-renders whatever format was pulled first.
+  const currentPath = path.join(DATA_DIR, 'current.json');
+  fs.writeFileSync(currentPath, JSON.stringify(payload, null, 2));
 
   console.log('');
   fights.forEach((f) => {
@@ -346,7 +375,10 @@ async function main() {
       `${corpus.ratingsCast.toLocaleString()} ratings cast.`,
   );
   console.log('  ^ on-screen claims must not exceed these numbers.');
+  console.log(`Hook: ${payload.hookHeadline.replace('\n', ' ')}`);
   console.log(`\nWrote ${outPath}`);
+  console.log(`Wrote ${currentPath}  <- this is what "pnpm render" will use`);
+  console.log(`\nNext:  cd ../video && pnpm render`);
   await prisma.$disconnect();
 }
 

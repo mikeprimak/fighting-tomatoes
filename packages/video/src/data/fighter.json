@@ -1,0 +1,156 @@
+{
+  "format": "fighter",
+  "title": "Every Conor McGregor Fight, Rated by Fans",
+  "subtitle": "As rated by Good Fights users",
+  "generatedAt": "2026-07-26T15:35:32.560Z",
+  "filters": {
+    "org": "UFC",
+    "minVotes": 10,
+    "limit": 5,
+    "extra": "fighter=Conor McGregor"
+  },
+  "corpus": {
+    "totalFights": 8945,
+    "ratedFights": 7054,
+    "ratingsCast": 67944,
+    "scopeRatedFights": 16
+  },
+  "hookHeadline": "FANS HAVE RATED\n16 CONOR MCGREGOR FIGHTS.",
+  "fights": [
+    {
+      "rank": 1,
+      "fightId": "f16940ca-39c6-4f7a-8050-58e4bb05293b",
+      "rating": 9.23,
+      "votes": 225,
+      "fighter1": {
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
+        "nickname": null,
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
+      },
+      "fighter2": {
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
+        "nickname": null,
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+      },
+      "event": "UFC 202",
+      "eventDate": "2016-08-20T04:00:00.000Z",
+      "eventDateLabel": "Aug 20, 2016",
+      "method": "Decision (majority) (48-47, 47-47, 48-47)",
+      "round": 5,
+      "finishLabel": "Decision (R5)",
+      "weightClass": null
+    },
+    {
+      "rank": 2,
+      "fightId": "d6877d85-7939-458b-913c-a40f5c1feae4",
+      "rating": 8.99,
+      "votes": 147,
+      "fighter1": {
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
+        "nickname": null,
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+      },
+      "fighter2": {
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
+        "nickname": null,
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
+      },
+      "event": "UFC 196",
+      "eventDate": "2016-03-05T05:00:00.000Z",
+      "eventDateLabel": "Mar 5, 2016",
+      "method": "Submission (rear-naked choke)",
+      "round": 2,
+      "finishLabel": "Submission (rear-naked choke) R2",
+      "weightClass": null
+    },
+    {
+      "rank": 3,
+      "fightId": "4d177d71-e10b-4dc6-8641-5af9d9c00fe0",
+      "rating": 8.77,
+      "votes": 47,
+      "fighter1": {
+        "id": "68db75c4-92c2-41eb-b358-3d228bc74ca7",
+        "name": "Dustin Poirier",
+        "lastName": "Poirier",
+        "nickname": null,
+        "headshot": "headshots/68db75c4-92c2-41eb-b358-3d228bc74ca7.png"
+      },
+      "fighter2": {
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
+        "nickname": null,
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+      },
+      "event": "UFC 257",
+      "eventDate": "2021-01-23T05:00:00.000Z",
+      "eventDateLabel": "Jan 23, 2021",
+      "method": "TKO (punches)",
+      "round": 2,
+      "finishLabel": "TKO (punches) R2",
+      "weightClass": null
+    },
+    {
+      "rank": 4,
+      "fightId": "0a1ba0bd-f3c9-41b5-8a76-5c9da32d26fb",
+      "rating": 8.6,
+      "votes": 68,
+      "fighter1": {
+        "id": "7bdc4e2b-85c5-4cba-bc46-515a43f61ff3",
+        "name": "Khabib Nurmagomedov",
+        "lastName": "Nurmagomedov",
+        "nickname": null,
+        "headshot": "headshots/7bdc4e2b-85c5-4cba-bc46-515a43f61ff3.png"
+      },
+      "fighter2": {
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
+        "nickname": null,
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+      },
+      "event": "UFC 229",
+      "eventDate": "2018-10-06T04:00:00.000Z",
+      "eventDateLabel": "Oct 6, 2018",
+      "method": "Submission (neck crank)",
+      "round": 4,
+      "finishLabel": "Submission (neck crank) R4",
+      "weightClass": null
+    },
+    {
+      "rank": 5,
+      "fightId": "0eaa311b-3c71-487e-87d1-2740e3477a95",
+      "rating": 8.53,
+      "votes": 93,
+      "fighter1": {
+        "id": "2782308d-0ecf-499f-8087-0edf6b3e2d06",
+        "name": "Eddie Alvarez",
+        "lastName": "Alvarez",
+        "nickname": null,
+        "headshot": "headshots/2782308d-0ecf-499f-8087-0edf6b3e2d06.png"
+      },
+      "fighter2": {
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
+        "nickname": null,
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+      },
+      "event": "UFC 205",
+      "eventDate": "2016-11-12T05:00:00.000Z",
+      "eventDateLabel": "Nov 12, 2016",
+      "method": "TKO (punches)",
+      "round": 2,
+      "finishLabel": "TKO (punches) R2",
+      "weightClass": null
+    }
+  ]
+}
