@@ -24,7 +24,24 @@ Render backend image or the Vercel web build.
 cd packages/video && pnpm install   # its own install, always
 ```
 
-## Producing a video
+## The control panel (GUI)
+
+```bash
+cd packages/video && pnpm panel     # -> http://localhost:3009
+```
+
+Pick a format, pull from production, write the captions, render, preview — no terminal.
+Zero dependencies beyond Node, so nothing new enters the lockfile.
+
+**It runs locally, not on Render.** Rendering needs headless Chrome and ~3 minutes of CPU;
+the Render instance is 256 MB and this package is deliberately excluded from the deploy
+image. The panel drives the same two commands documented below.
+
+The panel flags fights with **under 20 votes**. A 13-vote average is noise next to a
+44-vote one, and narrow scopes (one year, one division) hit this constantly at the default
+floor of 10 — raise "Min votes" and re-pull before publishing.
+
+## Producing a video (CLI)
 
 **1. Pull the data** (from `packages/backend/`, which owns the Prisma client and the prod
 `DATABASE_URL`). This also downloads the fighter headshots into `public/headshots/`:

@@ -4,6 +4,7 @@
   "private": true,
   "description": "Faceless video production engine (Remotion). Not part of any deployed app — excluded from the pnpm workspace on purpose.",
   "scripts": {
+    "panel": "node studio/server.mjs",
     "studio": "remotion studio",
     "render": "remotion render Countdown out/countdown.mp4",
     "still": "remotion still Countdown out/frame.png --frame=200",

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Good Fights — Video Panel</title>
+<style>
+  :root{
+    --gold:#F5C518; --bg:#181818; --panel:#202020; --line:#2e2e2e;
+    --white:#fff; --gray:#9CA3AF; --red:#EF4444; --green:#10b981;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    background:var(--bg);color:var(--white);min-height:100vh;font-size:14px;
+  }
+  header{
+    padding:1rem 1.5rem;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:.75rem;
+  }
+  header .bar{width:6px;height:22px;background:var(--gold);border-radius:2px}
+  header h1{font-size:1.05rem;font-weight:600;letter-spacing:.01em}
+  header .env{margin-left:auto;color:var(--gray);font-size:.78rem}
+  .wrap{display:grid;grid-template-columns:400px 1fr;gap:0;height:calc(100vh - 57px)}
+  .col{padding:1.25rem;overflow-y:auto}
+  .col.left{border-right:1px solid var(--line)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:1rem;margin-bottom:1rem}
+  .card h2{font-size:.72rem;text-transform:uppercase;letter-spacing:.09em;color:var(--gray);margin-bottom:.85rem;font-weight:600}
+  label{display:block;font-size:.75rem;color:var(--gray);margin:.7rem 0 .3rem}
+  select,input,textarea{
+    width:100%;background:#171717;border:1px solid var(--line);color:var(--white);
+    padding:.55rem .65rem;border-radius:7px;font-size:.85rem;font-family:inherit;
+  }
+  select:focus,input:focus,textarea:focus{outline:none;border-color:var(--gold)}
+  textarea{resize:vertical;min-height:62px;line-height:1.45}
+  button{
+    background:var(--gold);color:#111;border:none;padding:.62rem 1rem;border-radius:7px;
+    font-weight:650;font-size:.85rem;cursor:pointer;font-family:inherit;
+  }
+  button:disabled{opacity:.4;cursor:not-allowed}
+  button.ghost{background:transparent;color:var(--gold);border:1px solid var(--gold)}
+  .row{display:flex;gap:.6rem;align-items:center}
+  .row > *{flex:1}
+  .hide{display:none}
+  .muted{color:var(--gray);font-size:.78rem;line-height:1.5}
+  .warn{color:var(--red)}
+  .ok{color:var(--green)}
+  table{width:100%;border-collapse:collapse;font-size:.82rem}
+  td{padding:.45rem .3rem;border-bottom:1px solid var(--line);vertical-align:top}
+  td.rank{color:var(--gold);font-weight:700;width:28px}
+  td.score{text-align:right;color:var(--gold);font-weight:700;white-space:nowrap}
+  .cap{margin-bottom:.9rem}
+  .cap .who{font-size:.82rem;margin-bottom:.3rem}
+  .cap .who b{color:var(--gold)}
+  .cap .meta{color:var(--gray);font-size:.72rem;margin-bottom:.35rem}
+  pre.log{
+    background:#101010;border:1px solid var(--line);border-radius:8px;padding:.8rem;
+    font-size:.74rem;line-height:1.55;max-height:280px;overflow:auto;white-space:pre-wrap;
+    font-family:ui-monospace,Menlo,Consolas,monospace;color:#c9c9c9;
+  }
+  video{width:100%;border-radius:10px;background:#000;max-height:62vh}
+  .pill{display:inline-block;background:#2a2a2a;border-radius:99px;padding:.16rem .6rem;font-size:.7rem;color:var(--gray)}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--gold);
+    border-top-color:transparent;border-radius:50%;animation:s .7s linear infinite;vertical-align:-1px}
+  @keyframes s{to{transform:rotate(360deg)}}
+  .renders a{color:var(--gold);text-decoration:none;font-size:.8rem}
+  .renders div{padding:.35rem 0;border-bottom:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar"></div>
+  <h1>Video Panel</h1>
+  <div class="env">renders locally · prod data</div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: controls -->
+  <div class="col left">
+    <div class="card">
+      <h2>1 · Pull data</h2>
+      <label>Format</label>
+      <select id="format">
+        <option value="top-fights">Top fights (all-time canon)</option>
+        <option value="fighter">Fighter retrospective</option>
+        <option value="weight-class">Weight class</option>
+        <option value="year">Year in review</option>
+      </select>
+
+      <div id="f-fighter" class="hide">
+        <label>Fighter name</label>
+        <input id="fighter" placeholder="Conor McGregor">
+      </div>
+
+      <div id="f-weight" class="hide">
+        <label>Weight class</label>
+        <select id="weightClass">
+          <option>FLYWEIGHT</option><option>BANTAMWEIGHT</option><option>FEATHERWEIGHT</option>
+          <option>LIGHTWEIGHT</option><option>WELTERWEIGHT</option><option>MIDDLEWEIGHT</option>
+          <option>LIGHT_HEAVYWEIGHT</option><option>HEAVYWEIGHT</option>
+          <option>WOMENS_STRAWWEIGHT</option><option>WOMENS_FLYWEIGHT</option>
+          <option>WOMENS_BANTAMWEIGHT</option><option>WOMENS_FEATHERWEIGHT</option>
+        </select>
+      </div>
+
+      <div id="f-year" class="hide">
+        <label>Year</label>
+        <input id="year" type="number" value="2023">
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Org</label>
+          <input id="org" value="UFC">
+        </div>
+        <div>
+          <label>Count</label>
+          <input id="limit" type="number" value="5" min="3" max="10">
+        </div>
+        <div>
+          <label>Min votes</label>
+          <input id="minVotes" type="number" value="10" min="1">
+        </div>
+      </div>
+
+      <div style="margin-top:1rem">
+        <button id="pull" style="width:100%">Pull from production</button>
+      </div>
+      <p class="muted" style="margin-top:.6rem">
+        Ratings are recomputed live. Re-pull before every render — the top 5 drifts.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>3 · Render</h2>
+      <button id="render" style="width:100%">Render video</button>
+      <p class="muted" style="margin-top:.6rem">
+        ~3 min for a 62s cut. Silent until ElevenLabs VO is wired.
+      </p>
+      <div id="renders" class="renders" style="margin-top:.8rem"></div>
+    </div>
+
+    <div class="card">
+      <h2>Job log</h2>
+      <pre class="log" id="log">idle</pre>
+    </div>
+  </div>
+
+  <!-- RIGHT: data + captions + preview -->
+  <div class="col">
+    <div class="card">
+      <h2>Current pull</h2>
+      <div id="summary" class="muted">Nothing pulled yet.</div>
+      <table id="fights"></table>
+      <div id="thin" style="margin-top:.7rem;font-size:.78rem;line-height:1.5"></div>
+    </div>
+
+    <div class="card">
+      <h2>2 · Captions <span class="pill">one visceral line per fight</span></h2>
+      <div id="captions" class="muted">Pull data first.</div>
+      <button id="saveCaps" class="ghost hide" style="margin-top:.4rem">Save captions</button>
+    </div>
+
+    <div class="card">
+      <h2>Preview</h2>
+      <div id="preview" class="muted">No renders yet.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let busy = false;
+
+// Show only the fields the chosen format actually uses.
+function syncFormat(){
+  const f = $('format').value;
+  $('f-fighter').classList.toggle('hide', f !== 'fighter');
+  $('f-weight').classList.toggle('hide', f !== 'weight-class');
+  $('f-year').classList.toggle('hide', f !== 'year');
+}
+$('format').addEventListener('change', syncFormat);
+syncFormat();
+
+async function post(path, body){
+  const r = await fetch(path, {
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{})
+  });
+  const j = await r.json();
+  if (!r.ok) alert(j.error || 'Request failed');
+  return j;
+}
+
+$('pull').onclick = async () => {
+  await post('/api/pull', {
+    format: $('format').value,
+    org: $('org').value,
+    limit: +$('limit').value,
+    minVotes: +$('minVotes').value,
+    fighter: $('fighter').value,
+    weightClass: $('weightClass').value,
+    year: $('year').value,
+  });
+  tick();
+};
+
+$('render').onclick = async () => { await post('/api/render'); tick(); };
+
+$('saveCaps').onclick = async () => {
+  const caps = {};
+  document.querySelectorAll('textarea[data-fight]').forEach(t => caps[t.dataset.fight] = t.value);
+  const r = await post('/api/captions', { captions: caps });
+  if (r.saved !== undefined) {
+    $('saveCaps').textContent = 'Saved ✓';
+    setTimeout(() => $('saveCaps').textContent = 'Save captions', 1400);
+  }
+};
+
+function renderFights(p, captions){
+  if (!p) return;
+  $('summary').innerHTML =
+    `<b style="color:var(--gold)">${p.title}</b><br>` +
+    `<span class="muted">Hook: “${p.hookHeadline.replace('\\n',' ')}”<br>` +
+    `Pulled ${new Date(p.generatedAt).toLocaleString()} · min ${p.filters.minVotes} votes · ` +
+    `${p.corpus.scopeRatedFights.toLocaleString()} rated fights in scope</span>`;
+
+  $('fights').innerHTML = p.fights.map(f => `
+    <tr>
+      <td class="rank">#${f.rank}</td>
+      <td>${f.fighter1.name} vs ${f.fighter2.name}
+        <div class="muted">${f.event} · ${f.eventDateLabel}${f.finishLabel ? ' · ' + f.finishLabel : ''}</div>
+      </td>
+      <td class="score">${f.rating.toFixed(2)}<div class="${f.votes < 20 ? 'warn' : 'muted'}" style="font-weight:400">${f.votes} votes${f.votes < 20 ? ' ⚠' : ''}</div></td>
+    </tr>`).join('');
+
+  // A 13-vote average is noise next to a 44-vote one. Narrow scopes (a single year,
+  // a single division) hit this constantly at the default floor of 10.
+  const thin = p.fights.filter(f => f.votes < 20).length;
+  $('thin').innerHTML = thin
+    ? `<span class="warn">⚠ ${thin} of ${p.fights.length} fights have under 20 votes.</span>
+       <span class="muted">Averages that thin are noisy — raise “Min votes” and re-pull before publishing.</span>`
+    : '';
+
+  $('captions').innerHTML = p.fights.map(f => `
+    <div class="cap">
+      <div class="who"><b>#${f.rank}</b> ${f.fighter1.lastName} vs ${f.fighter2.lastName}</div>
+      <div class="meta">${captions[f.fightId] ? '' : 'no caption — will fall back to event · finish'}</div>
+      <textarea data-fight="${f.fightId}" placeholder="Blood, smiling, final seconds. Not a stats dump.">${captions[f.fightId] || ''}</textarea>
+    </div>`).join('');
+  $('saveCaps').classList.remove('hide');
+}
+
+// On first load, point the form at whatever is actually in current.json — otherwise the
+// controls read "Top fights" while a year pull is loaded, and the panel lies about what
+// "Render video" will produce.
+function adoptPayload(p){
+  if (window.__adopted || !p) return;
+  window.__adopted = true;
+  $('format').value = p.format;
+  $('org').value = p.filters.org;
+  $('limit').value = p.filters.limit;
+  $('minVotes').value = p.filters.minVotes;
+  const val = p.filters.extra ? p.filters.extra.split('=').slice(1).join('=') : '';
+  if (p.format === 'fighter') $('fighter').value = val;
+  if (p.format === 'weight-class') $('weightClass').value = val;
+  if (p.format === 'year') $('year').value = val;
+  syncFormat();
+}
+
+async function tick(){
+  const s = await (await fetch('/api/state')).json();
+
+  if (s.payload) { adoptPayload(s.payload); renderFights(s.payload, s.captions || {}); }
+
+  if (s.job){
+    $('log').textContent = s.job.log.join('\n');
+    $('log').scrollTop = $('log').scrollHeight;
+    busy = !s.job.done;
+    const label = s.job.type === 'pull' ? 'Pulling' : 'Rendering';
+    $('pull').disabled = busy;
+    $('render').disabled = busy;
+    $('render').innerHTML = busy && s.job.type === 'render'
+      ? `<span class="spin"></span> ${label}… ${s.job.elapsed}s` : 'Render video';
+    $('pull').innerHTML = busy && s.job.type === 'pull'
+      ? `<span class="spin"></span> ${label}… ${s.job.elapsed}s` : 'Pull from production';
+  }
+
+  if (s.renders?.length){
+    $('renders').innerHTML = s.renders.slice(0,6).map(r =>
+      `<div><a href="#" onclick="play('${r.file}');return false">${r.file}</a>
+       <span class="muted"> · ${(r.size/1e6).toFixed(1)} MB</span></div>`).join('');
+    if (!window.__played){ play(s.renders[0].file); window.__played = true; }
+  }
+}
+
+function play(file){
+  $('preview').innerHTML =
+    `<video controls src="/out/${file}"></video>
+     <div class="muted" style="margin-top:.5rem">out/${file}</div>`;
+}
+
+tick();
+setInterval(tick, 1200);
+</script>
+</body>
+</html>
