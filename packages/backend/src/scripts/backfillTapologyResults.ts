@@ -180,7 +180,8 @@ async function backfillEvent(event: any): Promise<{ matched: number; updated: nu
   const scraped = await scraper.scrape();
   console.log(`  [backfill] Scraped ${scraped.fights.length} fights, status=${scraped.status}`);
 
-  const result = await parseTapologyData(event.id, scraped);
+  // skipLiveInference: this runs days after the card. Nothing here is in progress.
+  const result = await parseTapologyData(event.id, scraped, { skipLiveInference: true });
   console.log(`  [backfill] matched=${result.fightsMatched} updated=${result.fightsUpdated}`);
 
   // Backfill is the trusted reconciliation pass: promote the freshly-scraped

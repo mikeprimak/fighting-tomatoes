@@ -281,6 +281,9 @@ async function runTapologyLiveTracker(): Promise<void> {
     console.log(`[TAPOLOGY LIVE] Parse results:`);
     console.log(`  Fights matched: ${result.fightsMatched}`);
     console.log(`  Fights updated: ${result.fightsUpdated}`);
+    if (result.markedLive) {
+      console.log(`  Marked LIVE: ${result.markedLive}`);
+    }
     if (result.fightsNotFound.length > 0) {
       console.log(`  Not found: ${result.fightsNotFound.join(', ')}`);
     }

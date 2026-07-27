@@ -363,10 +363,16 @@ async function scrapeTapologyOnce(tracker: ActiveTracker): Promise<void> {
   console.log(`[TAPOLOGY] ${scrapedData.fights.length} fights, status: ${scrapedData.status}`);
 
   const result = await parseTapologyData(tracker.eventId, scrapedData);
-  console.log(`[TAPOLOGY] Matched: ${result.fightsMatched}, updated: ${result.fightsUpdated}`);
+  console.log(
+    `[TAPOLOGY] Matched: ${result.fightsMatched}, updated: ${result.fightsUpdated}` +
+    (result.markedLive ? `, live: ${result.markedLive}` : '')
+  );
 
   // Adaptive poll: any fight-status change means the card is moving — reset the
   // flatline clock so the tracker stays (or returns to) full 150s speed.
+  // Deliberately excludes result.markedLive: that flip is inferred from a clock,
+  // not from new source data, so it must not convince a flatlined tracker that
+  // the card is moving again.
   if (result.fightsUpdated > 0) tracker.lastChangeAt = new Date();
 
   // Auto-complete check

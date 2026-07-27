@@ -23,7 +23,41 @@ interface ParseResult {
   fightsCreated: number;
   cancelledCount: number;
   unCancelledCount: number;
+  /** Label of the fight inferred LIVE this run, if any (see inferLiveFight). */
+  markedLive: string | null;
 }
+
+interface TapologyParseOptions {
+  /** Skip the timing-based LIVE inference. Set by the backfill: it runs days
+   *  after the card and must never stamp a historical bout as in-progress. */
+  skipLiveInference?: boolean;
+}
+
+/**
+ * How long after the previous bout's result appears we assume the next bout is
+ * under way.
+ *
+ * Tapology publishes no live marker of any kind — the event header still reads
+ * "upcoming" hours into a card (verified mid-card at Zuffa Boxing 9, 2026-07-26).
+ * The only real-time signal we get is a result appearing on the page, so the
+ * running bout has to be inferred from timing.
+ *
+ * 5 minutes, chosen deliberately on the early side. Measured gaps between
+ * consecutive result detections on Tapology cards run far longer than this
+ * (median 42 min, p25 19 min over the last 25 events), so this will usually
+ * flip a bout LIVE before its opening bell. That is the intended trade:
+ * Tapology itself lags, and our detection adds up to another poll interval on
+ * top, so being late means missing the live window entirely while being early
+ * only means the badge leads the broadcast. Operator decision, 2026-07-27.
+ */
+const LIVE_INFERENCE_DELAY_MS = Number(process.env.TAPOLOGY_LIVE_DELAY_MS || 5 * 60 * 1000);
+
+/**
+ * Refuse to infer LIVE from an anchor older than this. A card that has been
+ * silent for three hours is over, stalled, or mis-scraped — any of which would
+ * otherwise leave a bout claiming to be live indefinitely.
+ */
+const LIVE_INFERENCE_MAX_ANCHOR_AGE_MS = 3 * 60 * 60 * 1000;
 
 // ============== HELPER FUNCTIONS ==============
 
@@ -242,12 +276,171 @@ async function notifyNextFight(eventId: string, completedFightOrder: number): Pr
 }
 
 /**
+ * Infer which bout is currently in the ring and publish it as LIVE.
+ *
+ * Cards run MAIN-EVENT-LAST, so bouts happen in DESCENDING orderOnCard (the
+ * same convention notifyNextFight relies on). The running bout is therefore the
+ * first non-COMPLETED fight when the card is walked in descending order.
+ *
+ * We flip it to LIVE once LIVE_INFERENCE_DELAY_MS has elapsed since the anchor:
+ *   - the most recent result we detected on this card, or
+ *   - for the opening bout, the card's earliest known section start time.
+ *
+ * Returns a label for the fight it marked, or null if it changed nothing.
+ * Callers must have already established that the scrape is healthy — an empty
+ * or partial scrape must not reach this function, or a stale page would park a
+ * "Live Now" badge on a bout that already finished.
+ */
+export interface LiveInferenceFight {
+  id: string;
+  orderOnCard: number;
+  fightStatus: string;
+  completedAt: Date | null;
+  label: string;
+}
+
+export interface LiveInferenceEvent {
+  eventStatus: string;
+  earlyPrelimStartTime?: Date | null;
+  prelimStartTime?: Date | null;
+  mainStartTime?: Date | null;
+}
+
+export interface LiveInferenceDecision {
+  /** Fight to flip to LIVE, or null if nothing should change this poll. */
+  goLive: LiveInferenceFight | null;
+  /** Stray LIVE bouts that are no longer the current one; demote to UPCOMING. */
+  demote: LiveInferenceFight[];
+  /** Why, for the log line. */
+  reason: 'live' | 'waiting' | 'card-over' | 'already-live' | 'no-anchor' | 'stale-anchor';
+  anchorKind: 'previous result' | 'card start time' | null;
+  /** ms since the anchor, when there is one. */
+  anchorAgeMs: number | null;
+}
+
+/**
+ * The pure decision half of the LIVE inference — no DB, no clock of its own.
+ * Split out so the timing rules can be tested directly; see
+ * `tapologyLiveParser.liveInference.test.ts`.
+ */
+export function decideLiveFight(
+  fights: LiveInferenceFight[],
+  event: LiveInferenceEvent,
+  now: number,
+): LiveInferenceDecision {
+  const none = (reason: LiveInferenceDecision['reason']): LiveInferenceDecision => ({
+    goLive: null, demote: [], reason, anchorKind: null, anchorAgeMs: null,
+  });
+
+  const active = fights.filter(f => f.fightStatus !== 'CANCELLED');
+  if (active.length === 0) return none('card-over');
+
+  // Chronological order = descending orderOnCard (ord 1 is the headliner, last).
+  const running = [...active].sort((a, b) => b.orderOnCard - a.orderOnCard);
+  const current = running.find(f => f.fightStatus !== 'COMPLETED') ?? null;
+
+  // Stray LIVE bouts that are no longer current — self-healing for a card whose
+  // order shifted mid-event. Never touches COMPLETED rows.
+  const demote = active.filter(f => f.fightStatus === 'LIVE' && f.id !== current?.id);
+
+  if (!current) return { ...none('card-over'), demote };
+  if (current.fightStatus === 'LIVE') return { ...none('already-live'), demote };
+
+  // Anchor: last detected result, else the card's earliest section start time.
+  const completedAts = active
+    .filter(f => f.fightStatus === 'COMPLETED' && f.completedAt)
+    .map(f => f.completedAt!.getTime());
+
+  let anchor: number;
+  let anchorKind: 'previous result' | 'card start time';
+  if (completedAts.length > 0) {
+    anchor = Math.max(...completedAts);
+    anchorKind = 'previous result';
+  } else {
+    // Opening bout: no result to key off yet. Only trust a start time once the
+    // lifecycle has already flipped the event LIVE, so a mis-scraped start time
+    // on a future card can't light up a bout days early.
+    if (event.eventStatus !== 'LIVE') return { ...none('no-anchor'), demote };
+    const starts = [event.earlyPrelimStartTime, event.prelimStartTime, event.mainStartTime]
+      .filter((d): d is Date => !!d)
+      .map(d => d.getTime());
+    if (starts.length === 0) return { ...none('no-anchor'), demote };
+    anchor = Math.min(...starts);
+    anchorKind = 'card start time';
+  }
+
+  const anchorAgeMs = now - anchor;
+  if (anchorAgeMs < LIVE_INFERENCE_DELAY_MS) {
+    return { goLive: null, demote, reason: 'waiting', anchorKind, anchorAgeMs };
+  }
+  if (anchorAgeMs > LIVE_INFERENCE_MAX_ANCHOR_AGE_MS) {
+    return { goLive: null, demote, reason: 'stale-anchor', anchorKind, anchorAgeMs };
+  }
+  return { goLive: current, demote, reason: 'live', anchorKind, anchorAgeMs };
+}
+
+async function inferLiveFight(
+  eventId: string,
+  event: any,
+  scraperType: any,
+): Promise<string | null> {
+  // Re-read: the completion loop above wrote to the DB but not to the in-memory
+  // event.fights objects, so a bout that finished this very poll still looks
+  // UPCOMING here and would be mistaken for the running one.
+  const rows = await prisma.fight.findMany({
+    where: { eventId, fightStatus: { not: 'CANCELLED' } },
+    select: {
+      id: true, orderOnCard: true, fightStatus: true, completedAt: true,
+      fighter1: { select: { lastName: true } },
+      fighter2: { select: { lastName: true } },
+    },
+  });
+
+  const fights: LiveInferenceFight[] = rows.map(f => ({
+    id: f.id,
+    orderOnCard: f.orderOnCard,
+    fightStatus: f.fightStatus,
+    completedAt: f.completedAt,
+    label: `${f.fighter1.lastName} vs ${f.fighter2.lastName}`,
+  }));
+
+  const decision = decideLiveFight(fights, event, Date.now());
+
+  for (const f of decision.demote) {
+    await prisma.fight.update({
+      where: { id: f.id },
+      data: { fightStatus: 'UPCOMING', trackerFightStatus: 'UPCOMING' },
+    });
+    console.log(`  UNLIVE ${f.label} (no longer the current bout)`);
+  }
+
+  if (decision.reason === 'waiting') {
+    const wait = Math.ceil((LIVE_INFERENCE_DELAY_MS - decision.anchorAgeMs!) / 1000);
+    console.log(`  UP NEXT (LIVE in ~${wait}s, ${decision.anchorKind})`);
+  } else if (decision.reason === 'stale-anchor') {
+    const hrs = (decision.anchorAgeMs! / 3600000).toFixed(1);
+    console.log(`  Skipping LIVE inference: ${decision.anchorKind} is ${hrs}h old (card stalled or over)`);
+  }
+
+  if (!decision.goLive) return null;
+
+  await prisma.fight.update({
+    where: { id: decision.goLive.id },
+    data: buildTrackerUpdateData({ fightStatus: 'LIVE' }, scraperType),
+  });
+  const mins = Math.round(decision.anchorAgeMs! / 60000);
+  console.log(`  LIVE ${decision.goLive.label} (inferred, ${mins}m after ${decision.anchorKind})`);
+  return decision.goLive.label;
+}
+
+/**
  * Parse Tapology data and update database for a specific event.
  * Handles: fight completion, cancellations, un-cancellations, lifecycle resets.
  */
 export async function parseTapologyData(
   eventId: string,
-  scrapedData: TapologyEventData
+  scrapedData: TapologyEventData,
+  options: TapologyParseOptions = {}
 ): Promise<ParseResult> {
   console.log(`\n[Tapology Parser] Processing ${scrapedData.fights.length} scraped fights`);
   console.log(`[Tapology Parser] Event ID: ${eventId}`);
@@ -259,6 +452,7 @@ export async function parseTapologyData(
     fightsCreated: 0,
     cancelledCount: 0,
     unCancelledCount: 0,
+    markedLive: null,
   };
 
   try {
@@ -525,7 +719,15 @@ export async function parseTapologyData(
     // Update event status (guarded by scrapeLooksValid so an empty scrape can't flip LIVE)
     if (hasStarted && scrapeLooksValid && event.eventStatus === 'UPCOMING') {
       await prisma.event.update({ where: { id: eventId }, data: { eventStatus: 'LIVE' } });
+      event.eventStatus = 'LIVE';
       console.log(`  Event -> LIVE`);
+    }
+
+    // Infer the running bout. Tapology never tells us one is live, so this is
+    // purely timing-based — see inferLiveFight. Gated on the same health checks
+    // as the cancellation sweep: a partial scrape must not move a bout to LIVE.
+    if (!options.skipLiveInference && scrapeLooksValid && !eventIsComplete) {
+      result.markedLive = await inferLiveFight(eventId, event, scraperType);
     }
 
     console.log(`\n[Tapology Parser] Done: ${result.fightsUpdated} updated, ${result.fightsMatched} matched, ${result.fightsCreated} created, ${result.cancelledCount} cancelled, ${result.unCancelledCount} un-cancelled`);
