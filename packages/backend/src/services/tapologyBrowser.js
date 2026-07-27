@@ -429,10 +429,37 @@ async function newTapologyPage(browser) {
 const SHARED_BROWSER_MAX_AGE_MS = Number(process.env.TAPOLOGY_BROWSER_MAX_AGE_MS || 40 * 60 * 1000);
 const SHARED_BROWSER_MAX_USES = Number(process.env.TAPOLOGY_BROWSER_MAX_USES || 250);
 
+// Idle release. The VPS is a 2 GB box that already OOM-killed Chrome three times
+// on 2026-07-25 (pre-dating this shared session), and a scrape spikes to ~78
+// Chrome processes leaving ~56 MB available. Holding a browser resident between
+// polls costs ~14 processes of that headroom for no benefit once the card goes
+// quiet. 4 min comfortably spans the 150s live cadence — so back-to-back polls
+// still reuse the clearance, which is where the whole saving is — but the 15-min
+// slow keep-alive and the gaps between cards give the memory back.
+const SHARED_BROWSER_IDLE_MS = Number(process.env.TAPOLOGY_BROWSER_IDLE_MS || 4 * 60 * 1000);
+
 let sharedBrowser = null;
 let sharedBrowserBornAt = 0;
 let sharedBrowserUses = 0;
 let sharedBrowserLaunch = null; // in-flight launch, so concurrent trackers don't race
+let sharedBrowserIdleTimer = null;
+
+function clearIdleTimer() {
+  if (sharedBrowserIdleTimer) {
+    clearTimeout(sharedBrowserIdleTimer);
+    sharedBrowserIdleTimer = null;
+  }
+}
+
+/** (Re)arm the idle release. unref'd so a pending timer never holds the process open. */
+function armIdleTimer() {
+  clearIdleTimer();
+  if (!SHARED_BROWSER_IDLE_MS) return;
+  sharedBrowserIdleTimer = setTimeout(() => {
+    closeSharedTapologyBrowser('idle').catch(() => {});
+  }, SHARED_BROWSER_IDLE_MS);
+  if (typeof sharedBrowserIdleTimer.unref === 'function') sharedBrowserIdleTimer.unref();
+}
 
 /** Puppeteer renamed isConnected() -> connected; tolerate both. */
 function isBrowserAlive(browser) {
@@ -461,6 +488,7 @@ function sharedBrowserExpiry() {
  * flagged one won't.
  */
 async function closeSharedTapologyBrowser(reason = 'requested') {
+  clearIdleTimer();
   const browser = sharedBrowser;
   sharedBrowser = null;
   sharedBrowserBornAt = 0;
@@ -484,6 +512,7 @@ async function getSharedTapologyBrowser() {
 
   if (sharedBrowser) {
     sharedBrowserUses++;
+    armIdleTimer();
     return sharedBrowser;
   }
   if (!sharedBrowserLaunch) {
@@ -492,6 +521,7 @@ async function getSharedTapologyBrowser() {
         sharedBrowser = b;
         sharedBrowserBornAt = Date.now();
         sharedBrowserUses = 1;
+        armIdleTimer();
         // If Chrome dies underneath us, drop the handle so the next call relaunches
         // instead of throwing "Protocol error: Connection closed" forever.
         b.once('disconnected', () => {

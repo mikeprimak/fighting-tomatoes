@@ -34,6 +34,7 @@ import OneFCLiveScraper from './services/oneFCLiveScraper';
 import OktagonLiveScraper from './services/oktagonLiveScraper';
 import { TapologyLiveScraper } from './services/tapologyLiveScraper';
 import { closeSharedTapologyBrowser } from './services/tapologyBrowser';
+import { isProxyDeadError, alertProxyDown, noteProxyHealthy } from './services/proxyHealthAlert';
 import { matchTapologyEventLink } from './utils/tapologyEventMatcher';
 import { PFLLiveScraper } from './services/pflLiveScraper';
 import { SherdogLiveScraper } from './services/sherdogLiveScraper';
@@ -467,6 +468,9 @@ async function scrapeOnce(tracker: ActiveTracker): Promise<void> {
     tracker.lastScrapeAt = new Date();
     tracker.scrapeCount++;
     tracker.consecutiveErrors = 0;
+    // Clear the alert cooldown so a NEW outage pages immediately rather than
+    // being swallowed by the previous incident's hour-long window.
+    noteProxyHealthy();
     tracker.lastError = null;
 
     const elapsed = ((Date.now() - start) / 1000).toFixed(1);
@@ -476,6 +480,14 @@ async function scrapeOnce(tracker: ActiveTracker): Promise<void> {
     tracker.consecutiveErrors++;
     tracker.lastError = err.message;
     console.error(`[${tracker.scraperType.toUpperCase()}] Scrape error (${tracker.consecutiveErrors} consecutive):`, err.message);
+
+    // A dead/unfunded proxy fails silently forever: the service stays active and
+    // the event stays LIVE while results go stale (Zuffa Boxing 9, 2026-07-26).
+    // Alert on the second failure — one is usually a transient exit, two in a row
+    // on a proxy error is the balance or the gateway.
+    if (tracker.consecutiveErrors >= 2 && isProxyDeadError(err.message)) {
+      void alertProxyDown(`${tracker.scraperType}/${tracker.eventName}`, err.message);
+    }
 
     // Stop tracker after 10 consecutive errors
     if (tracker.consecutiveErrors >= 10) {
