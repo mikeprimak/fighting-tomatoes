@@ -22,7 +22,23 @@ export interface VideoFight {
   round: number | null;
   finishLabel: string | null;
   weightClass: string | null;
+  /** Where this bout sits in the pair's rivalry, oldest first. 1 when they only met once. */
+  boutNumber: number;
+  /** How many times these two have fought. > 1 means the card says "vs X 2". */
+  totalBouts: number;
 }
+
+/**
+ * "DIAZ vs McGREGOR 2".
+ *
+ * Numbered only when the pair actually fought more than once — a lone bout carrying a "1"
+ * implies a rematch that never happened. Tolerates payloads pulled before videoData.ts
+ * emitted the ordinal (older JSON simply renders unnumbered).
+ */
+export const matchupLabel = (f: VideoFight): string => {
+  const base = `${f.fighter1.lastName.toUpperCase()} vs ${f.fighter2.lastName.toUpperCase()}`;
+  return (f.totalBouts ?? 1) > 1 ? `${base} ${f.boutNumber}` : base;
+};
 
 /**
  * Corpus-level counts for on-screen claims in the hook/CTA.
@@ -44,5 +60,11 @@ export interface VideoPayload {
   corpus: VideoCorpus;
   /** Rendered verbatim in the hook. Generated per format from queried counts. */
   hookHeadline: string;
+  /**
+   * What the #1 payoff may claim, scoped to the filters that produced it — a fighter
+   * pull's #1 is not "the highest-rated fight in the app". Optional: payloads pulled
+   * before this field existed fall back to a claim that is true of any list.
+   */
+  payoffLabel?: string;
   fights: VideoFight[];
 }

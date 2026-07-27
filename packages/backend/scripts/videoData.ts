@@ -75,6 +75,10 @@ export interface VideoFight {
   round: number | null;
   finishLabel: string | null;
   weightClass: string | null;
+  /** Where this bout sits in the pair's rivalry, oldest first. 1 when they only met once. */
+  boutNumber: number;
+  /** How many times these two have fought. > 1 means the card should say "vs X 2". */
+  totalBouts: number;
 }
 
 /**
@@ -101,6 +105,12 @@ export interface VideoPayload {
    * Generated per format from queried counts so it can never overstate the data.
    */
   hookHeadline: string;
+  /**
+   * What the #1 payoff is allowed to claim, scoped to the filters that produced it.
+   * A fighter pull's #1 is NOT "the highest-rated fight in the app" — same rule as the
+   * hook: no superlative outruns the table it was queried from.
+   */
+  payoffLabel: string;
   fights: VideoFight[];
 }
 
@@ -219,6 +229,52 @@ async function cacheHeadshot(url: string | null, fighterId: string): Promise<str
   }
 }
 
+/**
+ * Which bout in the rivalry each fight is — "DIAZ vs McGREGOR 2".
+ *
+ * A retrospective that just says "Diaz vs McGregor" is ambiguous the moment a pair has
+ * fought twice, and picking the wrong one of a rematch pair is a factual error on screen.
+ * Ordered by the real instant (mainStartTime when present; Event.date is a UTC-hour
+ * placeholder), COMPLETED only — a booked trilogy bout must not renumber history, and a
+ * cancelled one must not count at all.
+ *
+ * Caveat: a rivalry split across duplicate Fighter rows (the Tapology rename-fork issue)
+ * would undercount. Rare, and it fails toward "no number shown" rather than a wrong one.
+ */
+async function boutOrdinals(
+  pairs: Array<{ fightId: string; a: string; b: string }>,
+): Promise<Map<string, { boutNumber: number; totalBouts: number }>> {
+  const out = new Map<string, { boutNumber: number; totalBouts: number }>();
+  const seen = new Set<string>();
+
+  for (const { a, b } of pairs) {
+    const key = [a, b].sort().join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const meetings = await prisma.fight.findMany({
+      where: {
+        fightStatus: 'COMPLETED',
+        OR: [
+          { fighter1Id: a, fighter2Id: b },
+          { fighter1Id: b, fighter2Id: a },
+        ],
+      },
+      select: { id: true, event: { select: { date: true, mainStartTime: true } } },
+    });
+
+    meetings
+      .sort((x, y) => {
+        const xd = (x.event.mainStartTime ?? x.event.date).getTime();
+        const yd = (y.event.mainStartTime ?? y.event.date).getTime();
+        return xd - yd;
+      })
+      .forEach((m, i) => out.set(m.id, { boutNumber: i + 1, totalBouts: meetings.length }));
+  }
+
+  return out;
+}
+
 async function hydrate(ranked: Awaited<ReturnType<typeof rankFights>>): Promise<VideoFight[]> {
   const fights = await prisma.fight.findMany({
     where: { id: { in: ranked.map((r) => r.fightId) } },
@@ -229,6 +285,10 @@ async function hydrate(ranked: Awaited<ReturnType<typeof rankFights>>): Promise<
     },
   });
   const byId = new Map(fights.map((f) => [f.id, f]));
+
+  const ordinals = await boutOrdinals(
+    fights.map((f) => ({ fightId: f.id, a: f.fighter1.id, b: f.fighter2.id })),
+  );
 
   const out: VideoFight[] = [];
   for (let i = 0; i < ranked.length; i++) {
@@ -258,6 +318,8 @@ async function hydrate(ranked: Awaited<ReturnType<typeof rankFights>>): Promise<
       round: f.round,
       finishLabel: finishLabel(f.method, f.round),
       weightClass: f.weightClass ?? null,
+      boutNumber: ordinals.get(f.id)?.boutNumber ?? 1,
+      totalBouts: ordinals.get(f.id)?.totalBouts ?? 1,
     });
   }
   return out;
@@ -272,6 +334,8 @@ async function main() {
   let extra: string | undefined;
   // What the hook counts: "FANS HAVE RATED <n> <scopeLabel>."
   let scopeLabel = '';
+  // What the #1 payoff may claim: "<votes> fans rated it - <payoffLabel>."
+  let payoffLabel = '';
 
   switch (args.format) {
     case 'top-fights':
@@ -279,6 +343,7 @@ async function main() {
       title = `The ${args.limit} Highest-Rated Fights in ${args.org} History`;
       subtitle = 'As rated by Good Fights users';
       scopeLabel = `${args.org} FIGHTS`;
+      payoffLabel = `the highest-rated ${args.org} fight in the app`;
       break;
 
     case 'fighter': {
@@ -302,6 +367,7 @@ async function main() {
       subtitle = 'As rated by Good Fights users';
       extra = `fighter=${fullName}`;
       scopeLabel = `${fullName.toUpperCase()} FIGHTS`;
+      payoffLabel = `the highest-rated ${fullName} fight in the app`;
       break;
     }
 
@@ -312,6 +378,7 @@ async function main() {
       subtitle = 'As rated by Good Fights users';
       extra = `weightClass=${args.weightClass}`;
       scopeLabel = `${args.weightClass.replace(/_/g, ' ')} FIGHTS`;
+      payoffLabel = `the highest-rated ${args.weightClass.replace(/_/g, ' ').toLowerCase()} fight in the app`;
       break;
 
     case 'year': {
@@ -323,6 +390,7 @@ async function main() {
       subtitle = 'As rated by Good Fights users';
       extra = `year=${args.year}`;
       scopeLabel = `${args.org} FIGHTS FROM ${args.year}`;
+      payoffLabel = `the highest-rated ${args.org} fight of ${args.year}`;
       break;
     }
 
@@ -348,6 +416,7 @@ async function main() {
     filters: { org: args.org, minVotes: args.minVotes, limit: args.limit, extra },
     corpus,
     hookHeadline: `FANS HAVE RATED\n${corpus.scopeRatedFights.toLocaleString('en-US')} ${scopeLabel}.`,
+    payoffLabel,
     fights,
   };
 
@@ -366,8 +435,9 @@ async function main() {
   console.log('');
   fights.forEach((f) => {
     const shots = `${f.fighter1.headshot ? '✓' : '✗'}${f.fighter2.headshot ? '✓' : '✗'}`;
+    const bout = f.totalBouts > 1 ? ` ${f.boutNumber} (of ${f.totalBouts})` : '';
     console.log(
-      `  #${f.rank}  ${f.rating.toFixed(2)}  (${f.votes} votes)  ${f.fighter1.name} vs ${f.fighter2.name}  [${f.event}]  headshots:${shots}`,
+      `  #${f.rank}  ${f.rating.toFixed(2)}  (${f.votes} votes)  ${f.fighter1.name} vs ${f.fighter2.name}${bout}  [${f.event}]  headshots:${shots}`,
     );
   });
   console.log(
@@ -376,6 +446,7 @@ async function main() {
   );
   console.log('  ^ on-screen claims must not exceed these numbers.');
   console.log(`Hook: ${payload.hookHeadline.replace('\n', ' ')}`);
+  console.log(`Payoff claim: "${payload.payoffLabel}"`);
   console.log(`\nWrote ${outPath}`);
   console.log(`Wrote ${currentPath}  <- this is what "pnpm render" will use`);
   console.log(`\nNext:  cd ../video && pnpm render`);

@@ -25,7 +25,9 @@ export const NumberPop: React.FC<{
   fontSize?: number;
   blurAmount?: number; // used by BlurReveal for the hook + #1 payoff
   showStar?: boolean;
-}> = ({ value, startFrame = 0, fontSize = 260, blurAmount = 0, showStar = true }) => {
+  /** Override the digits' colour. The #1 payoff uses white on a full-strength star. */
+  numberColor?: string;
+}> = ({ value, startFrame = 0, fontSize = 260, blurAmount = 0, showStar = true, numberColor }) => {
   const frame = useCurrentFrame() - startFrame;
 
   const scale = interpolate(frame, [0, 9, 14], [0.6, 1.1, 1.0], {
@@ -48,7 +50,11 @@ export const NumberPop: React.FC<{
   });
 
   const text = value.toFixed(1);
-  const color = heatmapColor(value);
+  const heat = heatmapColor(value);
+  const color = numberColor ?? heat;
+  // A heatmap number needs the star muted under it. White digits don't, so the payoff's
+  // star sits closer to full strength — the app's own convention for score-on-heatmap.
+  const starMix = numberColor ? 0.62 : 0.34;
   // Big enough that the star's points clear the digits — at 1.5x the number swallowed it
   // and the star read as a smudge behind the score.
   const starSize = Math.round(fontSize * 1.9);
@@ -86,17 +92,19 @@ export const NumberPop: React.FC<{
         >
           <StarIcon
             size={starSize}
-            fill={heatmapOnBg(value)}
-            stroke={color}
+            fill={heatmapOnBg(value, starMix)}
+            stroke={heat}
             strokeWidth={0.6}
           />
         </div>
       )}
 
-      {/* glow halo: blurred, slightly larger duplicate sitting behind the digits */}
+      {/* glow halo: blurred, slightly larger duplicate sitting behind the digits.
+          Always the heatmap colour, so white payoff digits still glow red. */}
       <div
         style={{
           ...base,
+          color: heat,
           position: 'absolute',
           filter: `blur(18px) ${blur ?? ''}`,
           transform: `${SHEAR} scale(${scale * 1.05})`,

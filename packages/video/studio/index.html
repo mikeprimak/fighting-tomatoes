@@ -227,7 +227,7 @@ function renderFights(p, captions){
   $('fights').innerHTML = p.fights.map(f => `
     <tr>
       <td class="rank">#${f.rank}</td>
-      <td>${f.fighter1.name} vs ${f.fighter2.name}
+      <td>${f.fighter1.name} vs ${f.fighter2.name}${f.totalBouts > 1 ? ' ' + f.boutNumber : ''}
         <div class="muted">${f.event} · ${f.eventDateLabel}${f.finishLabel ? ' · ' + f.finishLabel : ''}</div>
       </td>
       <td class="score">${f.rating.toFixed(2)}<div class="${f.votes < 20 ? 'warn' : 'muted'}" style="font-weight:400">${f.votes} votes${f.votes < 20 ? ' ⚠' : ''}</div></td>

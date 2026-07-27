@@ -13,7 +13,7 @@ import { NumberPop } from './components/NumberPop';
 import { StarRow } from './components/StarRow';
 import { Watermark } from './components/Watermark';
 import { FightCard } from './components/FightCard';
-import type { VideoPayload, VideoFight } from './data/types';
+import { matchupLabel, type VideoPayload, type VideoFight } from './data/types';
 
 /** ④ Whoosh slide — the ONE transition, used everywhere (spec §9.4). */
 const WhooshSlide: React.FC<{ children: React.ReactNode; durationInFrames: number }> = ({
@@ -214,7 +214,11 @@ const Tease: React.FC<{ fights: VideoFight[] }> = ({ fights }) => {
 };
 
 /** The #1 payoff — un-blur, biggest pop, let it sit. */
-const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, caption }) => {
+const Payoff: React.FC<{ fight: VideoFight; caption: string; claim: string }> = ({
+  fight,
+  caption,
+  claim,
+}) => {
   const frame = useCurrentFrame();
 
   // Hold a beat of near-empty frame, then ramp blur 26 -> 0 over ~0.4s.
@@ -289,13 +293,36 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, capti
           color: COLORS.white,
           transform: SHEAR,
           textAlign: 'center',
-          marginBottom: 20,
+          marginBottom: 12,
         }}
       >
-        {fight.fighter1.lastName.toUpperCase()} vs {fight.fighter2.lastName.toUpperCase()}
+        {matchupLabel(fight)}
       </div>
 
-      <NumberPop value={fight.rating} startFrame={30} fontSize={280} blurAmount={blur} />
+      {/* The #1 card was the only one not naming its event — the payoff is exactly where
+          a viewer wants to know which card this was. */}
+      <div
+        style={{
+          opacity: setupOpacity,
+          fontFamily: 'Inter, sans-serif',
+          fontSize: 30,
+          color: COLORS.gray,
+          textAlign: 'center',
+          marginBottom: 18,
+        }}
+      >
+        {fight.event} · {fight.eventDateLabel}
+      </div>
+
+      {/* The payoff score is white on the heatmap star — the app's convention for score
+          text sitting on a heatmap fill, and it lands harder than one more red number. */}
+      <NumberPop
+        value={fight.rating}
+        startFrame={30}
+        fontSize={280}
+        blurAmount={blur}
+        numberColor={COLORS.white}
+      />
 
       <div style={{ marginTop: 8 }}>
         <StarRow rating={fight.rating} startFrame={42} size={64} gap={12} />
@@ -308,7 +335,7 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, capti
           marginTop: 18,
         }}
       >
-        {fight.votes} fans rated it · the highest-rated fight in the app
+        {fight.votes} fans rated it · {claim}
       </div>
 
       <div
@@ -431,7 +458,14 @@ export const Countdown: React.FC<{
       ))}
 
       <Sequence from={payoffStart} durationInFrames={TIMING.payoff}>
-        <Payoff fight={top} caption={captionFor(top)} />
+        {/* The superlative is scoped by the pull, never hardcoded — a Nate Diaz list's #1
+            is his highest-rated fight, not the app's. Older payloads get a claim that is
+            true of any list rather than one that might not be. */}
+        <Payoff
+          fight={top}
+          caption={captionFor(top)}
+          claim={payload.payoffLabel ?? 'the highest-rated fight on this list'}
+        />
       </Sequence>
 
       <Sequence from={ctaStart} durationInFrames={TIMING.cta}>

@@ -3,7 +3,7 @@ import { interpolate, useCurrentFrame, Easing, Img, staticFile } from 'remotion'
 import { COLORS, SHEAR, SAFE } from '../brand';
 import { NumberPop } from './NumberPop';
 import { StarRow } from './StarRow';
-import type { VideoFight } from '../data/types';
+import { matchupLabel, type VideoFight } from '../data/types';
 
 const Headshot: React.FC<{ src: string | null; name: string; delay: number; from: number }> = ({
   src,
@@ -142,7 +142,7 @@ export const FightCard: React.FC<{ fight: VideoFight; caption: string; total: nu
             lineHeight: 1.05,
           }}
         >
-          {fight.fighter1.lastName.toUpperCase()} vs {fight.fighter2.lastName.toUpperCase()}
+          {matchupLabel(fight)}
         </div>
         <div
           style={{

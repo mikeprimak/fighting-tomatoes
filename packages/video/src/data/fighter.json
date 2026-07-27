@@ -1,21 +1,22 @@
 {
   "format": "fighter",
-  "title": "Every Conor McGregor Fight, Rated by Fans",
+  "title": "Every Nate Diaz Fight, Rated by Fans",
   "subtitle": "As rated by Good Fights users",
-  "generatedAt": "2026-07-26T15:42:22.868Z",
+  "generatedAt": "2026-07-27T20:28:54.725Z",
   "filters": {
     "org": "UFC",
     "minVotes": 10,
     "limit": 5,
-    "extra": "fighter=Conor McGregor"
+    "extra": "fighter=Nate Diaz"
   },
   "corpus": {
     "totalFights": 8945,
     "ratedFights": 7054,
-    "ratingsCast": 67944,
-    "scopeRatedFights": 16
+    "ratingsCast": 68014,
+    "scopeRatedFights": 33
   },
-  "hookHeadline": "FANS HAVE RATED\n16 CONOR MCGREGOR FIGHTS.",
+  "hookHeadline": "FANS HAVE RATED\n33 NATE DIAZ FIGHTS.",
+  "payoffLabel": "the highest-rated Nate Diaz fight in the app",
   "fights": [
     {
       "rank": 1,
@@ -42,7 +43,9 @@
       "method": "Decision (majority) (48-47, 47-47, 48-47)",
       "round": 5,
       "finishLabel": "Decision (R5)",
-      "weightClass": null
+      "weightClass": null,
+      "boutNumber": 2,
+      "totalBouts": 2
     },
     {
       "rank": 2,
@@ -69,88 +72,96 @@
       "method": "Submission (rear-naked choke)",
       "round": 2,
       "finishLabel": "Submission (rear-naked choke) R2",
-      "weightClass": null
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 2
     },
     {
       "rank": 3,
-      "fightId": "4d177d71-e10b-4dc6-8641-5af9d9c00fe0",
-      "rating": 8.77,
-      "votes": 47,
+      "fightId": "3e7ec259-ad03-4179-81ec-8711c9361c0d",
+      "rating": 8.76,
+      "votes": 25,
       "fighter1": {
-        "id": "68db75c4-92c2-41eb-b358-3d228bc74ca7",
-        "name": "Dustin Poirier",
-        "lastName": "Poirier",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/68db75c4-92c2-41eb-b358-3d228bc74ca7.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
       "fighter2": {
-        "id": "e906430b-ec75-468f-8d49-a142806d0509",
-        "name": "Conor McGregor",
-        "lastName": "McGregor",
+        "id": "cc257db5-a915-4501-90c1-5c478f4ead88",
+        "name": "Donald Cerrone",
+        "lastName": "Cerrone",
         "nickname": null,
-        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+        "headshot": "headshots/cc257db5-a915-4501-90c1-5c478f4ead88.png"
       },
-      "event": "UFC 257",
-      "eventDate": "2021-01-23T05:00:00.000Z",
-      "eventDateLabel": "Jan 23, 2021",
-      "method": "TKO (punches)",
-      "round": 2,
-      "finishLabel": "TKO (punches) R2",
-      "weightClass": null
+      "event": "UFC 141",
+      "eventDate": "2011-12-30T05:00:00.000Z",
+      "eventDateLabel": "Dec 30, 2011",
+      "method": "Decision (unanimous) (30-27, 30-27, 29-28)",
+      "round": 3,
+      "finishLabel": "Decision (R3)",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     },
     {
       "rank": 4,
-      "fightId": "0a1ba0bd-f3c9-41b5-8a76-5c9da32d26fb",
-      "rating": 8.6,
-      "votes": 68,
+      "fightId": "02d42e23-93ff-4b8d-a23a-2c5b7b941383",
+      "rating": 8.73,
+      "votes": 11,
       "fighter1": {
-        "id": "7bdc4e2b-85c5-4cba-bc46-515a43f61ff3",
-        "name": "Khabib Nurmagomedov",
-        "lastName": "Nurmagomedov",
+        "id": "04a0d9b1-6705-4e1f-804f-73860a4879f3",
+        "name": "Rory MacDonald",
+        "lastName": "MacDonald",
         "nickname": null,
-        "headshot": "headshots/7bdc4e2b-85c5-4cba-bc46-515a43f61ff3.png"
+        "headshot": "headshots/04a0d9b1-6705-4e1f-804f-73860a4879f3.png"
       },
       "fighter2": {
-        "id": "e906430b-ec75-468f-8d49-a142806d0509",
-        "name": "Conor McGregor",
-        "lastName": "McGregor",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
-      "event": "UFC 229",
-      "eventDate": "2018-10-06T04:00:00.000Z",
-      "eventDateLabel": "Oct 6, 2018",
-      "method": "Submission (neck crank)",
-      "round": 4,
-      "finishLabel": "Submission (neck crank) R4",
-      "weightClass": null
+      "event": "UFC 129",
+      "eventDate": "2011-04-30T04:00:00.000Z",
+      "eventDateLabel": "Apr 30, 2011",
+      "method": "Decision (unanimous) (30-26, 30-27, 30-26)",
+      "round": 3,
+      "finishLabel": "Decision (R3)",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     },
     {
       "rank": 5,
-      "fightId": "0eaa311b-3c71-487e-87d1-2740e3477a95",
-      "rating": 8.53,
-      "votes": 93,
+      "fightId": "96a22d2a-9216-4ddf-84bb-1987e0715cde",
+      "rating": 8.71,
+      "votes": 14,
       "fighter1": {
-        "id": "2782308d-0ecf-499f-8087-0edf6b3e2d06",
-        "name": "Eddie Alvarez",
-        "lastName": "Alvarez",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/2782308d-0ecf-499f-8087-0edf6b3e2d06.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
       "fighter2": {
-        "id": "e906430b-ec75-468f-8d49-a142806d0509",
-        "name": "Conor McGregor",
-        "lastName": "McGregor",
+        "id": "78c3aebf-2c2e-4859-a064-52b575cb0f85",
+        "name": "Takanori Gomi",
+        "lastName": "Gomi",
         "nickname": null,
-        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
+        "headshot": "headshots/78c3aebf-2c2e-4859-a064-52b575cb0f85.png"
       },
-      "event": "UFC 205",
-      "eventDate": "2016-11-12T05:00:00.000Z",
-      "eventDateLabel": "Nov 12, 2016",
-      "method": "TKO (punches)",
-      "round": 2,
-      "finishLabel": "TKO (punches) R2",
-      "weightClass": null
+      "event": "UFC 135",
+      "eventDate": "2011-09-24T04:00:00.000Z",
+      "eventDateLabel": "Sep 24, 2011",
+      "method": "Submission (armbar)",
+      "round": 1,
+      "finishLabel": "Submission (armbar) R1",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     }
   ]
 }

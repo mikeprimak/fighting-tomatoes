@@ -1,156 +1,167 @@
 {
-  "format": "year",
-  "title": "The Best Fights of 2023",
+  "format": "fighter",
+  "title": "Every Nate Diaz Fight, Rated by Fans",
   "subtitle": "As rated by Good Fights users",
-  "generatedAt": "2026-07-26T15:54:36.268Z",
+  "generatedAt": "2026-07-27T20:28:54.725Z",
   "filters": {
     "org": "UFC",
     "minVotes": 10,
     "limit": 5,
-    "extra": "year=2023"
+    "extra": "fighter=Nate Diaz"
   },
   "corpus": {
     "totalFights": 8945,
     "ratedFights": 7054,
-    "ratingsCast": 67944,
-    "scopeRatedFights": 522
+    "ratingsCast": 68014,
+    "scopeRatedFights": 33
   },
-  "hookHeadline": "FANS HAVE RATED\n522 UFC FIGHTS FROM 2023.",
+  "hookHeadline": "FANS HAVE RATED\n33 NATE DIAZ FIGHTS.",
+  "payoffLabel": "the highest-rated Nate Diaz fight in the app",
   "fights": [
     {
       "rank": 1,
-      "fightId": "c4d5c391-eafc-4b80-b760-f3a1c5e5e3bf",
-      "rating": 9.31,
-      "votes": 13,
+      "fightId": "f16940ca-39c6-4f7a-8050-58e4bb05293b",
+      "rating": 9.23,
+      "votes": 225,
       "fighter1": {
-        "id": "b14a1d12-1e3b-4786-acf9-6120c5b78a3e",
-        "name": "Bill Algeo",
-        "lastName": "Algeo",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/b14a1d12-1e3b-4786-acf9-6120c5b78a3e.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
       "fighter2": {
-        "id": "2bd015a0-d881-4560-b076-80a7bf08764a",
-        "name": "TJ Brown",
-        "lastName": "Brown",
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
         "nickname": null,
-        "headshot": "headshots/2bd015a0-d881-4560-b076-80a7bf08764a.png"
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
       },
-      "event": "UFC Fight Night Holloway vs Allen",
-      "eventDate": "2023-04-15T04:00:00.000Z",
-      "eventDateLabel": "Apr 15, 2023",
-      "method": "SUB (Rear Naked Choke)",
-      "round": 2,
-      "finishLabel": "SUB (Rear Naked Choke) R2",
-      "weightClass": null
+      "event": "UFC 202",
+      "eventDate": "2016-08-20T04:00:00.000Z",
+      "eventDateLabel": "Aug 20, 2016",
+      "method": "Decision (majority) (48-47, 47-47, 48-47)",
+      "round": 5,
+      "finishLabel": "Decision (R5)",
+      "weightClass": null,
+      "boutNumber": 2,
+      "totalBouts": 2
     },
     {
       "rank": 2,
-      "fightId": "d327c522-6737-4962-a815-7cffb97e98ed",
-      "rating": 9.27,
-      "votes": 15,
+      "fightId": "d6877d85-7939-458b-913c-a40f5c1feae4",
+      "rating": 8.99,
+      "votes": 147,
       "fighter1": {
-        "id": "00996a62-df20-499c-820b-9ffbb4a0912f",
-        "name": "Rodolfo Bellato",
-        "lastName": "Bellato",
+        "id": "e906430b-ec75-468f-8d49-a142806d0509",
+        "name": "Conor McGregor",
+        "lastName": "McGregor",
         "nickname": null,
-        "headshot": "headshots/00996a62-df20-499c-820b-9ffbb4a0912f.png"
+        "headshot": "headshots/e906430b-ec75-468f-8d49-a142806d0509.png"
       },
       "fighter2": {
-        "id": "016e03be-197c-4639-9165-d02afd6e7079",
-        "name": "Ihor Potieria",
-        "lastName": "Potieria",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/016e03be-197c-4639-9165-d02afd6e7079.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
-      "event": "UFC Fight Night Dariush vs Tsarukyan",
-      "eventDate": "2023-12-02T05:00:00.000Z",
-      "eventDateLabel": "Dec 2, 2023",
-      "method": "KO/TKO (Punches)",
+      "event": "UFC 196",
+      "eventDate": "2016-03-05T05:00:00.000Z",
+      "eventDateLabel": "Mar 5, 2016",
+      "method": "Submission (rear-naked choke)",
       "round": 2,
-      "finishLabel": "KO/TKO (Punches) R2",
-      "weightClass": null
+      "finishLabel": "Submission (rear-naked choke) R2",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 2
     },
     {
       "rank": 3,
-      "fightId": "c55f76c8-b02c-4383-9b03-777c27fd4d1c",
-      "rating": 9.21,
-      "votes": 14,
+      "fightId": "3e7ec259-ad03-4179-81ec-8711c9361c0d",
+      "rating": 8.76,
+      "votes": 25,
       "fighter1": {
-        "id": "e064a5bc-fd58-4739-b358-8810b619ab91",
-        "name": "Drakkar Klose",
-        "lastName": "Klose",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/e064a5bc-fd58-4739-b358-8810b619ab91.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
       "fighter2": {
-        "id": "6e267ca9-dc8c-4faf-8952-8f02516e8801",
-        "name": "Joe Solecki",
-        "lastName": "Solecki",
+        "id": "cc257db5-a915-4501-90c1-5c478f4ead88",
+        "name": "Donald Cerrone",
+        "lastName": "Cerrone",
         "nickname": null,
-        "headshot": "headshots/6e267ca9-dc8c-4faf-8952-8f02516e8801.png"
+        "headshot": "headshots/cc257db5-a915-4501-90c1-5c478f4ead88.png"
       },
-      "event": "UFC Fight Night Dariush vs Tsarukyan",
-      "eventDate": "2023-12-02T05:00:00.000Z",
-      "eventDateLabel": "Dec 2, 2023",
-      "method": "KO/TKO (Slam)",
-      "round": 1,
-      "finishLabel": "KO/TKO (Slam) R1",
-      "weightClass": null
+      "event": "UFC 141",
+      "eventDate": "2011-12-30T05:00:00.000Z",
+      "eventDateLabel": "Dec 30, 2011",
+      "method": "Decision (unanimous) (30-27, 30-27, 29-28)",
+      "round": 3,
+      "finishLabel": "Decision (R3)",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     },
     {
       "rank": 4,
-      "fightId": "a8c07478-d9ed-4d42-a803-16c312fda4e5",
-      "rating": 9.2,
-      "votes": 44,
+      "fightId": "02d42e23-93ff-4b8d-a23a-2c5b7b941383",
+      "rating": 8.73,
+      "votes": 11,
       "fighter1": {
-        "id": "dccac618-9e35-4b6d-bd5f-8314720ef469",
-        "name": "Jalin Turner",
-        "lastName": "Turner",
+        "id": "04a0d9b1-6705-4e1f-804f-73860a4879f3",
+        "name": "Rory MacDonald",
+        "lastName": "MacDonald",
         "nickname": null,
-        "headshot": "headshots/dccac618-9e35-4b6d-bd5f-8314720ef469.png"
+        "headshot": "headshots/04a0d9b1-6705-4e1f-804f-73860a4879f3.png"
       },
       "fighter2": {
-        "id": "d14add68-5d80-4469-adf9-365dbfd0d854",
-        "name": "Dan Hooker",
-        "lastName": "Hooker",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/d14add68-5d80-4469-adf9-365dbfd0d854.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
-      "event": "UFC 290",
-      "eventDate": "2023-07-08T04:00:00.000Z",
-      "eventDateLabel": "Jul 8, 2023",
-      "method": "S-DEC",
+      "event": "UFC 129",
+      "eventDate": "2011-04-30T04:00:00.000Z",
+      "eventDateLabel": "Apr 30, 2011",
+      "method": "Decision (unanimous) (30-26, 30-27, 30-26)",
       "round": 3,
-      "finishLabel": "S-DEC R3",
-      "weightClass": null
+      "finishLabel": "Decision (R3)",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     },
     {
       "rank": 5,
-      "fightId": "741c4ad5-f1a0-4796-ae93-ff901502ba40",
-      "rating": 9.2,
-      "votes": 10,
+      "fightId": "96a22d2a-9216-4ddf-84bb-1987e0715cde",
+      "rating": 8.71,
+      "votes": 14,
       "fighter1": {
-        "id": "99b9f5ad-b059-42ae-9a7c-570cfef5fbdb",
-        "name": "Trevor Peek",
-        "lastName": "Peek",
+        "id": "e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d",
+        "name": "Nate Diaz",
+        "lastName": "Diaz",
         "nickname": null,
-        "headshot": "headshots/99b9f5ad-b059-42ae-9a7c-570cfef5fbdb.png"
+        "headshot": "headshots/e6c4ca1d-d5b5-4494-ba6d-db08cdca7d9d.jpg"
       },
       "fighter2": {
-        "id": "4eac5628-78c7-4b54-ad61-6d1c6dd5183f",
-        "name": "Erick Gonzalez",
-        "lastName": "Gonzalez",
+        "id": "78c3aebf-2c2e-4859-a064-52b575cb0f85",
+        "name": "Takanori Gomi",
+        "lastName": "Gomi",
         "nickname": null,
-        "headshot": "headshots/4eac5628-78c7-4b54-ad61-6d1c6dd5183f.png"
+        "headshot": "headshots/78c3aebf-2c2e-4859-a064-52b575cb0f85.png"
       },
-      "event": "UFC Fight Night Muniz vs Allen",
-      "eventDate": "2023-02-25T05:00:00.000Z",
-      "eventDateLabel": "Feb 25, 2023",
-      "method": "KO/TKO (Punch)",
+      "event": "UFC 135",
+      "eventDate": "2011-09-24T04:00:00.000Z",
+      "eventDateLabel": "Sep 24, 2011",
+      "method": "Submission (armbar)",
       "round": 1,
-      "finishLabel": "KO/TKO (Punch) R1",
-      "weightClass": null
+      "finishLabel": "Submission (armbar) R1",
+      "weightClass": null,
+      "boutNumber": 1,
+      "totalBouts": 1
     }
   ]
 }
