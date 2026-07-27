@@ -1,6 +1,6 @@
 import React from 'react';
 import { interpolate, useCurrentFrame, Easing } from 'remotion';
-import { SHEAR } from '../brand';
+import { COLORS, SHEAR } from '../brand';
 import { heatmapColor, heatmapOnBg } from '../heatmap';
 import { StarIcon } from './StarIcon';
 
@@ -8,10 +8,11 @@ import { StarIcon } from './StarIcon';
  * ① Number Pop — the signature beat. Every rating number does this.
  * Spec §9.4: scale 0.6 -> 1.10 gentle overshoot -> 1.0 settle, alpha in over ~5 frames.
  *
- * The number is coloured by the app heatmap (a 9.7 is red, a 7.2 is gold) so the score
- * reads the same here as it does in the app, and a big heatmap star pops in behind it —
- * the Rate This Fight modal's star, scaled up. The star fill is mixed toward the
- * background so the full-strength number stays legible on top of it.
+ * The heatmap lives in the STAR, not the digits: a big heatmap star pops in behind the
+ * number (the Rate This Fight modal's star, scaled up) and the number itself is always
+ * white with a dark shadow — the app's own convention for score text sitting on a heatmap
+ * fill, and it holds contrast at every score, where a heatmap 9.0 on a heatmap star sat
+ * red-on-red. The glow halo stays heatmap-coloured, so a white number glows its own score.
  *
  * One decimal place, always. Two decimals reads like a spreadsheet, and the extra digit
  * is noise at 260px.
@@ -25,9 +26,7 @@ export const NumberPop: React.FC<{
   fontSize?: number;
   blurAmount?: number; // used by BlurReveal for the hook + #1 payoff
   showStar?: boolean;
-  /** Override the digits' colour. The #1 payoff uses white on a full-strength star. */
-  numberColor?: string;
-}> = ({ value, startFrame = 0, fontSize = 260, blurAmount = 0, showStar = true, numberColor }) => {
+}> = ({ value, startFrame = 0, fontSize = 260, blurAmount = 0, showStar = true }) => {
   const frame = useCurrentFrame() - startFrame;
 
   const scale = interpolate(frame, [0, 9, 14], [0.6, 1.1, 1.0], {
@@ -51,10 +50,9 @@ export const NumberPop: React.FC<{
 
   const text = value.toFixed(1);
   const heat = heatmapColor(value);
-  const color = numberColor ?? heat;
-  // A heatmap number needs the star muted under it. White digits don't, so the payoff's
-  // star sits closer to full strength — the app's own convention for score-on-heatmap.
-  const starMix = numberColor ? 0.62 : 0.34;
+  // White digits don't need the fill muted under them, so the star sits close to full
+  // strength — the heatmap is the thing carrying the score's colour now.
+  const starMix = 0.62;
   // Big enough that the star's points clear the digits — at 1.5x the number swallowed it
   // and the star read as a smudge behind the score.
   const starSize = Math.round(fontSize * 1.9);
@@ -63,7 +61,7 @@ export const NumberPop: React.FC<{
   const base: React.CSSProperties = {
     fontFamily: 'Anton, sans-serif',
     fontSize,
-    color,
+    color: COLORS.white,
     transform: `${SHEAR} scale(${scale})`,
     lineHeight: 1,
     letterSpacing: '-0.02em',

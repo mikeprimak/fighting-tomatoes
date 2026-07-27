@@ -314,15 +314,7 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string; claim: string }> = 
         {fight.event} · {fight.eventDateLabel}
       </div>
 
-      {/* The payoff score is white on the heatmap star — the app's convention for score
-          text sitting on a heatmap fill, and it lands harder than one more red number. */}
-      <NumberPop
-        value={fight.rating}
-        startFrame={30}
-        fontSize={280}
-        blurAmount={blur}
-        numberColor={COLORS.white}
-      />
+      <NumberPop value={fight.rating} startFrame={30} fontSize={280} blurAmount={blur} />
 
       <div style={{ marginTop: 8 }}>
         <StarRow rating={fight.rating} startFrame={42} size={64} gap={12} />
