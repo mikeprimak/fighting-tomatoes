@@ -40,6 +40,8 @@ The Sherdog tracker (shipped 2026-05-16) is now the **standard live tracker for 
 | **Golden Boy** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ⏳ Set URL per event |
 | **Gold Star** | `tapology` + `sherdogPbpUrl` | Sherdog PBP (per-event URL) | ⏳ Set URL per event |
 
+**Tapology-tracked orgs** (Zuffa Boxing, Karate Combat, Dirty Boxing, RIZIN) get results from Tapology and a **timing-inferred** LIVE state — Tapology itself has no live marker. See "Finding: Tapology is result-only" below before touching that behavior.
+
 **Onboarding a new org to Sherdog tracking**: the moment Sherdog publishes a PBP page for a card, set `event.sherdogPbpUrl = '<url>'` (admin panel or SQL). On lifecycle UPCOMING→LIVE, the VPS picks it up. No code change, no migration, no per-org parser.
 
 Sherdog tracking is **layered on top** of the native `scraperType` — the daily data scraper still pulls from Tapology (or whatever native source the org uses); Sherdog only handles the live-fight signal. Two orthogonal concerns, two fields. This means we can mix-and-match: use a native live tracker when one exists (UFC, ONE, etc.), fall through to Sherdog when one doesn't.
@@ -171,6 +173,59 @@ Full writeup: **`docs/HANDOFF-raf-live-tracker-2026-05-30.md`**. Key points for 
 - ⚠️ **GH Actions `raf-live-tracker.yml` was not actually running** (all `trackerUpdatedAt` NULL pre-manual-run) — investigate dispatch / `GITHUB_TOKEN`.
 
 General principle reinforced: **results and up-next are different signals and may need different sources.** A forward-looking signal (walkout / on-deck) is required for up-next; a result feed is only good for status/closure.
+
+## Finding: Tapology is result-only, so the running bout is inferred (2026-07-27)
+
+Same shape as the RAF finding above, resolved differently. **Tapology publishes no
+live marker at any level.** Its event header still reads `upcoming` four hours into
+a card — verified live mid-card at Zuffa Boxing 9:
+
+```
+Jul 27 00:33:27  [TAPOLOGY] 8 fights, status: upcoming
+Jul 27 00:33:28    DONE Wallin vs Sirenko -> Sirenko by TKO
+```
+
+The `.eventStatus, .event-status` selector in `tapologyLiveScraper.ts` is a legacy
+guess matching nothing on current markup. **Don't trust `scrapedData.status`** —
+it reads `upcoming` for the entire card.
+
+Consequence up to this point: no Tapology fight had *ever* carried
+`fightStatus = LIVE`. The parser only wrote COMPLETED / CANCELLED /
+UPCOMING-resets, so the apps fell back to a client-side "Up Next" guess
+(`live-events.tsx:367`) and a Tapology card could never show **Live Now**. The
+walkout notification was fine — `notifyNextFight()` already fired on each result.
+
+**Resolution: infer it from timing** (`decideLiveFight()` in `tapologyLiveParser.ts`,
+`ac5f378a`). Walk the card in descending `orderOnCard` (main event is ord 1 and runs
+last), take the first non-COMPLETED bout, flip it to LIVE **5 min** after the anchor:
+the most recent detected result, or for the opening bout the card's earliest section
+start time (only once the lifecycle has already moved the event to LIVE, so a bad
+start time can't light up a bout days early). Tune with `TAPOLOGY_LIVE_DELAY_MS`.
+
+**5 min is knowingly early and that is the point.** Measured gaps between consecutive
+result *detections* are far longer — median **42 min**, p25 **19 min** across the last
+25 Tapology cards. Operator call: Tapology lags, our poll adds up to another 150s on
+top, and being late means missing the live window entirely, while being early only
+means the badge leads the broadcast. **Don't raise it without asking** — the asymmetry
+is deliberate.
+
+**This does not violate design principle 6** ("start/end timing is sacred, null > guess").
+No timestamp is fabricated: `completedAt`, `round` and `time` are still written only
+from real scraped data. What's inferred is a *status*, and only for the window between
+two observed results — which the app was already guessing client-side, less accurately.
+
+Guards, all covered by an 18-assertion no-DB test
+(`tapologyLiveParser.liveInference.test.ts`): inherits the cancellation sweep's
+scrape-health gate; nothing inferred once the event is COMPLETED; an anchor older than
+**3h** is refused outright so a stalled card can't park a Live Now badge overnight;
+stray LIVE bouts that are no longer current are demoted; CANCELLED bouts are skipped;
+the backfill passes `skipLiveInference`; and the flip deliberately does **not** reset
+the adaptive-poll flatline clock, because it comes from a clock rather than new source
+data.
+
+Generalizable: **any result-only source can drive a "currently in the ring" state this
+way** — the RAF official page has exactly the same shape. Worth considering there
+instead of, or alongside, the Yahoo up-next poller.
 
 ## Source ranking ladder
 
@@ -370,6 +425,7 @@ Bleacher Report runs as a parallel cross-check on fight-end — if Sherdog's Off
 ## Related memories
 
 - [[lesson_tapology_tracker_overwrites_lifecycle]] — the canonical "don't reverse COMPLETED" lesson
+- [[lesson_tapology_has_no_live_marker]] — Tapology has no live indicator; the running bout is inferred 5 min after the previous result
 - [[lesson_vps_supported_scrapers]] — VPS dispatch only covers some scraperTypes
 - [[lesson_cancelled_fight_notification_guard]] — cancelled fights guarded at dispatch layer; matches left active for rebooks
 - [[lesson_tapology_event_lookup_ufcurl_only]] — name-fallback merges sibling events; tracker lookups must use stable IDs

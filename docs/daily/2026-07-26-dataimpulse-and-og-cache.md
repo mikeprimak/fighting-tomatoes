@@ -235,3 +235,31 @@ discovery crawler that feeds Perplexity citations — the same reason `OAI-Searc
 `Perplexity-User` are allowed. With caching in place the crawl is cheap, so blocking it
 would trade citations for nothing. Revisit only if it starts crawling far beyond the
 sitemap.
+
+## Commits
+
+| SHA | What |
+|---|---|
+| `e595f3bf` | OG image caching + bounded upstream fetches |
+| `13f0a115` | Shared Tapology browser (one Cloudflare clearance per session) |
+| `19d868b9` | Idle browser release + proxy-down alert |
+| `ac5f378a` | Tapology running-bout inference |
+
+## Follow-ups
+
+Nothing blocking. In rough priority order:
+
+1. **Watch the 5-min live delay across two or three full cards.** It is knowingly early
+   (see §1b) and the right value is an empirical question, not a design one. If bouts are
+   showing Live Now conspicuously before the ring walk, raise `TAPOLOGY_LIVE_DELAY_MS` —
+   but only after watching, and don't "correct" it on principle.
+2. **No bandwidth kill-switch on the proxy.** A tracker that can't clear Cloudflare
+   retries 4× per poll: ~800 MB in one 8-hour night, with nothing to stop it. The new
+   proxy-down alert covers the *dead* case, not the *burning* case.
+3. **VPS memory headroom.** 2 GB, and a scrape still spikes to ~65 Chrome processes
+   leaving ~176 MB free. Three OOM kills on 2026-07-25 pre-date all of this work, so the
+   margin was already thin. Worth a look on a busy multi-card night.
+4. **The same inference would suit RAF.** Its official page is result-only in exactly the
+   same way — see the area doc.
+5. **`docs/areas/live-trackers.md` coverage matrix still says "May 2026"** and predates
+   several changes. Not wrong for the Tapology rows, just stale in general.
