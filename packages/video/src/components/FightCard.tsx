@@ -2,7 +2,7 @@ import React from 'react';
 import { interpolate, useCurrentFrame, Easing, Img, staticFile } from 'remotion';
 import { COLORS, SHEAR, SAFE } from '../brand';
 import { NumberPop } from './NumberPop';
-import { RatingBar } from './RatingBar';
+import { StarRow } from './StarRow';
 import type { VideoFight } from '../data/types';
 
 const Headshot: React.FC<{ src: string | null; name: string; delay: number; from: number }> = ({
@@ -152,16 +152,17 @@ export const FightCard: React.FC<{ fight: VideoFight; caption: string; total: nu
             marginTop: 12,
           }}
         >
+          {/* Event + date only. The finish is the caption's job (see captionFor) — it was
+              printing here AND in the fallback caption, stating the outcome twice. */}
           {fight.event} · {fight.eventDateLabel}
-          {fight.finishLabel ? ` · ${fight.finishLabel}` : ''}
         </div>
       </div>
 
-      {/* the star: rating number + bar + honest vote count */}
-      <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <NumberPop value={fight.rating} startFrame={26} fontSize={260} />
-        <div style={{ marginTop: 18 }}>
-          <RatingBar rating={fight.rating} startFrame={30} />
+      {/* the star: rating number on its heatmap star + ten stars + honest vote count */}
+      <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <NumberPop value={fight.rating} startFrame={26} fontSize={230} />
+        <div style={{ marginTop: 6 }}>
+          <StarRow rating={fight.rating} startFrame={30} />
         </div>
         <div
           style={{

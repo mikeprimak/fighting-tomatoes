@@ -10,7 +10,7 @@ import {
 } from 'remotion';
 import { COLORS, SHEAR, SAFE, TIMING, VIDEO } from './brand';
 import { NumberPop } from './components/NumberPop';
-import { RatingBar } from './components/RatingBar';
+import { StarRow } from './components/StarRow';
 import { Watermark } from './components/Watermark';
 import { FightCard } from './components/FightCard';
 import type { VideoPayload, VideoFight } from './data/types';
@@ -239,7 +239,9 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, capti
         alignItems: 'center',
         justifyContent: 'center',
         paddingTop: SAFE.top,
-        paddingBottom: 300,
+        // Taller number block (star behind the score) than the old bar layout — reserve
+        // more at the bottom so the caption stays clear of the platform UI.
+        paddingBottom: 360,
         paddingLeft: SAFE.left,
         paddingRight: SAFE.right,
       }}
@@ -251,19 +253,19 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, capti
           fontSize: 58,
           color: COLORS.gold,
           transform: SHEAR,
-          marginBottom: 30,
+          marginBottom: 24,
         }}
       >
         #1
       </div>
 
-      <div style={{ display: 'flex', gap: 24, opacity: setupOpacity, marginBottom: 34 }}>
+      <div style={{ display: 'flex', gap: 24, opacity: setupOpacity, marginBottom: 28 }}>
         {[fight.fighter1, fight.fighter2].map((f) => (
           <div
             key={f.id}
             style={{
-              width: 320,
-              height: 320,
+              width: 280,
+              height: 280,
               borderRadius: 16,
               overflow: 'hidden',
               backgroundColor: COLORS.panel,
@@ -287,16 +289,16 @@ const Payoff: React.FC<{ fight: VideoFight; caption: string }> = ({ fight, capti
           color: COLORS.white,
           transform: SHEAR,
           textAlign: 'center',
-          marginBottom: 26,
+          marginBottom: 20,
         }}
       >
         {fight.fighter1.lastName.toUpperCase()} vs {fight.fighter2.lastName.toUpperCase()}
       </div>
 
-      <NumberPop value={fight.rating} startFrame={30} fontSize={340} blurAmount={blur} />
+      <NumberPop value={fight.rating} startFrame={30} fontSize={280} blurAmount={blur} />
 
-      <div style={{ marginTop: 22 }}>
-        <RatingBar rating={fight.rating} startFrame={42} width={720} />
+      <div style={{ marginTop: 8 }}>
+        <StarRow rating={fight.rating} startFrame={42} size={64} gap={12} />
       </div>
       <div
         style={{
@@ -394,8 +396,10 @@ export const Countdown: React.FC<{
   const top = fights[0];
   const countdownFights = fights.slice(1).reverse(); // #5, #4, #3, #2
 
+  // Fallback carries the finish ONLY — the event and date are already on the card's meta
+  // line, and printing the outcome in both places was the duplication on screen.
   const captionFor = (f: VideoFight) =>
-    captions[f.fightId] ?? `${f.event} · ${f.finishLabel ?? 'Went the distance'}`;
+    captions[f.fightId] ?? f.finishLabel ?? 'Went the distance';
 
   let cursor = 0;
   const hookStart = cursor;
