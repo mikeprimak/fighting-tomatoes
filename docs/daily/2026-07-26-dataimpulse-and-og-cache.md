@@ -115,6 +115,91 @@ Worth remembering: the failure was silent from the outside. The service stayed `
 event stayed LIVE, and only the journal showed 6 consecutive scrape errors. This is exactly
 the case the missing bandwidth kill-switch (below) should alert on.
 
+## 1b. Tapology live trackers now infer the running bout (`ac5f378a`)
+
+Follow-on question from the same session: how does a Tapology tracker know a
+fight is live? **It didn't.** Worth writing down properly, because the answer was
+"there is no such thing on Tapology."
+
+### What the signal actually is
+
+Tapology publishes **no live marker at any level**. The scraper does look for an
+event status (`tapologyLiveScraper.ts:224`) but that selector is a legacy guess
+matching nothing on current markup — the header reads `upcoming` four hours into
+a card. Verified live during Zuffa Boxing 9:
+
+```
+Jul 27 00:33:27  [TAPOLOGY] 8 fights, status: upcoming
+Jul 27 00:33:28    DONE Wallin vs Sirenko -> Sirenko by TKO
+```
+
+So the one real-time signal is **a result appearing on the page**. On that
+transition `tapologyLiveParser` already fired `notifyNextFight()` (the walkout
+push), but it never wrote `fightStatus = LIVE` — the parser only ever wrote
+COMPLETED, CANCELLED and UPCOMING-resets. Consequence: no Tapology bout had ever
+carried LIVE, so the apps fell back to a client-side "Up Next" guess
+(`live-events.tsx:367`) and a Tapology card could never show **Live Now**.
+
+### The inference
+
+Walk the card in **descending orderOnCard** (main event is ord 1 and runs last,
+the same convention `notifyNextFight` relies on), take the first non-COMPLETED
+bout, flip it to LIVE once `LIVE_INFERENCE_DELAY_MS` has passed since the anchor:
+
+- **the most recent result detected on this card**, or
+- for the opening bout, **the card's earliest section start time** — and only
+  once the lifecycle has already moved the event to LIVE, so a bad start time on
+  a future card can't light up a bout days early.
+
+**The delay is 5 minutes, and it is deliberately early.** Measured gaps between
+consecutive result detections on Tapology cards are far longer — median **42 min**,
+p25 **19 min** across the last 25 events; Zuffa Boxing 9 itself ran 30 min and
+45 min between results. So this will usually lead the opening bell. Operator call
+(2026-07-27): Tapology lags, our poll adds up to another 150s on top, and being
+late means missing the live window altogether, while being early only means the
+badge leads the broadcast.
+
+Tune with `TAPOLOGY_LIVE_DELAY_MS`.
+
+### Guards
+
+| Guard | Why |
+|---|---|
+| Same scrape-health gate as the cancellation sweep | a partial scrape must not move a bout |
+| Nothing inferred once the event is COMPLETED | the card is frozen |
+| Anchor older than **3h** refused outright | a stalled or finished card can't park a Live Now badge overnight |
+| Stray LIVE bouts that aren't current get demoted to UPCOMING | self-healing if the card order shifts; never touches COMPLETED |
+| CANCELLED bouts skipped | never the running fight |
+| Backfill passes `skipLiveInference` | it runs days later; nothing is in progress |
+| Inferred flip does **not** reset the adaptive-poll flatline clock | it comes from a clock, not from new source data |
+
+Decision logic is split into a pure `decideLiveFight()` so the timing rules are
+testable with no DB and no network —
+`tapologyLiveParser.liveInference.test.ts`, 18 assertions, all passing.
+
+### Verified in production, mid-card
+
+Deployed to the VPS 00:44 UTC while Zuffa Boxing 9 was still running. It fired on
+the very first poll and was idempotent on the second:
+
+```
+00:44:38   LIVE Derevyanchenko vs Hackett (inferred, 11m after previous result)
+00:44:38 [TAPOLOGY] Matched: 8, updated: 0, live: Derevyanchenko vs Hackett
+00:47:16 [TAPOLOGY] Matched: 8, updated: 0
+```
+
+DB confirms exactly one LIVE row on the card, with the shadow field in step:
+
+```
+ord= 4 Wallin vs Sirenko          | COMPLETED | tracker=COMPLETED | TKO
+ord= 3 Derevyanchenko vs Hackett  | LIVE      | tracker=LIVE      |
+ord= 2 Hitchins vs Salas          | UPCOMING  | tracker=-         |
+```
+
+No UI change was needed: mobile's `isUpNext` switches off as soon as a real LIVE
+bout exists, and web's `LiveFightCard` already picks "Live Now" over "Up Next" off
+`fightStatus`.
+
 ## 2. Vercel alerts: fight OG images were never cached (`e595f3bf`)
 
 Both alerts — the `/fights/[id]/opengraph-image` error spike and the Function CPU
