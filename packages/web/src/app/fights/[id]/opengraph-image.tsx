@@ -61,6 +61,30 @@ function isDefaultImage(url: string): boolean {
   ].some((s) => url.includes(s));
 }
 
+// Satori (behind next/og) decodes PNG, JPEG and GIF only. Hand it anything else
+// and it throws mid-stream, which surfaces as a 500 on the whole route rather
+// than a missing photo — the "failed to pipe response / u2 is not iterable"
+// pair in the error logs. That is not hypothetical: the AI-enrichment fighter
+// bios write Webflow-hosted .webp headshots (cdn.prod.website-files.com), so
+// every fight involving e.g. Clay Guida, Henry Cejudo or Arman Tsarukyan 500'd.
+//
+// Sniff the actual bytes rather than trusting the URL suffix or Content-Type —
+// R2 and Webflow both serve headshots under generic/incorrect types, and the
+// magic numbers are the only thing Satori actually cares about.
+function isSatoriDecodable(buf: Buffer): boolean {
+  if (buf.length < 12) return false;
+  const png = buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+  const jpeg = buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  const gif = buf[0] === 0x47 && buf[1] === 0x49 && buf[2] === 0x46;
+  return png || jpeg || gif;
+}
+
+function sniffedMimeType(buf: Buffer): string {
+  if (buf[0] === 0xff) return 'image/jpeg';
+  if (buf[0] === 0x47) return 'image/gif';
+  return 'image/png';
+}
+
 // Pre-fetch a fighter photo and inline it as a data URL. Returns null on any
 // problem so the card falls back to a placeholder circle instead of erroring
 // the whole image (Satori throws on an unreachable <img src>).
@@ -75,9 +99,9 @@ async function loadFighterImage(profileImage: string | null | undefined): Promis
       signal: AbortSignal.timeout(IMAGE_FETCH_TIMEOUT_MS),
     });
     if (!res.ok) return null;
-    const type = res.headers.get('content-type') || 'image/jpeg';
     const buf = Buffer.from(await res.arrayBuffer());
-    return `data:${type};base64,${buf.toString('base64')}`;
+    if (!isSatoriDecodable(buf)) return null;
+    return `data:${sniffedMimeType(buf)};base64,${buf.toString('base64')}`;
   } catch {
     return null;
   }
