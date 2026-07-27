@@ -36,6 +36,12 @@ Gotchas (all load-bearing — see `docs/daily/2026-06-17.md`): proxy auth wraps 
 - **Other Tapology daily workflows** — `karate-combat`, `goldstar`, `goldenboy-tapology`, `toprank-tapology`, `zuffa-boxing`, `tapology-backfill` still inject `SCRAPFLY_KEY`. Fix each = same 1-line workflow-env swap (`SCRAPFLY_KEY` → `TAPOLOGY_PROXY` + `CAPSOLVER_KEY`); the secrets already exist.
 - **VPS live trackers** — Tapology live tracking runs on the Hetzner VPS (`/opt/scraper-service/.../.env`), NOT GitHub Actions. Add `TAPOLOGY_PROXY` + `CAPSOLVER_KEY` there and unset `SCRAPFLY_KEY`, then `vps-update.sh` + restart. ⚠️ Live polling re-challenges far more often than a daily run → watch CapSolver spend (and consider a longer cf_clearance reuse window).
 
+**Bandwidth (measured 2026-07-27, on the VPS, current shared-browser config).** DataImpulse is metered at ~$1/GB, so per-page bytes are the cost model. One Tapology page load: **cold 4,440 KB** (fresh browser → challenge → CapSolver solve → real page), **warm ~1,820 KB** (reused browser + `cf_clearance`). A four-hour live card (Zuffa Boxing 9: 65 polls, 27 solves) came to **~189 MB**, plus CapSolver's own egress through the same sticky proxy.
+
+⚠️ **Correction to the 2026-07-26 figures.** That audit reported ~1,080 KB/load, "98–99% Cloudflare, ~6 KB Tapology HTML." It was measured on a navigation that never cleared the interstitial, and a challenge page loads no ads. On a *cleared* page the split is **~96% third-party ad traffic** — doubleclick, prebid/media.net, pub.network, sharethrough, rubicon, gumgum, casalemedia, adnxs, adsrvr, amazon-adsystem, bounceexchange, ingage, yellowblue, t13.io — plus `images.tapology.com`. `www.tapology.com` itself is ~9% of the bill. The shared-browser fix (`13f0a115`) was still correct; it removes a ~2.6 MB challenge premium per poll but never touched the largest line.
+
+**The open lever:** `tapologyBrowser` sets no request interception anywhere. A prototype allowlist (permit `*.tapology.com` + `challenges.cloudflare.com`, abort every other host plus image/font/media/stylesheet) measured **cold 790 KB, warm 53 KB** — 34× on a warm poll, 35.8s → 2.3s — with the challenge still clearing and all 57 bout links still present. Not shipped; see `docs/daily/2026-07-27.md`.
+
 **Fragility:** the pinned gateway IP `64.34.81.65` is one of 3 `gw.dataimpulse.com` DNS A-records. If scrapers start timing out at the proxy, re-resolve `gw.dataimpulse.com` and update the `TAPOLOGY_PROXY` secret with a live IP.
 
 ## Live Trackers
