@@ -361,8 +361,9 @@ async function launchTapologyBrowser(opts = {}) {
   // --proxy-server can't carry creds, and scrapers call browser.newPage()
   // directly (not just newTapologyPage), so the auth must live at this level or
   // navigations fail with net::ERR_INVALID_AUTH_CREDENTIALS.
-  if (proxy && proxy.auth) return wrapBrowserForProxy(browser, proxy.auth);
-  return browser;
+  if (proxy && proxy.auth) wrapBrowserForProxy(browser, proxy.auth);
+  // Blocking goes OUTSIDE the proxy wrapper so authenticate() runs first.
+  return wrapBrowserForResourceBlocking(browser);
 }
 
 /**
@@ -396,6 +397,113 @@ function wrapBrowserForProxy(browser, auth) {
   };
   return browser;
 }
+
+// ──────────────────── Third-party request blocking (proxy cost) ──────────────
+// Every byte here is billed at DataImpulse residential rates (~$1/GB), and we
+// parse ~6 KB of HTML per page. Measured 2026-07-27 on the VPS (CDP
+// encodedDataLength, per host): a cleared Tapology page pulls ~1,820 KB warm /
+// ~4,440 KB cold, of which www.tapology.com is ~165 KB. The other ~96% is the
+// site's header-bidding ad stack — doubleclick, prebid/media.net, pub.network,
+// sharethrough, rubicon, gumgum, casalemedia, adnxs, adsrvr, amazon-adsystem,
+// bounceexchange, ingage, yellowblue, t13.io — plus images.tapology.com.
+//
+// NOTE this corrects the 2026-07-26 figure ("98-99% of bytes are Cloudflare").
+// That was measured on a navigation that never cleared the interstitial, and a
+// challenge page loads no ads. The shared browser above is still the right fix
+// (it removes a ~2.6 MB challenge premium per poll) — it just wasn't the
+// biggest line.
+//
+// Blocking rules, in order:
+//   - never block the document itself, whatever the host (the MVP scraper
+//     navigates to mostvaluablepromotions.com, the smoke test to api.ipify.org)
+//   - always allow challenges.cloudflare.com — Cloudflare's challenge must clear
+//   - drop image/font/media/stylesheet even same-site; nothing here renders
+//   - drop every other cross-site host
+// Measured effect on the same page: cold 4,440 -> 790 KB, warm 1,824 -> 53 KB
+// (34x), warm poll 35.8s -> 2.3s, with the challenge still clearing and all 57
+// bout links still present.
+//
+// Set TAPOLOGY_BLOCK_THIRD_PARTY=0 to disable if a site ever needs its
+// cross-origin JS to render the content we parse.
+const BLOCK_THIRD_PARTY = process.env.TAPOLOGY_BLOCK_THIRD_PARTY !== '0';
+const NEVER_BLOCK_HOSTS = /(^|\.)challenges\.cloudflare\.com$/i;
+const BLOCKED_RESOURCE_TYPES = new Set(['image', 'font', 'media', 'stylesheet']);
+
+function hostOfUrl(u) {
+  try {
+    return new URL(u).hostname.toLowerCase();
+  } catch (_) {
+    return null;
+  }
+}
+
+/**
+ * Registrable-ish domain: the last two labels. Deliberately naive — it exists
+ * only to keep subresources on the page's own domain (images.tapology.com for
+ * www.tapology.com). Getting it wrong on a multi-part TLD costs a blocked asset
+ * we weren't going to read anyway.
+ */
+function siteOfHost(host) {
+  if (!host) return null;
+  const parts = host.split('.');
+  return parts.length <= 2 ? host : parts.slice(-2).join('.');
+}
+
+/**
+ * Pure decision so the rules are testable without a browser or a network.
+ * `pageHost` is the host of the page's own navigation target.
+ */
+function shouldBlockRequest({ url, resourceType, pageHost }) {
+  if (!BLOCK_THIRD_PARTY) return false;
+  if (resourceType === 'document') return false; // never block a navigation
+  const host = hostOfUrl(url);
+  if (!host) return false; // data:/blob: — no bytes on the wire
+  if (NEVER_BLOCK_HOSTS.test(host)) return false;
+  if (BLOCKED_RESOURCE_TYPES.has(resourceType)) return true;
+  if (!pageHost) return false; // unknown origin — fail open, don't break a scrape
+  return siteOfHost(host) !== siteOfHost(pageHost);
+}
+
+/**
+ * Wrap a browser so every page drops third-party subresources. Applied
+ * OUTSIDE the proxy wrapper so page.authenticate() has already run — Chrome
+ * needs the proxy credentials before interception starts issuing continues.
+ *
+ * The page's origin is taken from the goto target rather than page.url(),
+ * which is still about:blank while the first navigation is in flight.
+ */
+function wrapBrowserForResourceBlocking(browser) {
+  const origNewPage = browser.newPage.bind(browser);
+  browser.newPage = async (...a) => {
+    const page = await origNewPage(...a);
+    let pageHost = null;
+    const origGoto = page.goto.bind(page);
+    page.goto = async (url, opts) => {
+      pageHost = hostOfUrl(url) || pageHost;
+      return origGoto(url, opts);
+    };
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      try {
+        // Another handler (or puppeteer's own auth path) already answered.
+        if (typeof req.isInterceptResolutionHandled === 'function' && req.isInterceptResolutionHandled()) return;
+        if (shouldBlockRequest({ url: req.url(), resourceType: req.resourceType(), pageHost })) return req.abort();
+        return req.continue();
+      } catch (_) {
+        // A request can be resolved out from under us mid-navigation; letting
+        // it through is always safer than leaving it hanging.
+        try {
+          req.continue();
+        } catch (__) {
+          /* already handled */
+        }
+      }
+    });
+    return page;
+  };
+  return browser;
+}
+// ────────────────── end third-party request blocking ─────────────────────────
 
 /** A page pre-set with a realistic viewport + desktop Chrome UA. */
 async function newTapologyPage(browser) {
@@ -626,6 +734,7 @@ module.exports = {
   scrapflyFetchHtml,
   isCapsolverEnabled,
   capsolverSolveCloudflare,
+  shouldBlockRequest,
   CHALLENGE_RE,
   DEFAULT_UA,
 };

@@ -18,5 +18,10 @@ export function scrapflyFetchHtml(
   url: string,
   opts?: { renderJs?: boolean; country?: string; timeoutMs?: number }
 ): Promise<string>;
+export function shouldBlockRequest(req: {
+  url: string;
+  resourceType: string;
+  pageHost: string | null;
+}): boolean;
 export const CHALLENGE_RE: RegExp;
 export const DEFAULT_UA: string;
