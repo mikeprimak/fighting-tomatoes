@@ -60,11 +60,38 @@ navigation timeouts keep the browser, so a blip doesn't forfeit the saving. Cont
 `tapologyBrowser.sharedSession.test.ts` covers reuse, no page leak, real replacement on
 recycle, double-close safety, and concurrent callers sharing one launch.
 
-**⚠️ NOT YET DEPLOYED TO THE VPS.** Deploying restarts `scraper-service`, which would drop
-live tracking mid-card, and Zuffa Boxing 9 was live when this shipped. Once no card is
-running: `bash /opt/scraper-service/packages/backend/vps-update.sh`, then
-`node dist/scripts/testTapologyProxy.js` to confirm. Until then the VPS still pays the old
-per-poll cost.
+**DEPLOYED TO THE VPS 2026-07-27 00:06 UTC**, mid-card at Mike's call. The saving is
+directly visible in the scrape times either side of a browser reuse:
+
+| | Duration |
+|---|---|
+| Scrape #1 (cold — launch + CapSolver solve) | **81.4s** |
+| Scrape #2 (warm — reused browser + cf_clearance) | **24.6s** |
+
+Scrape #2 skipped the challenge entirely. That 3.3× is the ~1 MB of Cloudflare traffic
+not being re-downloaded.
+
+### Follow-up shipped same night: idle release + proxy alert (`19d868b9`)
+
+Monitoring after the first deploy showed the cost of keeping Chrome resident on a 2 GB
+box. Steady state was fine (~1,300 MB available, load < 1) but a scrape spikes to ~65-78
+Chrome processes and briefly leaves **~176 MB available** — and `dmesg` shows Chrome
+OOM-killed three times on **2026-07-25**, before any of this, so the margin was already
+thin. The shared session was holding ~14 processes of that headroom even when nothing was
+polling.
+
+**Idle release:** the browser is now dropped after 4 min with no fetch. That spans the
+150s live cadence, so back-to-back polls still reuse the clearance (where the entire
+saving is), while the 15-min slow keep-alive and the gaps between cards give the memory
+back. Verified post-deploy: 13 Chrome processes held steady across polls, load 0.2-0.6.
+
+**Proxy-down alert:** fires on the second consecutive proxy-shaped error, once per hour,
+with the cooldown reset on the next success so a fresh outage pages immediately. Detection
+keys on `ERR_PROXY_AUTH_UNSUPPORTED` / `407` / `TRAFFIC_EXHAUSTED` / tunnel failures, and
+deliberately **ignores navigation timeouts and uncleared challenges** — those are
+recoverable and not the proxy being dead. Delivery reuses the endpoint the scraper
+workflows already call, because `EmailService` needs SMTP credentials that live on Render
+and not on the VPS.
 
 ### Two things that will push the burn up
 
