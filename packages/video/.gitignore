@@ -5,3 +5,8 @@ out/
 # Fighter headshots are scraped images and the repo is PUBLIC — keep them out.
 # They are re-downloaded by the data script, which must be run before any render.
 public/headshots/
+
+# Background action photos are per-video editorial assets with per-file rights
+# decisions — NEVER commit them to this public repo. The manifest
+# (src/data/backgrounds.json) is regenerated from this folder before every render.
+public/backgrounds/

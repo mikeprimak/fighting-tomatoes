@@ -6,9 +6,10 @@
   "scripts": {
     "panel": "node studio/server.mjs",
     "panel:stop": "node studio/stop.mjs",
-    "studio": "remotion studio",
-    "render": "remotion render Countdown out/countdown.mp4",
-    "still": "remotion still Countdown out/frame.png --frame=200",
+    "backgrounds": "node scripts/syncBackgrounds.mjs",
+    "studio": "node scripts/syncBackgrounds.mjs && remotion studio",
+    "render": "node scripts/syncBackgrounds.mjs && remotion render Countdown out/countdown.mp4",
+    "still": "node scripts/syncBackgrounds.mjs && remotion still Countdown out/frame.png --frame=200",
     "data": "cd ../backend && npx tsx scripts/videoData.ts"
   },
   "dependencies": {

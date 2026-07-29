@@ -48,6 +48,13 @@ export const NumberPop: React.FC<{
     easing: Easing.bezier(0.33, 1, 0.68, 1),
   });
 
+  // The halo flares on the pop beat and settles — a static glow reads as a style,
+  // a flare reads as an event. Peaks with the overshoot, rests at the old constant.
+  const haloOpacity = interpolate(frame, [0, 9, 20], [0, 0.85, 0.55], {
+    extrapolateLeft: 'clamp',
+    extrapolateRight: 'clamp',
+  });
+
   const text = value.toFixed(1);
   const heat = heatmapColor(value);
   // White digits don't need the fill muted under them, so the star sits close to full
@@ -106,7 +113,7 @@ export const NumberPop: React.FC<{
           position: 'absolute',
           filter: `blur(18px) ${blur ?? ''}`,
           transform: `${SHEAR} scale(${scale * 1.05})`,
-          opacity: 0.55,
+          opacity: haloOpacity,
         }}
       >
         {text}

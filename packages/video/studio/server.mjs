@@ -15,12 +15,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { syncBackgrounds } from '../scripts/syncBackgrounds.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const VIDEO_DIR = path.resolve(__dirname, '..');
 const BACKEND_DIR = path.resolve(VIDEO_DIR, '../backend');
 const DATA_DIR = path.join(VIDEO_DIR, 'src', 'data');
 const OUT_DIR = path.join(VIDEO_DIR, 'out');
+const BG_DIR = path.join(VIDEO_DIR, 'public', 'backgrounds');
 const PORT = Number(process.env.PORT ?? 3009);
 
 /** One job at a time — renders are CPU-bound and two at once helps nobody. */
@@ -82,6 +84,7 @@ function state() {
   return {
     payload,
     captions,
+    backgrounds: syncBackgrounds(),
     renders,
     job: job && {
       type: job.type,
@@ -157,8 +160,51 @@ const server = http.createServer(async (req, res) => {
       ? payload.filters.extra.split('=').slice(1).join('=')
       : payload.filters.org;
     const name = slug(`${payload.format}-${descriptor}`) || 'video';
+    // Regenerate the backgrounds manifest before bundling — a file dropped into
+    // public/backgrounds/ since the last render must make it into this one.
+    syncBackgrounds();
     runJob('render', 'npx', ['remotion', 'render', 'Countdown', `out/${name}.mp4`], VIDEO_DIR);
     return send(res, 200, { started: true, file: `${name}.mp4` });
+  }
+
+  // Per-fight background upload: body { fightId, ext, data (base64) }. The server
+  // names the file <fightId>.<ext> itself — hand-naming UUID files is the error
+  // this endpoint exists to remove.
+  if (url.pathname === '/api/background' && req.method === 'POST') {
+    const b = await readBody(req);
+    const ext = String(b.ext || '').toLowerCase().replace('jpeg', 'jpg');
+    if (!b.fightId || !/^[0-9a-f-]{36}$/i.test(b.fightId)) return send(res, 400, { error: 'Bad fightId.' });
+    if (!['jpg', 'png', 'webp'].includes(ext)) return send(res, 400, { error: 'Use a JPG, PNG or WebP.' });
+    if (!b.data) return send(res, 400, { error: 'Empty file.' });
+    fs.mkdirSync(BG_DIR, { recursive: true });
+    // One background per fight: drop any other extension's file for this id first.
+    for (const old of ['jpg', 'jpeg', 'png', 'webp']) {
+      const p = path.join(BG_DIR, `${b.fightId}.${old}`);
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    fs.writeFileSync(path.join(BG_DIR, `${b.fightId}.${ext}`), Buffer.from(b.data, 'base64'));
+    syncBackgrounds();
+    return send(res, 200, { saved: `${b.fightId}.${ext}` });
+  }
+
+  if (url.pathname === '/api/background' && req.method === 'DELETE') {
+    const fightId = url.searchParams.get('fightId') || '';
+    if (!/^[0-9a-f-]{36}$/i.test(fightId)) return send(res, 400, { error: 'Bad fightId.' });
+    for (const old of ['jpg', 'jpeg', 'png', 'webp']) {
+      const p = path.join(BG_DIR, `${fightId}.${old}`);
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
+    syncBackgrounds();
+    return send(res, 200, { removed: true });
+  }
+
+  // Serve background previews to the panel.
+  if (url.pathname.startsWith('/backgrounds/')) {
+    const file = path.join(BG_DIR, path.basename(url.pathname));
+    if (!fs.existsSync(file)) return send(res, 404, { error: 'not found' });
+    const ext = path.extname(file).slice(1).replace('jpeg', 'jpg');
+    const types = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+    return send(res, 200, fs.readFileSync(file), types[ext] || 'application/octet-stream');
   }
 
   if (url.pathname.startsWith('/out/')) {

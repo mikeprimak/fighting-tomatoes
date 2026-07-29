@@ -78,6 +78,22 @@ is a factual claim.
 `fightId`. This is the only hand-written part. A fight with no entry falls back to
 `"<event> · <finish>"` so a render never blocks, but a fallback line is a flat line.
 
+**2b. Background photos (optional).** Each fight can carry an action-photo backdrop —
+desaturated, ~25% opacity, slow push-in, scrimmed so every number stays readable. The
+easiest path is the panel's **Backgrounds** card: pick a file per fight and the server
+names it correctly. By hand: drop `public/backgrounds/<fightId>.<jpg|png|webp>` (fightId
+from the pull). `scripts/syncBackgrounds.mjs` bakes the folder into a manifest before
+every render/studio/still — it is chained into those scripts, so there is nothing to run.
+
+- A fight without a photo gets an ambient-glow treatment, not a flat card.
+- The hook uses the **lowest-ranked** fight's photo, heavily blurred — never #1's, the
+  payoff must not leak into the opening frame.
+- **The photo must be from the fight on the card** — a wrong-fight photo is a factual
+  error, same rule as every number on screen.
+- **Rights are a per-file editorial decision** and the folder is gitignored (public
+  repo): small-org press kits and licensed/CC material first; ask promotions — the small
+  ones say yes.
+
 **3. Preview or render:**
 
 ```bash

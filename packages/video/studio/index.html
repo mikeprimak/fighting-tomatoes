@@ -162,6 +162,16 @@
     </div>
 
     <div class="card">
+      <h2>2b · Backgrounds <span class="pill">action photo per fight — optional</span></h2>
+      <p class="muted" style="margin-bottom:.7rem">
+        Shown desaturated at ~25% behind the card. Fights without one get the ambient-glow
+        look instead. Use photos you have the right to use — press kits, licensed, CC.
+      </p>
+      <div id="backgrounds" class="muted">Pull data first.</div>
+      <input type="file" id="bgFile" accept="image/jpeg,image/png,image/webp" class="hide">
+    </div>
+
+    <div class="card">
       <h2>Preview</h2>
       <div id="preview" class="muted">No renders yet.</div>
     </div>
@@ -250,6 +260,52 @@ function renderFights(p, captions){
   $('saveCaps').classList.remove('hide');
 }
 
+// Separate card, separate render cycle: backgrounds re-draw when a file changes,
+// which must never rebuild the captions card and eat unsaved textarea edits.
+let bgTarget = null;
+function renderBackgrounds(p, backgrounds){
+  if (!p) return;
+  $('backgrounds').innerHTML = p.fights.map(f => {
+    const file = backgrounds[f.fightId];
+    return `
+    <div class="cap" style="display:flex;gap:.7rem;align-items:center">
+      ${file
+        ? `<img src="/${file}?t=${Date.now()}" style="width:74px;height:46px;object-fit:cover;border-radius:6px;border:1px solid var(--line)">`
+        : `<div style="width:74px;height:46px;border-radius:6px;border:1px dashed var(--line);display:flex;align-items:center;justify-content:center;color:var(--gray);font-size:.65rem">none</div>`}
+      <div style="flex:1">
+        <div class="who"><b>#${f.rank}</b> ${f.fighter1.lastName} vs ${f.fighter2.lastName}</div>
+        <div class="meta">${file ? `<span class="ok">photo set</span>` : 'ambient glow (no photo)'}</div>
+      </div>
+      <button class="ghost" style="flex:none" onclick="pickBg('${f.fightId}')">${file ? 'Replace' : 'Add photo'}</button>
+      ${file ? `<button class="ghost" style="flex:none;border-color:var(--red);color:var(--red)" onclick="removeBg('${f.fightId}')">✕</button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function pickBg(fightId){ bgTarget = fightId; $('bgFile').click(); }
+
+async function removeBg(fightId){
+  await fetch('/api/background?fightId=' + fightId, { method: 'DELETE' });
+  window.__bgKey = null; // force redraw on next tick
+  tick();
+}
+
+$('bgFile').addEventListener('change', async () => {
+  const file = $('bgFile').files[0];
+  $('bgFile').value = '';
+  if (!file || !bgTarget) return;
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const buf = await file.arrayBuffer();
+  let bin = '';
+  const bytes = new Uint8Array(buf);
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  await post('/api/background', { fightId: bgTarget, ext, data: btoa(bin) });
+  bgTarget = null;
+  window.__bgKey = null;
+  tick();
+});
+
 // On first load, point the form at whatever is actually in current.json — otherwise the
 // controls read "Top fights" while a year pull is loaded, and the panel lies about what
 // "Render video" will produce.
@@ -270,7 +326,21 @@ function adoptPayload(p){
 async function tick(){
   const s = await (await fetch('/api/state')).json();
 
-  if (s.payload) { adoptPayload(s.payload); renderFights(s.payload, s.captions || {}); }
+  if (s.payload) {
+    adoptPayload(s.payload);
+    // Redraw the pull/captions cards only when the pull actually changes — a redraw
+    // every tick rebuilds the textareas and eats whatever was being typed.
+    if (window.__pullKey !== s.payload.generatedAt) {
+      window.__pullKey = s.payload.generatedAt;
+      renderFights(s.payload, s.captions || {});
+      window.__bgKey = null;
+    }
+    const bgKey = JSON.stringify(s.backgrounds || {});
+    if (window.__bgKey !== bgKey) {
+      window.__bgKey = bgKey;
+      renderBackgrounds(s.payload, s.backgrounds || {});
+    }
+  }
 
   if (s.job){
     $('log').textContent = s.job.log.join('\n');
