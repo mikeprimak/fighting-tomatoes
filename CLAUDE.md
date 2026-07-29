@@ -34,6 +34,15 @@ factual claim; the hook headline is generated from a live query for exactly this
 Full detail: `docs/daily/2026-07-26.md`, `packages/video/README.md`,
 `private/marketing/video-production.md`.
 
+**Visual upgrade shipped 2026-07-28 (`02971ed6`):** per-fight action-photo backgrounds
+(panel "2b · Backgrounds" card uploads them; desaturated ~25% + push-in + scrim; no-photo
+cards get ambient glow) plus a motion pass (grain, Ken Burns headshots, impact settle,
+halo flare). **Decision: NO fight footage ever** (Zuffa strikes + buyer-diligence optics);
+stills-at-opacity is the ceiling, sourced press-kit/licensed/CC — ask small orgs for
+photos, it fits the relationship outreach. A backdrop must be FROM the fight on the card.
+Hook uses the lowest-ranked fight's photo, never #1's (payoff leak). See
+`docs/daily/2026-07-28.md`.
+
 **✅ Round Numbers #1 PUBLISHED + journalist outreach DONE (2026-07-28) — and the pitch-send strategy is RETIRED.** The letdowns article is live at `https://goodfights.app/blog/biggest-fight-letdowns-2026` (latest `0c4e5a1e`). Mike completed his first outreach round and is **pausing article-pitch emails entirely**: what worked was individual, relationship-first intros — introducing himself to journalists as a colleague, no article attached. Do not draft pitch emails or plan pitch sends for future installments unless Mike asks. The series itself continues quarterly (next ~October) as the citable asset relationships can point at. Email alias note (still true for any send): `mikeprimak@goodfights.app` is an alias on `contact@goodfights.app` — **pick the alias in the From dropdown**, the default is still contact@.
 
 **Lessons that must carry to #2:** re-run the "no superlative outruns the table" check over *derivative* copy (pitches/social), not just the article body — two overstated claims were caught in the pitch drafts. Pull the live distribution from prod before drawing any graphic; every tile is a factual claim. Score text on heatmap colours is **always white with a dark shadow**. **Voice: `docs/marketing/round-numbers-voice.md`.** Full detail: `docs/daily/2026-07-20.md`. Series is quarterly (next ~October); engine `packages/backend/scripts/hype-vs-reality.ts`, banner `packages/backend/scripts/generateLetdownsBanner.js`.
