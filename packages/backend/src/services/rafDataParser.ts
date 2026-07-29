@@ -5,7 +5,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { stripDiacritics } from '../utils/fighterMatcher';
 import { eventTimeToUTC } from '../utils/timezone';
-import { uploadEventImage } from './imageStorage';
+import { uploadEventImage, uploadFighterImage } from './imageStorage';
 import { syncFighterFollowMatchesForFight } from './notificationRuleEngine';
 import { upsertFightSwapAware } from '../utils/fightUpsert';
 import { resolveRenamedOpponent, normalizeFullName } from '../utils/fighterRename';
@@ -177,10 +177,12 @@ async function importRAFFighters(
     if (!firstName && !lastName) continue;
 
     try {
-      // Upload athlete image to R2 if available
+      // Upload athlete image to R2. RAF's site is Webflow and serves .webp,
+      // which Satori (the OG-image route) can't decode — the upload path
+      // transcodes, so the raw URL must never be written directly.
       let profileImage: string | undefined;
       if (athlete.imageUrl && athlete.imageUrl.startsWith('http')) {
-        profileImage = athlete.imageUrl;
+        profileImage = await uploadFighterImage(athlete.imageUrl, athlete.name);
       }
 
       const fighter = await prisma.fighter.upsert({
@@ -380,6 +382,9 @@ async function importRAFEvents(
       if (!fighter1Id) {
         const { firstName, lastName } = parseFighterName(fightData.fighter1.name);
         try {
+          const imageUrl = fightData.fighter1.imageUrl
+            ? await uploadFighterImage(fightData.fighter1.imageUrl, fightData.fighter1.name)
+            : undefined;
           const fighter = await prisma.fighter.upsert({
             where: { firstName_lastName: { firstName, lastName } },
             update: {},
@@ -389,7 +394,7 @@ async function importRAFEvents(
               gender,
               sport: Sport.MMA,
               isActive: true,
-              profileImage: fightData.fighter1.imageUrl || undefined,
+              profileImage: imageUrl,
             },
           });
           fighter1Id = fighter.id;
@@ -403,6 +408,9 @@ async function importRAFEvents(
       if (!fighter2Id) {
         const { firstName, lastName } = parseFighterName(fightData.fighter2.name);
         try {
+          const imageUrl = fightData.fighter2.imageUrl
+            ? await uploadFighterImage(fightData.fighter2.imageUrl, fightData.fighter2.name)
+            : undefined;
           const fighter = await prisma.fighter.upsert({
             where: { firstName_lastName: { firstName, lastName } },
             update: {},
@@ -412,7 +420,7 @@ async function importRAFEvents(
               gender,
               sport: Sport.MMA,
               isActive: true,
-              profileImage: fightData.fighter2.imageUrl || undefined,
+              profileImage: imageUrl,
             },
           });
           fighter2Id = fighter.id;

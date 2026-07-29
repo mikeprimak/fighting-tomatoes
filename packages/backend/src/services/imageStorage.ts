@@ -13,6 +13,7 @@
 
 import { S3Client, PutObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import crypto from 'crypto';
+import sharp from 'sharp';
 
 // ============== CONFIGURATION ==============
 
@@ -66,10 +67,10 @@ function getS3Client(): S3Client {
  * @param prefix - Optional prefix (fighter name, event name, etc.)
  * @returns Clean filename with hash to prevent collisions
  */
-function generateFileName(sourceUrl: string, prefix?: string): string {
+function generateFileName(sourceUrl: string, prefix?: string, extensionOverride?: string): string {
   // Extract file extension from URL or default to .jpg
   const urlPath = new URL(sourceUrl).pathname;
-  const extension = urlPath.match(/\.(jpg|jpeg|png|gif|webp)$/i)?.[1] || 'jpg';
+  const extension = extensionOverride || urlPath.match(/\.(jpg|jpeg|png|gif|webp)$/i)?.[1] || 'jpg';
 
   // Generate short hash from URL for uniqueness (prevents collisions)
   const hash = crypto.createHash('md5').update(sourceUrl).digest('hex').substring(0, 8);
@@ -102,6 +103,51 @@ function getContentType(filename: string): string {
 
   return contentTypes[extension || ''] || 'image/jpeg';
 }
+
+// ============== FORMAT SAFETY ==============
+
+/**
+ * Identify an image format from its magic bytes. URL suffixes and Content-Type
+ * headers both lie (Webflow and R2 serve images under generic types), so
+ * anything that gates on format must sniff the actual bytes.
+ */
+export function sniffImageFormat(
+  buffer: Buffer
+): 'png' | 'jpeg' | 'gif' | 'webp' | 'avif' | 'unknown' {
+  if (buffer.length >= 4 && buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47) return 'png';
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpeg';
+  if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === 'GIF8') return 'gif';
+  if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') return 'webp';
+  if (buffer.length >= 12 && buffer.toString('ascii', 4, 8) === 'ftyp') return 'avif';
+  return 'unknown';
+}
+
+/**
+ * Guarantee a buffer is a raster every consumer can decode — Satori (behind
+ * next/og) handles PNG/JPEG/GIF only, and a WebP profileImage 500s the whole
+ * OG-image route (2026-07-27 incident, RAF's Webflow-hosted headshots).
+ * WebP/AVIF/unknown are transcoded: PNG when the image has alpha (headshot
+ * cutouts must keep transparency), JPEG otherwise. Throws if the buffer isn't
+ * an image at all — callers treat that as a failed download.
+ */
+export async function ensureDecodableRaster(
+  buffer: Buffer
+): Promise<{ buffer: Buffer; extension: 'png' | 'jpg' | 'gif'; transcoded: boolean }> {
+  const format = sniffImageFormat(buffer);
+  if (format === 'png') return { buffer, extension: 'png', transcoded: false };
+  if (format === 'jpeg') return { buffer, extension: 'jpg', transcoded: false };
+  if (format === 'gif') return { buffer, extension: 'gif', transcoded: false };
+
+  const image = sharp(buffer);
+  const meta = await image.metadata();
+  if (meta.hasAlpha) {
+    return { buffer: await image.png().toBuffer(), extension: 'png', transcoded: true };
+  }
+  return { buffer: await image.jpeg({ quality: 90 }).toBuffer(), extension: 'jpg', transcoded: true };
+}
+
+/** Extensions that are safe as-is (match what sniffImageFormat passes through). */
+const SAFE_URL_EXTENSIONS = /\.(jpg|jpeg|png|gif)$/i;
 
 /**
  * Build public URL for an R2 object
@@ -172,13 +218,16 @@ export async function uploadImageToR2(
 
   try {
     const client = getS3Client();
-    const fileName = generateFileName(sourceUrl, prefix);
-    const key = `${folder}/${fileName}`;
 
-    // Check if image already exists in R2 (avoid re-upload)
-    if (await imageExists(key)) {
-      console.log(`[R2] Image already exists: ${key}`);
-      return getPublicUrl(key);
+    // Early dedupe only when the URL extension is a format we store as-is.
+    // A .webp (or extension-less) URL gets transcoded, so its final key isn't
+    // knowable until the bytes are sniffed — those always download first.
+    if (SAFE_URL_EXTENSIONS.test(new URL(sourceUrl).pathname)) {
+      const candidateKey = `${folder}/${generateFileName(sourceUrl, prefix)}`;
+      if (await imageExists(candidateKey)) {
+        console.log(`[R2] Image already exists: ${candidateKey}`);
+        return getPublicUrl(candidateKey);
+      }
     }
 
     console.log(`[R2] Downloading image: ${sourceUrl}`);
@@ -189,8 +238,19 @@ export async function uploadImageToR2(
       throw new Error(`Failed to download image: ${response.statusText}`);
     }
 
-    const arrayBuffer = await response.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    const raster = await ensureDecodableRaster(Buffer.from(await response.arrayBuffer()));
+    const buffer = raster.buffer;
+    if (raster.transcoded) {
+      console.log(`[R2] Transcoded to ${raster.extension} (Satori-safe)`);
+    }
+
+    const fileName = generateFileName(sourceUrl, prefix, raster.extension);
+    const key = `${folder}/${fileName}`;
+
+    if (await imageExists(key)) {
+      console.log(`[R2] Image already exists: ${key}`);
+      return getPublicUrl(key);
+    }
 
     console.log(`[R2] Uploading to: ${key} (${(buffer.length / 1024).toFixed(2)} KB)`);
 
@@ -256,7 +316,9 @@ export async function uploadFighterImageFromFile(
 
   try {
     const client = getS3Client();
-    const extension = filePath.match(/\.(jpg|jpeg|png|gif|webp)$/i)?.[1]?.toLowerCase() || 'png';
+    const raster = await ensureDecodableRaster(buffer);
+    buffer = raster.buffer;
+    const extension = raster.extension;
     const hash = crypto.createHash('md5').update(buffer).digest('hex').substring(0, 8);
     const cleanPrefix = fighterName
       .toLowerCase()
