@@ -1,5 +1,4 @@
 import { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { permanentRedirect } from 'next/navigation';
 import { FightDetailClient } from './FightDetailClient';
 import { AppDownloadFooter } from '@/components/layout/AppDownloadFooter';
@@ -115,11 +114,6 @@ function buildFightJsonLd(fight: any, url: string) {
 
 export default async function FightDetailPage({ params }: Props) {
   const { id } = await params;
-
-  // TEMP (2026-08-01) — see the matching probe on /fighters/[id]. The crawler
-  // behind the invocation spike works one section at a time, so both catalog
-  // routes need the probe to catch it. Remove once the UA is identified.
-  console.log('[ua-probe]', (await headers()).get('user-agent') || '(none)');
 
   let initialFight = null;
   try {
