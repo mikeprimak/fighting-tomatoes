@@ -10,6 +10,11 @@ const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrend
 
 type Props = { params: Promise<{ id: string }> };
 
+// ISR — see the matching comment on /fights/[id]. 60 matches every fetch in
+// this route (both the event and its fights), so a live card's SSR HTML is no
+// staler than it was before; EventDetailClient re-fetches on mount anyway.
+export const revalidate = 60;
+
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
 }

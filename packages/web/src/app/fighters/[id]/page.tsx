@@ -12,6 +12,11 @@ const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrend
 
 type Props = { params: Promise<{ id: string }> };
 
+// ISR — see the matching comment on /fights/[id]. This was the single
+// highest-volume route in the 2026-07-29 crawl (3,751 invocations in 6h).
+// 60 matches the fetch revalidate below, so freshness is unchanged.
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {

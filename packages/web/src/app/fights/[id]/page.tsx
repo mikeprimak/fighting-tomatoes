@@ -10,6 +10,15 @@ const API_BASE_URL = process.env.API_URL || 'https://fightcrewapp-backend.onrend
 
 type Props = { params: Promise<{ id: string }> };
 
+// ISR the rendered HTML, not just the upstream fetches. Every request to this
+// route was a fresh function invocation (`cache=MISS` on all of them) even
+// though the fetches below were already cached — which is what let the
+// 2026-07-29 scraper turn a one-pass catalog crawl into thousands of renders.
+// 60 matches the fetch revalidate in the page body, so freshness is unchanged;
+// live data reaches the client through React Query regardless. See
+// docs/daily/2026-08-01.md.
+export const revalidate = 60;
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   try {
