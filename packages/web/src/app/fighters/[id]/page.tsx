@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { permanentRedirect } from 'next/navigation';
 import { FighterDetailClient } from './FighterDetailClient';
 import { AppDownloadFooter } from '@/components/layout/AppDownloadFooter';
@@ -88,6 +89,12 @@ function buildFighterJsonLd(fighter: any, url: string) {
 
 export default async function FighterDetailPage({ params }: Props) {
   const { id } = await params;
+
+  // TEMP (2026-08-01) — Vercel flagged a 19x function-invocation spike starting
+  // Jul 29 15:00 UTC and this is the highest-volume route in it. Vercel's runtime
+  // logs don't carry the user agent, so log it here to identify the crawler and
+  // add it to the "Block bulk crawlers" firewall rule. Remove once identified.
+  console.log('[ua-probe]', (await headers()).get('user-agent') || '(none)');
 
   let initialFighter = null;
   try {
