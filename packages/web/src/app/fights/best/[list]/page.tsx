@@ -24,6 +24,13 @@ import { FightColumnHeader } from '@/components/fight-cards/FightSectionList';
 // "title-fights"), an org ("ufc", "bkfc", …), or a division ("lightweight").
 type Props = { params: Promise<{ list: string }> };
 
+// ISR the rendered HTML, not just the upstream fetches. Without this the route
+// re-rendered on every request (586 function invocations in 6h during the
+// 2026-07-29 crawler spike) even though every fetch below was already cached
+// for an hour. 3600 matches the `fetchBest*` defaults in lib/bestFights.ts, so
+// page freshness is unchanged — only the invocation count drops.
+export const revalidate = 3600;
+
 function fightName(f: any): string {
   return `${f.fighter1.firstName} ${f.fighter1.lastName} vs ${f.fighter2.firstName} ${f.fighter2.lastName}`;
 }
