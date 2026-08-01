@@ -14,8 +14,13 @@ type Props = { params: Promise<{ id: string }> };
 
 // ISR — see the matching comment on /fights/[id]. This was the single
 // highest-volume route in the 2026-07-29 crawl (3,751 invocations in 6h).
-// 60 matches the fetch revalidate below, so freshness is unchanged.
+// 60 matches the fetch revalidate below, so freshness is unchanged. The empty
+// generateStaticParams is what actually enables runtime ISR on a dynamic
+// segment — see the comment on /fights/[id].
 export const revalidate = 60;
+export function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;

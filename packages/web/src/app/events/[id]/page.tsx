@@ -12,8 +12,13 @@ type Props = { params: Promise<{ id: string }> };
 
 // ISR — see the matching comment on /fights/[id]. 60 matches every fetch in
 // this route (both the event and its fights), so a live card's SSR HTML is no
-// staler than it was before; EventDetailClient re-fetches on mount anyway.
+// staler than it was before; EventDetailClient re-fetches on mount anyway. The
+// empty generateStaticParams is what actually enables runtime ISR on a dynamic
+// segment — see the comment on /fights/[id].
 export const revalidate = 60;
+export function generateStaticParams() {
+  return [];
+}
 
 function formatDate(date: string) {
   return new Date(date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });

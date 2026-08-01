@@ -17,7 +17,17 @@ type Props = { params: Promise<{ id: string }> };
 // 60 matches the fetch revalidate in the page body, so freshness is unchanged;
 // live data reaches the client through React Query regardless. See
 // docs/daily/2026-08-01.md.
+//
+// `revalidate` on its own does nothing here: a dynamic segment only opts into
+// runtime ISR if it *also* exports generateStaticParams (Next 16 docs,
+// generate-static-params.md: "You must return an empty array from
+// generateStaticParams … in order to revalidate (ISR) paths at runtime").
+// Empty array = prerender nothing at build time, render each fight on first
+// request, then cache it. Verified by X-Vercel-Cache going MISS → HIT.
 export const revalidate = 60;
+export function generateStaticParams() {
+  return [];
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
