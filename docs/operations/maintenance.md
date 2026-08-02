@@ -40,6 +40,13 @@ This is NOT a one-off task list — anything that needs to happen on a schedule 
 - **Time:** ~5 min.
 - **Output:** Nothing unless the top-10 looks wrong (then daily-doc it).
 
+### Vercel usage + crawler check
+- **What:** From `packages/web`, `vercel firewall rules list` (confirm the deny rules are still Enabled), then check function-invocation volume — `get_runtime_logs` grouped by `route` with `source: serverless`, or the Vercel dashboard's usage graph. If a route is unexpectedly high, group the same window by `requestPath`: **distinct-paths ≈ invocations means a one-pass crawl** (nothing to cache, it will exhaust itself); **invocations ≫ distinct paths means a caching regression** — check `X-Vercel-Cache` on the live URL twice in a row.
+- **Why:** This has now bitten twice (2026-07-02 AI/SEO-bot swarm, 2026-07-29 unattributed scraper). Vercel's anomaly email is the tripwire but it fires after the burn starts, and a Hobby-tier overage pauses the project, which would 503 goodfights.app to Googlebot mid-indexing.
+- **Identifying a new crawler:** Vercel runtime logs carry **no user agent and no client IP**. Either read the dashboard's Observability user-agent breakdown, or temporarily `console.log('[ua-probe]', (await headers()).get('user-agent'))` inside a route that is *already* dynamically rendered (costs no extra invocations). Do **not** put a probe in an ISR-cached route — `headers()` forces dynamic rendering and silently undoes the caching.
+- **Time:** ~5 min.
+- **Output:** Nothing unless a new rule is needed (then daily-doc it). Full playbook: `docs/daily/2026-08-01.md`.
+
 ### SEO indexing health check (GSC) — AUTOMATED 2026-07-14
 - **What:** The GSC Weekly Report workflow (`.github/workflows/gsc-weekly-report.yml`, Mondays 12:00 UTC) commits a report to `docs/operations/gsc-reports/YYYY-MM-DD.md`: WoW clicks/impressions, striking-distance queries (pos 5-15), top pages/queries, new queries, sitemap errors. **The human job is reading the latest report** (~5 min): pick 1-2 striking-distance queries and improve those pages (title, on-page copy, internal links).
 - **Why:** The programmatic SEO corpus only pays off if Google indexes it — a gate regression, sitemap error, or Helpful-Content demotion shows up here first. Striking-distance queries are where cheap ranking wins live.

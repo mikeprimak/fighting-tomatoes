@@ -35,6 +35,47 @@ vercel --prod
 - `/fighters/[id]` — Fighter profile
 - `/search` — Search
 
+## Route caching / ISR (added 2026-08-01)
+
+The catalog routes — `/fights/[id]`, `/fighters/[id]`, `/events/[id]`,
+`/fights/best/[list]` — are ISR-cached. Each exports **both**:
+
+```ts
+export const revalidate = 60;          // 3600 on /fights/best/[list]
+export function generateStaticParams() { return []; }
+```
+
+**Both exports are required.** On a dynamic segment, `revalidate` alone does
+nothing — the route keeps rendering per-request as a function. The Next 16 docs
+(`next/dist/docs/…/generate-static-params.md`) state it directly: *"You must
+return an empty array from `generateStaticParams` … in order to revalidate
+(ISR) paths at runtime."* The empty array prerenders nothing at build time
+(the catalog is ~5,900 URLs and the backend may be cold) and caches each path
+after its first request.
+
+Before this, every catalog request re-rendered *and* re-hit the Render backend
+— which is how a single scraper produced ~9,800 function invocations in six
+hours plus a `TypeError: fetch failed` storm (`docs/daily/2026-08-01.md`).
+
+**Never add `headers()`, `cookies()`, or `searchParams` to these routes** — any
+of them forces dynamic rendering and silently reverts the caching. `/fighters`
+and `/fighters/division/[division]` are dynamic for exactly this reason
+(pagination via `searchParams`), and `/download` deliberately so (per-device UA
+redirect).
+
+Verify after any change to these routes — read the header off the live URL
+twice, don't trust the source:
+
+```bash
+curl -sI https://goodfights.app/fights/<slug> | grep -i "x-vercel-cache\|cache-control"
+# working: Cache-Control: public, …  and MISS then HIT
+# broken:  Cache-Control: private, no-cache, no-store  and MISS every time
+```
+
+The revalidate values match the `fetch` revalidate already inside each route,
+so page freshness is unchanged. One accepted trade-off: during a backend
+outage, the degraded no-data render is cached for up to the TTL.
+
 ## Blog: images, graphics & embeds (added 2026-06-03)
 
 Posts live in `packages/web/src/content/posts/*.md`; rendered via `marked` →
